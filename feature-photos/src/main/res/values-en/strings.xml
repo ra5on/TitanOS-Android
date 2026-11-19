@@ -18,6 +18,7 @@
     <string name="photos_no_access_text">The app needs access to photos and videos to back them up.</string>
     <string name="photos_allow">Allow access</string>
     <string name="photos_partial">You only shared selected photos. The app cannot see new photos this way, so it does not back them up.</string>
+    <string name="photos_partial_title">Only selected photos visible</string>
     <string name="photos_allow_all">Allow full access</string>
     <string name="photos_no_target">Choose a target on the NAS</string>
     <string name="photos_no_target_text">Choose a share and a folder for the photos.</string>

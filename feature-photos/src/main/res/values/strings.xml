@@ -18,6 +18,7 @@
     <string name="photos_no_access_text">Die App braucht Zugriff auf Fotos und Videos, um sie zu sichern.</string>
     <string name="photos_allow">Zugriff erlauben</string>
     <string name="photos_partial">Du hast nur ausgewählte Fotos freigegeben. Neue Aufnahmen sieht die App so nicht und sichert sie deshalb nicht.</string>
+    <string name="photos_partial_title">Nur ausgewählte Fotos sichtbar</string>
     <string name="photos_allow_all">Vollen Zugriff erlauben</string>
     <string name="photos_no_target">Ziel auf dem NAS wählen</string>
     <string name="photos_no_target_text">Wähle eine Freigabe und einen Ordner, in den die Aufnahmen kommen.</string>

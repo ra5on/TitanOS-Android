@@ -8,6 +8,7 @@ import io.github.ra5on.titanos.net.PhotosApi
 import io.github.ra5on.titanos.net.TitanApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.sync.Mutex
 
 /**
  * Was Worker und Dienst ohne Activity brauchen. Die App setzt [titan] und
@@ -24,6 +25,13 @@ object PhotosRuntime {
     /** Name des Geräts aus der Kopplung, Vorschlag für den Ordner am NAS. */
     @Volatile
     var deviceName: () -> String = { "" }
+
+    /**
+     * Immer nur ein Lauf: „Jetzt sichern“ und ein Upload-Auftrag würden sonst
+     * dieselbe Aufnahme zweimal hochladen („IMG_1 (2).jpg“). Worker und Dienst
+     * laufen im selben Prozess.
+     */
+    val runLock = Mutex()
 
     /** Läuft gerade eine Sicherung (in diesem Prozess)? Und ihr Fortschritt. */
     private val _progress = MutableStateFlow(Progress())

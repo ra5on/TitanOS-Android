@@ -70,7 +70,7 @@ private val WAITS_BY_CHOICE = setOf(Wait.Charging, Wait.Wifi, Wait.Roaming, Wait
  * wartet nur nach der eigenen Wahl (Laden, WLAN, von Hand).
  */
 val PhotosView.upToDate: Boolean
-    get() = settings.enabled && settings.hasTarget && access != Access.None &&
+    get() = settings.enabled && settings.hasTarget && access == Access.Full &&
         Kind.entries.all { k -> (pending[k] ?: 0) == 0 || waits[k] in WAITS_BY_CHOICE }
 
 /** Eine Kachel im Raster (Entwurf 30). */
@@ -204,6 +204,7 @@ private fun StatusCard(view: PhotosView, onSetUp: () -> Unit) {
                     !s.enabled -> stringResource(R.string.photos_off)
                     view.access == Access.None -> stringResource(R.string.photos_no_access)
                     !s.hasTarget -> stringResource(R.string.photos_no_target)
+                    view.access == Access.Partial -> stringResource(R.string.photos_partial_title)
                     view.progress.running && view.progress.total > 0 ->
                         stringResource(R.string.photos_running, view.progress.done, view.progress.total)
                     ok -> stringResource(R.string.photos_up_to_date)

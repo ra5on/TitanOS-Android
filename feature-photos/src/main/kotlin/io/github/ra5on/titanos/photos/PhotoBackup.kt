@@ -13,6 +13,7 @@ import io.github.ra5on.titanos.net.Uploader
 import io.github.ra5on.titanos.net.certificateChange
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
@@ -33,7 +34,10 @@ class PhotoBackup(
     private val store: BackupStore = BackupStore.get(context),
     private val scanner: MediaScanner = MediaScanner(context),
 ) {
-    suspend fun run(kinds: Set<Kind>, stopped: () -> Boolean = { false }): Outcome = withContext(Dispatchers.IO) {
+    suspend fun run(kinds: Set<Kind>, stopped: () -> Boolean = { false }): Outcome =
+        PhotosRuntime.runLock.withLock { runLocked(kinds, stopped) }
+
+    private suspend fun runLocked(kinds: Set<Kind>, stopped: () -> Boolean): Outcome = withContext(Dispatchers.IO) {
         if (!settings.enabled || !settings.hasTarget || MediaAccess.access(context) == Access.None) return@withContext Outcome.Skipped
         val (gens, versions) = scanner.generations()
         val items = scanner.scan()
@@ -46,12 +50,14 @@ class PhotoBackup(
         try {
             for (batch in todo.chunked(BATCH)) {
                 if (stopped()) return@withContext Outcome.RetryLater
-                val sums = batch.associateWith { sumOf(it) }
+                // Eine Aufnahme, die sich nicht lesen lässt (gerade gelöscht), wird übersprungen;
+                // das ist kein Fehler des NAS.
+                val sums = batch.mapNotNull { item -> localSum(item)?.let { item to it } }.toMap()
                 val answers = if (settings.skipDuplicates) {
                     photos.check(
                         PhotoCheckRequest(
                             settings.root, settings.dir.trim('/'),
-                            batch.map { PhotoItem(sums.getValue(it).first, sums.getValue(it).second, pathInDir(it)) },
+                            sums.map { (it, sum) -> PhotoItem(sum.first, sum.second, pathInDir(it)) },
                         ),
                     ).items.associateBy { it.sha256 }
                 } else {
@@ -59,13 +65,17 @@ class PhotoBackup(
                 }
                 for (item in batch) {
                     if (stopped()) return@withContext Outcome.RetryLater
-                    val (sha, size) = sums.getValue(item)
+                    val (sha, size) = sums[item] ?: run { done++; null } ?: continue
                     val known = answers[sha]
                     if (known?.state == "saved") {
                         mark(item, sha, known.path)
                     } else {
                         PhotosRuntime.report(Progress(running = true, done = done, total = todo.size, current = item.media.name))
-                        upload(item, sha, size, made)
+                        try {
+                            upload(item, sha, size, made)
+                        } catch (_: java.io.FileNotFoundException) {
+                            // Am Handy gelöscht, während sie wartete: nichts zu sichern.
+                        }
                     }
                     done++
                     PhotosRuntime.report(Progress(running = true, done = done, total = todo.size))
@@ -90,6 +100,14 @@ class PhotoBackup(
     private fun pathInDir(item: MediaItem): String {
         val sub = targetDir("", settings.yearMonth, item.media.taken)
         return if (sub.isEmpty()) item.media.name else "$sub/${item.media.name}"
+    }
+
+    private fun localSum(item: MediaItem): Pair<String, Long>? = try {
+        sumOf(item)
+    } catch (_: java.io.FileNotFoundException) {
+        null
+    } catch (_: SecurityException) {
+        null
     }
 
     private fun sumOf(item: MediaItem): Pair<String, Long> {
