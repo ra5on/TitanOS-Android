@@ -9,6 +9,9 @@
     <string name="ui_later_title">Kommt bald</string>
     <string name="ui_later">Kommt in einer späteren Testfassung.</string>
     <string name="ui_retry">Erneut versuchen</string>
+    <string name="ui_close">Schließen</string>
+    <string name="ui_selected">ausgewählt</string>
+    <string name="ui_not_selected">nicht ausgewählt</string>
     <string name="ui_loading">Wird geladen …</string>
     <string name="ui_nav_home">Start</string>
     <string name="ui_nav_files">Dateien</string>

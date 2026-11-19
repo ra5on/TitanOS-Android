@@ -7,7 +7,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.ra5on.titanos.files.FilesModel
+import io.github.ra5on.titanos.files.FilesRuntime
+import io.github.ra5on.titanos.files.OfflineStore
+import io.github.ra5on.titanos.files.OfflineSync
+import io.github.ra5on.titanos.files.Outbox
 import io.github.ra5on.titanos.files.TransferStore
+import java.io.File
 import io.github.ra5on.titanos.net.DeviceKey
 import io.github.ra5on.titanos.net.KeystoreDeviceKey
 import io.github.ra5on.titanos.net.NasConnection
@@ -27,6 +32,12 @@ class TitanApp : Application() {
     override fun onCreate() {
         super.onCreate()
         graph = AppGraph(this, PrefsPairingStore(this), KeystoreDeviceKey())
+        // Worker (Übertragungen, Offline) brauchen die Verbindung auch ohne Activity.
+        FilesRuntime.store = graph.transfers
+        FilesRuntime.offline = graph.offline
+        FilesRuntime.api = { graph.api }
+        Outbox.prune(this, graph.transfers)
+        if (graph.pairing != null) OfflineSync.schedule(this, graph.offline)
     }
 }
 
@@ -36,7 +47,8 @@ class TitanApp : Application() {
  */
 class AppGraph(private val app: Application, val store: PairingStore, val key: DeviceKey) {
     val shared = NasConnection.sharedClient()
-    val transfers = TransferStore()
+    val transfers = TransferStore(File(app.filesDir, "transfers.json"))
+    val offline = OfflineStore(app.filesDir)
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val main = Handler(Looper.getMainLooper())
 
@@ -52,7 +64,7 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
 
     var api: TitanApi? by mutableStateOf(pairing?.let(::apiFor))
         private set
-    var files: FilesModel? by mutableStateOf(api?.let { FilesModel(app, it, transfers, scope) })
+    var files: FilesModel? by mutableStateOf(api?.let { FilesModel(app, it, transfers, scope, offline) })
         private set
 
     private fun apiFor(p: Pairing) = TitanApi(NasConnection.forPairing(shared, p, sessions))
@@ -62,7 +74,8 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         pairing = p
         unpairedByNas = false
         api = apiFor(p)
-        files = FilesModel(app, api!!, transfers, scope)
+        files = FilesModel(app, api!!, transfers, scope, offline)
+        OfflineSync.schedule(app, offline)
     }
 
     /** Kopplung aufheben: Schlüssel, Kopplung und Sitzung weg. Am NAS beendet man das Gerät im Browser. */

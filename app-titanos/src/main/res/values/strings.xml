@@ -8,4 +8,5 @@
     <string name="app_notifications">Mitteilungen</string>
     <string name="app_notifications_text">Mitteilungen ohne Google kommen in einer späteren Testfassung.</string>
     <string name="app_unpair_do">Kopplung aufheben</string>
+    <string name="app_share_label">Auf TitanOS speichern</string>
 </resources>

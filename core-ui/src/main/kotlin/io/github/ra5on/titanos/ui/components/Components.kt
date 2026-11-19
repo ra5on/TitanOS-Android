@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import io.github.ra5on.titanos.ui.R
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -437,5 +439,18 @@ fun EmptyState(title: String, text: String, modifier: Modifier = Modifier, icon:
         icon?.invoke()
         Text(title, style = TitanType.title, color = Titan.colors.text, textAlign = TextAlign.Center)
         Text(text, style = TitanType.body, color = Titan.colors.muted, textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 320.dp))
+    }
+}
+
+/** Auswahlkreis (.a-rad): gewählt in der Akzentfarbe mit innerem Punkt; für Bildschirmleser „ausgewählt“. */
+@Composable
+fun RadioMark(selected: Boolean, modifier: Modifier = Modifier) {
+    val c = Titan.colors
+    val said = stringResource(if (selected) R.string.ui_selected else R.string.ui_not_selected)
+    Box(
+        modifier.size(20.dp).border(2.dp, if (selected) c.accent else c.muted, CircleShape).semantics { stateDescription = said },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (selected) Box(Modifier.size(10.dp).background(c.accent, CircleShape))
     }
 }

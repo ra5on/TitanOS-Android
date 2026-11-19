@@ -17,6 +17,14 @@ import io.github.ra5on.titanos.files.Location
 import io.github.ra5on.titanos.files.RootsState
 import io.github.ra5on.titanos.files.Transfer
 import io.github.ra5on.titanos.files.TransferState
+import io.github.ra5on.titanos.files.WaitReason
+import io.github.ra5on.titanos.files.OfflinePin
+import io.github.ra5on.titanos.files.OfflineScreen
+import io.github.ra5on.titanos.files.OfflineStore
+import io.github.ra5on.titanos.files.FolderSheet
+import io.github.ra5on.titanos.files.Incoming
+import io.github.ra5on.titanos.files.ShareModel
+import io.github.ra5on.titanos.files.ShareTargetScreen
 import io.github.ra5on.titanos.files.TransfersScreen
 import io.github.ra5on.titanos.home.HomeScreen
 import io.github.ra5on.titanos.home.HomeState
@@ -158,7 +166,7 @@ class ScreenshotTest {
     fun s20_files() = shot("20-dateien-freigaben") {
         FilesHomeScreen(
             RootsState(listOf(root("Documents", 3_900_000_000_000, 8_000_000_000_000), root("Media", 3_900_000_000_000, 8_000_000_000_000), root("Fotos", 3_900_000_000_000, 8_000_000_000_000), root("Projects", 400_000_000_000, 1_000_000_000_000))),
-            running = 1, finished = 4, onRoot = {}, onTransfers = {}, onLater = {}, bottomBar = { NavBar("Files") },
+            running = 1, finished = 4, offlineSummary = "3 Ordner, 14 Dateien · 1,2 GB", onRoot = {}, onTransfers = {}, onOffline = {}, onLater = {}, bottomBar = { NavBar("Files") },
         )
     }
 
@@ -182,7 +190,7 @@ class ScreenshotTest {
     @Test
     fun s22_actions() = shot("22-datei-aktionen") {
         FolderScreen(FolderState(location, entries), emptyList(), {}, {}, {}, {}, {}, bottomBar = { NavBar("Files") }) {
-            FileSheet(entries[3], withTrash = true, writable = true, {}, {}, {}, {}, {})
+            FileSheet(entries[3], withTrash = true, writable = true, offline = true, onOffline = {}, onShare = {}, onDownload = {}, onRename = {}, onDelete = {}, onDismiss = {})
         }
     }
 
@@ -198,11 +206,62 @@ class ScreenshotTest {
         TransfersScreen(
             listOf(
                 upload,
-                Transfer(2, "Urlaub Gardasee.zip", Direction.Upload, "Media/Reisen", "share/Media", "Reisen", 1_800_000_000, 1_800_000_000, TransferState.Done, finishedAt = now),
-                Transfer(3, "Steuerbescheid.pdf", Direction.Download, "Documents", "share/Documents", "", 120_000, 120_000, TransferState.Done, finishedAt = now.minus(1, ChronoUnit.DAYS)),
-                Transfer(4, "Präsentation.key", Direction.Upload, "Projects", "share/Projects", "", 2_000_000, 9_000_000, TransferState.Failed, offline = true, finishedAt = now),
+                Transfer(2, "Urlaub Gardasee.zip", Direction.Upload, "Media/Reisen", "share/Media", "Reisen", 1_800_000_000, 1_800_000_000, TransferState.Done, finishedAtMs = now.toEpochMilli()),
+                Transfer(3, "Steuerbescheid.pdf", Direction.Download, "Documents", "share/Documents", "", 120_000, 120_000, TransferState.Done, finishedAtMs = now.minus(1, ChronoUnit.DAYS).toEpochMilli()),
+                Transfer(4, "Präsentation.key", Direction.Upload, "Projects", "share/Projects", "", 2_000_000, 9_000_000, TransferState.Failed, offline = true, finishedAtMs = now.toEpochMilli()),
             ),
             onBack = {}, onCancel = {}, now = now,
         )
+    }
+
+    @Test
+    fun s23b_transfers_waiting() = shot("23-uebertragungen-wartet") {
+        TransfersScreen(
+            listOf(
+                Transfer(5, "IMG_2041.mp4", Direction.Upload, "Fotos/Handy", "share/Fotos", "Handy", 0, 80_000_000, TransferState.Waiting, waiting = WaitReason.Network),
+                Transfer(6, "Rechnung.pdf", Direction.Upload, "Documents", "share/Documents", "", 0, 90_000, TransferState.Waiting, waiting = WaitReason.Nas),
+                Transfer(4, "Präsentation.key", Direction.Upload, "Projects", "share/Projects", "", 2_000_000, 9_000_000, TransferState.Failed, offline = true, finishedAtMs = now.toEpochMilli()),
+            ),
+            onBack = {}, onCancel = {}, now = now,
+        )
+    }
+
+    private fun offlineStore(): OfflineStore {
+        val dir = java.io.File(System.getProperty("java.io.tmpdir"), "offline-shot-" + System.nanoTime())
+        return OfflineStore(dir).apply {
+            pin("share/Documents", "Documents", "Steuer 2025", dir = true)
+            pin("share/Media", "Media", "Noten Chor", dir = true)
+            pin("share/Documents", "Documents", "Privat/Mietvertrag Wohnung.pdf", dir = false)
+            finish(
+                listOf(
+                    OfflinePin("share/Documents", "Documents", "Steuer 2025", true, files = 8, bytes = 46_000_000),
+                    OfflinePin("share/Media", "Media", "Noten Chor", true, files = 5, bytes = 12_000_000, problem = "offline"),
+                    OfflinePin("share/Documents", "Documents", "Privat/Mietvertrag Wohnung.pdf", false, files = 1, bytes = 2_400_000),
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun s24_offline() = shot("24-offline") {
+        OfflineScreen(offlineStore(), onBack = {}, onPin = {}, onRemove = {}, onSyncNow = {}, onWifiOnly = {}, bottomBar = { NavBar("Files") })
+    }
+
+    @Test
+    fun s24b_folder_menu() = shot("24-ordner-offline") {
+        FolderScreen(FolderState(location, entries), emptyList(), {}, {}, {}, {}, {}, bottomBar = { NavBar("Files") }) {
+            FolderSheet("Privat", offline = true, onOffline = {}, onDismiss = {})
+        }
+    }
+
+    @Test
+    fun s81_share() = shot("81-teilen-ziel") {
+        val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        ctx.getSharedPreferences("share", android.content.Context.MODE_PRIVATE).edit()
+            .putString("root", "share/Fotos").putString("rootName", "Fotos").putString("path", "Handy Zeus/Geteilt").commit()
+        val api = io.github.ra5on.titanos.net.TitanApi(io.github.ra5on.titanos.net.NasConnection(emptyList(), null))
+        val items = listOf("IMG_2041.jpg" to 3_100_000L, "IMG_2042.jpg" to 2_900_000L, "IMG_2043.jpg" to 3_400_000L)
+            .map { (n, b) -> Incoming(android.net.Uri.parse("content://x/$n"), n, b) }
+        ShareTargetScreen(ShareModel(ctx, api, items), onCancel = {}, onUpload = {}, onOpen = {})
     }
 }
