@@ -38,9 +38,9 @@ Die Debug-APK liegt danach unter `app-titanos/build/outputs/apk/debug/`.
 
 - **Bildtests:** `./gradlew recordRoborazziDebug` schreibt Bilder aller Bildschirme in 412 dp Breite, hell und dunkel, nach `app-titanos/build/outputs/roborazzi/`.
 - **Release:** Signiert wird nur über Umgebungsvariablen: `TITANOS_KEYSTORE` (Pfad zum Keystore) und `TITANOS_KEYSTORE_PASSWORD`, Alias `titanos-release`. Ohne sie bleibt `assembleRelease` unsigniert.
-- **Stil:** Farben, Maße, Programmsymbole und die Schrift (IBM Plex) erzeugt `scripts/android-theme.mjs` im Repo TitanOS aus der Weboberfläche:
+- **Stil:** Farben, Maße, Programmsymbole und die Schrift (IBM Plex) erzeugt `web/scripts/android-theme.mjs` im Repo TitanOS aus der Weboberfläche:
   ```
-  node scripts/android-theme.mjs ../TitanOS-Android
+  node web/scripts/android-theme.mjs ../TitanOS-Android
   ```
   Das Ergebnis unter `core-ui/src/main/kotlin/…/ui/generated/` und `core-ui/src/main/res/font/` ist eingecheckt.
 

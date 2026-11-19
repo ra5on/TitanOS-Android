@@ -48,7 +48,7 @@ Please **do not** open a public issue for security vulnerabilities. Use GitHub's
 
 - Text is never cut off: no `TextOverflow.Ellipsis`, no `maxLines`; let it wrap or scroll. Lint enforces this (`TitanNoTruncatedText`).
 - A state is never shown by color alone; always add text or a distinct symbol.
-- No hardcoded colors in screens; use the theme (`Titan.colors`). Colors, sizes and program symbols are generated from the TitanOS web UI by `scripts/android-theme.mjs` in the TitanOS repository – change them there, not in `core-ui/…/generated`.
+- No hardcoded colors in screens; use the theme (`Titan.colors`). Colors, sizes and program symbols are generated from the TitanOS web UI by `web/scripts/android-theme.mjs` in the TitanOS repository – change them there, not in `core-ui/…/generated`.
 - User-facing text goes into `strings.xml`, German (`values/`) and English (`values-en/`).
 - Use the NAS's existing API routes, the same ones the web UI uses.
 - No Google Play Services, Firebase or ML Kit.

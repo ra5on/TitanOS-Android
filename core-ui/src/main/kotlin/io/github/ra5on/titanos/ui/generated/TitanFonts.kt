@@ -1,4 +1,4 @@
-// Erzeugt von TitanOS/scripts/android-theme.mjs – nicht von Hand ändern.
+// Erzeugt von TitanOS/web/scripts/android-theme.mjs – nicht von Hand ändern.
 // Quellen: web/src/app.css, web/src/lib/theme/themes.ts, web/src/lib/desktop/DesktopIcon.svelte.
 package io.github.ra5on.titanos.ui.generated
 
