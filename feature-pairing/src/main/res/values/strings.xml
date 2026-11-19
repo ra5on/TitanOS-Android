@@ -61,6 +61,7 @@
     <string name="perm_intro">Alles lässt sich später unter Einstellungen ändern. Android fragt bei jedem Punkt einmal nach.</string>
     <string name="perm_photos">Fotos und Videos sichern</string>
     <string name="perm_photos_text">Neue Aufnahmen automatisch aufs NAS</string>
+    <string name="perm_photos_partial">Nur ausgewählte Fotos freigegeben: Neue Aufnahmen sieht die App so nicht. Tippen für vollen Zugriff.</string>
     <string name="perm_contacts">Kontakte abgleichen</string>
     <string name="perm_contacts_text">TitanOS erscheint in der Kontakte-App</string>
     <string name="perm_calendar">Kalender abgleichen</string>

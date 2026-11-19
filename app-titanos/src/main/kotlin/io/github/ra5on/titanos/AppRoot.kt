@@ -50,6 +50,11 @@ import io.github.ra5on.titanos.pairing.ManualScreen
 import io.github.ra5on.titanos.pairing.PairingModel
 import io.github.ra5on.titanos.pairing.PermissionsRoute
 import io.github.ra5on.titanos.pairing.WelcomeScreen
+import io.github.ra5on.titanos.photos.Access
+import io.github.ra5on.titanos.photos.MediaAccess
+import io.github.ra5on.titanos.photos.PhotosTab
+import io.github.ra5on.titanos.photos.SettingsStore
+import io.github.ra5on.titanos.photos.homeTileText
 import io.github.ra5on.titanos.ui.R as UiR
 import io.github.ra5on.titanos.ui.components.BottomNav
 import io.github.ra5on.titanos.ui.components.Card
@@ -93,7 +98,16 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
     }
     when {
         pairing == null -> SetupFlow(graph, pairingModel, step) { step = it }
-        permissionsPending -> PermissionsRoute(onNext = { permissionsPending = false; step = SetupStep.Welcome })
+        permissionsPending -> PermissionsRoute(
+            onNext = { permissionsPending = false; step = SetupStep.Welcome },
+            photoPermissions = MediaAccess.PERMISSIONS,
+            photosOn = { SettingsStore(context).load().enabled && MediaAccess.access(context) != Access.None },
+            photosPartial = { MediaAccess.access(context) == Access.Partial },
+            // Eingeschaltet wird hier; das Ziel wählt man danach unter Fotos.
+            onPhotos = { on ->
+                graph.photos?.update(SettingsStore(context).load().copy(enabled = on)) ?: SettingsStore(context).let { it.save(it.load().copy(enabled = on)) }
+            },
+        )
         else -> MainShell(graph)
     }
 }
@@ -187,6 +201,7 @@ private fun MainShell(graph: AppGraph) {
     var filesRoute by remember { mutableStateOf<FilesRoute>(FilesRoute.Roots) }
     val api = graph.api ?: return
     val files = graph.files ?: return
+    val photos = graph.photos ?: return
     val nav = @Composable {
         BottomNav(
             listOf(
@@ -202,7 +217,12 @@ private fun MainShell(graph: AppGraph) {
     // Je Kopplung ein eigenes Modell, sonst behielte es nach neuem Koppeln die alte Verbindung.
     val home: HomeModel = viewModel(key = "home-" + graph.pairing?.device) { HomeModel(api, { graph.sessions.user?.role ?: "user" }, graph.pairing?.hostname.orEmpty()) }
     DisposableEffect(tab) {
-        if (tab == Tab.Home) home.start() else home.stop()
+        if (tab == Tab.Home) {
+            home.start()
+            photos.refresh()
+        } else {
+            home.stop()
+        }
         onDispose { home.stop() }
     }
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
@@ -219,6 +239,8 @@ private fun MainShell(graph: AppGraph) {
                     onNotifications = { tab = Tab.Notifications },
                     onMenu = { menu = true },
                     modifier = Modifier.weight(1f),
+                    photos = homeTileText(photos.view),
+                    onPhotos = { tab = Tab.Photos },
                 )
                 nav()
             }
@@ -254,7 +276,7 @@ private fun MainShell(graph: AppGraph) {
             }
         }
         Tab.Files -> FilesTab(files, filesRoute, { filesRoute = it }, nav, toastLater)
-        Tab.Photos -> Placeholder(stringResource(R.string.app_photos), stringResource(R.string.app_photos_text), nav)
+        Tab.Photos -> PhotosTab(photos, nav)
         Tab.Notifications -> Placeholder(stringResource(R.string.app_notifications), stringResource(R.string.app_notifications_text), nav)
     }
 }

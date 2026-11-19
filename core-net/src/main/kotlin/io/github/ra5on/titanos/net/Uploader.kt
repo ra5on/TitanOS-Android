@@ -16,6 +16,16 @@ class Uploader(private val api: TitanApi, private val chunkBytes: Int = 8 * 1024
         start: UploadStatus,
         open: () -> InputStream,
         progress: (Long, Long) -> Unit = { _, _ -> },
+    ): UploadStatus = api.uploadFinish(send(start, open, progress).id)
+
+    /**
+     * Schickt alle Stücke, schließt aber nicht ab: Die Foto-Sicherung
+     * schließt mit `app/photos/uploads/{id}/finish` und der Prüfsumme ab.
+     */
+    suspend fun send(
+        start: UploadStatus,
+        open: () -> InputStream,
+        progress: (Long, Long) -> Unit = { _, _ -> },
     ): UploadStatus {
         var status = start
         val buf = ByteArray(chunkBytes)
@@ -47,7 +57,7 @@ class Uploader(private val api: TitanApi, private val chunkBytes: Int = 8 * 1024
                 status = api.uploadStatus(status.id)
             }
         }
-        return api.uploadFinish(status.id)
+        return status
     }
 
     private fun skipFully(input: InputStream, count: Long) {

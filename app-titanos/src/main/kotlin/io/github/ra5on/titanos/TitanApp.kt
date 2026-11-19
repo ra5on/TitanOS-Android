@@ -16,6 +16,12 @@ import io.github.ra5on.titanos.net.PairingStore
 import io.github.ra5on.titanos.net.PrefsPairingStore
 import io.github.ra5on.titanos.net.SessionManager
 import io.github.ra5on.titanos.net.TitanApi
+import io.github.ra5on.titanos.net.PhotosApi
+import io.github.ra5on.titanos.photos.BackupStore
+import io.github.ra5on.titanos.photos.PhotoScheduler
+import io.github.ra5on.titanos.photos.PhotosModel
+import io.github.ra5on.titanos.photos.PhotosRuntime
+import io.github.ra5on.titanos.photos.SettingsStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,6 +33,15 @@ class TitanApp : Application() {
     override fun onCreate() {
         super.onCreate()
         graph = AppGraph(this, PrefsPairingStore(this), KeystoreDeviceKey())
+        // Worker der Foto-Sicherung laufen ohne Activity und holen sich hier die Verbindung.
+        PhotosRuntime.titan = { graph.api }
+        PhotosRuntime.photos = { graph.photosApi }
+        // Vorschlag für den Ordner am NAS: der Name des Handys aus den Android-Einstellungen.
+        PhotosRuntime.deviceName = {
+            android.provider.Settings.Global.getString(contentResolver, android.provider.Settings.Global.DEVICE_NAME)
+                ?.takeIf { it.isNotBlank() } ?: android.os.Build.MODEL
+        }
+        if (graph.pairing != null) PhotoScheduler.arm(this)
     }
 }
 
@@ -55,7 +70,16 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
     var files: FilesModel? by mutableStateOf(api?.let { FilesModel(app, it, transfers, scope) })
         private set
 
+    /** Foto-Sicherung: eigene Verbindung mit längerer Lesezeit für den Abschluss (das NAS rechnet dort nach). */
+    private val photosClient = PhotosApi.forFinish(shared)
+    var photosApi: PhotosApi? by mutableStateOf(pairing?.let(::photosApiFor))
+        private set
+    var photos: PhotosModel? by mutableStateOf(photosModelFor(api, photosApi))
+        private set
+
     private fun apiFor(p: Pairing) = TitanApi(NasConnection.forPairing(shared, p, sessions))
+    private fun photosApiFor(p: Pairing) = PhotosApi(NasConnection.forPairing(photosClient, p, sessions))
+    private fun photosModelFor(t: TitanApi?, p: PhotosApi?) = if (t != null && p != null) PhotosModel(app, t, p, scope) else null
 
     fun paired(p: Pairing) {
         sessions.forget()
@@ -63,6 +87,9 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         unpairedByNas = false
         api = apiFor(p)
         files = FilesModel(app, api!!, transfers, scope)
+        photosApi = photosApiFor(p)
+        photos = photosModelFor(api, photosApi)
+        PhotoScheduler.arm(app)
     }
 
     /** Kopplung aufheben: Schlüssel, Kopplung und Sitzung weg. Am NAS beendet man das Gerät im Browser. */
@@ -74,6 +101,12 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         pairing = null
         api = null
         files = null
+        photosApi = null
+        photos = null
+        // Die Foto-Sicherung gehört zu dieser Kopplung: Aufträge, Stand und Einstellungen weg.
+        PhotoScheduler.cancelAll(app)
+        BackupStore.get(app).clear()
+        SettingsStore(app).clear()
         unpairedByNas = byNas
     }
 }

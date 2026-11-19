@@ -39,12 +39,15 @@ enum class Grant { Granted, NotAsked, Denied }
 data class PermissionsState(
     val localNetwork: Grant = Grant.NotAsked,
     val notifications: Grant = Grant.NotAsked,
+    /** Fotos und Videos (null: kommt in einer späteren Testfassung). */
+    val photos: Grant? = null,
+    /** Nur ausgewählte Fotos freigegeben: neue sieht die App nicht. */
+    val photosPartial: Boolean = false,
 )
 
 /**
- * Was soll die App tun? (Entwurf 04). In dieser Testfassung fragt die App nur
- * Heimnetz und Mitteilungen wirklich ab; Fotos, Kontakte und Kalender sagen,
- * dass sie später kommen.
+ * Was soll die App tun? (Entwurf 04). Fotos, Heimnetz und Mitteilungen fragt
+ * die App wirklich ab; Kontakte und Kalender sagen, dass sie später kommen.
  */
 @Composable
 fun PermissionsScreen(
@@ -53,6 +56,7 @@ fun PermissionsScreen(
     onNotifications: () -> Unit,
     onNext: () -> Unit,
     onBack: (() -> Unit)? = null,
+    onPhotos: () -> Unit = {},
 ) {
     val on = stringResource(UiR.string.ui_on)
     val off = stringResource(UiR.string.ui_off)
@@ -76,7 +80,18 @@ fun PermissionsScreen(
                     divider = divider,
                 )
             }
-            later(R.string.perm_photos, R.string.perm_photos_text, "photos", "pink", false)
+            val photos = state.photos
+            if (photos == null) {
+                later(R.string.perm_photos, R.string.perm_photos_text, "photos", "pink", false)
+            } else {
+                ListRow(
+                    title = stringResource(R.string.perm_photos),
+                    sub = if (state.photosPartial) stringResource(R.string.perm_photos_partial) else subFor(photos, R.string.perm_photos_text),
+                    icon = { AppIcon("photos", "pink", 40.dp) },
+                    right = { Toggle(photos == Grant.Granted, { onPhotos() }, on, off) },
+                    onClick = onPhotos,
+                )
+            }
             later(R.string.perm_contacts, R.string.perm_contacts_text, "contacts", "green", true)
             later(R.string.perm_calendar, R.string.perm_calendar_text, "calendar", "violet", true)
             ListRow(
@@ -104,9 +119,20 @@ fun PermissionsScreen(
 private fun subFor(g: Grant, text: Int): String =
     if (g == Grant.Denied) stringResource(R.string.perm_denied_suffix, stringResource(text)) else stringResource(text)
 
-/** Fragt Heimnetz (ab Android 17 Pflicht) und Mitteilungen wirklich ab. */
+/**
+ * Fragt Heimnetz (ab Android 17 Pflicht) und Mitteilungen wirklich ab, mit
+ * [photoPermissions] auch Fotos und Videos; [onPhotos] erfährt danach, ob
+ * die Sicherung an ist (voller oder teilweiser Zugriff).
+ */
 @Composable
-fun PermissionsRoute(onNext: () -> Unit, onBack: (() -> Unit)? = null) {
+fun PermissionsRoute(
+    onNext: () -> Unit,
+    onBack: (() -> Unit)? = null,
+    photoPermissions: Array<String>? = null,
+    photosOn: () -> Boolean = { false },
+    photosPartial: () -> Boolean = { false },
+    onPhotos: (Boolean) -> Unit = {},
+) {
     val context = LocalContext.current
     fun grant(p: String, asked: Boolean): Grant = when {
         p == LOCAL_NETWORK && localNetworkGranted(context) -> Grant.Granted
@@ -114,8 +140,25 @@ fun PermissionsRoute(onNext: () -> Unit, onBack: (() -> Unit)? = null) {
         asked -> Grant.Denied
         else -> Grant.NotAsked
     }
+    fun photoGrant(asked: Boolean): Grant? = when {
+        photoPermissions == null -> null
+        photosOn() -> Grant.Granted
+        asked -> Grant.Denied
+        else -> Grant.NotAsked
+    }
     var state by remember {
-        mutableStateOf(PermissionsState(grant(LOCAL_NETWORK, false), grant(Manifest.permission.POST_NOTIFICATIONS, false)))
+        mutableStateOf(
+            PermissionsState(
+                grant(LOCAL_NETWORK, false), grant(Manifest.permission.POST_NOTIFICATIONS, false),
+                photos = photoGrant(false), photosPartial = photosPartial(),
+            ),
+        )
+    }
+    val media = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        // Teilzugriff zählt als „an“, mit Hinweis, dass neue Fotos so nicht kommen.
+        val any = result.entries.any { it.value && it.key != Manifest.permission.ACCESS_MEDIA_LOCATION }
+        onPhotos(any)
+        state = state.copy(photos = photoGrant(true), photosPartial = photosPartial())
     }
     val local = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         state = state.copy(localNetwork = grant(LOCAL_NETWORK, true))
@@ -129,6 +172,14 @@ fun PermissionsRoute(onNext: () -> Unit, onBack: (() -> Unit)? = null) {
         onNotifications = { if (state.notifications != Grant.Granted) notify.launch(Manifest.permission.POST_NOTIFICATIONS) },
         onNext = onNext,
         onBack = onBack,
+        onPhotos = {
+            if (state.photos == Grant.Granted && !state.photosPartial) {
+                onPhotos(false)
+                state = state.copy(photos = photoGrant(false))
+            } else if (photoPermissions != null) {
+                media.launch(photoPermissions)
+            }
+        },
     )
 }
 
