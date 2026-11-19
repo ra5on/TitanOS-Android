@@ -94,6 +94,36 @@ class SpkiPinningTest {
         }
     }
 
+    /** Fremdes Gerät unter der Heimnetz-Adresse: weiter zur nächsten Adresse, ohne dort etwas zu senden. */
+    @Test
+    fun wrongCertificateOnOneAddressFallsBackToTheNext() {
+        val stranger = MockWebServer()
+        stranger.useHttps(HandshakeCertificates.Builder().heldCertificate(otherCert).build().sslSocketFactory())
+        stranger.start()
+        try {
+            val pin = Spki.of(nasCert.certificate)
+            val first = Endpoint.pinned(OkHttpClient(), PinnedAddress("localhost:${stranger.port}", pin))!!
+            val second = endpoint(pin)
+            val nas = NasConnection(listOf(first, second), sessions = null)
+            nas.execute { Request.Builder().url(it.resolve("/api/v1/session")!!).build() }.use { assertEquals(200, it.code) }
+            assertEquals(0, stranger.requestCount)
+            assertEquals(1, server.requestCount)
+        } finally {
+            stranger.close()
+        }
+    }
+
+    @Test
+    fun changedCertificateEverywhereIsReported() {
+        val nas = NasConnection(listOf(endpoint(Spki.of(otherCert.certificate))), sessions = null)
+        try {
+            nas.execute { Request.Builder().url(it.resolve("/api/v1/session")!!).build() }.close()
+            fail("connected despite a different certificate")
+        } catch (e: SSLException) {
+            assertTrue(generateSequence(e as Throwable) { it.cause }.any { it is CertificateChangedException })
+        }
+    }
+
     @Test
     fun homeAddressWithoutPinIsNotUsable() {
         assertEquals(null, Endpoint.pinned(OkHttpClient(), PinnedAddress("192.168.1.20", "")))

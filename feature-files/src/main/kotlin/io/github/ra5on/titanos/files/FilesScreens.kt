@@ -47,6 +47,9 @@ import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
 import java.time.Instant
+import io.github.ra5on.titanos.ui.theme.warnInk
+import io.github.ra5on.titanos.ui.theme.okInk
+import io.github.ra5on.titanos.ui.theme.dangerInk
 
 @Composable
 fun errorText(e: FilesError): String = when (e) {
@@ -148,7 +151,7 @@ private fun EntryIcon(e: FileEntry) {
         AppIcon("files", "orange", 40.dp)
     } else {
         val pdf = e.name.lowercase().endsWith(".pdf")
-        FileTypeIcon(iconFor(e.name), tint = if (pdf) Titan.colors.statusError else Titan.colors.muted)
+        FileTypeIcon(iconFor(e.name), tint = if (pdf) Titan.colors.dangerInk else Titan.colors.muted)
     }
 }
 
@@ -289,8 +292,8 @@ fun BoxScope.FileSheet(
                 ListRow(stringResource(R.string.files_move), sub = stringResource(R.string.files_move_text), icon = { RowIcon(TitanIcons.move) }, divider = true)
                 ListRow(
                     stringResource(if (withTrash) R.string.files_to_trash else R.string.files_delete_forever),
-                    icon = { RowIcon(TitanIcons.trash, tint = c.statusError) },
-                    titleColor = c.statusError,
+                    icon = { RowIcon(TitanIcons.trash, tint = c.dangerInk) },
+                    titleColor = c.dangerInk,
                     divider = true,
                     onClick = onDelete,
                 )
@@ -387,7 +390,7 @@ fun TransfersScreen(items: List<Transfer>, onBack: () -> Unit, onCancel: (Long) 
                             Icon(
                                 if (ok) TitanIcons.check else TitanIcons.warn,
                                 stringResource(if (ok) R.string.tr_state_done else R.string.tr_state_failed),
-                                tint = if (ok) c.statusOk else c.statusWarn,
+                                tint = if (ok) c.okInk else c.warnInk,
                                 modifier = Modifier.size(22.dp),
                             )
                         },

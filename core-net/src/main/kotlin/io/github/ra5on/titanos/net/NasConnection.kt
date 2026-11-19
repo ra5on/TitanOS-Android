@@ -9,6 +9,8 @@ import java.net.ConnectException
 import java.net.NoRouteToHostException
 import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLHandshakeException
+import javax.net.ssl.SSLPeerUnverifiedException
 
 /** Eine Adresse mit dem Client, der ihr Zertifikat prüft. */
 class Endpoint(val base: HttpUrl, val client: OkHttpClient, val kind: AddressKind = AddressKind.of(base.host)) {
@@ -30,8 +32,12 @@ class Endpoint(val base: HttpUrl, val client: OkHttpClient, val kind: AddressKin
 
 /**
  * Verbindung zum gekoppelten NAS über alle bekannten Adressen, das Heimnetz
- * zuerst. Scheitert schon der Verbindungsaufbau, versucht sie die nächste
- * Adresse; andere Fehler gibt sie weiter (keine doppelten Änderungen).
+ * zuerst. Scheitert schon der Verbindungsaufbau oder der TLS-Handshake (etwa
+ * ein fremdes Gerät mit derselben Heimnetz-Adresse in einem anderen WLAN),
+ * versucht sie die nächste Adresse – dabei ist noch keine Anfrage gesendet.
+ * Andere Fehler gibt sie weiter (keine doppelten Änderungen). Passt der Pin
+ * nirgends, kommt die [CertificateChangedException] erst, wenn keine Adresse
+ * geklappt hat.
  */
 class NasConnection(endpoints: List<Endpoint>, private val sessions: SessionManager?) {
     private val ordered = endpoints.sortedBy { if (it.kind == AddressKind.LAN) 0 else 1 }
@@ -48,6 +54,7 @@ class NasConnection(endpoints: List<Endpoint>, private val sessions: SessionMana
     fun execute(build: (HttpUrl) -> Request): Response {
         if (authed.isEmpty()) throw IOException("no address")
         var last: IOException? = null
+        var changed: IOException? = null
         val start = active
         for (i in authed.indices) {
             val index = (start + i) % authed.size
@@ -57,12 +64,15 @@ class NasConnection(endpoints: List<Endpoint>, private val sessions: SessionMana
                 active = index
                 return response
             } catch (e: IOException) {
-                if (!e.isUnreachable()) throw e
+                if (!e.isUnreachable() && !e.isHandshake()) throw e
+                if (generateSequence(e as Throwable) { it.cause }.any { it is CertificateChangedException }) changed = changed ?: e
                 last = e
             }
         }
-        throw last ?: IOException("NAS not reachable")
+        throw changed ?: last ?: IOException("NAS not reachable")
     }
+
+    private fun IOException.isHandshake(): Boolean = this is SSLHandshakeException || this is SSLPeerUnverifiedException
 
     private fun IOException.isUnreachable(): Boolean =
         this is ConnectException || this is UnknownHostException || this is NoRouteToHostException ||

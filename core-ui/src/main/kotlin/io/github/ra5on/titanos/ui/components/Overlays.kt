@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanType
+import io.github.ra5on.titanos.ui.theme.dangerInk
 
 /**
  * Hintergrund wie der Arbeitsplatz am Handy in den Entwürfen (01, 10, 11):
@@ -111,7 +112,7 @@ fun BoxScope.ConfirmDialog(
                 Text(
                     a.label,
                     style = TitanType.button.copy(fontSize = TitanType.body.fontSize),
-                    color = if (a.danger) c.statusError else c.accent,
+                    color = if (a.danger) c.dangerInk else c.accent,
                     modifier = Modifier.clip(RoundedCornerShape(20.dp)).clickable(role = Role.Button, onClick = a.onClick)
                         .heightIn(min = 40.dp).padding(horizontal = 14.dp, vertical = 10.dp),
                 )

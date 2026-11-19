@@ -50,6 +50,7 @@ import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
 import kotlin.math.cos
 import kotlin.math.sin
+import io.github.ra5on.titanos.ui.theme.dangerInk
 
 // Bausteine nach Entwuerfe/116-android/lib.mjs (.a-top, .a-card, .a-row, …).
 // Texte brechen immer um; nie eine Zeilenbegrenzung (TitanOS: kein abgeschnittener Text).
@@ -234,7 +235,7 @@ fun TitanButton(
     }
     val fg = when (kind) {
         ButtonKind.Primary -> c.onAccent
-        ButtonKind.Danger -> c.statusError
+        ButtonKind.Danger -> c.dangerInk
         ButtonKind.Normal -> c.text
     }
     Row(

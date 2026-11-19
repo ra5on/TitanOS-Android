@@ -67,6 +67,7 @@ import io.github.ra5on.titanos.ui.theme.TitanIcons
 import kotlinx.coroutines.launch
 import io.github.ra5on.titanos.home.R as HomeR
 import io.github.ra5on.titanos.pairing.R as PairR
+import io.github.ra5on.titanos.ui.theme.dangerInk
 
 private enum class SetupStep { Welcome, Manual, Confirm }
 
@@ -198,7 +199,8 @@ private fun MainShell(graph: AppGraph) {
         ) { tab = Tab.valueOf(it) }
         Box(Modifier.navigationBarsPadding())
     }
-    val home: HomeModel = viewModel { HomeModel(api, { graph.sessions.user?.role ?: "user" }, graph.pairing?.hostname.orEmpty()) }
+    // Je Kopplung ein eigenes Modell, sonst behielte es nach neuem Koppeln die alte Verbindung.
+    val home: HomeModel = viewModel(key = "home-" + graph.pairing?.device) { HomeModel(api, { graph.sessions.user?.role ?: "user" }, graph.pairing?.hostname.orEmpty()) }
     DisposableEffect(tab) {
         if (tab == Tab.Home) home.start() else home.stop()
         onDispose { home.stop() }
@@ -231,8 +233,8 @@ private fun MainShell(graph: AppGraph) {
                         ListRow(
                             stringResource(HomeR.string.home_menu_unpair),
                             sub = stringResource(HomeR.string.home_menu_unpair_text),
-                            icon = { RowIcon(TitanIcons.x, tint = Titan.colors.statusError) },
-                            titleColor = Titan.colors.statusError,
+                            icon = { RowIcon(TitanIcons.x, tint = Titan.colors.dangerInk) },
+                            titleColor = Titan.colors.dangerInk,
                             divider = true,
                             onClick = { menu = false; confirmUnpair = true },
                         )

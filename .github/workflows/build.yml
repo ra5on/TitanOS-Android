@@ -35,8 +35,10 @@ jobs:
       # wenn Lint einen Ausdruck nicht auflöst.
       - name: Kein TextOverflow.Ellipsis und kein maxLines
         run: |
+          # Die Lint-Regel selbst (lint-rules) nennt die verbotenen Wörter und bleibt außen vor.
+          dirs=$(ls -d */src/main | grep -v '^lint-rules/')
           if grep -rnE 'TextOverflow\.Ellipsis|\bmaxLines\b|android:ellipsize|android:singleLine|android:maxLines' \
-              --include='*.kt' --include='*.xml' */src/main --exclude-dir=lint-rules; then
+              --include='*.kt' --include='*.xml' $dirs; then
             echo "::error::Abgeschnittener Text ist verboten – umbrechen oder scrollen."
             exit 1
           fi

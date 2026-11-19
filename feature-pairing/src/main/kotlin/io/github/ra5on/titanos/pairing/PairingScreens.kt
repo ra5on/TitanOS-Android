@@ -47,6 +47,8 @@ import io.github.ra5on.titanos.ui.components.wallpaper
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
+import io.github.ra5on.titanos.ui.theme.warnInk
+import io.github.ra5on.titanos.ui.theme.okInk
 
 /** Erster Start (Entwurf 01). */
 @Composable
@@ -252,10 +254,10 @@ private fun ReachMark(s: CheckStatus) {
         when (s) {
             CheckStatus.Reachable -> {
                 val label = stringResource(R.string.pair_reachable)
-                Icon(TitanIcons.check, label, tint = c.statusOk, modifier = Modifier.size(18.dp))
+                Icon(TitanIcons.check, label, tint = c.okInk, modifier = Modifier.size(18.dp))
             }
             CheckStatus.Unreachable -> {
-                Icon(TitanIcons.x, null, tint = c.statusWarn, modifier = Modifier.size(18.dp))
+                Icon(TitanIcons.x, null, tint = c.warnInk, modifier = Modifier.size(18.dp))
                 Text(stringResource(R.string.pair_unreachable), style = TitanType.small, color = c.muted)
             }
             CheckStatus.Checking -> Text(stringResource(R.string.pair_checking), style = TitanType.small, color = c.muted)

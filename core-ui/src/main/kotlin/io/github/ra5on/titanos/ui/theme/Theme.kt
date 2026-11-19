@@ -65,3 +65,12 @@ object Titan {
     val colors: TitanColors
         @Composable get() = LocalTitanColors.current
 }
+
+/**
+ * Statusfarben für Text und Strichsymbole. Die Statusfarben des Webs sind für
+ * dunkle Flächen gemacht; auf hellem Grund erreichen sie keine 4,5:1. Dort
+ * gelten die Textfarben der Hinweise (--error-text, --warn-text, --ok-text).
+ */
+val io.github.ra5on.titanos.ui.generated.TitanColors.dangerInk get() = if (dark) statusError else errorText
+val io.github.ra5on.titanos.ui.generated.TitanColors.warnInk get() = if (dark) statusWarn else warnText
+val io.github.ra5on.titanos.ui.generated.TitanColors.okInk get() = if (dark) statusOk else okText
