@@ -6,7 +6,7 @@ Die native Android-App zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-B
 - Zustand des NAS
 - Schritt für Schritt alles, was TitanOS im Browser kann: Foto-Sicherung im Hintergrund, Mail, Kalender und Kontakte in den Apps des Handys, Mitteilungen ohne Google, die ganze Systemsteuerung.
 
-> **Status: Testfassung 0.01.** Frühes Grundgerüst zum Ausprobieren, noch keine fertige App. Was noch fehlt, zeigt sie mit „kommt in einer späteren Testfassung“.
+> **Status: Testfassung 0.02.** Frühes Grundgerüst zum Ausprobieren, noch keine fertige App. Was noch fehlt, zeigt sie mit „kommt in einer späteren Testfassung“.
 
 <p>
 <img src="docs/screenshots/01-willkommen-dunkel.png" width="200" alt="Willkommen">
@@ -23,12 +23,21 @@ Die native Android-App zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-B
   - Freigaben und Ordner durchsuchen
   - Teilen, In Downloads speichern, Umbenennen, In den Papierkorb
   - Hochladen über „+“
-  - Liste der Übertragungen
+  - **Übertragungen im Hintergrund:** laufen weiter, wenn die App zu ist, und machen nach einem Abbruch beim Stand des NAS weiter; die Liste nennt den Grund, wenn etwas wartet, mit „Erneut versuchen“
+  - **Offline verfügbar:** Dateien und ganze Ordner auf dem Handy behalten, abgeglichen alle 6 Stunden (ab Werk nur im WLAN, höchstens 5 GB), lesend zu öffnen auch ohne NAS
+  - **Teilen-Menü:** „Teilen → Auf TitanOS speichern“ aus jeder App
+- **Foto-Sicherung** (braucht **TitanOS 1.17**):
+  - in eine frei wählbare Freigabe und einen Ordner, ab Werk mit Unterordnern je Jahr und Monat
+  - Ordner am Handy wählbar, ab Werk die Kamera
+  - wann, je Fotos und Videos: sofort, sofort im WLAN, im WLAN und beim Laden oder nur von Hand; mobile Daten auf Wunsch, im Ausland nie
+  - Doppelte erkennt das NAS am Inhalt (SHA-256), auch nach Umbenennen
+  - die App sagt immer, warum etwas wartet („wartet aufs Laden“, „das NAS ist nicht erreichbar“)
+  - „Speicher freigeben“ löscht nur, was das NAS gerade per Prüfsumme bestätigt, älter als 30 Tage, nur auf Knopfdruck; Android fragt noch einmal, alles liegt 30 Tage im Papierkorb des Handys
 - Hell und dunkel nach der Einstellung des Handys, Deutsch und Englisch.
 
 ## Installieren und koppeln
 
-Nötig sind Android 13 oder neuer und ein NAS mit **TitanOS 1.16** oder neuer. Ab 1.16 kennt das NAS die Kopplung von Android-Apps.
+Nötig sind Android 13 oder neuer und ein NAS mit **TitanOS 1.16** oder neuer (Kopplung, Dateien). Für die Foto-Sicherung braucht es **TitanOS 1.17**.
 
 1. **APK laden** von der Seite [Releases](https://github.com/ra5on/TitanOS-Android/releases). Testfassungen gibt es vorerst direkt vom Projekt.
 2. **Installieren:** Die APK auf dem Handy öffnen. Beim ersten Mal fragt Android, ob der Browser bzw. die Dateien-App „unbekannte Apps installieren“ darf. Erlauben, dann „Installieren“.
@@ -60,15 +69,11 @@ Einzelheiten zur Schnittstelle stehen in [`docs/ANDROID-APP.md`](https://github.
 
 In dieser Reihenfolge, jeweils als Testfassung:
 
-1. **Dateien fertig:** Übertragungen im Hintergrund, die nach Verbindungsabbrüchen weitermachen; Offline-Dateien; Teilen-Menü „Auf TitanOS speichern“.
-2. **Foto-Sicherung:**
-   - eigene Sicherung in eine frei wählbare Freigabe und einen Ordner, Doppelte werden übersprungen
-   - einstellbar, wann: Fotos sofort im WLAN, Videos beim Laden
-   - „Speicher freigeben“ nur für nachweislich gesicherte Aufnahmen und nur auf Knopfdruck
-3. **Kontakte und Kalender** als Konto in den Apps des Handys, Abgleich in beide Richtungen; Mail.
-4. **Zustand und Verwaltung:** Speicher, Docker, VMs, Systemcontainer, NVR, Sicherungen, Protokolle.
-5. **Die ganze Systemsteuerung.** Sensible Einstellungen bestätigst du per Fingerabdruck.
-6. **Agent-App**, Widgets, Mitteilungen ohne Google, Selbst-Update.
+1. ~~Dateien fertig~~ und ~~Foto-Sicherung~~ – in 0.02.
+2. **Kontakte und Kalender** als Konto in den Apps des Handys, Abgleich in beide Richtungen; Mail.
+3. **Zustand und Verwaltung:** Speicher, Docker, VMs, Systemcontainer, NVR, Sicherungen, Protokolle.
+4. **Die ganze Systemsteuerung.** Sensible Einstellungen bestätigst du per Fingerabdruck.
+5. **Agent-App**, Widgets, Mitteilungen ohne Google, Selbst-Update.
 
 Danach folgt Version 1.00 mit allem.
 

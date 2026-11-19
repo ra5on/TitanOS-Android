@@ -61,6 +61,7 @@
     <string name="perm_intro">You can change everything later in the settings. Android asks once for each item.</string>
     <string name="perm_photos">Back up photos and videos</string>
     <string name="perm_photos_text">New shots go to the NAS automatically</string>
+    <string name="perm_photos_partial">Only selected photos shared: the app cannot see new photos this way. Tap for full access.</string>
     <string name="perm_contacts">Sync contacts</string>
     <string name="perm_contacts_text">TitanOS appears in the Contacts app</string>
     <string name="perm_calendar">Sync calendar</string>

@@ -1,0 +1,180 @@
+package io.github.ra5on.titanos.photos
+
+import android.app.Application
+import android.content.IntentSender
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import io.github.ra5on.titanos.model.FileRoot
+import io.github.ra5on.titanos.model.PhotoItem
+import io.github.ra5on.titanos.model.PhotoVerifyRequest
+import io.github.ra5on.titanos.net.PhotosApi
+import io.github.ra5on.titanos.net.TitanApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.time.Instant
+
+/** Zustand der Seiten „Fotos“ und „Foto-Sicherung“ für eine Kopplung. */
+class PhotosModel(
+    private val app: Application,
+    private val titan: TitanApi,
+    private val photos: PhotosApi,
+    private val scope: CoroutineScope,
+) {
+    private val settingsStore = SettingsStore(app)
+    private val store = BackupStore.get(app)
+    private val scanner = MediaScanner(app)
+    private var items: List<MediaItem> = emptyList()
+    private var trash: List<Uri> = emptyList()
+    private var watching: Job? = null
+
+    var settings by mutableStateOf(settingsStore.load())
+        private set
+    var view by mutableStateOf(PhotosView(settings = settings, loading = true))
+        private set
+    var folders by mutableStateOf<List<LocalFolder>>(emptyList())
+        private set
+
+    /** Freigaben mit Schreibrecht für „Ziel auf dem NAS“; null solange sie laden. */
+    var roots by mutableStateOf<List<FileRoot>?>(null)
+        private set
+    var rootsFailed by mutableStateOf(false)
+        private set
+
+    var free by mutableStateOf<FreeState?>(null)
+    var message by mutableStateOf<Int?>(null)
+
+    @OptIn(FlowPreview::class)
+    fun start() {
+        refresh()
+        if (watching != null) return
+        watching = scope.launch {
+            merge(PhotosRuntime.changes, PhotosRuntime.progress).debounce(400).collect { refresh() }
+        }
+    }
+
+    fun stop() {
+        watching?.cancel()
+        watching = null
+    }
+
+    fun refresh() {
+        scope.launch {
+            val s = settingsStore.load()
+            val access = MediaAccess.access(app)
+            val scanned = if (access == Access.None) emptyList() else withContext(Dispatchers.IO) { runCatching { scanner.scan() }.getOrDefault(emptyList()) }
+            items = scanned
+            val state = store.snapshot()
+            val marks = state.marks()
+            val media = scanned.map { it.media }
+            val pending = Kind.entries.associateWith { selectForUpload(media, marks, s.target, setOf(it), s.folders).size }
+            val device = withContext(Dispatchers.IO) { deviceState(app) }
+            val waits = Kind.entries.associateWith { k ->
+                waitReason(pending.getValue(k), s.enabled, access != Access.None, s.hasTarget, s.whenOf(k), s.mobileData, device, state.problem)
+            }
+            val chosen = media.filter { s.folders?.contains(it.folder) ?: defaultFolder(it.folder) }
+            val tiles = chosen.sortedByDescending { it.taken }.take(TILES).map { m -> Tile(m.id, m.kind, isSaved(m, marks[m.id], s.target), m.taken) }
+            settings = s
+            folders = scanner.folders(scanned)
+            view = PhotosView(
+                settings = s,
+                access = access,
+                savedCount = state.saved.values.count { it.target == s.target },
+                lastSaved = state.lastSaved.takeIf { it > 0 }?.let(Instant::ofEpochMilli),
+                pending = pending,
+                waits = waits,
+                tiles = tiles,
+                progress = PhotosRuntime.progress.value,
+                loading = false,
+            )
+        }
+    }
+
+    /** Neue Einstellungen speichern und die Aufträge danach einplanen. */
+    fun update(next: PhotoSettings) {
+        settingsStore.save(next)
+        settings = next
+        PhotoScheduler.arm(app, settingsChanged = true)
+        refresh()
+    }
+
+    /** Medien-Zugriff ist geklärt: Aufträge (neu) einplanen und neu lesen. */
+    fun accessChanged() {
+        PhotoScheduler.arm(app)
+        refresh()
+    }
+
+    fun loadRoots() {
+        roots = null
+        rootsFailed = false
+        scope.launch {
+            try {
+                roots = titan.roots().filter { it.kind == "share" && it.writable }
+            } catch (_: Exception) {
+                rootsFailed = true
+                roots = emptyList()
+            }
+        }
+    }
+
+    /** „Jetzt sichern“, solange die App sichtbar ist. */
+    fun backupNow() {
+        val s = settingsStore.load()
+        val bytes = selectForUpload(items.map { it.media }, store.snapshot().marks(), s.target, Kind.entries.toSet(), s.folders).sumOf { it.size }
+        message = if (PhotoScheduler.backupNow(app, bytes)) R.string.photos_now_started else R.string.photos_now_refused
+    }
+
+    /** Speicher freigeben: nur, was das NAS jetzt bestätigt, nie automatisch. */
+    fun prepareFree() {
+        free = FreeState.Checking
+        scope.launch {
+            try {
+                val marks = store.snapshot().marks()
+                val byId = items.associateBy { it.id }
+                val candidates = freeCandidates(items.map { it.media }, marks, Instant.now())
+                val answers = HashMap<String, String>()
+                for (chunk in candidates.chunked(VERIFY_BATCH)) {
+                    val asked = chunk.mapNotNull { m -> marks[m.id]?.let { PhotoItem(it.sha256, m.size) } }.distinctBy { it.sha256 }
+                    photos.verify(PhotoVerifyRequest(asked)).items.forEach { answers[it.sha256] = it.state }
+                    if (free != FreeState.Checking) return@launch
+                }
+                val confirmed = confirmedOnly(candidates, marks, answers)
+                val round = confirmed.take(TRASH_ROUND)
+                trash = round.mapNotNull { byId[it.id]?.uri }
+                free = if (round.isEmpty()) FreeState.Nothing else FreeState.Ready(round.size, round.sumOf { it.size }, confirmed.size > round.size)
+            } catch (_: Exception) {
+                trash = emptyList()
+                free = FreeState.Failed
+            }
+        }
+    }
+
+    /** Android fragt danach selbst noch einmal; gelöscht wird in den Papierkorb des Handys. */
+    fun trashRequest(): IntentSender? =
+        trash.takeIf { it.isNotEmpty() }?.let { MediaStore.createTrashRequest(app.contentResolver, it, true).intentSender }
+
+    fun trashed(ok: Boolean) {
+        trash = emptyList()
+        free = if (ok) FreeState.Done else null
+        refresh()
+    }
+
+    /** Die Aufnahme zu einer Kachel (für das Vorschaubild). */
+    fun item(id: Long): MediaItem? = items.firstOrNull { it.id == id }
+
+    companion object {
+        const val TILES = 48
+        const val VERIFY_BATCH = 500
+
+        /** So viele Aufnahmen gibt die App Android je Rückfrage mit. */
+        const val TRASH_ROUND = 1000
+    }
+}

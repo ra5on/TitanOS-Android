@@ -28,7 +28,7 @@
 
     <string name="files_share">Teilen</string>
     <string name="files_share_text">An eine andere App senden</string>
-    <string name="files_offline_text">Bleibt auf dem Handy und aktuell. Kommt in einer späteren Testfassung.</string>
+    <string name="files_offline_text">Bleibt auf dem Handy und aktuell.</string>
     <string name="files_download">In Downloads speichern</string>
     <string name="files_rename">Umbenennen</string>
     <string name="files_move">Verschieben oder kopieren</string>
@@ -64,4 +64,57 @@
     <string name="tr_waiting_start">wartet auf den Start</string>
     <string name="tr_state_done">fertig</string>
     <string name="tr_state_failed">abgebrochen</string>
+    <string name="off_none_short">Noch nichts markiert</string>
+    <string name="off_summary">%1$d Ordner, %2$d Dateien · %3$s</string>
+    <string name="off_state_ok">aktuell</string>
+    <string name="off_state_syncing">wird abgeglichen</string>
+    <string name="off_state_nas">NAS nicht erreichbar – letzter Stand bleibt</string>
+    <string name="off_state_gone">am NAS nicht mehr da</string>
+    <string name="off_state_limit">%1$d Dateien passen nicht mehr in die Obergrenze</string>
+    <string name="off_state_failed">Abgleich gescheitert: %1$s</string>
+    <string name="off_note_last">Zuletzt abgeglichen %1$s. Die App holt Änderungen von selbst, ab Werk nur im WLAN.</string>
+    <string name="off_note_never">Noch nicht abgeglichen. Die App holt die Dateien, sobald sie das NAS erreicht – ab Werk nur im WLAN.</string>
+    <string name="off_none">Im Blatt einer Datei oder über „⋯“ in einem Ordner „Offline verfügbar“ einschalten. Die Dateien bleiben dann auf dem Handy, auch ohne Verbindung zum NAS.</string>
+    <string name="off_folders">Ordner</string>
+    <string name="off_files">Einzelne Dateien</string>
+    <string name="off_folder_files">%1$d Dateien · %2$s</string>
+    <string name="off_settings">Abgleich</string>
+    <string name="off_wifi_only">Nur im WLAN</string>
+    <string name="off_wifi_only_text">Aus: auch über mobile Daten abgleichen</string>
+    <string name="off_sync_now">Jetzt abgleichen</string>
+    <string name="off_used">Belegt auf dem Handy: %1$s von höchstens %2$s</string>
+    <string name="off_read_only">Offline-Kopien öffnen andere Apps nur zum Lesen. Änderungen am Handy gehen in dieser Testfassung nicht zurück aufs NAS.</string>
+    <string name="off_remove">„%1$s“ nicht mehr offline halten</string>
+    <string name="off_folder_empty">Noch keine Dateien abgelegt. Der Abgleich holt sie, sobald das NAS erreichbar ist.</string>
+    <string name="off_folder_toggle">Ordner offline verfügbar</string>
+    <string name="off_folder_toggle_text">Alle Dateien darin bleiben auf dem Handy und aktuell</string>
+    <string name="off_open_failed">Diese Datei liegt noch nicht auf dem Handy.</string>
+    <string name="off_open_with">Öffnen mit</string>
+    <string name="tr_wait_network">wartet auf eine Verbindung</string>
+    <string name="tr_wait_nas">NAS nicht erreichbar – nächster Versuch von selbst</string>
+    <string name="tr_clear">Fertige aus der Liste nehmen</string>
+    <string name="share_title">Auf TitanOS speichern</string>
+    <string name="share_upload">Hochladen</string>
+    <string name="share_more">+%1$d weitere</string>
+    <string name="share_read_failed">Eine Datei ließ sich nicht lesen. Bitte noch einmal teilen.</string>
+    <string name="share_where">Wohin?</string>
+    <string name="share_none">Noch kein Ziel gewählt</string>
+    <string name="share_last">zuletzt benutzt</string>
+    <string name="share_other">Anderen Ordner wählen</string>
+    <string name="share_here">Hier speichern: %1$s</string>
+    <string name="share_up">Eine Ebene höher</string>
+    <string name="share_same_names">Gleiche Namen</string>
+    <string name="share_rename">Neuen Namen vergeben</string>
+    <string name="share_rename_text">z. B. „IMG_2041 (2).jpg“</string>
+    <string name="share_replace">Ersetzen</string>
+    <string name="share_replace_text">Die alte Datei kommt in den Papierkorb, wenn die Freigabe einen hat</string>
+    <string name="share_not_paired">Zuerst die App mit dem NAS koppeln.</string>
+    <plurals name="share_started">
+        <item quantity="one">%1$d Datei wird im Hintergrund hochgeladen.</item>
+        <item quantity="other">%1$d Dateien werden im Hintergrund hochgeladen.</item>
+    </plurals>
+    <plurals name="share_count">
+        <item quantity="one">%1$d Datei · %2$s</item>
+        <item quantity="other">%1$d Dateien · %2$s</item>
+    </plurals>
 </resources>

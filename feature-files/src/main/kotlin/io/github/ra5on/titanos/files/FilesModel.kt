@@ -1,10 +1,8 @@
 package io.github.ra5on.titanos.files
 
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import androidx.compose.runtime.getValue
@@ -24,7 +22,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
-import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /** Wo man gerade ist: Freigabe und Pfad darin („“ = oberste Ebene). */
@@ -60,7 +57,15 @@ class FilesModel(
     private val api: TitanApi,
     val transfers: TransferStore,
     private val scope: CoroutineScope,
+    val offline: OfflineStore,
 ) {
+    init {
+        // Ein fertiger Upload im Hintergrund lädt die offene Ordneransicht neu.
+        FilesRuntime.onUploaded = { root, dir ->
+            val f = folder
+            if (f != null && f.location.root.id == root && f.location.path == dir) scope.launch { reload() }
+        }
+    }
     var roots by mutableStateOf(RootsState())
         private set
     var folder by mutableStateOf<FolderState?>(null)
@@ -129,27 +134,9 @@ class FilesModel(
         false
     }
 
-    /** In Downloads speichern (MediaStore, ohne Berechtigung). */
+    /** In Downloads speichern (MediaStore, ohne Berechtigung) – als Auftrag, der das Schließen der App übersteht. */
     fun saveToDownloads(location: Location, entry: FileEntry) {
-        val t = transfers.add(Transfer(0, entry.name, Direction.Download, location.place, location.root.id, location.path, total = entry.size))
-        run(t) {
-            val resolver = context.contentResolver
-            val values = ContentValues().apply {
-                put(MediaStore.Downloads.DISPLAY_NAME, entry.name)
-                put(MediaStore.Downloads.MIME_TYPE, mimeOf(entry.name))
-                put(MediaStore.Downloads.IS_PENDING, 1)
-            }
-            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: throw IOException("no Downloads")
-            try {
-                resolver.openOutputStream(uri)!!.use { out ->
-                    api.download(location.root.id, location.full(entry.name), out) { done, total -> progress(t.id, done, total) }
-                }
-                resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
-            } catch (e: Throwable) {
-                resolver.delete(uri, null, null)
-                throw e
-            }
-        }
+        TransferQueue.enqueueDownload(context, location.root.id, location.path, location.place, entry.name, entry.size)
     }
 
     /** Teilen: erst in den Cache laden, dann mit eigener Leseerlaubnis weitergeben. */
@@ -174,7 +161,11 @@ class FilesModel(
         }
     }
 
-    /** Hochladen über „+“: Name und Größe aus dem Dokument, Konflikte mit neuem Namen „(2)“. */
+    /**
+     * Hochladen über „+“: Name und Größe aus dem Dokument, Konflikte mit neuem
+     * Namen „(2)“. Der Auftrag braucht die Quelle über das Schließen der App
+     * hinaus: dauerhafte Leseerlaubnis, sonst eine eigene Kopie.
+     */
     fun upload(location: Location, uri: Uri) {
         val resolver = context.contentResolver
         var name = "upload"
@@ -185,23 +176,60 @@ class FilesModel(
                 if (!c.isNull(1)) size = c.getLong(1)
             }
         }
-        val t = transfers.add(Transfer(0, name, Direction.Upload, location.place, location.root.id, location.path, total = maxOf(size, 0)))
-        run(t) {
-            val total = if (size >= 0) size else resolver.openInputStream(uri)!!.use { s -> s.skip(Long.MAX_VALUE) }
-            transfers.update(t.id) { it.copy(total = total) }
-            val start = api.uploadStart(location.root.id, location.path, name, total, conflict = "rename")
-            transfers.update(t.id) { it.copy(name = start.name) }
-            val done = Uploader(api).upload(start, { resolver.openInputStream(uri) ?: throw IOException("cannot read") }) { d, all ->
-                progress(t.id, d, all)
+        val kept = runCatching { resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }.isSuccess
+        if (kept) {
+            TransferQueue.enqueueUpload(context, location.root.id, location.path, location.place, name, size, uri)
+            return
+        }
+        scope.launch(Dispatchers.IO) {
+            try {
+                val copy = Outbox.copy(context, uri, name)
+                TransferQueue.enqueueUpload(context, location.root.id, location.path, location.place, name, copy.length(), Uri.fromFile(copy), ownCopy = true)
+            } catch (e: IOException) {
+                actionError = FilesError.Other("read")
             }
-            transfers.update(t.id) { it.copy(name = done.name) }
-            if (folder?.location == location) reload()
         }
     }
 
     fun cancel(id: Long) {
+        // Teilen läuft im Speicher, alles andere als Auftrag.
         jobs.remove(id)?.cancel()
-        transfers.update(id) { it.copy(state = TransferState.Cancelled, finishedAt = Instant.now()) }
+        if (transfers.get(id)?.direction == Direction.Share) {
+            transfers.update(id) { it.copy(state = TransferState.Cancelled, finishedAtMs = System.currentTimeMillis()) }
+        } else {
+            TransferQueue.cancel(context, id, api)
+        }
+    }
+
+    fun retry(id: Long) = TransferQueue.retry(context, id)
+
+    // ---------- offline ----------
+
+    fun isOffline(location: Location, entry: FileEntry) = offline.isPinned(location.root.id, location.full(entry.name))
+
+    fun setOffline(location: Location, entry: FileEntry, on: Boolean) {
+        val path = location.full(entry.name)
+        if (on) offline.pin(location.root.id, location.root.name, path, entry.dir) else offline.unpin(location.root.id, path)
+        if (on) OfflineSync.now(context, offline)
+    }
+
+    fun syncOfflineNow() = OfflineSync.now(context, offline)
+
+    fun setOfflineWifiOnly(on: Boolean) {
+        offline.changeWifiOnly(on)
+        OfflineSync.schedule(context, offline)
+    }
+
+    /** Eine Offline-Kopie lesend mit einer anderen App öffnen. */
+    fun openOffline(root: String, path: String, chooserTitle: String): Boolean {
+        val file = offline.copyOf(root, path) ?: return false
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+        val view = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, TransferWorker.mimeOf(file.name))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(view, chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION))
+        return true
     }
 
     private fun progress(id: Long, done: Long, total: Long) {
@@ -213,9 +241,9 @@ class FilesModel(
             transfers.update(t.id) { it.copy(state = TransferState.Running) }
             try {
                 work()
-                transfers.update(t.id) { it.copy(state = TransferState.Done, done = it.total, finishedAt = Instant.now()) }
+                transfers.update(t.id) { it.copy(state = TransferState.Done, done = it.total, finishedAtMs = System.currentTimeMillis()) }
             } catch (e: CancellationException) {
-                transfers.update(t.id) { it.copy(state = TransferState.Cancelled, finishedAt = Instant.now()) }
+                transfers.update(t.id) { it.copy(state = TransferState.Cancelled, finishedAtMs = System.currentTimeMillis()) }
             } catch (e: Exception) {
                 val err = errorOf(e)
                 transfers.update(t.id) {
@@ -223,7 +251,7 @@ class FilesModel(
                         state = TransferState.Failed,
                         offline = err is FilesError.Offline,
                         reason = (err as? FilesError.Other)?.detail,
-                        finishedAt = Instant.now(),
+                        finishedAtMs = System.currentTimeMillis(),
                     )
                 }
             } finally {

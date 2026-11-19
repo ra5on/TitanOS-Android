@@ -16,8 +16,8 @@ android {
         applicationId = "io.github.ra5on.titanos"
         minSdk = 33
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.01"
+        versionCode = 2
+        versionName = "0.02"
     }
     signingConfigs {
         if (releaseKeystore != null && releasePassword != null) {
@@ -67,12 +67,14 @@ dependencies {
     implementation(project(":feature-pairing"))
     implementation(project(":feature-home"))
     implementation(project(":feature-files"))
+    implementation(project(":feature-photos"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.zxing.embedded)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.work)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

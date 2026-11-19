@@ -75,7 +75,9 @@ class SessionManager(
 
 /**
  * Setzt den Cookie an jede Anfrage und erneuert die Sitzung einmal bei 401.
- * Die eigenen Routen der App (`/api/v1/app/…`) laufen ohne Sitzung.
+ * Kopplung und Anmeldung der App (`/api/v1/app/pair/…`, `challenge`,
+ * `session`) laufen ohne Sitzung; andere App-Routen wie die Foto-Sicherung
+ * (`/api/v1/app/photos/…`) brauchen sie.
  * Nie `Authorization` (dann hielte das NAS es für einen API-Token) und nie `Origin`.
  */
 class SessionInterceptor(
@@ -85,7 +87,7 @@ class SessionInterceptor(
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder().removeHeader("Authorization").removeHeader("Origin").build()
-        if (request.url.encodedPath.startsWith("/api/v1/app/")) return chain.proceed(request)
+        if (request.url.encodedPath.isAppLogin()) return chain.proceed(request)
         val first = sessions.current() ?: sessions.refresh(null, raw, base)
         val response = chain.proceed(request.withCookie(first))
         if (response.code != 401) return response
@@ -96,3 +98,7 @@ class SessionInterceptor(
 
     private fun Request.withCookie(c: SessionCookie): Request = newBuilder().header("Cookie", c.header).build()
 }
+
+/** Die Routen, mit denen die App sich koppelt und eine Sitzung holt; sie gehen ohne Cookie. */
+internal fun String.isAppLogin(): Boolean =
+    startsWith("/api/v1/app/pair/") || this == "/api/v1/app/challenge" || this == "/api/v1/app/session"

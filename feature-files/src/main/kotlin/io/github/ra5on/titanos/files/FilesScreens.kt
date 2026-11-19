@@ -64,8 +64,10 @@ fun FilesHomeScreen(
     state: RootsState,
     running: Int,
     finished: Int,
+    offlineSummary: String,
     onRoot: (FileRoot) -> Unit,
     onTransfers: () -> Unit,
+    onOffline: () -> Unit,
     onLater: () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
@@ -108,10 +110,10 @@ fun FilesHomeScreen(
         Card {
             ListRow(
                 stringResource(R.string.files_offline),
-                sub = stringResource(UiR.string.ui_later),
+                sub = offlineSummary,
                 icon = { RowIcon(TitanIcons.offline, size = 24.dp) },
                 chevron = true,
-                onClick = onLater,
+                onClick = onOffline,
             )
             ListRow(
                 stringResource(R.string.files_transfers),
@@ -166,6 +168,7 @@ fun FolderScreen(
     onUpload: () -> Unit,
     onLater: () -> Unit,
     bottomBar: @Composable () -> Unit,
+    onMore: () -> Unit = onLater,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val c = Titan.colors
@@ -176,7 +179,7 @@ fun FolderScreen(
                 Box(Modifier.statusBarsPadding()) {
                     TopBar(title, onBack = onBack, backLabel = stringResource(UiR.string.ui_back), actions = {
                         IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), onLater)
-                        IconButton(TitanIcons.more, stringResource(UiR.string.ui_more), onLater)
+                        IconButton(TitanIcons.more, stringResource(UiR.string.ui_more), onMore)
                     })
                 }
             },
@@ -255,6 +258,8 @@ fun BoxScope.FileSheet(
     entry: FileEntry,
     withTrash: Boolean,
     writable: Boolean,
+    offline: Boolean,
+    onOffline: (Boolean) -> Unit,
     onShare: () -> Unit,
     onDownload: () -> Unit,
     onRename: () -> Unit,
@@ -283,7 +288,7 @@ fun BoxScope.FileSheet(
                 stringResource(R.string.files_offline),
                 sub = stringResource(R.string.files_offline_text),
                 icon = { RowIcon(TitanIcons.offline) },
-                right = { Toggle(false, null, on, off, enabled = false) },
+                right = { Toggle(offline, onOffline, on, off) },
                 divider = true,
             )
             ListRow(stringResource(R.string.files_download), icon = { RowIcon(TitanIcons.download) }, divider = true, onClick = onDownload)
@@ -336,7 +341,14 @@ fun BoxScope.DeleteDialog(name: String, withTrash: Boolean, onDo: () -> Unit, on
 
 /** Übertragungen (Entwurf 23), einfache Fassung. */
 @Composable
-fun TransfersScreen(items: List<Transfer>, onBack: () -> Unit, onCancel: (Long) -> Unit, now: Instant = Instant.now()) {
+fun TransfersScreen(
+    items: List<Transfer>,
+    onBack: () -> Unit,
+    onCancel: (Long) -> Unit,
+    onRetry: (Long) -> Unit = {},
+    onClear: () -> Unit = {},
+    now: Instant = Instant.now(),
+) {
     val c = Titan.colors
     Page(topBar = { Box(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.tr_title), onBack = onBack, backLabel = stringResource(UiR.string.ui_back)) } }) {
         val running = items.filter { it.state == TransferState.Running }
@@ -365,7 +377,18 @@ fun TransfersScreen(items: List<Transfer>, onBack: () -> Unit, onCancel: (Long) 
             SectionHeader(stringResource(R.string.tr_waiting), top = if (running.isEmpty()) 14.dp else 18.dp)
             Card {
                 waiting.forEachIndexed { i, t ->
-                    ListRow(t.name, sub = "${t.place} · ${stringResource(R.string.tr_waiting_start)}", icon = { RowIcon(TitanIcons.cloud) }, divider = i > 0)
+                    val why = when (t.waiting) {
+                        WaitReason.Network -> stringResource(R.string.tr_wait_network)
+                        WaitReason.Nas -> stringResource(R.string.tr_wait_nas)
+                        WaitReason.None -> stringResource(R.string.tr_waiting_start)
+                    }
+                    ListRow(
+                        t.name,
+                        sub = "${t.place} · $why",
+                        icon = { RowIcon(TitanIcons.cloud) },
+                        right = { IconButton(TitanIcons.x, stringResource(R.string.tr_cancel), { onCancel(t.id) }, size = 20.dp, tint = c.muted) },
+                        divider = i > 0,
+                    )
                 }
             }
         }
@@ -394,9 +417,15 @@ fun TransfersScreen(items: List<Transfer>, onBack: () -> Unit, onCancel: (Long) 
                                 modifier = Modifier.size(22.dp),
                             )
                         },
+                        right = if (t.state == TransferState.Failed && t.direction != Direction.Share) {
+                            { IconButton(TitanIcons.restart, stringResource(R.string.tr_retry), { onRetry(t.id) }, size = 20.dp, tint = c.muted) }
+                        } else null,
                         divider = i > 0,
                     )
                 }
+            }
+            Box(Modifier.padding(top = 12.dp)) {
+                io.github.ra5on.titanos.ui.components.TitanButton(stringResource(R.string.tr_clear), onClear)
             }
         }
         Box(Modifier.navigationBarsPadding())

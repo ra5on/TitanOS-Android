@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Nur der Ordner für geteilte Dateien im Cache wird nach außen gegeben. -->
+<!-- Nach außen gegeben werden nur geteilte Dateien im Cache und Offline-Kopien (lesend). -->
 <paths>
     <cache-path name="shared" path="shared/" />
+    <!-- Offline-Dateien, nur lesend geöffnet. -->
+    <files-path name="offline" path="offline/" />
 </paths>
