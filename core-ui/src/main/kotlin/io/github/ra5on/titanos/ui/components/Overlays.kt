@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -132,7 +133,9 @@ fun Page(
     scroll: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier.fillMaxSize().then(background)) {
+    // imePadding: the keyboard pushes the bar at the bottom up instead of
+    // covering it (found in the emulator: "Zertifikat holen" lay under it).
+    Column(modifier.fillMaxSize().then(background).imePadding()) {
         topBar()
         Box(Modifier.weight(1f).fillMaxWidth()) {
             Column(
