@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_all_good">All good</string>
+    <string name="home_all_good_text">Volumes without findings</string>
+    <string name="home_attention">Please check</string>
+    <plurals name="home_volumes_attention">
+        <item quantity="one">%d volume not OK</item>
+        <item quantity="other">%d volumes not OK</item>
+    </plurals>
+    <string name="home_no_volumes">No volume yet</string>
+    <plurals name="home_up_days">
+        <item quantity="one">up %d day</item>
+        <item quantity="other">up %d days</item>
+    </plurals>
+    <plurals name="home_up_hours">
+        <item quantity="one">up %d hour</item>
+        <item quantity="other">up %d hours</item>
+    </plurals>
+    <string name="home_up_minutes">just started</string>
+    <string name="home_storage_of">%1$s of %2$s</string>
+    <string name="home_storage_sub">%1$s · %2$s</string>
+    <string name="home_photos_title">Photo backup</string>
+    <string name="home_photos_later">comes in a later test version</string>
+    <string name="home_loading">Loading status …</string>
+    <string name="home_offline">The NAS is not reachable right now.</string>
+    <string name="home_not_ready">The NAS is not ready right now. The app tries again shortly.</string>
+    <string name="home_locked">The session is locked on the NAS. Unlock it in the browser or wait until the lock ends.</string>
+    <string name="home_certificate">The certificate of the NAS changed. The app does not connect until you pair again.</string>
+    <string name="home_notifications">Notifications</string>
+    <string name="home_menu">More</string>
+    <string name="home_menu_unpair">Remove pairing</string>
+    <string name="home_menu_unpair_text">The app signs out and forgets this NAS. On the NAS you end the device under My account › Devices.</string>
+    <string name="home_menu_about">About the app</string>
+    <string name="home_about_text">TitanOS for Android %1$s, test version. Fair Source (FSL-1.1-ALv2).</string>
+
+    <string name="app_shares">Shares</string>
+    <string name="app_storage">Storage</string>
+    <string name="app_docker">Docker</string>
+    <string name="app_vms">Virtual machines</string>
+    <string name="app_mail">Mail</string>
+    <string name="app_calendar">Calendar</string>
+    <string name="app_contacts">Contacts</string>
+    <string name="app_backup">Backup</string>
+    <string name="app_nvr">NVR</string>
+    <string name="app_terminal">Terminal</string>
+    <string name="app_users">Users</string>
+    <string name="app_settings">Settings</string>
+</resources>

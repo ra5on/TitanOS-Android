@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TitanOS</string>
+    <string name="app_later_toast">Kommt in einer späteren Testfassung.</string>
+    <string name="app_unpaired">Das NAS kennt dieses Handy nicht mehr (beendet oder abgelaufen). Bitte neu koppeln.</string>
+    <string name="app_photos">Fotos</string>
+    <string name="app_photos_text">Die Foto-Sicherung kommt in einer späteren Testfassung.</string>
+    <string name="app_notifications">Mitteilungen</string>
+    <string name="app_notifications_text">Mitteilungen ohne Google kommen in einer späteren Testfassung.</string>
+    <string name="app_unpair_do">Kopplung aufheben</string>
+</resources>

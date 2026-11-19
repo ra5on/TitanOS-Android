@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pair_app_name">TitanOS</string>
+    <string name="pair_welcome_text">Dein NAS auf dem Handy: Dateien, Fotos sichern, Mail, Kalender, Kontakte und alle Einstellungen.</string>
+    <string name="pair_scan">QR-Code scannen</string>
+    <string name="pair_manual">Adresse von Hand eingeben</string>
+    <string name="pair_where_qr">Den QR-Code zeigt TitanOS unter Mein Konto › Geräte › „Android-App koppeln“.</string>
+    <string name="pair_scan_prompt">QR-Code aus TitanOS scannen</string>
+    <string name="pair_scan_invalid">Das ist kein Kopplungscode von TitanOS.</string>
+
+    <string name="pair_manual_title">Adresse eingeben</string>
+    <string name="pair_manual_address">Adresse des NAS</string>
+    <string name="pair_manual_address_hint">z. B. 192.168.1.20 oder nas.tail1234.ts.net</string>
+    <string name="pair_manual_connect">Zertifikat abrufen</string>
+    <string name="pair_manual_compare">Zertifikat vergleichen</string>
+    <string name="pair_manual_shown">Das NAS hat dieses Zertifikat gezeigt:</string>
+    <string name="pair_manual_where">Im Browser steht dieselbe Zahl unter Mein Konto › Geräte › „Android-App koppeln“ › „Ohne QR-Code“. Stimmt sie, gehört die Verbindung wirklich zu deinem NAS.</string>
+    <string name="pair_manual_public">Das NAS hat ein öffentliches Zertifikat für diesen Namen, das normal geprüft wurde. Ein Vergleich ist nicht nötig.</string>
+    <string name="pair_manual_code">Kopplungscode aus dem Browser</string>
+    <string name="pair_manual_ts_note">Mit einem Tailscale-Namen (…ts.net) hat das NAS ein öffentliches Zertifikat; dann entfällt der Vergleich.</string>
+    <string name="pair_manual_wrong">Stimmt nicht</string>
+    <string name="pair_manual_ok">Stimmt, weiter</string>
+    <string name="pair_manual_bad_address">Diese Adresse versteht die App nicht. Gib nur den Namen oder die IP-Adresse an, wahlweise mit :Port.</string>
+    <string name="pair_manual_bad_code">Der Kopplungscode hat 8 Zeichen, etwa K7Q4-9XMT.</string>
+    <string name="pair_manual_mismatch">Abgebrochen: Das Zertifikat stimmt nicht mit dem Browser überein. Prüfe die Adresse; vielleicht hört jemand mit.</string>
+    <string name="pair_manual_probing">Verbinde …</string>
+
+    <string name="pair_confirm_title">NAS koppeln</string>
+    <string name="pair_confirm_product">TitanOS</string>
+    <string name="pair_confirm_product_user">TitanOS · Konto %1$s</string>
+    <string name="pair_connection">Verbindung</string>
+    <string name="pair_kind_tailscale">Unterwegs über Tailscale</string>
+    <string name="pair_kind_lan">Im Heimnetz, wird bevorzugt</string>
+    <string name="pair_kind_other">Weitere Adresse</string>
+    <string name="pair_reachable">erreichbar</string>
+    <string name="pair_unreachable">nicht erreichbar</string>
+    <string name="pair_checking">wird geprüft</string>
+    <string name="pair_cert_title">Zertifikat festgehalten</string>
+    <string name="pair_cert_text">SHA-256 %1$s – ändert es sich, fragt die App, statt still weiterzumachen.</string>
+    <string name="pair_cert_public_title">Öffentliches Zertifikat</string>
+    <string name="pair_cert_public_text">Wird bei jeder Verbindung normal geprüft.</string>
+    <string name="pair_device_name">Name dieses Handys</string>
+    <string name="pair_device_name_owner">%1$s von %2$s</string>
+    <string name="pair_note_before">Nach „Koppeln“ erscheint am NAS „%1$s möchte sich anmelden“. Bestätige dort – dann geht es hier weiter.</string>
+    <string name="pair_note_waiting">Am NAS erscheint jetzt „%1$s möchte sich anmelden“. Bestätige dort – dann geht es hier weiter.</string>
+    <string name="pair_do">Koppeln</string>
+    <string name="pair_waiting">Warte auf das NAS …</string>
+    <string name="pair_err_code">Der Kopplungscode stimmt nicht, wurde schon benutzt oder ist abgelaufen. Erzeuge im Browser einen neuen.</string>
+    <string name="pair_err_name">Dieser Name geht nicht. Erlaubt sind 1 bis 64 Zeichen ohne Leerzeichen am Anfang oder Ende.</string>
+    <string name="pair_err_rate">Zu viele Versuche. Bitte warte %1$d Sekunden.</string>
+    <string name="pair_err_rate_plain">Zu viele Versuche. Bitte warte einen Moment.</string>
+    <string name="pair_err_rejected">Am NAS wurde die Anmeldung abgelehnt.</string>
+    <string name="pair_err_expired">Die Kopplung ist abgelaufen (5 Minuten). Erzeuge im Browser einen neuen Code.</string>
+    <string name="pair_err_unreachable">Das NAS ist unter keiner Adresse erreichbar. Ist das Handy im Heimnetz oder in Tailscale?</string>
+    <string name="pair_err_cert">Das Zertifikat des NAS passt nicht zum QR-Code. Abgebrochen.</string>
+    <string name="pair_err_busy">Das NAS ist gerade nicht bereit. Bitte gleich noch einmal.</string>
+    <string name="pair_err_other">Das hat nicht geklappt (%1$s).</string>
+
+    <string name="perm_title">Einrichten</string>
+    <string name="perm_heading">Was soll die App tun?</string>
+    <string name="perm_intro">Alles lässt sich später unter Einstellungen ändern. Android fragt bei jedem Punkt einmal nach.</string>
+    <string name="perm_photos">Fotos und Videos sichern</string>
+    <string name="perm_photos_text">Neue Aufnahmen automatisch aufs NAS</string>
+    <string name="perm_contacts">Kontakte abgleichen</string>
+    <string name="perm_contacts_text">TitanOS erscheint in der Kontakte-App</string>
+    <string name="perm_calendar">Kalender abgleichen</string>
+    <string name="perm_calendar_text">Termine in der Kalender-App des Handys</string>
+    <string name="perm_local">Geräte im Heimnetz finden</string>
+    <string name="perm_local_text">Damit die App das NAS zu Hause direkt erreicht</string>
+    <string name="perm_notify">Mitteilungen</string>
+    <string name="perm_notify_text">Neue Mail, NAS-Warnungen, Termine – ohne Google</string>
+    <string name="perm_later_suffix">%1$s. Kommt in einer späteren Testfassung.</string>
+    <string name="perm_denied_suffix">%1$s. Android hat es abgelehnt; in den Android-Einstellungen der App änderbar.</string>
+    <string name="perm_note">Mitteilungen kommen ohne Google über eine eigene Verbindung zum NAS. Dafür bittet die App in einer späteren Testfassung, sie vom Akku-Sparen auszunehmen.</string>
+    <string name="perm_next">Weiter</string>
+</resources>

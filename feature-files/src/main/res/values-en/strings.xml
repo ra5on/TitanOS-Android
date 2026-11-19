@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="files_title">Files</string>
+    <string name="files_shares">Shares</string>
+    <string name="files_free">%1$s free of %2$s</string>
+    <string name="files_read_only">read only</string>
+    <string name="files_on_phone">On this phone</string>
+    <string name="files_offline">Available offline</string>
+    <string name="files_transfers">Transfers</string>
+    <string name="files_transfers_none">No transfers</string>
+    <string name="files_transfers_summary">%1$d running, %2$d done</string>
+    <string name="files_trash">Recycle bin</string>
+    <string name="files_trash_text">On the NAS, %1$d days</string>
+    <string name="files_trash_text_plain">On the NAS</string>
+    <string name="files_no_shares">No share for this account.</string>
+    <string name="files_empty">This folder is empty.</string>
+    <string name="files_load_failed">Could not load: %1$s</string>
+    <string name="files_offline_nas">The NAS is not reachable right now.</string>
+    <string name="files_sort_name">Name ↑</string>
+    <string name="files_today">today</string>
+    <string name="files_yesterday">yesterday</string>
+    <string name="files_entry_sub">%1$s · %2$s</string>
+    <string name="files_changed">%1$s · changed %2$s</string>
+    <string name="files_uploading">uploading %1$s</string>
+    <string name="files_upload">Upload</string>
+    <string name="files_path">Path</string>
+    <string name="files_actions">Actions for %1$s</string>
+
+    <string name="files_share">Share</string>
+    <string name="files_share_text">Send to another app</string>
+    <string name="files_offline_text">Stays on the phone and up to date. Comes in a later test version.</string>
+    <string name="files_download">Save to Downloads</string>
+    <string name="files_rename">Rename</string>
+    <string name="files_move">Move or copy</string>
+    <string name="files_move_text">Comes in a later test version.</string>
+    <string name="files_to_trash">Move to recycle bin</string>
+    <string name="files_delete_forever">Delete permanently</string>
+    <string name="files_trash_confirm_title">Move “%1$s” to the recycle bin?</string>
+    <string name="files_trash_confirm_text">It can be restored from the share’s recycle bin.</string>
+    <string name="files_delete_confirm_title">Delete “%1$s” permanently?</string>
+    <string name="files_delete_confirm_text">This share has no recycle bin. Deleted items cannot be restored.</string>
+    <string name="files_rename_title">Rename</string>
+    <string name="files_rename_label">New name</string>
+    <string name="files_rename_do">Rename</string>
+    <string name="files_exists">Something with this name already exists.</string>
+    <string name="files_failed">That did not work (%1$s).</string>
+    <string name="files_share_chooser">Share with</string>
+
+    <string name="tr_title">Transfers</string>
+    <string name="tr_running">Running</string>
+    <string name="tr_waiting">Waiting</string>
+    <string name="tr_done">Done</string>
+    <string name="tr_none">Uploads and downloads appear here.</string>
+    <string name="tr_to">to %1$s · %2$s of %3$s</string>
+    <string name="tr_from">from %1$s · %2$s of %3$s</string>
+    <string name="tr_uploaded">to %1$s · %2$s · %3$s</string>
+    <string name="tr_downloaded">saved to Downloads · %1$s</string>
+    <string name="tr_shared">loaded for sharing · %1$s</string>
+    <string name="tr_failed">Stopped: %1$s</string>
+    <string name="tr_failed_offline">Stopped: no connection to the NAS. Try again once it is reachable.</string>
+    <string name="tr_cancelled">Cancelled.</string>
+    <string name="tr_cancel">Cancel</string>
+    <string name="tr_retry">Try again</string>
+    <string name="tr_waiting_start">waiting to start</string>
+    <string name="tr_state_done">done</string>
+    <string name="tr_state_failed">stopped</string>
+</resources>

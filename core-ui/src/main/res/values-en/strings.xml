@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_back">Back</string>
+    <string name="ui_cancel">Cancel</string>
+    <string name="ui_on">On</string>
+    <string name="ui_off">Off</string>
+    <string name="ui_more">More</string>
+    <string name="ui_search">Search</string>
+    <string name="ui_later_title">Coming soon</string>
+    <string name="ui_later">Comes in a later test version.</string>
+    <string name="ui_retry">Try again</string>
+    <string name="ui_loading">Loading …</string>
+    <string name="ui_nav_home">Home</string>
+    <string name="ui_nav_files">Files</string>
+    <string name="ui_nav_photos">Photos</string>
+    <string name="ui_nav_notifications">Notifications</string>
+</resources>

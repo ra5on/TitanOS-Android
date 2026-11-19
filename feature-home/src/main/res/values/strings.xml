@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Wie im Web: desktop.widget.allGood, allGoodText, attention, volumesAttention. -->
+    <string name="home_all_good">Alles in Ordnung</string>
+    <string name="home_all_good_text">Volumes ohne Befund</string>
+    <string name="home_attention">Bitte ansehen</string>
+    <plurals name="home_volumes_attention">
+        <item quantity="one">%d Volume nicht in Ordnung</item>
+        <item quantity="other">%d Volumes nicht in Ordnung</item>
+    </plurals>
+    <string name="home_no_volumes">Noch kein Volume angelegt</string>
+    <plurals name="home_up_days">
+        <item quantity="one">%d Tag in Betrieb</item>
+        <item quantity="other">%d Tage in Betrieb</item>
+    </plurals>
+    <plurals name="home_up_hours">
+        <item quantity="one">%d Stunde in Betrieb</item>
+        <item quantity="other">%d Stunden in Betrieb</item>
+    </plurals>
+    <string name="home_up_minutes">gerade gestartet</string>
+    <string name="home_storage_of">%1$s von %2$s</string>
+    <string name="home_storage_sub">%1$s · %2$s</string>
+    <string name="home_photos_title">Foto-Sicherung</string>
+    <string name="home_photos_later">kommt in einer späteren Testfassung</string>
+    <string name="home_loading">Zustand wird geladen …</string>
+    <string name="home_offline">Das NAS ist gerade nicht erreichbar.</string>
+    <string name="home_not_ready">Das NAS ist gerade nicht bereit. Die App versucht es gleich wieder.</string>
+    <string name="home_locked">Die Sitzung ist am NAS gesperrt. Entsperre sie im Browser oder warte, bis die Sperre endet.</string>
+    <string name="home_certificate">Das Zertifikat des NAS hat sich geändert. Die App verbindet sich nicht, bis du neu koppelst.</string>
+    <string name="home_notifications">Mitteilungen</string>
+    <string name="home_menu">Mehr</string>
+    <string name="home_menu_unpair">Kopplung aufheben</string>
+    <string name="home_menu_unpair_text">Die App meldet sich ab und vergisst dieses NAS. Am NAS beendest du das Gerät unter Mein Konto › Geräte.</string>
+    <string name="home_menu_about">Über die App</string>
+    <string name="home_about_text">TitanOS für Android %1$s, Testfassung. Fair Source (FSL-1.1-ALv2).</string>
+
+    <string name="app_shares">Freigaben</string>
+    <string name="app_storage">Speicher</string>
+    <string name="app_docker">Docker</string>
+    <string name="app_vms">Virtuelle Maschinen</string>
+    <string name="app_mail">Mail</string>
+    <string name="app_calendar">Kalender</string>
+    <string name="app_contacts">Kontakte</string>
+    <string name="app_backup">Sicherung</string>
+    <string name="app_nvr">NVR</string>
+    <string name="app_terminal">Terminal</string>
+    <string name="app_users">Benutzer</string>
+    <string name="app_settings">System­steuerung</string>
+</resources>
