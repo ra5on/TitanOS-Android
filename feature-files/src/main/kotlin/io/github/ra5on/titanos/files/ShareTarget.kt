@@ -162,7 +162,7 @@ fun ShareTargetScreen(model: ShareModel, onCancel: () -> Unit, onUpload: () -> U
         },
     ) {
         Text(
-            stringResource(R.string.share_count, model.items.size, Format.bytes(model.totalBytes)),
+            androidx.compose.ui.res.pluralStringResource(R.plurals.share_count, model.items.size, model.items.size, Format.bytes(model.totalBytes)),
             style = TitanType.body,
             color = c.muted,
             modifier = Modifier.padding(top = 14.dp, bottom = 4.dp),
@@ -189,6 +189,7 @@ fun ShareTargetScreen(model: ShareModel, onCancel: () -> Unit, onUpload: () -> U
                 if (b == null) {
                     val roots = model.roots
                     if (roots == null) ListRow(stringResource(UiR.string.ui_loading))
+                    if (roots != null && roots.isEmpty()) ListRow(stringResource(R.string.files_no_shares))
                     roots?.forEachIndexed { i, r ->
                         ListRow(
                             r.name,

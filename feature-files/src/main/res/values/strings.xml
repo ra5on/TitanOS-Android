@@ -95,7 +95,6 @@
     <string name="tr_clear">Fertige aus der Liste nehmen</string>
     <string name="share_title">Auf TitanOS speichern</string>
     <string name="share_upload">Hochladen</string>
-    <string name="share_count">%1$d Dateien · %2$s</string>
     <string name="share_more">+%1$d weitere</string>
     <string name="share_read_failed">Eine Datei ließ sich nicht lesen. Bitte noch einmal teilen.</string>
     <string name="share_where">Wohin?</string>
@@ -113,5 +112,9 @@
     <plurals name="share_started">
         <item quantity="one">%1$d Datei wird im Hintergrund hochgeladen.</item>
         <item quantity="other">%1$d Dateien werden im Hintergrund hochgeladen.</item>
+    </plurals>
+    <plurals name="share_count">
+        <item quantity="one">%1$d Datei · %2$s</item>
+        <item quantity="other">%1$d Dateien · %2$s</item>
     </plurals>
 </resources>
