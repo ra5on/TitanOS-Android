@@ -24,6 +24,13 @@ Die native Android-App zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-B
   - Teilen, In Downloads speichern, Umbenennen, In den Papierkorb
   - Hochladen über „+“
   - Liste der Übertragungen
+- **Foto-Sicherung** (braucht ein NAS mit der Foto-Schnittstelle, erscheint nach TitanOS 1.16):
+  - in eine frei wählbare Freigabe und einen Ordner, ab Werk mit Unterordnern je Jahr und Monat
+  - Ordner am Handy wählbar, ab Werk die Kamera
+  - wann, je Fotos und Videos: sofort, sofort im WLAN, im WLAN und beim Laden oder nur von Hand; mobile Daten auf Wunsch, im Ausland nie
+  - Doppelte erkennt das NAS am Inhalt (SHA-256), auch nach Umbenennen
+  - die App sagt immer, warum etwas wartet („wartet aufs Laden“, „das NAS ist nicht erreichbar“)
+  - „Speicher freigeben“ löscht nur, was das NAS gerade per Prüfsumme bestätigt, älter als 30 Tage, nur auf Knopfdruck; Android fragt noch einmal, alles liegt 30 Tage im Papierkorb des Handys
 - Hell und dunkel nach der Einstellung des Handys, Deutsch und Englisch.
 
 ## Installieren und koppeln

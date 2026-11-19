@@ -67,6 +67,9 @@ fun HomeScreen(
     onNotifications: () -> Unit,
     onMenu: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Stand der Foto-Sicherung in Worten für die Kachel; null: kommt später. */
+    photos: String? = null,
+    onPhotos: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     Column(modifier.fillMaxSize().wallpaper(c.dark)) {
@@ -83,7 +86,7 @@ fun HomeScreen(
         }
         Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 16.dp)) {
             SearchBox(stringResource(UiR.string.ui_search), onSearch, Modifier.padding(bottom = 12.dp))
-            StatusCard(state)
+            StatusCard(state, photos, onPhotos)
             state.problem?.let {
                 Problem(
                     stringResource(
@@ -104,7 +107,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun StatusCard(state: HomeState) {
+private fun StatusCard(state: HomeState, photos: String?, onPhotos: (() -> Unit)?) {
     val c = Titan.colors
     val shape = RoundedCornerShape(18.dp)
     Column(Modifier.fillMaxWidth().clip(shape).background(c.surface).border(1.dp, c.border, shape).padding(16.dp)) {
@@ -142,8 +145,11 @@ private fun StatusCard(state: HomeState) {
                     modifier = Modifier.weight(1f),
                 )
             }
-            // Die Foto-Sicherung kommt später; bis dahin sagt die Kachel das in Worten.
-            Tile(stringResource(R.string.home_photos_title), stringResource(R.string.home_photos_later), null, Modifier.weight(1f))
+            // Stand der Foto-Sicherung in Worten („12 418 gesichert“, „4 Aufnahmen warten“).
+            Tile(
+                stringResource(R.string.home_photos_title), photos ?: stringResource(R.string.home_photos_later), null,
+                Modifier.weight(1f).then(if (onPhotos != null) Modifier.clickable(role = Role.Button, onClick = onPhotos) else Modifier),
+            )
         }
     }
 }
