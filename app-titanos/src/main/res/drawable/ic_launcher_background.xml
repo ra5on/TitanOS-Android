@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Verlauf „dark“ aus GRADIENTS (DesktopIcon.svelte): #4a5563 → #1f2730, 160°. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient android:angle="290" android:startColor="#4A5563" android:endColor="#1F2730" android:type="linear" />
+</shape>

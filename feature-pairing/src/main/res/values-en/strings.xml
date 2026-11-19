@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pair_app_name">TitanOS</string>
+    <string name="pair_welcome_text">Your NAS on your phone: files, photo backup, mail, calendar, contacts and every setting.</string>
+    <string name="pair_scan">Scan QR code</string>
+    <string name="pair_manual">Enter address by hand</string>
+    <string name="pair_where_qr">TitanOS shows the QR code under My account › Devices › “Pair Android app”.</string>
+    <string name="pair_scan_prompt">Scan the QR code from TitanOS</string>
+    <string name="pair_scan_invalid">This is not a TitanOS pairing code.</string>
+
+    <string name="pair_manual_title">Enter address</string>
+    <string name="pair_manual_address">Address of the NAS</string>
+    <string name="pair_manual_address_hint">e.g. 192.168.1.20 or nas.tail1234.ts.net</string>
+    <string name="pair_manual_connect">Get certificate</string>
+    <string name="pair_manual_compare">Compare certificate</string>
+    <string name="pair_manual_shown">The NAS showed this certificate:</string>
+    <string name="pair_manual_where">The browser shows the same number under My account › Devices › “Pair Android app” › “Without QR code”. If it matches, the connection really belongs to your NAS.</string>
+    <string name="pair_manual_public">The NAS has a public certificate for this name, checked the normal way. No comparison is needed.</string>
+    <string name="pair_manual_code">Pairing code from the browser</string>
+    <string name="pair_manual_ts_note">With a Tailscale name (…ts.net) the NAS has a public certificate; then no comparison is needed.</string>
+    <string name="pair_manual_wrong">Doesn’t match</string>
+    <string name="pair_manual_ok">Matches, continue</string>
+    <string name="pair_manual_bad_address">The app does not understand this address. Enter only the name or IP address, optionally with :port.</string>
+    <string name="pair_manual_bad_code">The pairing code has 8 characters, like K7Q4-9XMT.</string>
+    <string name="pair_manual_mismatch">Stopped: the certificate does not match the browser. Check the address; someone may be listening in.</string>
+    <string name="pair_manual_probing">Connecting …</string>
+
+    <string name="pair_confirm_title">Pair NAS</string>
+    <string name="pair_confirm_product">TitanOS</string>
+    <string name="pair_confirm_product_user">TitanOS · account %1$s</string>
+    <string name="pair_connection">Connection</string>
+    <string name="pair_kind_tailscale">On the go via Tailscale</string>
+    <string name="pair_kind_lan">In the home network, preferred</string>
+    <string name="pair_kind_other">Other address</string>
+    <string name="pair_reachable">reachable</string>
+    <string name="pair_unreachable">not reachable</string>
+    <string name="pair_checking">checking</string>
+    <string name="pair_cert_title">Certificate pinned</string>
+    <string name="pair_cert_text">SHA-256 %1$s – if it changes, the app asks instead of carrying on silently.</string>
+    <string name="pair_cert_public_title">Public certificate</string>
+    <string name="pair_cert_public_text">Checked the normal way on every connection.</string>
+    <string name="pair_device_name">Name of this phone</string>
+    <string name="pair_device_name_owner">%2$s’s %1$s</string>
+    <string name="pair_note_before">After “Pair”, the NAS shows “%1$s wants to sign in”. Confirm there – then it continues here.</string>
+    <string name="pair_note_waiting">The NAS now shows “%1$s wants to sign in”. Confirm there – then it continues here.</string>
+    <string name="pair_do">Pair</string>
+    <string name="pair_waiting">Waiting for the NAS …</string>
+    <string name="pair_err_code">The pairing code is wrong, already used or expired. Create a new one in the browser.</string>
+    <string name="pair_err_name">This name does not work. Use 1 to 64 characters without spaces at the start or end.</string>
+    <string name="pair_err_rate">Too many attempts. Please wait %1$d seconds.</string>
+    <string name="pair_err_rate_plain">Too many attempts. Please wait a moment.</string>
+    <string name="pair_err_rejected">The sign-in was declined on the NAS.</string>
+    <string name="pair_err_expired">The pairing expired (5 minutes). Create a new code in the browser.</string>
+    <string name="pair_err_unreachable">The NAS is not reachable at any address. Is the phone in the home network or in Tailscale?</string>
+    <string name="pair_err_cert">The certificate of the NAS does not match the QR code. Stopped.</string>
+    <string name="pair_err_busy">The NAS is not ready right now. Please try again shortly.</string>
+    <string name="pair_err_other">That did not work (%1$s).</string>
+
+    <string name="perm_title">Set up</string>
+    <string name="perm_heading">What should the app do?</string>
+    <string name="perm_intro">You can change everything later in the settings. Android asks once for each item.</string>
+    <string name="perm_photos">Back up photos and videos</string>
+    <string name="perm_photos_text">New shots go to the NAS automatically</string>
+    <string name="perm_contacts">Sync contacts</string>
+    <string name="perm_contacts_text">TitanOS appears in the Contacts app</string>
+    <string name="perm_calendar">Sync calendar</string>
+    <string name="perm_calendar_text">Events in the phone’s calendar app</string>
+    <string name="perm_local">Find devices in the home network</string>
+    <string name="perm_local_text">So the app reaches the NAS at home directly</string>
+    <string name="perm_notify">Notifications</string>
+    <string name="perm_notify_text">New mail, NAS warnings, events – without Google</string>
+    <string name="perm_later_suffix">%1$s. Comes in a later test version.</string>
+    <string name="perm_denied_suffix">%1$s. Android declined; you can change it in the app’s Android settings.</string>
+    <string name="perm_note">Notifications arrive without Google over the app’s own connection to the NAS. For that, a later test version will ask to exempt the app from battery saving.</string>
+    <string name="perm_next">Continue</string>
+</resources>

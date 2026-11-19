@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="files_title">Dateien</string>
+    <string name="files_shares">Freigaben</string>
+    <string name="files_free">%1$s frei von %2$s</string>
+    <string name="files_read_only">nur lesen</string>
+    <string name="files_on_phone">Auf diesem Handy</string>
+    <string name="files_offline">Offline verfügbar</string>
+    <string name="files_transfers">Übertragungen</string>
+    <string name="files_transfers_none">Keine Übertragungen</string>
+    <string name="files_transfers_summary">%1$d läuft, %2$d fertig</string>
+    <string name="files_trash">Papierkorb</string>
+    <string name="files_trash_text">Auf dem NAS, %1$d Tage</string>
+    <string name="files_trash_text_plain">Auf dem NAS</string>
+    <string name="files_no_shares">Keine Freigabe für dieses Konto.</string>
+    <string name="files_empty">Dieser Ordner ist leer.</string>
+    <string name="files_load_failed">Konnte nicht geladen werden: %1$s</string>
+    <string name="files_offline_nas">Das NAS ist gerade nicht erreichbar.</string>
+    <string name="files_sort_name">Name ↑</string>
+    <string name="files_today">heute</string>
+    <string name="files_yesterday">gestern</string>
+    <string name="files_entry_sub">%1$s · %2$s</string>
+    <string name="files_changed">%1$s · geändert %2$s</string>
+    <string name="files_uploading">lädt hoch %1$s</string>
+    <string name="files_upload">Hochladen</string>
+    <string name="files_path">Pfad</string>
+    <string name="files_actions">Aktionen für %1$s</string>
+
+    <string name="files_share">Teilen</string>
+    <string name="files_share_text">An eine andere App senden</string>
+    <string name="files_offline_text">Bleibt auf dem Handy und aktuell. Kommt in einer späteren Testfassung.</string>
+    <string name="files_download">In Downloads speichern</string>
+    <string name="files_rename">Umbenennen</string>
+    <string name="files_move">Verschieben oder kopieren</string>
+    <string name="files_move_text">Kommt in einer späteren Testfassung.</string>
+    <string name="files_to_trash">In den Papierkorb</string>
+    <string name="files_delete_forever">Endgültig löschen</string>
+    <string name="files_trash_confirm_title">„%1$s“ in den Papierkorb?</string>
+    <string name="files_trash_confirm_text">Im Papierkorb der Freigabe lässt es sich wiederherstellen.</string>
+    <string name="files_delete_confirm_title">„%1$s“ endgültig löschen?</string>
+    <string name="files_delete_confirm_text">Diese Freigabe hat keinen Papierkorb. Gelöschtes lässt sich nicht wiederherstellen.</string>
+    <string name="files_rename_title">Umbenennen</string>
+    <string name="files_rename_label">Neuer Name</string>
+    <string name="files_rename_do">Umbenennen</string>
+    <string name="files_exists">Es gibt schon etwas mit diesem Namen.</string>
+    <string name="files_failed">Das hat nicht geklappt (%1$s).</string>
+    <string name="files_share_chooser">Teilen mit</string>
+
+    <string name="tr_title">Übertragungen</string>
+    <string name="tr_running">Läuft</string>
+    <string name="tr_waiting">Wartet</string>
+    <string name="tr_done">Fertig</string>
+    <string name="tr_none">Hier erscheinen Uploads und Downloads.</string>
+    <string name="tr_to">nach %1$s · %2$s von %3$s</string>
+    <string name="tr_from">aus %1$s · %2$s von %3$s</string>
+    <string name="tr_uploaded">nach %1$s · %2$s · %3$s</string>
+    <string name="tr_downloaded">in Downloads gespeichert · %1$s</string>
+    <string name="tr_shared">zum Teilen geladen · %1$s</string>
+    <string name="tr_failed">Abgebrochen: %1$s</string>
+    <string name="tr_failed_offline">Abgebrochen: keine Verbindung zum NAS. Erneut versuchen, sobald es wieder erreichbar ist.</string>
+    <string name="tr_cancelled">Abgebrochen.</string>
+    <string name="tr_cancel">Abbrechen</string>
+    <string name="tr_retry">Erneut versuchen</string>
+    <string name="tr_waiting_start">wartet auf den Start</string>
+    <string name="tr_state_done">fertig</string>
+    <string name="tr_state_failed">abgebrochen</string>
+</resources>

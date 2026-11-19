@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PLAN 116: leere Hülle der Agent-App; Funktionen folgen in einer späteren Testfassung. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:allowBackup="false"
+        android:label="@string/agent_app_name"
+        android:supportsRtl="true" />
+</manifest>
