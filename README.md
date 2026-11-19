@@ -1,34 +1,82 @@
 # TitanOS für Android
 
-Die native Android-App zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-Betriebssystem, das vom USB-Stick bootet. Mit ihr hast du dein NAS auf dem Handy: Dateien, Zustand des NAS und nach und nach alles, was die Weboberfläche kann – im selben Stil wie TitanOS.
+Die native Android-App zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-Betriebssystem, das vom USB-Stick bootet und im RAM läuft. Sie bringt dein NAS aufs Handy, im selben Stil wie die Weboberfläche:
 
-> **Status: Testfassung 0.01.** Das ist ein frühes Grundgerüst zum Ausprobieren, keine fertige App. Vieles zeigt noch „kommt in einer späteren Testfassung“.
+- Dateien
+- Zustand des NAS
+- Schritt für Schritt alles, was TitanOS im Browser kann: Foto-Sicherung im Hintergrund, Mail, Kalender und Kontakte in den Apps des Handys, Mitteilungen ohne Google, die ganze Systemsteuerung.
 
-## Was diese Testfassung kann
+> **Status: Testfassung 0.01.** Frühes Grundgerüst zum Ausprobieren, noch keine fertige App. Was noch fehlt, zeigt sie mit „kommt in einer späteren Testfassung“.
 
-- **Koppeln** mit dem NAS, ohne dass Passwort oder 2FA aufs Handy kommen:
-  - QR-Code scannen, den TitanOS unter Mein Konto › Geräte › „Android-App koppeln“ zeigt;
-  - „Auf diesem Handy öffnen“ im Browser des Handys (App-Link `titanos://pair?…`);
-  - oder die Adresse von Hand eingeben und den Fingerabdruck des Zertifikats mit dem Browser vergleichen.
-  - Bestätigt wird im Browser. Danach meldet sich die App mit einem eigenen Schlüssel im Android Keystore an; das Zertifikat des NAS ist festgehalten (SPKI-Pinning).
-- **Start:** Zustand der Volumes, Laufzeit, Speicherbelegung und die Programme, die das Konto sehen darf.
-- **Dateien:** Freigaben und Ordner, Teilen, In Downloads speichern, Umbenennen, In den Papierkorb, Hochladen über „+“, eine einfache Liste der Übertragungen.
+<p>
+<img src="docs/screenshots/01-willkommen-dunkel.png" width="200" alt="Willkommen">
+<img src="docs/screenshots/10-start-dunkel.png" width="200" alt="Start, dunkel">
+<img src="docs/screenshots/10-start-hell.png" width="200" alt="Start, hell">
+<img src="docs/screenshots/20-dateien-freigaben-dunkel.png" width="200" alt="Freigaben">
+</p>
+
+## Was die Testfassung kann
+
+- **Koppeln mit dem NAS.** Passwort und 2FA kommen dabei nie aufs Handy. Die App bekommt einen eigenen Schlüssel und hält das Zertifikat des NAS fest.
+- **Start:** Zustand der Volumes, Laufzeit, Belegung und die Programme, die dein Konto sehen darf.
+- **Dateien:**
+  - Freigaben und Ordner durchsuchen
+  - Teilen, In Downloads speichern, Umbenennen, In den Papierkorb
+  - Hochladen über „+“
+  - Liste der Übertragungen
 - Hell und dunkel nach der Einstellung des Handys, Deutsch und Englisch.
 
-Noch nicht dabei: Foto-Sicherung, Mitteilungen, Kontakte und Kalender, Offline-Dateien, Widgets, Selbst-Update und die Agent-App (`:app-agent` ist eine leere Hülle).
+## Installieren und koppeln
 
-Die App braucht ein NAS mit TitanOS, das die Kopplung für Android-Apps kennt (`docs/ANDROID-APP.md` im Repo TitanOS).
+Nötig sind Android 13 oder neuer und ein NAS mit **TitanOS 1.16** oder neuer. Ab 1.16 kennt das NAS die Kopplung von Android-Apps.
 
-## Voraussetzungen
+1. **APK laden** von der Seite [Releases](https://github.com/ra5on/TitanOS-Android/releases). Testfassungen gibt es vorerst direkt vom Projekt.
+2. **Installieren:** Die APK auf dem Handy öffnen. Beim ersten Mal fragt Android, ob der Browser bzw. die Dateien-App „unbekannte Apps installieren“ darf. Erlauben, dann „Installieren“.
+3. **Code anzeigen:** Im Browser in TitanOS **Mein Konto › Geräte › Android-Apps › „Android-App koppeln“** öffnen.
+4. **In der App koppeln**, auf einem von drei Wegen:
+   - **QR-Code scannen**, wenn TitanOS auf einem anderen Gerät offen ist.
+   - **„Auf diesem Handy öffnen“**, wenn TitanOS im Browser desselben Handys offen ist.
+   - **„Adresse von Hand eingeben“:** Die App zeigt den Fingerabdruck des Zertifikats in Vierergruppen. Im Browser unter „Ohne QR-Code“ steht derselbe Wert und ein Kopplungscode zum Abtippen.
+5. **Bestätigen:** Der Browser fragt „<Name> möchte sich anmelden“. Mit deinem Kontopasswort bestätigen, dann macht die App von selbst weiter.
 
-- Android 13 oder neuer.
-- Keine Google-Dienste: kein Google Play Services, kein Firebase, kein ML Kit.
+Zuhause verbindet sich die App direkt über das Heimnetz, unterwegs über Tailscale. Unter **Mein Konto › Geräte** siehst du jede gekoppelte App. Dort beendest du sie mit „Beenden“, dann ist sie sofort abgemeldet.
+
+<p>
+<img src="docs/screenshots/05-adresse-von-hand-dunkel.png" width="200" alt="Adresse von Hand mit Fingerabdruck">
+<img src="docs/screenshots/22-datei-aktionen-dunkel.png" width="200" alt="Aktionen einer Datei">
+</p>
+
+## Sicherheit
+
+- **Die App ist eine Sitzung wie der Browser, kein API-Token.** Es gelten genau die Rechte deines Kontos.
+- **Eigener Schlüssel je Handy:** ECDSA P-256, erzeugt im Android-Schlüsselspeicher, nicht auslesbar. Das NAS kennt nur den öffentlichen Teil. Mit dem Schlüssel unterschreibt die App eine Herausforderung, wenn sie eine neue Sitzung braucht, etwa nach einem Neustart des NAS.
+- **Festgehaltenes Zertifikat (SPKI-Pinning):** Zeigt das NAS plötzlich ein anderes Zertifikat, fragt die App, statt still weiterzumachen. Namen mit öffentlichem Zertifikat (Let's Encrypt, `*.ts.net`) prüft sie zusätzlich ganz normal.
+- **Ende:** Ein neues Kontopasswort, eine geänderte 2FA, „Beenden“ oder das Löschen des Kontos beenden die App.
+- **Keine Google-Dienste:** kein Google Play Services, kein Firebase, kein ML Kit.
+
+Einzelheiten zur Schnittstelle stehen in [`docs/ANDROID-APP.md`](https://github.com/ra5on/TitanOS/blob/main/docs/ANDROID-APP.md) im Repo TitanOS.
+
+## Was als Nächstes kommt
+
+In dieser Reihenfolge, jeweils als Testfassung:
+
+1. **Dateien fertig:** Übertragungen im Hintergrund, die nach Verbindungsabbrüchen weitermachen; Offline-Dateien; Teilen-Menü „Auf TitanOS speichern“.
+2. **Foto-Sicherung:**
+   - eigene Sicherung in eine frei wählbare Freigabe und einen Ordner, Doppelte werden übersprungen
+   - einstellbar, wann: Fotos sofort im WLAN, Videos beim Laden
+   - „Speicher freigeben“ nur für nachweislich gesicherte Aufnahmen und nur auf Knopfdruck
+3. **Kontakte und Kalender** als Konto in den Apps des Handys, Abgleich in beide Richtungen; Mail.
+4. **Zustand und Verwaltung:** Speicher, Docker, VMs, Systemcontainer, NVR, Sicherungen, Protokolle.
+5. **Die ganze Systemsteuerung.** Sensible Einstellungen bestätigst du per Fingerabdruck.
+6. **Agent-App**, Widgets, Mitteilungen ohne Google, Selbst-Update.
+
+Danach folgt Version 1.00 mit allem.
 
 ## Bauen
 
 Nötig sind JDK 21 und das Android-SDK mit `platforms;android-37.0` und `build-tools;37.0.0`.
 
-```
+```bash
 export JAVA_HOME=/pfad/zu/jdk-21
 export ANDROID_HOME=/pfad/zu/android-sdk
 ./gradlew assembleDebug testDebugUnitTest lint
@@ -36,13 +84,13 @@ export ANDROID_HOME=/pfad/zu/android-sdk
 
 Die Debug-APK liegt danach unter `app-titanos/build/outputs/apk/debug/`.
 
-- **Bildtests:** `./gradlew recordRoborazziDebug` schreibt Bilder aller Bildschirme in 412 dp Breite, hell und dunkel, nach `app-titanos/build/outputs/roborazzi/`.
-- **Release:** Signiert wird nur über Umgebungsvariablen: `TITANOS_KEYSTORE` (Pfad zum Keystore) und `TITANOS_KEYSTORE_PASSWORD`, Alias `titanos-release`. Ohne sie bleibt `assembleRelease` unsigniert.
-- **Stil:** Farben, Maße, Programmsymbole und die Schrift (IBM Plex) erzeugt `web/scripts/android-theme.mjs` im Repo TitanOS aus der Weboberfläche:
-  ```
+- **Bildtests:** `./gradlew recordRoborazziDebug` schreibt alle Bildschirme in 412 dp Breite, hell und dunkel, nach `app-titanos/build/outputs/roborazzi/`.
+- **Release:** Signiert wird nur über die Umgebungsvariablen `TITANOS_KEYSTORE` (Pfad zum Keystore) und `TITANOS_KEYSTORE_PASSWORD` mit dem Alias `titanos-release`. Ohne sie bleibt `assembleRelease` unsigniert.
+- **Stil:** Farben, Maße, Programmsymbole und die Schrift (IBM Plex) erzeugt `web/scripts/android-theme.mjs` im Repo TitanOS aus der Weboberfläche. Das Ergebnis unter `core-ui/…/ui/generated/` und `core-ui/src/main/res/font/` ist eingecheckt; geändert wird im Repo TitanOS, nicht hier.
+  ```bash
   node web/scripts/android-theme.mjs ../TitanOS-Android
   ```
-  Das Ergebnis unter `core-ui/src/main/kotlin/…/ui/generated/` und `core-ui/src/main/res/font/` ist eingecheckt.
+- **Kein abgeschnittener Text:** Eine eigene Lint-Regel verbietet `TextOverflow.Ellipsis` und `maxLines` bei Text.
 
 ## Aufbau
 
@@ -60,6 +108,6 @@ Die Debug-APK liegt danach unter `app-titanos/build/outputs/apk/debug/`.
 
 ## Lizenz
 
-Die App ist **Fair Source** unter der [Functional Source License 1.1 mit Apache-2.0-Zukunftslizenz (FSL-1.1-ALv2)](LICENSE.md), wie TitanOS: Nutzen, Ändern und Weitergeben ist erlaubt, nur kein konkurrierendes kommerzielles Angebot. Zwei Jahre nach Erscheinen steht jede Version unter der Apache License 2.0. Bis dahin ist sie nicht „Open Source“.
+Die App ist **Fair Source** unter der [Functional Source License 1.1 mit Apache-2.0-Zukunftslizenz (FSL-1.1-ALv2)](LICENSE.md), wie TitanOS. Nutzen, Ändern und Weitergeben ist erlaubt, nur kein konkurrierendes kommerzielles Angebot. Zwei Jahre nach Erscheinen steht jede Version unter der Apache License 2.0; bis dahin ist sie nicht „Open Source“.
 
 Fremde Bestandteile behalten ihre Lizenz, siehe [THIRD_PARTY_LICENSES](THIRD_PARTY_LICENSES). Beiträge nur mit dem [CLA](CLA.md), siehe [CONTRIBUTING.md](CONTRIBUTING.md).
