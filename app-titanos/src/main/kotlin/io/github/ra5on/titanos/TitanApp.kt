@@ -51,6 +51,8 @@ class TitanApp : Application(), Configuration.Provider {
         FilesRuntime.offline = graph.offline
         FilesRuntime.api = { graph.api }
         Outbox.prune(this, graph.transfers)
+        io.github.ra5on.titanos.update.UpdateCheck.schedule(this)
+        io.github.ra5on.titanos.widgets.WidgetRuntime.api = { graph.api }
         if (graph.pairing != null) OfflineSync.schedule(this, graph.offline)
         // Worker der Foto-Sicherung laufen ohne Activity und holen sich hier die Verbindung.
         PhotosRuntime.titan = { graph.api }
@@ -77,6 +79,12 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
 
     var pairing by mutableStateOf(store.load())
         private set
+
+    /** Vom Widget „Fotos“ geöffnet: der Reiter Fotos. */
+    var openPhotos by mutableStateOf(false)
+
+    /** „Über die App“ offen (Menü oder Mitteilung „Version … ist da“). */
+    var openAbout by mutableStateOf(false)
 
     /** Wird gesetzt, wenn das NAS das Gerät nicht mehr kennt; die Willkommensseite sagt es dann. */
     var unpairedByNas by mutableStateOf(false)
@@ -111,6 +119,7 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         photosApi = photosApiFor(p)
         photos = photosModelFor(api, photosApi)
         PhotoScheduler.arm(app)
+        io.github.ra5on.titanos.widgets.WidgetRefresh.now(app)
     }
 
     /** Kopplung aufheben: Schlüssel, Kopplung und Sitzung weg. Am NAS beendet man das Gerät im Browser. */

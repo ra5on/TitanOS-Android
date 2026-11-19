@@ -102,18 +102,23 @@ jobs:
           export TITANOS_KEYSTORE="$RUNNER_TEMP/titanos-release.p12"
           printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$TITANOS_KEYSTORE"
           trap 'rm -f "$TITANOS_KEYSTORE"' EXIT
-          ./gradlew --no-daemon :app-titanos:assembleRelease
+          ./gradlew --no-daemon :app-titanos:assembleRelease :app-agent:assembleRelease
       - name: Signatur und Version prüfen
         run: |
           bt="$ANDROID_HOME/build-tools/37.0.0"
-          apk=app-titanos/build/outputs/apk/release/app-titanos-release.apk
-          "$bt/apksigner" verify --print-certs "$apk" | tee signer.txt
-          grep -q "certificate SHA-256 digest: $CERT_SHA256" signer.txt || { echo "::error::falsches Signaturzertifikat"; exit 1; }
-          name=$("$bt/aapt2" dump badging "$apk" | sed -nE "s/.*versionName='([^']+)'.*/\1/p")
           mkdir -p out
-          cp "$apk" "out/TitanOS-Android-$name.apk"
+          for pair in "app-titanos:TitanOS-Android" "app-agent:TitanOS-Agent"; do
+            module=${pair%%:*} prefix=${pair##*:}
+            apk=$module/build/outputs/apk/release/$module-release.apk
+            # Die Agent-App ist erst ab 0.03 dabei; fehlt sie, bleibt es bei der TitanOS-App.
+            [ -f "$apk" ] || { [ "$module" = app-agent ] && continue; echo "::error::$apk fehlt"; exit 1; }
+            "$bt/apksigner" verify --print-certs "$apk" | tee signer.txt
+            grep -q "certificate SHA-256 digest: $CERT_SHA256" signer.txt || { echo "::error::falsches Signaturzertifikat ($module)"; exit 1; }
+            name=$("$bt/aapt2" dump badging "$apk" | sed -nE "s/.*versionName='([^']+)'.*/\1/p")
+            cp "$apk" "out/$prefix-$name.apk"
+            [ "$module" = app-titanos ] && echo "NAME=$name" >> "$GITHUB_ENV"
+          done
           (cd out && sha256sum *.apk > SHA256SUMS && cat SHA256SUMS)
-          echo "NAME=$name" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: titanos-android-release

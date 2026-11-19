@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.glance.appwidget.updateAll
+import io.github.ra5on.titanos.photos.upToDate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -205,6 +207,26 @@ private fun MainShell(graph: AppGraph) {
     val api = graph.api ?: return
     val files = graph.files ?: return
     val photos = graph.photos ?: return
+    // Widget „Fotos“: den Stand, den die Startseite zeigt, auch dort.
+    val photoLine = io.github.ra5on.titanos.photos.homeTileText(photos.view)
+    LaunchedEffect(photoLine, photos.view.upToDate, photos.view.settings.enabled) {
+        val snap = io.github.ra5on.titanos.widgets.PhotosSnapshot(
+            enabled = photos.view.settings.enabled,
+            line = photoLine,
+            upToDate = photos.view.upToDate,
+            atMs = System.currentTimeMillis(),
+        )
+        if (io.github.ra5on.titanos.widgets.WidgetStore.savePhotos(context, snap)) {
+            runCatching { io.github.ra5on.titanos.widgets.PhotosWidget().updateAll(context) }
+        }
+    }
+    // Tippen auf das Widget „Fotos“ öffnet den Reiter.
+    LaunchedEffect(graph.openPhotos) {
+        if (graph.openPhotos) {
+            tab = Tab.Photos
+            graph.openPhotos = false
+        }
+    }
     val nav = @Composable {
         BottomNav(
             listOf(
@@ -231,6 +253,14 @@ private fun MainShell(graph: AppGraph) {
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
     if (tab != Tab.Home) BackHandler { tab = Tab.Home }
     var menu by remember { mutableStateOf(false) }
+    // „Über die App“ mit Selbst-Update; die Mitteilung „Version … ist da“ öffnet es direkt.
+    if (graph.openAbout) {
+        BackHandler { graph.openAbout = false }
+        var nasVersion by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(Unit) { nasVersion = runCatching { api.system().version }.getOrNull()?.takeIf { it.isNotBlank() } }
+        io.github.ra5on.titanos.update.AboutScreen(nasVersion, onBack = { graph.openAbout = false })
+        return
+    }
     var confirmUnpair by remember { mutableStateOf(false) }
     when (tab) {
         Tab.Home -> Box(Modifier.fillMaxSize()) {
@@ -254,6 +284,8 @@ private fun MainShell(graph: AppGraph) {
                             stringResource(HomeR.string.home_menu_about),
                             sub = stringResource(HomeR.string.home_about_text, BuildConfigInfo.versionName(context)),
                             icon = { RowIcon(TitanIcons.info) },
+                            chevron = true,
+                            onClick = { menu = false; graph.openAbout = true },
                         )
                         ListRow(
                             stringResource(HomeR.string.home_menu_unpair),

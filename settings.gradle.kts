@@ -23,6 +23,8 @@ include(
     ":feature-home",
     ":feature-files",
     ":feature-photos",
+    ":feature-update",
+    ":feature-widgets",
     ":app-titanos",
     ":app-agent",
     ":lint-rules",

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Selbst-Update: die App installiert ihre neue Version (und die der Agent-App). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Ohne Rückfrage nur, wenn Android es zulässt (eigene App, aktuelle targetSdk). -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+    <application>
+        <receiver android:name="io.github.ra5on.titanos.update.InstallReceiver" android:exported="false" />
+    </application>
+</manifest>

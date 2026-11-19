@@ -33,6 +33,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun take(intent: Intent?) {
+        if (intent?.getBooleanExtra(io.github.ra5on.titanos.update.UpdateWorker.EXTRA_OPEN_ABOUT, false) == true) {
+            (application as TitanApp).graph.openAbout = true
+        }
+        if (intent?.getBooleanExtra(io.github.ra5on.titanos.widgets.PhotosWidget.EXTRA_OPEN_PHOTOS, false) == true) {
+            (application as TitanApp).graph.openPhotos = true
+        }
         if (intent?.action != Intent.ACTION_VIEW) return
         val data = intent.dataString ?: return
         PairLink.parse(data)?.let { pendingLink = it }
