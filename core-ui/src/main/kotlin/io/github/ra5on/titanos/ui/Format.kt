@@ -10,6 +10,8 @@ import java.util.Locale
 
 /** Zahlen und Größen wie web/src/lib/format.ts (Einheiten zu 1000). */
 object Format {
+    /** Geschütztes Leerzeichen: Zahl und Einheit brechen nie auseinander. */
+    private const val NBSP = '\u00A0'
     private val UNITS = listOf("B", "KB", "MB", "GB", "TB", "PB")
 
     private fun number(v: Double, digits: Int, locale: Locale): String =
@@ -26,7 +28,7 @@ object Format {
             unit++
         }
         val digits = if (unit == 0 || value >= 100) 0 else if (value >= 10) 1 else 2
-        return "${number(value, digits, locale)} ${UNITS[unit]}"
+        return "${number(value, digits, locale)}$NBSP${UNITS[unit]}"
     }
 
     /** Beide Werte in der Einheit des größeren: ("4,1", "8 TB"). */
@@ -40,13 +42,13 @@ object Format {
         fun digits(v: Double) = if (unit == 0 || v >= 100) 0 else 1
         val u = used / scale
         val t = total / scale
-        return number(u, digits(u), locale) to "${number(t, digits(t), locale)} ${UNITS[unit]}"
+        return number(u, digits(u), locale) to "${number(t, digits(t), locale)}$NBSP${UNITS[unit]}"
     }
 
     fun percent(fraction: Double, locale: Locale = Locale.getDefault()): String {
         val v = fraction * 100
         val shown = if (v < 100 && v >= 99.5) 99.0 else if (v > 0 && v < 0.5) 1.0 else v
-        return "${number(shown, 0, locale)} %"
+        return "${number(shown, 0, locale)}$NBSP%"
     }
 
     /** RFC 3339 → Instant; null, wenn leer oder unlesbar. */

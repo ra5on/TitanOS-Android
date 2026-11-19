@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Prüft gradle-wrapper.jar gegen die bekannten Prüfsummen von Gradle.
+      - uses: gradle/actions/wrapper-validation@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Android SDK (Plattform 37.0, Build-Tools 37.0.0)
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;37.0.0"
+
+      # Kein abgeschnittener Text (TitanOS: „Oberfläche“). Die Lint-Regel
+      # TitanNoTruncatedText prüft dasselbe; dieser Schritt fällt auch auf,
+      # wenn Lint einen Ausdruck nicht auflöst.
+      - name: Kein TextOverflow.Ellipsis und kein maxLines
+        run: |
+          if grep -rnE 'TextOverflow\.Ellipsis|\bmaxLines\b|android:ellipsize|android:singleLine|android:maxLines' \
+              --include='*.kt' --include='*.xml' */src/main --exclude-dir=lint-rules; then
+            echo "::error::Abgeschnittener Text ist verboten – umbrechen oder scrollen."
+            exit 1
+          fi
+
+      - name: Bauen, Unit-Tests, Lint
+        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest lint :lint-rules:test
+
+      - name: Bildtests aufnehmen
+        run: ./gradlew --no-daemon recordRoborazziDebug
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: berichte
+          path: |
+            */build/reports/
+            app-titanos/build/outputs/roborazzi/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: titanos-debug-apk
+          path: app-titanos/build/outputs/apk/debug/*.apk
