@@ -12,6 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLException
@@ -59,9 +60,10 @@ class SpkiPinningTest {
         try {
             get(endpoint(Spki.of(otherCert.certificate))).close()
             fail("connected despite a different certificate")
-        } catch (e: SSLException) {
-            val changed = generateSequence(e as Throwable) { it.cause }.filterIsInstance<CertificateChangedException>().firstOrNull()
-            assertEquals(Spki.of(nasCert.certificate), changed?.seenSpki)
+        } catch (e: IOException) {
+            // localhost may name two addresses (CI): the handshake error can
+            // sit under a suppressed one.
+            assertEquals(Spki.of(nasCert.certificate), e.certificateChange()?.seenSpki)
         }
         assertEquals(0, server.requestCount)
     }
@@ -72,7 +74,7 @@ class SpkiPinningTest {
         try {
             get(endpoint(Spki.of(otherCert.certificate), publicCert = true)).close()
             fail("connected with an untrusted chain")
-        } catch (_: SSLException) {
+        } catch (_: IOException) {
         }
     }
 
@@ -120,8 +122,16 @@ class SpkiPinningTest {
             nas.execute { Request.Builder().url(it.resolve("/api/v1/session")!!).build() }.close()
             fail("connected despite a different certificate")
         } catch (e: SSLException) {
-            assertTrue(generateSequence(e as Throwable) { it.cause }.any { it is CertificateChangedException })
+            assertTrue(e.certificateChange() != null)
         }
+    }
+
+    @Test
+    fun certificateChangeIsFoundUnderSuppressedErrors() {
+        val handshake = javax.net.ssl.SSLHandshakeException("bad").apply { initCause(CertificateChangedException("x")) }
+        val last = java.net.ConnectException("refused").apply { addSuppressed(handshake) }
+        assertEquals("x", last.certificateChange()?.seenSpki)
+        assertEquals(null, java.net.ConnectException("refused").certificateChange())
     }
 
     @Test

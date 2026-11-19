@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.ra5on.titanos.model.PairState
 import io.github.ra5on.titanos.net.AddressKind
 import io.github.ra5on.titanos.net.ApiException
-import io.github.ra5on.titanos.net.CertificateChangedException
+import io.github.ra5on.titanos.net.certificateChange
 import io.github.ra5on.titanos.net.CertificateProbe
 import io.github.ra5on.titanos.net.DeviceKey
 import io.github.ra5on.titanos.net.Endpoint
@@ -242,7 +242,7 @@ class PairingModel(
         pinned.mapNotNull { Endpoint.pinned(shared, it) }.sortedBy { if (it.kind == AddressKind.LAN) 0 else 1 }
 
     private fun errorOf(e: Throwable): PairError {
-        val changed = generateSequence(e) { it.cause }.any { it is CertificateChangedException }
+        val changed = e.certificateChange() != null
         return when {
             changed -> PairError.Certificate
             e is ApiException && e.status == 404 && e.code == "pairing_code" -> PairError.Code

@@ -17,6 +17,25 @@ class CertificateChangedException(val seenSpki: String) :
     CertificateException("certificate of the NAS changed (spki $seenSpki)")
 
 /**
+ * Der Zertifikatswechsel in einer Fehlerkette – auch unter den unterdrückten
+ * Fehlern: Hat ein Name mehrere Adressen (IPv4 und IPv6), wirft OkHttp den
+ * Fehler der letzten (oft „keine Verbindung“) und hängt den Handshake-Fehler
+ * der ersten als unterdrückt an.
+ */
+fun Throwable.certificateChange(): CertificateChangedException? {
+    val seen = HashSet<Throwable>()
+    val todo = ArrayDeque<Throwable>().apply { add(this@certificateChange) }
+    while (todo.isNotEmpty()) {
+        val t = todo.removeFirst()
+        if (!seen.add(t)) continue
+        if (t is CertificateChangedException) return t
+        t.cause?.let(todo::add)
+        t.suppressed.forEach(todo::add)
+    }
+    return null
+}
+
+/**
  * Prüft das Serverzertifikat einer gekoppelten Adresse (docs/ANDROID-APP.md, TLS):
  * - passt der SPKI-Hash des Blattzertifikats zu [pin], gilt die Verbindung;
  * - sonst nur, wenn die Adresse ein öffentliches Zertifikat haben darf

@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.ra5on.titanos.model.Volume
 import io.github.ra5on.titanos.net.ApiException
-import io.github.ra5on.titanos.net.CertificateChangedException
+import io.github.ra5on.titanos.net.certificateChange
 import io.github.ra5on.titanos.net.NasNotReadyException
 import io.github.ra5on.titanos.net.SessionLockedException
 import io.github.ra5on.titanos.net.TitanApi
@@ -123,7 +123,7 @@ class HomeModel(
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            val cert = generateSequence(e as Throwable) { it.cause }.any { it is CertificateChangedException }
+            val cert = e.certificateChange() != null
             state = state.copy(
                 loading = false,
                 problem = when {

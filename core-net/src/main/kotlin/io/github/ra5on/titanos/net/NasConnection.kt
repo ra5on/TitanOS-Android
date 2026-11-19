@@ -64,8 +64,9 @@ class NasConnection(endpoints: List<Endpoint>, private val sessions: SessionMana
                 active = index
                 return response
             } catch (e: IOException) {
-                if (!e.isUnreachable() && !e.isHandshake()) throw e
-                if (generateSequence(e as Throwable) { it.cause }.any { it is CertificateChangedException }) changed = changed ?: e
+                val cert = e.certificateChange()
+                if (cert == null && !e.isUnreachable() && !e.isHandshake()) throw e
+                if (cert != null) changed = changed ?: (e as? javax.net.ssl.SSLException ?: SSLHandshakeException(cert.message).apply { initCause(cert) })
                 last = e
             }
         }
