@@ -9,6 +9,10 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Außerhalb des Play Stores für Apps ohne FCM vertretbar; die App fragt nur nach Tippen. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Android 11+: ohne diese Angabe gilt die Agent-App immer als nicht installiert. -->
+    <queries>
+        <package android:name="io.github.ra5on.titanos.agent" />
+    </queries>
     <application>
         <!--
             „Direkt zum NAS“: eine offene Verbindung zum eigenen NAS, über die es

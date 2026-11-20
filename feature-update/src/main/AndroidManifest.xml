@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Ohne Rückfrage nur, wenn Android es zulässt (eigene App, aktuelle targetSdk). -->
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+    <!-- Android 11+: ohne diese Angabe gilt die Agent-App immer als nicht installiert. -->
+    <queries>
+        <package android:name="io.github.ra5on.titanos.agent" />
+    </queries>
     <application>
         <receiver android:name="io.github.ra5on.titanos.update.InstallReceiver" android:exported="false" />
     </application>
