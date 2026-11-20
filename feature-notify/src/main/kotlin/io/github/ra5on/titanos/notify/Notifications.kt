@@ -108,11 +108,12 @@ object Poster {
                 .setAutoCancel(true)
                 .setCategory(if (n.kind == Category.Mail) Notification.CATEGORY_EMAIL else Notification.CATEGORY_STATUS)
                 .setGroup(GROUP)
-                .addAction(0, context.getString(R.string.notify_action_read), read)
             if (n.millis > 0) builder.setWhen(n.millis).setShowWhen(true)
+            // Wie Entwurf 71: zuerst „Ansehen“, dann „Gelesen“.
             if (open != null) {
                 builder.setContentIntent(open).addAction(0, context.getString(R.string.notify_action_view), open)
             }
+            builder.addAction(0, context.getString(R.string.notify_action_read), read)
             try {
                 nm.notify(n.notificationTag, ID, builder.build())
             } catch (_: SecurityException) {
