@@ -57,7 +57,6 @@
     <string name="mail_box_done">Done</string>
     <string name="mail_box_edit">Edit</string>
     <string name="mail_box_flagged">Flagged</string>
-    <string name="mail_box_hint">Drag mailboxes and folders by the grip. The top mailbox is your main one: new mails are sent from it. A folder without a tick is hidden; the star makes it a favourite.</string>
     <string name="mail_box_show" formatted="true">Show “%1$s”</string>
     <string name="mail_box_title">Mailboxes</string>
     <string name="mail_bulk_deleteText">The messages are in the trash. They are deleted for good at the provider and cannot be brought back.</string>
@@ -297,6 +296,7 @@
     <string name="mailx_autosave_seconds" formatted="true">every %1$s seconds</string>
     <string name="mailx_avatars">Sender pictures</string>
     <string name="mailx_avatars_desc">Picture from the contacts, else initials in a fixed colour.</string>
+    <string name="mailx_box_hint">The arrows sort mailboxes and folders. The top mailbox is your main one: new e-mails go from there. Without a tick a folder is hidden, the star adds it to the favourites (on this phone).</string>
     <string name="mailx_cert_changed">The NAS shows another certificate than when paired. The app asks on the start page how to go on.</string>
     <string name="mailx_clear_day" formatted="true">Clear %1$s</string>
     <string name="mailx_collapsed">collapsed</string>

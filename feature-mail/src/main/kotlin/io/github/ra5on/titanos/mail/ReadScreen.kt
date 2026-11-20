@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import android.provider.MediaStore
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -171,7 +171,7 @@ fun ReadScreen(
     Page(
         topBar = { LevelHead(msg?.subject?.trim()?.ifEmpty { null } ?: stringResource(R.string.mail_noSubject), back = backLabel, onBack = onBack) },
         bottomBar = {
-            Column(Modifier.fillMaxWidth().background(c.header)) {
+            if (!(replyMenu || more || moving || saving != null)) Column(Modifier.fillMaxWidth().background(c.header)) {
                 Divider()
                 val m = msg
                 Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -261,7 +261,7 @@ fun ReadScreen(
                         DialogAction(stringResource(R.string.mailx_link_go)) {
                             link = null
                             if (l.href.startsWith("mailto:", true)) onMailto(l.href.substringAfter(':').substringBefore('?'))
-                            else runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(l.href))) }
+                            else runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, l.href.toUri())) }
                         },
                         DialogAction(stringResource(UiR.string.ui_cancel)) { link = null },
                     ),
@@ -283,7 +283,7 @@ fun ReadScreen(
             if (prefs.avatars) SenderAvatar(model, m.from, 44.dp)
             Column(Modifier.weight(1f)) {
                 HeadLine(stringResource(R.string.mail_head_from), addressText(m.from))
-                Text(fullDate(m.date, Locale.getDefault()), style = TitanType.rowSub, color = c.muted)
+                Text(fullDate(m.date, currentLocale()), style = TitanType.rowSub, color = c.muted)
                 val all = m.to + m.cc
                 val names = all.take(2).joinToString(", ") { senderName(it) }
                 val recipients = if (all.size > 2) stringResource(R.string.mail_head_andMore, names, (all.size - 2).toString()) else names

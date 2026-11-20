@@ -1,6 +1,7 @@
 package io.github.ra5on.titanos.mail
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -96,16 +97,18 @@ fun ListScreen(
     onOpen: (MessageRow) -> Unit,
     onCompose: () -> Unit,
     now: Instant = Instant.now(),
+    startEditing: Boolean = false,
+    startFilter: Boolean = false,
 ) {
     val c = Titan.colors
     val scope = rememberCoroutineScope()
-    val locale = Locale.getDefault()
+    val locale = currentLocale()
     val zone = ZoneId.systemDefault()
-    var editing by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf(startEditing) }
     var picked by remember { mutableStateOf(setOf<String>()) }
     var expanded by remember { mutableStateOf(setOf<String>()) }
     var search by remember { mutableStateOf(list.filters.q) }
-    var filterOpen by remember { mutableStateOf(false) }
+    var filterOpen by remember { mutableStateOf(startFilter) }
     var actionsFor by remember { mutableStateOf<List<MessageRow>?>(null) }
     var moveFor by remember { mutableStateOf<List<MessageRow>?>(null) }
     var confirmFor by remember { mutableStateOf<List<MessageRow>?>(null) }
@@ -141,7 +144,7 @@ fun ListScreen(
     }
     // Ohne Live-Strom (andere Ordner, Postfächer ohne IDLE) alle 2 Minuten, solange die Liste offen ist.
     LaunchedEffect(list) {
-        while (true) {
+        while (model.autoload) {
             delay(120_000)
             list.load(quiet = true)
         }
@@ -244,7 +247,9 @@ fun ListScreen(
             }
         },
         bottomBar = {
-            if (editing) {
+            if (filterOpen || actionsFor != null || moveFor != null) {
+                // Ein Blatt ist offen: es reicht bis unten.
+            } else if (editing) {
                 Column(Modifier.fillMaxWidth().background(c.header)) {
                     Divider()
                     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -576,7 +581,8 @@ fun DayField(label: String, value: String, onChange: (String) -> Unit, modifier:
     Column(modifier) {
         Text(label, style = TitanType.small, color = c.muted, modifier = Modifier.padding(start = 2.dp, bottom = 6.dp))
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(RoundedCornerShape(12.dp)).background(c.surface)
+            Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(RoundedCornerShape(12.dp)).background(c.bg)
+                .border(1.dp, c.border, RoundedCornerShape(12.dp))
                 .combinedClickable(role = Role.Button) {
                     val d = day ?: java.time.LocalDate.now()
                     android.app.DatePickerDialog(ctx, { _, y, m, dd -> onChange(java.time.LocalDate.of(y, m + 1, dd).toString()) }, d.year, d.monthValue - 1, d.dayOfMonth).show()

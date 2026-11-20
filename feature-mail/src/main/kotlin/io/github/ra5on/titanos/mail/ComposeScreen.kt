@@ -100,7 +100,7 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
     val c = Titan.colors
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
-    val locale = Locale.getDefault()
+    val locale = currentLocale()
     val prefs = model.prefs
     val src = start.source
     var accountId by remember { mutableStateOf(start.account.takeIf { it.isNotEmpty() && it != ALL } ?: model.mainAccount()?.id.orEmpty()) }
@@ -118,7 +118,7 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
     var carried by remember { mutableStateOf<Carried?>(null) }
     var inReplyTo by remember { mutableStateOf("") }
     var references by remember { mutableStateOf("") }
-    var draftUid by remember { mutableStateOf(0L) }
+    var draftUid by remember { androidx.compose.runtime.mutableLongStateOf(0L) }
     var sending by remember { mutableStateOf(false) }
     var sendError by remember { mutableStateOf<Throwable?>(null) }
     var problem by remember { mutableStateOf("") }
@@ -183,7 +183,7 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
                 ComposeMode.New -> Unit
             }
         }
-        signatures = runCatching { model.api.settings().signatures }.getOrDefault(emptyList())
+        signatures = model.settings?.signatures ?: if (model.autoload) runCatching { model.loadSettings().signatures }.getOrDefault(emptyList()) else emptyList()
     }
     // Die Signatur des Postfachs, bis eine gewählt ist.
     val chosenSignature = signatures.firstOrNull { it.id == (signature ?: account?.signature) }
@@ -297,7 +297,7 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
 
     Page(
         topBar = {
-            Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp)) {
+            Column(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 8.dp, end = 12.dp, top = 6.dp)) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
                     TextAction(stringResource(R.string.mail_compose_discard), { confirmDiscard = true }, danger = true, enabled = !sending)
                     Text(

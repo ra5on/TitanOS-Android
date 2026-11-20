@@ -31,7 +31,7 @@ class MailModel(
     val api: MailApi,
     private val context: Context?,
     val scope: CoroutineScope,
-    private val autoload: Boolean = true,
+    val autoload: Boolean = true,
 ) {
     var access by mutableStateOf<Boolean?>(null)
     var accessError by mutableStateOf<Throwable?>(null)

@@ -66,7 +66,7 @@ fun LevelHead(
         Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) {
                 Row(
-                    Modifier.weight(1f, fill = false).heightIn(min = 44.dp)
+                    Modifier.weight(1f).heightIn(min = 44.dp)
                         .then(Modifier.combinedClickable(role = Role.Button, onClick = onBack))
                         .semantics { contentDescription = back ?: "" }
                         .padding(end = 8.dp),
@@ -75,9 +75,10 @@ fun LevelHead(
                     Icon(TitanIcons.back, null, tint = Titan.colors.accent, modifier = Modifier.size(26.dp))
                     if (back != null) Text(back, style = TitanType.button.copy(fontWeight = FontWeight.Normal), color = Titan.colors.accent)
                 }
+                actions()
+            } else {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) { actions() }
             }
-            Spacer(Modifier.weight(1f))
-            actions()
         }
         BigTitle(title, Modifier.padding(start = 8.dp))
         if (sub != null) Text(sub, style = TitanType.rowSub, color = Titan.colors.muted, modifier = Modifier.padding(start = 10.dp, bottom = 10.dp))
@@ -114,8 +115,9 @@ fun BoxesScreen(
     onCompose: () -> Unit,
     onSetup: () -> Unit,
     onSettings: () -> Unit,
+    startEditing: Boolean = false,
 ) {
-    var editing by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf(startEditing) }
     var sheetFor by remember { mutableStateOf<Pair<String, MailFolder>?>(null) }
     var ask by remember { mutableStateOf<FolderAsk?>(null) }
     var name by remember { mutableStateOf("") }
@@ -155,7 +157,7 @@ fun BoxesScreen(
             }
         },
         bottomBar = {
-            MailBottomBar(
+            if (sheetFor == null) MailBottomBar(
                 stringResource(R.string.mail_box_title),
                 if (accounts.isNotEmpty()) stringResource(R.string.mail_unreadCount, unread.toString()) else null,
                 onCompose = if (accounts.isNotEmpty()) onCompose else null,
@@ -396,7 +398,7 @@ private fun AccountSection(model: MailModel, a: MailAccount, onOpen: (String) ->
 private fun EditBoxes(model: MailModel) {
     val c = Titan.colors
     val accounts = model.orderedAccounts()
-    Note(stringResource(R.string.mail_box_hint), Modifier.padding(bottom = 12.dp))
+    Note(stringResource(R.string.mailx_box_hint), Modifier.padding(bottom = 12.dp))
     io.github.ra5on.titanos.ui.components.SectionHeader(stringResource(R.string.mail_settings_accounts), top = 4.dp)
     Card {
         accounts.forEachIndexed { i, a ->

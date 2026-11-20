@@ -1,6 +1,7 @@
 package io.github.ra5on.titanos.mail
 
 import android.content.Context
+import androidx.core.content.edit
 
 /** Was beim Wischen nach rechts bzw. ganz nach links geschieht. */
 enum class SwipeAction { Seen, Flag, Archive, Delete, Move, Junk, None }
@@ -58,21 +59,21 @@ data class MailPrefs(
         }
 
         fun save(context: Context, v: MailPrefs) {
-            context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
-                .putBoolean("threads", v.threads)
-                .putBoolean("avatars", v.avatars)
-                .putBoolean("preview", v.preview)
-                .putString("swipeRight", v.swipeRight.name)
-                .putString("swipeLeft", v.swipeLeft.name)
-                .putBoolean("confirmDelete", v.confirmDelete)
-                .putString("images", v.images.name)
-                .putString("afterRemove", v.afterRemove.name)
-                .putInt("autosave", v.autosaveSeconds)
-                .putBoolean("quoteReply", v.quoteReply)
-                .putString("favourites", v.favourites.joinToString("\u0002"))
-                .putStringSet("collapsed", v.collapsed)
-                .putStringSet("collapsedFolders", v.collapsedFolders)
-                .apply()
+            context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit {
+                putBoolean("threads", v.threads)
+                putBoolean("avatars", v.avatars)
+                putBoolean("preview", v.preview)
+                putString("swipeRight", v.swipeRight.name)
+                putString("swipeLeft", v.swipeLeft.name)
+                putBoolean("confirmDelete", v.confirmDelete)
+                putString("images", v.images.name)
+                putString("afterRemove", v.afterRemove.name)
+                putInt("autosave", v.autosaveSeconds)
+                putBoolean("quoteReply", v.quoteReply)
+                putString("favourites", v.favourites.joinToString("\u0002"))
+                putStringSet("collapsed", v.collapsed)
+                putStringSet("collapsedFolders", v.collapsedFolders)
+            }
         }
     }
 }

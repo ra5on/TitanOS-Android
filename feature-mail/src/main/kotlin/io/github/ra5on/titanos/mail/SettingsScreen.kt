@@ -60,6 +60,7 @@ fun SettingsScreen(model: MailModel, onBack: () -> Unit, onAccount: (String) -> 
     var removeRule by remember { mutableStateOf<MailRule?>(null) }
     BackHandler(onBack = onBack)
     LaunchedEffect(Unit) {
+        if (!model.autoload) return@LaunchedEffect
         try {
             settings = model.loadSettings()
         } catch (e: Exception) {

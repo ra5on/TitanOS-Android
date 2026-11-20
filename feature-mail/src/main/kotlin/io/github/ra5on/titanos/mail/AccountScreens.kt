@@ -93,7 +93,7 @@ fun TestResultView(r: TestResult) {
 fun SetupScreen(model: MailModel, onBack: () -> Unit, onSaved: (MailAccount) -> Unit) {
     val c = Titan.colors
     val scope = rememberCoroutineScope()
-    var step by remember { mutableStateOf(1) }
+    var step by remember { androidx.compose.runtime.mutableIntStateOf(1) }
     var email by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var senderName by remember { mutableStateOf("") }
@@ -261,7 +261,7 @@ fun AccountScreen(model: MailModel, id: String, onBack: () -> Unit, onRemoved: (
     var confirmRemove by remember { mutableStateOf(false) }
     var pickSig by remember { mutableStateOf(false) }
     var signatures by remember { mutableStateOf(model.settings?.signatures.orEmpty()) }
-    androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { model.loadSettings() }.onSuccess { signatures = it.signatures } }
+    androidx.compose.runtime.LaunchedEffect(Unit) { if (model.autoload) runCatching { model.loadSettings() }.onSuccess { signatures = it.signatures } }
     BackHandler(onBack = onBack)
     // Ein gespeichertes Passwort geht nie an einen anderen Server.
     val moved = imap.host.trim() != start.imap.host || smtp.host.trim() != start.smtp.host || user.trim() != start.user

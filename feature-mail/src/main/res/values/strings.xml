@@ -57,7 +57,6 @@
     <string name="mail_box_done">Fertig</string>
     <string name="mail_box_edit">Bearbeiten</string>
     <string name="mail_box_flagged">Markiert</string>
-    <string name="mail_box_hint">Konten und Ordner am Griff ziehen. Das oberste Konto ist dein Hauptkonto: Neue E-Mails gehen von dort aus. Ohne Haken wird ein Ordner ausgeblendet, mit dem Stern kommt er zu den Favoriten.</string>
     <string name="mail_box_show" formatted="true">„%1$s“ anzeigen</string>
     <string name="mail_box_title">Postfächer</string>
     <string name="mail_bulk_deleteText">Die Nachrichten liegen im Papierkorb. Sie werden beim Anbieter endgültig gelöscht und lassen sich nicht zurückholen.</string>
@@ -297,6 +296,7 @@
     <string name="mailx_autosave_seconds" formatted="true">alle %1$s Sekunden</string>
     <string name="mailx_avatars">Absenderbilder</string>
     <string name="mailx_avatars_desc">Bild aus den Kontakten, sonst Initialen in einer festen Farbe.</string>
+    <string name="mailx_box_hint">Mit den Pfeilen sortierst du Postfächer und Ordner. Das oberste Postfach ist dein Hauptpostfach: Neue E-Mails gehen von dort aus. Ohne Haken wird ein Ordner ausgeblendet, mit dem Stern kommt er zu den Favoriten (auf diesem Handy).</string>
     <string name="mailx_cert_changed">Das NAS zeigt ein anderes Zertifikat als beim Koppeln. Die App fragt auf der Startseite, wie es weitergeht.</string>
     <string name="mailx_clear_day" formatted="true">%1$s leeren</string>
     <string name="mailx_collapsed">eingeklappt</string>

@@ -232,7 +232,7 @@ fun MailBottomBar(
 
 /** Ein Knopf mit Symbol und Beschriftung für Leisten unten. */
 @Composable
-fun BarButton(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier, danger: Boolean = false) {
+fun BarButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, danger: Boolean = false) {
     val c = Titan.colors
     Box(
         modifier.heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp)).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
@@ -406,6 +406,10 @@ private fun SwipeLabel(s: Swipe) {
         Text(s.label, style = TitanType.small, color = Color.White, textAlign = TextAlign.Center)
     }
 }
+
+/** Die Sprache der Oberfläche, beobachtbar für Compose. */
+@Composable
+fun currentLocale(): java.util.Locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
 
 /** Abstand. */
 @Composable
