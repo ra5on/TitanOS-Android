@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="agent_title">KI-Agent</string>
+    <string name="agent_menu">Chats und Menü</string>
+    <string name="agent_new_chat">Neuer Chat</string>
+    <string name="agent_more">Weitere Aktionen</string>
+    <string name="agent_head_hint">Projekt und Modell wählen</string>
+    <string name="agent_input">Nachricht an den Agenten …</string>
+    <string name="agent_send">Senden</string>
+    <string name="agent_stop">Anhalten</string>
+    <string name="agent_attach">Bild oder Datei anhängen</string>
+    <string name="agent_attach_remove">Anhang %1$s entfernen</string>
+    <string name="agent_voice">Sprechen</string>
+    <string name="agent_voice_prompt">Frag den Agenten</string>
+    <string name="agent_sending">Wird gesendet …</string>
+    <string name="agent_fresh">Womit kann ich helfen?</string>
+    <string name="agent_thinking">Denkt nach …</string>
+    <string name="agent_working">Arbeitet …</string>
+    <string name="agent_steps_show">Schritte anzeigen</string>
+    <string name="agent_steps_hide">Schritte ausblenden</string>
+    <string name="agent_step_failed">fehlgeschlagen</string>
+    <string name="agent_step_approved">Freigegeben</string>
+    <string name="agent_step_declined">Abgelehnt</string>
+    <string name="agent_step_verify">Nachgeprüft</string>
+    <string name="agent_thought">Gedanken</string>
+    <string name="agent_seconds">%1$s s</string>
+    <string name="agent_copy">Kopieren</string>
+    <string name="agent_copied">Kopiert</string>
+    <string name="agent_regenerate">Antwort neu erzeugen</string>
+    <string name="agent_table_copy">Tabelle kopieren</string>
+    <string name="agent_code">Code</string>
+    <string name="agent_checked">erledigt</string>
+    <string name="agent_unchecked">offen</string>
+    <string name="agent_note_stopped">Angehalten.</string>
+    <string name="agent_note_interrupted">Unterbrochen – TitanOS wurde neu gestartet.</string>
+    <string name="agent_note_error">Fehler: %1$s</string>
+    <string name="agent_note_memory">Gemerkt: %1$s</string>
+    <string name="agent_note_limit">Die Grenze der Schritte ist erreicht.</string>
+    <string name="agent_note_timelimit">Die Zeitgrenze ist erreicht.</string>
+    <string name="agent_note_summary">Ältere Zeilen zusammengefasst.</string>
+    <string name="agent_note_other">Hinweis: %1$s</string>
+    <string name="agent_state_error">Der Agent hat einen Fehler gemeldet: %1$s</string>
+    <string name="agent_read_only">Chat von %1$s – nur lesen</string>
+    <string name="agent_files_made">Datei: %1$s</string>
+    <string name="agent_sources">Quellen</string>
+
+    <string name="agent_tab_chat">Chat</string>
+    <string name="agent_tab_projects">Projekte</string>
+    <string name="agent_tab_planned">Aufträge</string>
+    <string name="agent_tab_notes">Notizen</string>
+
+    <string name="agent_project">Projekt</string>
+    <string name="agent_no_project">Ohne Projekt</string>
+    <string name="agent_model">Modell</string>
+    <string name="agent_model_default">%1$s (Standard)</string>
+    <string name="agent_think">Denken</string>
+    <string name="agent_think_default">Standard</string>
+    <string name="agent_level_off">Aus</string>
+    <string name="agent_level_on">An</string>
+    <string name="agent_level_minimal">Minimal</string>
+    <string name="agent_level_low">Niedrig</string>
+    <string name="agent_level_medium">Mittel</string>
+    <string name="agent_level_high">Hoch</string>
+    <string name="agent_level_xhigh">Sehr hoch</string>
+    <string name="agent_level_max">Maximal</string>
+    <string name="agent_cap_thinking">Denken</string>
+    <string name="agent_cap_vision">Bilder</string>
+    <string name="agent_models_none">Am NAS ist kein Modell mit Werkzeugen eingerichtet.</string>
+    <string name="agent_selected">gewählt</string>
+
+    <string name="agent_chats">Chats</string>
+    <string name="agent_search">Chats durchsuchen</string>
+    <string name="agent_search_none">Kein Chat passt zur Suche.</string>
+    <string name="agent_no_chats">Noch keine Chats. Schreib unten eine Nachricht.</string>
+    <string name="agent_group_pinned">Angeheftet</string>
+    <string name="agent_group_today">Heute</string>
+    <string name="agent_group_yesterday">Gestern</string>
+    <string name="agent_group_week">Letzte 7 Tage</string>
+    <string name="agent_group_older">Älter</string>
+    <string name="agent_chat_running">arbeitet</string>
+    <string name="agent_chat_waiting">wartet auf dich</string>
+    <string name="agent_chat_error">Fehler</string>
+    <string name="agent_chat_unread">neu</string>
+    <string name="agent_offline_list">Kein NAS erreichbar. Das ist der letzte bekannte Stand von %1$s; senden geht erst wieder mit Verbindung.</string>
+    <string name="agent_offline_list_plain">Kein NAS erreichbar. Das ist der letzte bekannte Stand; senden geht erst wieder mit Verbindung.</string>
+    <string name="agent_pin">Anheften</string>
+    <string name="agent_unpin">Lösen</string>
+    <string name="agent_delete">Chat löschen</string>
+    <string name="agent_delete_title">Chat löschen?</string>
+    <string name="agent_delete_text">„%1$s“ wird mit allen Nachrichten gelöscht.</string>
+    <string name="agent_delete_do">Löschen</string>
+    <string name="agent_about">Über die App</string>
+    <string name="agent_about_text">Agent %1$s für TitanOS. Gekoppelt mit %2$s.</string>
+    <string name="agent_unpair">Kopplung aufheben</string>
+    <string name="agent_unpair_text">Die App vergisst das NAS und ihren Schlüssel. Am NAS beendest du sie unter Mein Konto › Geräte.</string>
+    <string name="agent_unpair_do">Aufheben</string>
+
+    <string name="agent_err_offline">Kein NAS erreichbar – nichts gesendet. Ist das Handy im Heimnetz oder in Tailscale?</string>
+    <string name="agent_err_no_volume">Der Agent braucht am NAS ein eingebundenes Daten-Volume für seine Chats.</string>
+    <string name="agent_err_not_allowed">Der KI-Agent ist für dein Konto nicht freigegeben. Ein Besitzer kann das unter Einstellungen › KI-Agent ändern.</string>
+    <string name="agent_err_busy">Der Agent arbeitet noch an diesem Chat. Halte ihn zuerst an.</string>
+    <string name="agent_err_nothing_pending">Dieser Schritt wartet nicht mehr – vielleicht wurde er auf einem anderen Gerät entschieden.</string>
+    <string name="agent_err_too_large">Der Anhang ist zu groß (höchstens 20 MB).</string>
+    <string name="agent_err_cert">Das Zertifikat des NAS hat sich geändert. Die App verbindet sich so nicht; prüfe es oder kopple neu.</string>
+    <string name="agent_err_unavailable">Der Agent kann gerade nicht starten. Ist am NAS ein Modell erreichbar?</string>
+    <string name="agent_err_other">Das hat nicht geklappt (%1$s).</string>
+    <string name="agent_err_share">Die geteilte Datei ließ sich nicht lesen.</string>
+
+    <string name="agent_off_title">Der KI-Agent ist aus</string>
+    <string name="agent_off_text">Ein Besitzer kann ihn im Browser unter Einstellungen › KI-Agent einschalten.</string>
+    <string name="agent_not_allowed_title">Der KI-Agent ist für dein Konto nicht freigegeben</string>
+    <string name="agent_no_volume_title">Kein Daten-Volume</string>
+
+    <string name="agent_projects_title">Projekte</string>
+    <string name="agent_projects_empty">Noch keine Projekte. Ein Projekt sammelt Chats mit eigener Anweisung.</string>
+    <string name="agent_project_new">Neues Projekt</string>
+    <string name="agent_project_name">Name des Projekts</string>
+    <string name="agent_project_create">Anlegen</string>
+    <string name="agent_project_shared">geteilt von %1$s</string>
+    <string name="agent_project_new_chat">Neuer Chat in diesem Projekt</string>
+    <string name="agent_project_no_chats">In diesem Projekt gibt es noch keine Chats.</string>
+
+    <string name="agent_planned_title">Aufträge</string>
+    <string name="agent_planned_empty">Noch keine geplanten Aufträge. Sag dem Agenten zum Beispiel „erinnere mich jeden Montag um 8 an den Müll“.</string>
+    <string name="agent_planned_run">Jetzt ausführen</string>
+    <string name="agent_planned_started">Gestartet – der Chat steht in der Liste.</string>
+    <string name="agent_planned_last_ok">zuletzt %1$s, erfolgreich</string>
+    <string name="agent_planned_last_failed">zuletzt %1$s, fehlgeschlagen</string>
+    <string name="agent_planned_never">noch nicht gelaufen</string>
+    <string name="agent_planned_kind_reminder">Erinnerung</string>
+    <string name="agent_planned_kind_morning">Morgenbericht</string>
+    <string name="agent_planned_kind_task">Auftrag</string>
+    <string name="agent_every_once">einmal</string>
+    <string name="agent_every_once_at">einmal am %1$s</string>
+    <string name="agent_every_daily">täglich</string>
+    <string name="agent_every_weekdays">werktags</string>
+    <string name="agent_every_weekly">wöchentlich</string>
+    <string name="agent_every_monthly">monatlich</string>
+    <string name="agent_every_hourly">stündlich</string>
+    <string name="agent_every_cron">nach Zeitplan %1$s</string>
+    <string name="agent_every_trigger">bei einem Ereignis in Home Assistant</string>
+    <string name="agent_every_at">%1$s um %2$s</string>
+    <string name="agent_enabled_on">eingeschaltet</string>
+    <string name="agent_enabled_off">ausgeschaltet</string>
+
+    <string name="agent_notes_title">Notizen</string>
+    <string name="agent_notes_empty">Noch keine Notizen. Leg mit „+“ eine an, oder sag dem Agenten „schreib mir eine Notiz …“.</string>
+    <string name="agent_notes_search">Notizen durchsuchen</string>
+    <string name="agent_notes_new">Neue Notiz</string>
+    <string name="agent_notes_untitled">Neue Notiz</string>
+    <string name="agent_notes_save">Speichern</string>
+    <string name="agent_notes_saved">gespeichert</string>
+    <string name="agent_notes_unsaved">nicht gespeichert</string>
+    <string name="agent_notes_pinned">angeheftet</string>
+    <string name="agent_notes_text">Text der Notiz</string>
+    <plurals name="agent_steps">
+        <item quantity="one">%1$d Schritt</item>
+        <item quantity="other">%1$d Schritte</item>
+    </plurals>
+    <plurals name="agent_project_chats">
+        <item quantity="one">%1$d Chat</item>
+        <item quantity="other">%1$d Chats</item>
+    </plurals>
+    <plurals name="agent_every_minutes">
+        <item quantity="one">jede Minute</item>
+        <item quantity="other">alle %1$d Minuten</item>
+    </plurals>
+    <plurals name="agent_every_hours">
+        <item quantity="one">jede Stunde</item>
+        <item quantity="other">alle %1$d Stunden</item>
+    </plurals>
+    <plurals name="agent_every_days">
+        <item quantity="one">jeden Tag</item>
+        <item quantity="other">alle %1$d Tage</item>
+    </plurals>
+    <plurals name="agent_err_limit">
+        <item quantity="one">Dein Konto lässt nur einen laufenden Chat zu. Warte, bis er fertig ist, oder halte ihn an.</item>
+        <item quantity="other">Dein Konto lässt %1$d laufende Chats gleichzeitig zu. Warte auf einen oder halte ihn an.</item>
+    </plurals>
+</resources>
