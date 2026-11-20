@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.journeyapps.barcodescanner.ScanContract
@@ -233,6 +234,14 @@ private fun MainShell(graph: AppGraph) {
             home.stop()
         }
         onDispose { home.stop() }
+    }
+    // Beim Öffnen der App: neue Mitteilungen holen und die Dauerverbindung prüfen
+    // (Android kann sie beendet haben; eine Berechtigung kam vielleicht später).
+    val resumeScope = rememberCoroutineScope()
+    LifecycleResumeEffect(Unit) {
+        NotifyScheduler.arm(context)
+        val job = resumeScope.launch { NotifyRuntime.fetch(context) }
+        onPauseOrDispose { job.cancel() }
     }
     // Getippte Mitteilung: zur Liste.
     val openList by NotifyRuntime.openList.collectAsStateWithLifecycle()
