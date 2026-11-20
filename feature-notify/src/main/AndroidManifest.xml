@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Mitteilungen ohne Google (TECHNIK §5). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Außerhalb des Play Stores für Apps ohne FCM vertretbar; die App fragt nur nach Tippen. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <application>
+        <!--
+            „Direkt zum NAS“: eine offene Verbindung zum eigenen NAS, über die es
+            Mitteilungen schickt. Keiner der festen Typen passt (kein dataSync:
+            nichts wird abgeglichen, und dataSync hat Zeitgrenzen und darf nicht
+            aus BOOT_COMPLETED starten), daher specialUse mit Begründung.
+        -->
+        <service
+            android:name=".LiveService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Push notifications from the user's own self-hosted NAS without Google services (no FCM): keeps one long-lived connection (Server-Sent Events) to the NAS the user paired, so alerts about disks, mail, calendar and the assistant arrive in time. The user switches it on or off in the app." />
+        </service>
+        <receiver
+            android:name=".ReadReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

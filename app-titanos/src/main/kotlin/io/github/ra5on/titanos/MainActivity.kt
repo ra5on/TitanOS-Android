@@ -33,6 +33,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun take(intent: Intent?) {
+        // Tippen auf eine Mitteilung: die Liste der Mitteilungen.
+        io.github.ra5on.titanos.notify.NotifyRuntime.take(intent)
         if (intent?.action != Intent.ACTION_VIEW) return
         val data = intent.dataString ?: return
         PairLink.parse(data)?.let { pendingLink = it }

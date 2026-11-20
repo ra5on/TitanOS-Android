@@ -68,6 +68,7 @@ dependencies {
     implementation(project(":feature-home"))
     implementation(project(":feature-files"))
     implementation(project(":feature-photos"))
+    implementation(project(":feature-notify"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.zxing.embedded)
     implementation(libs.androidx.activity.compose)

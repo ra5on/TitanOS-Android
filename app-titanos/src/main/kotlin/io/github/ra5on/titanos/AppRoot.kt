@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -24,7 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -44,6 +42,11 @@ import io.github.ra5on.titanos.model.FileEntry
 import io.github.ra5on.titanos.net.AddressKind
 import io.github.ra5on.titanos.net.PairLink
 import io.github.ra5on.titanos.net.ServerAddress
+import io.github.ra5on.titanos.notify.NotifyRuntime
+import io.github.ra5on.titanos.notify.NotifyScheduler
+import io.github.ra5on.titanos.notify.NotifyTab
+import io.github.ra5on.titanos.notify.notificationsOn
+import io.github.ra5on.titanos.notify.setNotificationsOn
 import io.github.ra5on.titanos.pairing.ConfirmScreen
 import io.github.ra5on.titanos.pairing.LOCAL_NETWORK
 import io.github.ra5on.titanos.pairing.localNetworkGranted
@@ -61,13 +64,10 @@ import io.github.ra5on.titanos.ui.components.BottomNav
 import io.github.ra5on.titanos.ui.components.Card
 import io.github.ra5on.titanos.ui.components.ConfirmDialog
 import io.github.ra5on.titanos.ui.components.DialogAction
-import io.github.ra5on.titanos.ui.components.EmptyState
 import io.github.ra5on.titanos.ui.components.ListRow
 import io.github.ra5on.titanos.ui.components.NavItem
-import io.github.ra5on.titanos.ui.components.Page
 import io.github.ra5on.titanos.ui.components.RowIcon
 import io.github.ra5on.titanos.ui.components.Sheet
-import io.github.ra5on.titanos.ui.components.TopBar
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanIcons
 import kotlinx.coroutines.launch
@@ -107,6 +107,12 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
             // Eingeschaltet wird hier; das Ziel wählt man danach unter Fotos.
             onPhotos = { on ->
                 graph.photos?.update(SettingsStore(context).load().copy(enabled = on)) ?: SettingsStore(context).let { it.save(it.load().copy(enabled = on)) }
+            },
+            // Mitteilungen ohne Google; danach die Bitte um die Akku-Ausnahme (TECHNIK §5).
+            notifyOn = { notificationsOn(context) },
+            onNotify = { on ->
+                setNotificationsOn(context, on)
+                if (on) NotifyScheduler.askBatteryExemption(context)
             },
         )
         else -> MainShell(graph)
@@ -228,6 +234,14 @@ private fun MainShell(graph: AppGraph) {
         }
         onDispose { home.stop() }
     }
+    // Getippte Mitteilung: zur Liste.
+    val openList by NotifyRuntime.openList.collectAsStateWithLifecycle()
+    LaunchedEffect(openList) {
+        if (openList) {
+            tab = Tab.Notifications
+            NotifyRuntime.listOpened()
+        }
+    }
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
     if (tab != Tab.Home) BackHandler { tab = Tab.Home }
     var menu by remember { mutableStateOf(false) }
@@ -280,14 +294,7 @@ private fun MainShell(graph: AppGraph) {
         }
         Tab.Files -> FilesTab(files, filesRoute, { filesRoute = it }, nav, toastLater)
         Tab.Photos -> PhotosTab(photos, nav)
-        Tab.Notifications -> Placeholder(stringResource(R.string.app_notifications), stringResource(R.string.app_notifications_text), nav)
-    }
-}
-
-@Composable
-private fun Placeholder(title: String, text: String, nav: @Composable () -> Unit) {
-    Page(topBar = { Box(Modifier.statusBarsPadding()) { TopBar(title) } }, bottomBar = nav) {
-        EmptyState(stringResource(UiR.string.ui_later_title), text, Modifier.padding(top = 80.dp))
+        Tab.Notifications -> NotifyTab(nav)
     }
 }
 

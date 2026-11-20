@@ -72,6 +72,6 @@
     <string name="perm_notify_text">New mail, NAS warnings, events – without Google</string>
     <string name="perm_later_suffix">%1$s. Comes in a later test version.</string>
     <string name="perm_denied_suffix">%1$s. Android declined; you can change it in the app’s Android settings.</string>
-    <string name="perm_note">Notifications arrive without Google over the app’s own connection to the NAS. For that, a later test version will ask to exempt the app from battery saving.</string>
+    <string name="perm_note">Notifications arrive without Google over the app’s own connection to the NAS. So that Android does not cut it, the app then asks to be exempted from battery saving.</string>
     <string name="perm_next">Continue</string>
 </resources>
