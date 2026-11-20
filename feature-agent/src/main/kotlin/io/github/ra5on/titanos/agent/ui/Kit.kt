@@ -199,6 +199,8 @@ fun SRow(
     summary: String? = null,
     onClick: (() -> Unit)? = null,
     initiallyOpen: Boolean = false,
+    iconTint: Color? = null,
+    chevron: Boolean = true,
     badge: (@Composable () -> Unit)? = null,
     control: (@Composable () -> Unit)? = null,
     children: (@Composable ColumnScope.() -> Unit)? = null,
@@ -218,7 +220,7 @@ fun SRow(
             verticalArrangement = Arrangement.Center,
         ) {
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                if (icon != null) Box(Modifier.width(24.dp).heightIn(min = 22.dp), contentAlignment = Alignment.Center) { WIcon(icon, 19.dp, c.muted) }
+                if (icon != null) Box(Modifier.width(24.dp).heightIn(min = 22.dp), contentAlignment = Alignment.Center) { WIcon(icon, 19.dp, iconTint ?: c.muted) }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(title, style = AgentText.md.copy(fontWeight = FontWeight.Medium), color = c.text, modifier = Modifier.weight(1f, fill = false))
@@ -226,7 +228,7 @@ fun SRow(
                     }
                     if (!desc.isNullOrEmpty()) Text(desc, style = AgentText.sm, color = c.muted)
                 }
-                if (onClick != null) WIcon("chevronRight", 16.dp, c.muted, modifier = Modifier.padding(top = 3.dp))
+                if (onClick != null && chevron) WIcon("chevronRight", 16.dp, c.muted, modifier = Modifier.padding(top = 3.dp))
                 else if (children != null) WIcon("chevronDown", 16.dp, c.muted, modifier = Modifier.padding(top = 3.dp).rotate(turn))
             }
             if (summary != null || control != null) {

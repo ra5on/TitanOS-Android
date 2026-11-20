@@ -83,6 +83,7 @@ class AgentGraph(private val app: Application, val store: PairingStore, val key:
         ChatCache(cacheFile),
         scope,
         online = ::online,
+        prefs = io.github.ra5on.titanos.agent.app.SharedDevicePrefs(app),
     )
 
     fun paired(p: Pairing) {

@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import okhttp3.HttpUrl
@@ -50,6 +52,63 @@ class AgentApi(private val nas: NasConnection, private val stream: NasConnection
                 val b = body ?: if (method == "DELETE") null else ByteArray(0).toRequestBody(null)
                 Request.Builder().url(url(it, path)).method(method, b).build()
             }.use { it.throwIfError() }
+        }
+    }
+
+    // ---------- roh: alles, was das Web mit api.get/put/post/patch/delete holt ----------
+
+    /** `GET /api/v1/<path>` als JSON (Seiten, Einstellungen, Listen). */
+    suspend fun getJson(path: String, query: List<Pair<String, String>> = emptyList()): JsonElement = withContext(Dispatchers.IO) {
+        nas.execute { Request.Builder().url(url(it, path, query)).build() }.use { r ->
+            r.throwIfError()
+            val text = r.body.string()
+            if (text.isBlank()) JsonNull else TitanJson.parseToJsonElement(text)
+        }
+    }
+
+    /** PUT/POST/PATCH/DELETE mit JSON; die Antwort als JSON (leer: JsonNull). */
+    suspend fun sendJson(method: String, path: String, body: JsonElement? = null, query: List<Pair<String, String>> = emptyList()): JsonElement =
+        withContext(Dispatchers.IO) {
+            nas.execute {
+                val b = when {
+                    body != null -> body.toString().toRequestBody("application/json".toMediaTypeOrNull())
+                    method == "DELETE" || method == "GET" -> null
+                    else -> "{}".toRequestBody("application/json".toMediaTypeOrNull())
+                }
+                Request.Builder().url(url(it, path, query)).method(method, b).build()
+            }.use { r ->
+                r.throwIfError()
+                val text = r.body.string()
+                if (text.isBlank()) JsonNull else runCatching { TitanJson.parseToJsonElement(text) }.getOrDefault(JsonNull)
+            }
+        }
+
+    /** Eine Datei vom NAS (Ausfuhr als Markdown/PDF, Bild eines Fotos): Inhalt und Typ. */
+    suspend fun bytes(path: String, query: List<Pair<String, String>> = emptyList()): Pair<ByteArray, String?> = withContext(Dispatchers.IO) {
+        nas.execute { Request.Builder().url(url(it, path, query)).build() }.use { r ->
+            r.throwIfError()
+            r.body.bytes() to r.header("Content-Type")
+        }
+    }
+
+    /** Lädt Rohdaten hoch (Sprache zum Erkennen, Anhänge); die Antwort als JSON. */
+    suspend fun upload(path: String, data: ByteArray, type: String?, query: List<Pair<String, String>> = emptyList()): JsonElement = withContext(Dispatchers.IO) {
+        nas.execute {
+            Request.Builder().url(url(it, path, query)).post(data.toRequestBody(type?.toMediaTypeOrNull())).build()
+        }.use { r ->
+            r.throwIfError()
+            val text = r.body.string()
+            if (text.isBlank()) JsonNull else runCatching { TitanJson.parseToJsonElement(text) }.getOrDefault(JsonNull)
+        }
+    }
+
+    /** Wie [upload], aber die Antwort als Bytes (Vorlesen: Text hin, Ton zurück). */
+    suspend fun postForBytes(path: String, body: JsonElement): Pair<ByteArray, String?> = withContext(Dispatchers.IO) {
+        nas.execute {
+            Request.Builder().url(url(it, path)).post(body.toString().toRequestBody("application/json".toMediaTypeOrNull())).build()
+        }.use { r ->
+            r.throwIfError()
+            r.body.bytes() to r.header("Content-Type")
         }
     }
 

@@ -17,7 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
-import io.github.ra5on.titanos.agent.chat.AgentRoot
+import io.github.ra5on.titanos.agent.app.AgentRoot
 import io.github.ra5on.titanos.net.AddressKind
 import io.github.ra5on.titanos.net.PairLink
 import io.github.ra5on.titanos.net.ServerAddress
@@ -56,6 +56,7 @@ fun AgentAppRoot(graph: AgentGraph, link: PairLink?, onLinkTaken: () -> Unit) {
             onAskTaken = { graph.pendingAsk = null },
             versionName = versionName(context),
             hostname = graph.pairing?.hostname.orEmpty(),
+            user = graph.pairing?.user.orEmpty(),
             onUnpair = {
                 graph.forget()
                 step = SetupStep.Welcome
