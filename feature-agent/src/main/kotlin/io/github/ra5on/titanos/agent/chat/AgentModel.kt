@@ -275,7 +275,7 @@ class AgentModel(
                     target = api.newChat(request("", withProject = true, draftOnly = true))
                 }
                 val refs = files.map { a ->
-                    val kept = api.attach(target!!.id, a.name, a.file.readBytes(), a.mime)
+                    val kept = api.attach(target!!.id, a.name, a.file, a.mime)
                     "[Anhang: $kept]"
                 }
                 val message = if (refs.isEmpty()) text else refs.joinToString("\n") + if (text.isEmpty()) "" else "\n\n$text"

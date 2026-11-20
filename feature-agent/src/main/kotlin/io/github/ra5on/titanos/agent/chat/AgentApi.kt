@@ -81,7 +81,8 @@ class AgentApi(private val nas: NasConnection, private val stream: NasConnection
     suspend fun seen(chatId: String, visible: Boolean) = call("POST", "agent/chats/$chatId/seen", jsonBody(SeenRequest(visible)))
 
     /** Lädt einen Anhang (höchstens 20 MB); die Antwort nennt den Namen, unter dem das NAS ihn behielt. */
-    suspend fun attach(chatId: String, name: String, bytes: ByteArray, type: String?): String = withContext(Dispatchers.IO) {
+    suspend fun attach(chatId: String, name: String, file: java.io.File, type: String?): String = withContext(Dispatchers.IO) {
+        val bytes = file.readBytes()
         nas.execute {
             Request.Builder().url(url(it, "agent/chats/$chatId/attachments", listOf("name" to name)))
                 .post(bytes.toRequestBody(type?.toMediaTypeOrNull())).build()
