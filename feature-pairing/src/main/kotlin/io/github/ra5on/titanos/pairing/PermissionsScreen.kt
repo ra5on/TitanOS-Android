@@ -122,7 +122,9 @@ private fun subFor(g: Grant, text: Int): String =
 /**
  * Fragt Heimnetz (ab Android 17 Pflicht) und Mitteilungen wirklich ab, mit
  * [photoPermissions] auch Fotos und Videos; [onPhotos] erfährt danach, ob
- * die Sicherung an ist (voller oder teilweiser Zugriff).
+ * die Sicherung an ist (voller oder teilweiser Zugriff). [notifyOn] sagt,
+ * ob die Mitteilungen der App an sind; [onNotify] schaltet sie (nach der
+ * Antwort von Android auf die Berechtigung).
  */
 @Composable
 fun PermissionsRoute(
@@ -132,6 +134,8 @@ fun PermissionsRoute(
     photosOn: () -> Boolean = { false },
     photosPartial: () -> Boolean = { false },
     onPhotos: (Boolean) -> Unit = {},
+    notifyOn: () -> Boolean = { true },
+    onNotify: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
     fun grant(p: String, asked: Boolean): Grant = when {
@@ -139,6 +143,10 @@ fun PermissionsRoute(
         context.checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED -> Grant.Granted
         asked -> Grant.Denied
         else -> Grant.NotAsked
+    }
+    fun notifyGrant(asked: Boolean): Grant {
+        val g = grant(Manifest.permission.POST_NOTIFICATIONS, asked)
+        return if (g == Grant.Granted && !notifyOn()) Grant.NotAsked else g
     }
     fun photoGrant(asked: Boolean): Grant? = when {
         photoPermissions == null -> null
@@ -149,7 +157,7 @@ fun PermissionsRoute(
     var state by remember {
         mutableStateOf(
             PermissionsState(
-                grant(LOCAL_NETWORK, false), grant(Manifest.permission.POST_NOTIFICATIONS, false),
+                grant(LOCAL_NETWORK, false), notifyGrant(false),
                 photos = photoGrant(false), photosPartial = photosPartial(),
             ),
         )
@@ -163,13 +171,26 @@ fun PermissionsRoute(
     val local = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         state = state.copy(localNetwork = grant(LOCAL_NETWORK, true))
     }
-    val notify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        state = state.copy(notifications = grant(Manifest.permission.POST_NOTIFICATIONS, true))
+    val notify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        onNotify(granted)
+        state = state.copy(notifications = notifyGrant(true))
     }
     PermissionsScreen(
         state,
         onLocalNetwork = { if (state.localNetwork != Grant.Granted) local.launch(LOCAL_NETWORK) },
-        onNotifications = { if (state.notifications != Grant.Granted) notify.launch(Manifest.permission.POST_NOTIFICATIONS) },
+        onNotifications = {
+            when {
+                state.notifications == Grant.Granted -> {
+                    onNotify(false)
+                    state = state.copy(notifications = notifyGrant(false))
+                }
+                grant(Manifest.permission.POST_NOTIFICATIONS, false) == Grant.Granted -> {
+                    onNotify(true)
+                    state = state.copy(notifications = notifyGrant(false))
+                }
+                else -> notify.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        },
         onNext = onNext,
         onBack = onBack,
         onPhotos = {

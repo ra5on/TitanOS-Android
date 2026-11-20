@@ -33,6 +33,11 @@ Die native Android-App zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-B
   - Doppelte erkennt das NAS am Inhalt (SHA-256), auch nach Umbenennen
   - die App sagt immer, warum etwas wartet („wartet aufs Laden“, „das NAS ist nicht erreichbar“)
   - „Speicher freigeben“ löscht nur, was das NAS gerade per Prüfsumme bestätigt, älter als 30 Tage, nur auf Knopfdruck; Android fragt noch einmal, alles liegt 30 Tage im Papierkorb des Handys
+- **Mitteilungen ohne Google** (braucht ein TitanOS nach 1.17 mit `/api/v1/app/notifications`):
+  - dieselben Meldungen wie Web Push im Browser: NAS-Warnungen, neue Mail, Termine, KI-Agent, NVR
+  - Liste mit Filtern Alle/NAS/Mail/Termine; ohne NAS der letzte Stand
+  - „Direkt zum NAS“: eine eigene sparsame Verbindung (ab Werk an, mit der Bitte um die Akku-Ausnahme), sonst schaut die App alle 15 Minuten nach
+  - je Art ein eigener Android-Kanal und ein Schalter „Was soll klingeln?“; „Ansehen“ und „Gelesen“ an jeder Mitteilung
 - Hell und dunkel nach der Einstellung des Handys, Deutsch und Englisch.
 
 ## Installieren und koppeln

@@ -23,6 +23,9 @@ import io.github.ra5on.titanos.net.PrefsPairingStore
 import io.github.ra5on.titanos.net.SessionManager
 import io.github.ra5on.titanos.net.TitanApi
 import io.github.ra5on.titanos.net.PhotosApi
+import io.github.ra5on.titanos.notify.NotifyApi
+import io.github.ra5on.titanos.notify.NotifyRuntime
+import io.github.ra5on.titanos.notify.NotifyScheduler
 import io.github.ra5on.titanos.photos.BackupStore
 import io.github.ra5on.titanos.photos.PhotoScheduler
 import io.github.ra5on.titanos.photos.PhotosModel
@@ -63,6 +66,9 @@ class TitanApp : Application(), Configuration.Provider {
                 ?.takeIf { it.isNotBlank() } ?: android.os.Build.MODEL
         }
         if (graph.pairing != null) PhotoScheduler.arm(this)
+        // Mitteilungen ohne Google: Abruf, Dauerverbindung und Empfänger holen sich hier die Verbindung.
+        NotifyRuntime.api = { graph.notifyApi }
+        if (graph.pairing != null) NotifyScheduler.arm(this)
     }
 }
 
@@ -105,6 +111,12 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
     var photos: PhotosModel? by mutableStateOf(photosModelFor(api, photosApi))
         private set
 
+    /** Mitteilungen: eigene Verbindung mit langer Lesezeit für den Strom (Herzschlag 90 s). */
+    private val notifyClient = NotifyApi.streamClient(shared)
+    var notifyApi: NotifyApi? = pairing?.let(::notifyApiFor)
+        private set
+
+    private fun notifyApiFor(p: Pairing) = NotifyApi(NasConnection.forPairing(notifyClient, p, sessions))
     private fun apiFor(p: Pairing) = TitanApi(NasConnection.forPairing(shared, p, sessions))
     private fun photosApiFor(p: Pairing) = PhotosApi(NasConnection.forPairing(photosClient, p, sessions))
     private fun photosModelFor(t: TitanApi?, p: PhotosApi?) = if (t != null && p != null) PhotosModel(app, t, p, scope) else null
@@ -120,6 +132,8 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         photos = photosModelFor(api, photosApi)
         PhotoScheduler.arm(app)
         io.github.ra5on.titanos.widgets.WidgetRefresh.now(app)
+        notifyApi = notifyApiFor(p)
+        NotifyScheduler.arm(app)
     }
 
     /** Kopplung aufheben: Schlüssel, Kopplung und Sitzung weg. Am NAS beendet man das Gerät im Browser. */
@@ -137,6 +151,9 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         PhotoScheduler.cancelAll(app)
         BackupStore.get(app).clear()
         SettingsStore(app).clear()
+        // Mitteilungen dieser Kopplung: Stand, Einstellungen, Auftrag und Dienst weg.
+        notifyApi = null
+        NotifyRuntime.forget(app)
         unpairedByNas = byNas
     }
 }

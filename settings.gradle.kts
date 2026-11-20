@@ -25,6 +25,7 @@ include(
     ":feature-photos",
     ":feature-update",
     ":feature-widgets",
+    ":feature-notify",
     ":app-titanos",
     ":app-agent",
     ":lint-rules",
