@@ -6,7 +6,7 @@ Die native Android-App zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-B
 - Zustand des NAS
 - Schritt für Schritt alles, was TitanOS im Browser kann: Foto-Sicherung im Hintergrund, Mail, Kalender und Kontakte in den Apps des Handys, Mitteilungen ohne Google, die ganze Systemsteuerung.
 
-> **Status: Testfassung 0.02.** Frühes Grundgerüst zum Ausprobieren, noch keine fertige App. Was noch fehlt, zeigt sie mit „kommt in einer späteren Testfassung“.
+> **Status: Testfassung 0.03.** Frühes Grundgerüst zum Ausprobieren, noch keine fertige App. Was noch fehlt, zeigt sie mit „kommt in einer späteren Testfassung“.
 
 <p>
 <img src="docs/screenshots/01-willkommen-dunkel.png" width="200" alt="Willkommen">
@@ -33,16 +33,26 @@ Die native Android-App zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-B
   - Doppelte erkennt das NAS am Inhalt (SHA-256), auch nach Umbenennen
   - die App sagt immer, warum etwas wartet („wartet aufs Laden“, „das NAS ist nicht erreichbar“)
   - „Speicher freigeben“ löscht nur, was das NAS gerade per Prüfsumme bestätigt, älter als 30 Tage, nur auf Knopfdruck; Android fragt noch einmal, alles liegt 30 Tage im Papierkorb des Handys
-- **Mitteilungen ohne Google** (braucht ein TitanOS nach 1.17 mit `/api/v1/app/notifications`):
+- **Mitteilungen ohne Google** (braucht **TitanOS 1.18**):
   - dieselben Meldungen wie Web Push im Browser: NAS-Warnungen, neue Mail, Termine, KI-Agent, NVR
   - Liste mit Filtern Alle/NAS/Mail/Termine; ohne NAS der letzte Stand
   - „Direkt zum NAS“: eine eigene sparsame Verbindung (ab Werk an, mit der Bitte um die Akku-Ausnahme), sonst schaut die App alle 15 Minuten nach
   - je Art ein eigener Android-Kanal und ein Schalter „Was soll klingeln?“; „Ansehen“ und „Gelesen“ an jeder Mitteilung
+- **Selbst-Update** unter **Menü › Über die App:**
+  - sucht täglich auf GitHub nach einer neuen Version (abschaltbar), Testfassungen auf Wunsch
+  - installiert erst nach deinem Tipp; Android fragt dabei womöglich noch einmal
+  - installiert nur, was mit demselben Schlüssel signiert ist wie die App und zur Prüfsumme in `SHA256SUMS` passt
+  - aktualisiert auch die Agent-App, wenn sie installiert ist
+- **Widgets für den Startbildschirm:**
+  - **NAS-Zustand:** Zustand in Worten, Belegung der größten Volumes, für Verwalter CPU und RAM; ohne NAS der letzte Stand mit „Nicht erreichbar“
+  - **Fotos:** Stand der Foto-Sicherung, Tippen öffnet sie
+  - **Agent fragen:** „Schreiben“ oder „Sprechen“ öffnet die Agent-App
+  - aktualisiert alle 30 Minuten, solange ein Widget da ist
 - Hell und dunkel nach der Einstellung des Handys, Deutsch und Englisch.
 
 ## Installieren und koppeln
 
-Nötig sind Android 13 oder neuer und ein NAS mit **TitanOS 1.16** oder neuer (Kopplung, Dateien). Für die Foto-Sicherung braucht es **TitanOS 1.17**.
+Nötig sind Android 13 oder neuer und ein NAS mit **TitanOS 1.16** oder neuer (Kopplung, Dateien). Für die Foto-Sicherung braucht es **TitanOS 1.17**, für die Mitteilungen **TitanOS 1.18**.
 
 1. **APK laden** von der Seite [Releases](https://github.com/ra5on/TitanOS-Android/releases). Testfassungen gibt es vorerst direkt vom Projekt.
 2. **Installieren:** Die APK auf dem Handy öffnen. Beim ersten Mal fragt Android, ob der Browser bzw. die Dateien-App „unbekannte Apps installieren“ darf. Erlauben, dann „Installieren“.
@@ -78,7 +88,7 @@ In dieser Reihenfolge, jeweils als Testfassung:
 2. **Kontakte und Kalender** als Konto in den Apps des Handys, Abgleich in beide Richtungen; Mail.
 3. **Zustand und Verwaltung:** Speicher, Docker, VMs, Systemcontainer, NVR, Sicherungen, Protokolle.
 4. **Die ganze Systemsteuerung.** Sensible Einstellungen bestätigst du per Fingerabdruck.
-5. **Agent-App**, Widgets, Mitteilungen ohne Google, Selbst-Update.
+5. ~~Agent-App, Widgets, Mitteilungen ohne Google, Selbst-Update~~ – in 0.03.
 
 Danach folgt Version 1.00 mit allem.
 
@@ -159,6 +169,9 @@ Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/debug/` und `a
 | `:feature-pairing` | Willkommen, QR-Code, Adresse von Hand, Koppeln bestätigen, Berechtigungen |
 | `:feature-home` | Start mit Zustandskarte und Programmen |
 | `:feature-files` | Freigaben, Ordner, Datei-Aktionen, Übertragungen |
+| `:feature-notify` | Mitteilungen ohne Google: Liste, Kanäle, eigene Verbindung zum NAS |
+| `:feature-update` | Über die App, Selbst-Update von GitHub mit Signatur- und Prüfsummenprüfung |
+| `:feature-widgets` | Widgets NAS-Zustand, Fotos, Agent fragen (Glance) |
 | `:app-titanos` | die App „TitanOS“ (`io.github.ra5on.titanos`) |
 | `:feature-agent` | Chat mit dem KI-Agenten: Strom (SSE), Freigaben, Markdown, Projekte, Aufträge, Notizen |
 | `:app-agent` | die App „Agent“ (`io.github.ra5on.titanos.agent`) |
