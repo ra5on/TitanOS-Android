@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cal_title">Calendar</string>
+    <string name="con_title">Contacts</string>
+</resources>

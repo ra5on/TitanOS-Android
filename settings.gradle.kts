@@ -27,6 +27,8 @@ include(
     ":feature-widgets",
     ":feature-notify",
     ":feature-agent",
+    ":feature-mail",
+    ":feature-pim",
     ":app-titanos",
     ":app-agent",
     ":lint-rules",

@@ -284,13 +284,24 @@ private fun MainShell(graph: AppGraph) {
         io.github.ra5on.titanos.update.AboutScreen(nasVersion, onBack = { graph.openAbout = false })
         return
     }
+    graph.openProgram?.let { id ->
+        ProgramHost(graph, id) { graph.openProgram = null }
+        return
+    }
     var confirmUnpair by remember { mutableStateOf(false) }
     when (tab) {
         Tab.Home -> Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 HomeScreen(
                     home.state,
-                    onProgram = { p -> if (p.id == "shares") tab = Tab.Files else toastLater() },
+                    onProgram = { p ->
+                        when (p.id) {
+                            "shares" -> tab = Tab.Files
+                            // Mail, Kalender, Kontakte (feature-mail, feature-pim) in voller Größe.
+                            in PROGRAMS -> graph.openProgram = p.id
+                            else -> toastLater()
+                        }
+                    },
                     onSearch = toastLater,
                     onNotifications = { tab = Tab.Notifications },
                     onMenu = { menu = true },

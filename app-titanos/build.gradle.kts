@@ -72,6 +72,8 @@ dependencies {
     implementation(libs.androidx.glance)
     implementation(project(":feature-photos"))
     implementation(project(":feature-notify"))
+    implementation(project(":feature-mail"))
+    implementation(project(":feature-pim"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.zxing.embedded)
     implementation(libs.androidx.activity.compose)

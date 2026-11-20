@@ -69,6 +69,9 @@ class TitanApp : Application(), Configuration.Provider {
         // Mitteilungen ohne Google: Abruf, Dauerverbindung und Empfänger holen sich hier die Verbindung.
         NotifyRuntime.api = { graph.notifyApi }
         if (graph.pairing != null) NotifyScheduler.arm(this)
+        // Kontakte und Kalender des Handys: der SyncAdapter holt sich hier die Verbindung.
+        io.github.ra5on.titanos.pim.sync.PimRuntime.nas = { graph.connection() }
+        graph.pairing?.let { io.github.ra5on.titanos.pim.sync.PimAccount.ensure(this, it.user) }
     }
 }
 
@@ -91,6 +94,16 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
 
     /** „Über die App“ offen (Menü oder Mitteilung „Version … ist da“). */
     var openAbout by mutableStateOf(false)
+
+    /** Mail, Kalender oder Kontakte in voller Größe (`mail`, `calendar`, `contacts`), sonst null. */
+    var openProgram by mutableStateOf<String?>(null)
+
+    /**
+     * Eine Verbindung zum gekoppelten NAS über [client] (Mail, Kalender,
+     * Kontakte, Abgleich); null ohne Kopplung.
+     */
+    fun connection(client: okhttp3.OkHttpClient = shared): NasConnection? =
+        pairing?.let { NasConnection.forPairing(client, it, sessions) }
 
     /** Wird gesetzt, wenn das NAS das Gerät nicht mehr kennt; die Willkommensseite sagt es dann. */
     var unpairedByNas by mutableStateOf(false)
@@ -134,6 +147,7 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         io.github.ra5on.titanos.widgets.WidgetRefresh.now(app)
         notifyApi = notifyApiFor(p)
         NotifyScheduler.arm(app)
+        io.github.ra5on.titanos.pim.sync.PimAccount.ensure(app, p.user)
     }
 
     /** Kopplung aufheben: Schlüssel, Kopplung und Sitzung weg. Am NAS beendet man das Gerät im Browser. */
@@ -154,6 +168,9 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         // Mitteilungen dieser Kopplung: Stand, Einstellungen, Auftrag und Dienst weg.
         notifyApi = null
         NotifyRuntime.forget(app)
+        // Das Konto „TitanOS“ weg: Android löscht seine Kontakte und Termine vom Handy (am NAS bleiben sie).
+        io.github.ra5on.titanos.pim.sync.PimAccount.remove(app)
+        openProgram = null
         unpairedByNas = byNas
     }
 }
