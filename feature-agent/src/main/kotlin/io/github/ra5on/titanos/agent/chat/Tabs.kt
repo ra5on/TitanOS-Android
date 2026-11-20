@@ -346,6 +346,7 @@ fun PlannedScreen(
         problem?.let { Box(Modifier.padding(bottom = 12.dp)) { Problem(problemText(it)) } }
         if (started) io.github.ra5on.titanos.ui.components.Note(stringResource(R.string.agent_planned_started), Modifier.padding(bottom = 12.dp))
         when {
+            schedules == null && problem != null -> Unit
             schedules == null -> Text(stringResource(io.github.ra5on.titanos.ui.R.string.ui_loading), style = TitanType.body, color = c.muted)
             schedules.isEmpty() -> EmptyState("", stringResource(R.string.agent_planned_empty), Modifier.padding(top = 40.dp))
             else -> Card {
@@ -467,4 +468,20 @@ fun NoteEditor(note: NoteFile, saved: Boolean, problem: AgentProblem?, onChange:
             modifier = Modifier.weight(1f).fillMaxWidth().navigationBarsPadding().padding(16.dp).semantics { contentDescription = label },
         )
     }
+}
+
+/**
+ * Ist der Agent am NAS aus, nicht freigegeben oder ohne Volume, zeigen alle
+ * Bereiche dasselbe wie der Chat, statt Fehler einzeln. true, wenn gezeigt.
+ */
+@Composable
+fun AgentUnavailable(status: AgentStatus?, modifier: Modifier = Modifier): Boolean {
+    val s = status ?: return false
+    when {
+        !s.enabled -> EmptyState(stringResource(R.string.agent_off_title), stringResource(R.string.agent_off_text), modifier)
+        !s.allowed -> EmptyState(stringResource(R.string.agent_not_allowed_title), stringResource(R.string.agent_err_not_allowed), modifier)
+        !s.volume -> EmptyState(stringResource(R.string.agent_no_volume_title), stringResource(R.string.agent_err_no_volume), modifier)
+        else -> return false
+    }
+    return true
 }

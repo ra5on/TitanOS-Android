@@ -31,7 +31,12 @@ fun copyToCache(context: Context, uri: Uri, mime: String? = null): Attachment? {
     // Nur der Name zählt, kein Pfad aus der fremden App.
     name = name.substringAfterLast('/').replace(Regex("[\\\\:*?\"<>|]"), "_").trimStart('.').ifEmpty { "Datei" }
     val dir = File(context.cacheDir, "agent-share").apply { mkdirs() }
-    val target = File.createTempFile("a", null, dir)
+    val target = try {
+        // Das Präfix braucht mindestens drei Zeichen.
+        File.createTempFile("share", null, dir)
+    } catch (_: Exception) {
+        return null
+    }
     return try {
         var total = 0L
         resolver.openInputStream(uri)?.use { input ->

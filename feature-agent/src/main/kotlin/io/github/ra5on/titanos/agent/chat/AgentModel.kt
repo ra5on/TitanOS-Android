@@ -566,6 +566,7 @@ class AgentModel(
     // ---------- Aufträge ----------
 
     fun loadSchedules() {
+        tabProblem = null
         scope.launch {
             try {
                 schedules = api.schedules()
@@ -615,6 +616,7 @@ class AgentModel(
     // ---------- Notizen ----------
 
     fun loadNotes() {
+        tabProblem = null
         scope.launch {
             try {
                 notes = api.notes()

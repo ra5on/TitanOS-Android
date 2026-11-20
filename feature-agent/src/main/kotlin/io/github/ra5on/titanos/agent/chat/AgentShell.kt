@@ -196,33 +196,22 @@ fun AgentRoot(
                     }, nav)
                 }
             }
-            AgentTab.Projects -> ProjectsTab(model, nav, onOpenChat = { model.open(it); tab = AgentTab.Chat; route = ChatRoute.Chat }) { p ->
-                model.newChat(p.id)
-                tab = AgentTab.Chat
-                route = ChatRoute.Chat
-            }
-            AgentTab.Planned -> {
-                var started by remember { mutableStateOf(false) }
-                LaunchedEffect(Unit) { model.loadSchedules() }
-                PlannedScreen(
-                    model.schedules?.map { it.schedule() },
-                    model.tabProblem,
-                    started,
-                    onToggle = { s, on -> model.schedules?.firstOrNull { it.schedule().id == s.id }?.let { model.setScheduleEnabled(it, on) } },
-                    onRun = { s -> model.runSchedule(s.id) { started = true } },
-                    nav = nav,
-                )
-            }
-            AgentTab.Notes -> {
-                val open = model.note
-                if (open != null) {
-                    BackHandler { model.closeNote() }
-                    NoteEditor(open, model.noteSaved, model.tabProblem, model::editNote, model::saveNote, model::closeNote)
-                } else {
-                    var noteQuery by rememberSaveable { mutableStateOf("") }
-                    LaunchedEffect(Unit) { model.loadNotes() }
-                    val untitled = stringResource(R.string.agent_notes_untitled)
-                    NotesScreen(model.notes, noteQuery, { noteQuery = it }, model.tabProblem, { model.openNote(it.path) }, { model.newNote(untitled) }, nav)
+            AgentTab.Projects, AgentTab.Planned, AgentTab.Notes -> if (model.status?.ready == false) {
+                AgentPage(
+                    stringResource(
+                        when (tab) {
+                            AgentTab.Projects -> R.string.agent_projects_title
+                            AgentTab.Planned -> R.string.agent_planned_title
+                            else -> R.string.agent_notes_title
+                        },
+                    ),
+                    nav,
+                ) { AgentUnavailable(model.status, Modifier.padding(top = 56.dp)) }
+            } else {
+                OtherTab(model, tab, nav, onOpenChat = { model.open(it); tab = AgentTab.Chat; route = ChatRoute.Chat }) { p ->
+                    model.newChat(p.id)
+                    tab = AgentTab.Chat
+                    route = ChatRoute.Chat
                 }
             }
         }
@@ -232,7 +221,7 @@ fun AgentRoot(
             Sheet(onDismiss = { moreSheet = false }) {
                 if (chat != null) {
                     Text(chat.title, style = TitanType.rowTitle, color = Titan.colors.text, modifier = Modifier.padding(start = 6.dp, bottom = 8.dp))
-                    SheetRow(if (chat.pinned) TitanIcons.pin else TitanIcons.pin, stringResource(if (chat.pinned) R.string.agent_unpin else R.string.agent_pin)) {
+                    SheetRow(TitanIcons.pin, stringResource(if (chat.pinned) R.string.agent_unpin else R.string.agent_pin)) {
                         moreSheet = false
                         model.setPinned(!chat.pinned)
                     }
@@ -393,5 +382,38 @@ private fun ProjectsTab(model: AgentModel, nav: @Composable () -> Unit, onOpenCh
             onOpen = { openId = it.id },
             nav = nav,
         )
+    }
+}
+
+/** Projekte, Aufträge und Notizen. */
+@Composable
+private fun OtherTab(model: AgentModel, tab: AgentTab, nav: @Composable () -> Unit, onOpenChat: (ChatInfo) -> Unit, onNewChat: (Project) -> Unit) {
+    when (tab) {
+        AgentTab.Projects -> ProjectsTab(model, nav, onOpenChat, onNewChat)
+        AgentTab.Planned -> {
+            var started by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) { model.loadSchedules() }
+            PlannedScreen(
+                model.schedules?.map { it.schedule() },
+                model.tabProblem,
+                started,
+                onToggle = { s, on -> model.schedules?.firstOrNull { it.schedule().id == s.id }?.let { model.setScheduleEnabled(it, on) } },
+                onRun = { s -> model.runSchedule(s.id) { started = true } },
+                nav = nav,
+            )
+        }
+        AgentTab.Notes -> {
+            val open = model.note
+            if (open != null) {
+                BackHandler { model.closeNote() }
+                NoteEditor(open, model.noteSaved, model.tabProblem, model::editNote, model::saveNote, model::closeNote)
+            } else {
+                var noteQuery by rememberSaveable { mutableStateOf("") }
+                LaunchedEffect(Unit) { model.loadNotes() }
+                val untitled = stringResource(R.string.agent_notes_untitled)
+                NotesScreen(model.notes, noteQuery, { noteQuery = it }, model.tabProblem, { model.openNote(it.path) }, { model.newNote(untitled) }, nav)
+            }
+        }
+        AgentTab.Chat -> Unit
     }
 }
