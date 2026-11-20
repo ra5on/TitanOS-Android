@@ -1,0 +1,95 @@
+package io.github.ra5on.titanos.agent
+
+import android.app.Application
+import android.net.ConnectivityManager
+import android.os.Handler
+import android.os.Looper
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import io.github.ra5on.titanos.agent.chat.AgentApi
+import io.github.ra5on.titanos.agent.chat.AgentModel
+import io.github.ra5on.titanos.agent.chat.AskRequest
+import io.github.ra5on.titanos.agent.chat.ChatCache
+import io.github.ra5on.titanos.net.DeviceKey
+import io.github.ra5on.titanos.net.KeystoreDeviceKey
+import io.github.ra5on.titanos.net.NasConnection
+import io.github.ra5on.titanos.net.Pairing
+import io.github.ra5on.titanos.net.PairingStore
+import io.github.ra5on.titanos.net.PrefsPairingStore
+import io.github.ra5on.titanos.net.SessionManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import java.io.File
+
+class AgentApp : Application() {
+    lateinit var graph: AgentGraph
+        private set
+
+    override fun onCreate() {
+        super.onCreate()
+        // Eigener Schlüssel im Keystore dieser App, eigene Kopplung: die Agent-App ist am NAS ein eigenes Gerät.
+        graph = AgentGraph(this, PrefsPairingStore(this), KeystoreDeviceKey())
+    }
+}
+
+/**
+ * Was die Agent-App einmal braucht: Kopplung, Geräteschlüssel, Sitzung und
+ * das Modell des Agenten. Ändert sich die Kopplung, entsteht es neu.
+ */
+class AgentGraph(private val app: Application, val store: PairingStore, val key: DeviceKey) {
+    val shared = NasConnection.sharedClient()
+    private val streamClient = AgentApi.streamClient(shared)
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val main = Handler(Looper.getMainLooper())
+    private val cacheFile = File(app.filesDir, "agent-lists.json")
+
+    var pairing by mutableStateOf(store.load())
+        private set
+
+    /** Wird gesetzt, wenn das NAS das Gerät nicht mehr kennt; die Willkommensseite sagt es dann. */
+    var unpairedByNas by mutableStateOf(false)
+
+    /** Ein Wunsch aus dem Teilen-Menü oder vom Widget, der auf die Oberfläche wartet. */
+    var pendingAsk by mutableStateOf<AskRequest?>(null)
+
+    val sessions = SessionManager({ pairing }, key).also {
+        it.onDeviceUnknown = { main.post { forget(byNas = true) } }
+    }
+
+    var model: AgentModel? by mutableStateOf(pairing?.let(::modelFor))
+        private set
+
+    private fun online(): Boolean {
+        val cm = app.getSystemService(ConnectivityManager::class.java) ?: return true
+        return cm.activeNetwork != null
+    }
+
+    private fun modelFor(p: Pairing) = AgentModel(
+        AgentApi(NasConnection.forPairing(shared, p, sessions), NasConnection.forPairing(streamClient, p, sessions)),
+        ChatCache(cacheFile),
+        scope,
+        online = ::online,
+    )
+
+    fun paired(p: Pairing) {
+        sessions.forget()
+        pairing = p
+        unpairedByNas = false
+        model = modelFor(p)
+    }
+
+    /** Kopplung aufheben: Schlüssel, Kopplung, Sitzung und der Zwischenspeicher weg. */
+    fun forget(byNas: Boolean = false) {
+        if (pairing == null) return
+        model?.forget()
+        ChatCache(cacheFile).clear()
+        store.clear()
+        runCatching { key.delete() }
+        sessions.forget()
+        pairing = null
+        model = null
+        unpairedByNas = byNas
+    }
+}

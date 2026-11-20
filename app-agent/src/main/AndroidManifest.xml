@@ -1,8 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- PLAN 116: leere Hülle der Agent-App; Funktionen folgen in einer späteren Testfassung. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Ohne Netz scheitert Senden sofort, statt erst nach der Zeitüberschreitung. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Spracheingabe über die Spracherkennung von Android (RecognizerIntent).
+         Ohne diesen Eintrag sieht die App ab Android 11 keine Erkennung. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
+    </queries>
+
     <application
+        android:name=".AgentApp"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/agent_app_name"
-        android:supportsRtl="true" />
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Agent">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- „Auf diesem Handy öffnen“: titanos://pair?v=1&c=…&a=… (docs/ANDROID-APP.md).
+                 Denselben Link nimmt auch die TitanOS-App an; Android fragt dann, welche App ihn öffnet. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="titanos" android:host="pair" />
+            </intent-filter>
+            <!-- Widget „Agent fragen“ (README › Schnittstelle): Extras text (String), voice (Boolean).
+                 Füllt nur das Eingabefeld; gesendet wird nie von selbst. -->
+            <intent-filter>
+                <action android:name="io.github.ra5on.titanos.agent.ASK" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <!-- „Teilen → Agent fragen“: Text oder Bild in einen neuen Chat. -->
+        <activity-alias
+            android:name=".AskShare"
+            android:exported="true"
+            android:label="@string/agent_share_label"
+            android:icon="@mipmap/ic_launcher"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity-alias>
+    </application>
 </manifest>
