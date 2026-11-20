@@ -3,8 +3,6 @@
     <string name="app_name">TitanOS</string>
     <string name="app_later_toast">Comes in a later test version.</string>
     <string name="app_unpaired">The NAS no longer knows this phone (ended or expired). Please pair again.</string>
-    <string name="app_notifications">Notifications</string>
-    <string name="app_notifications_text">Notifications without Google come in a later test version.</string>
     <string name="app_unpair_do">Remove pairing</string>
     <string name="app_share_label">Save to TitanOS</string>
 </resources>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notify_title">Mitteilungen</string>
+    <string name="notify_more">Mehr</string>
+    <string name="notify_filter_all">Alle</string>
+    <string name="notify_filter_nas">NAS</string>
+    <string name="notify_filter_mail">Mail</string>
+    <string name="notify_filter_calendar">Termine</string>
+    <string name="notify_today">Heute</string>
+    <string name="notify_yesterday">Gestern</string>
+    <string name="notify_empty_title">Keine Mitteilungen</string>
+    <string name="notify_empty_text">Was das NAS meldet, erscheint hier und, wenn du willst, als Mitteilung am Handy.</string>
+    <string name="notify_offline">NAS nicht erreichbar. Hier steht der letzte Stand.</string>
+    <string name="notify_unread">ungelesen</string>
+    <string name="notify_menu_settings">Einstellungen</string>
+    <string name="notify_menu_read_all">Alle als gelesen markieren</string>
+    <string name="notify_line">%1$s · %2$s</string>
+
+    <string name="notify_settings_title">Mitteilungen</string>
+    <string name="notify_section_connection">Verbindung</string>
+    <string name="notify_direct">Direkt zum NAS</string>
+    <string name="notify_direct_text">Eigene sparsame Verbindung, ohne Google.</string>
+    <string name="notify_direct_connected">Eigene sparsame Verbindung, ohne Google. Verbunden.</string>
+    <string name="notify_direct_connecting">Eigene sparsame Verbindung, ohne Google. Verbindet …</string>
+    <string name="notify_direct_waiting">Eigene sparsame Verbindung, ohne Google. Wartet auf das NAS.</string>
+    <string name="notify_direct_off">Aus: Die App schaut alle 15 Minuten nach.</string>
+    <string name="notify_battery">Vom Akku-Sparen ausgenommen</string>
+    <string name="notify_battery_text">Nötig, damit Android die Verbindung nicht trennt</string>
+    <string name="notify_battery_ask">Nötig, damit Android die Verbindung nicht trennt. Tippen, um es zu erlauben.</string>
+    <string name="notify_unifiedpush">UnifiedPush nutzen</string>
+    <string name="notify_unifiedpush_text">Wenn eine App wie ntfy installiert ist – spart Akku, weil sich mehrere Apps eine Verbindung teilen. Kommt in einer späteren Testfassung.</string>
+    <string name="notify_permission">Mitteilungen erlauben</string>
+    <string name="notify_permission_text">Android zeigt sonst nichts an; die Liste in der App füllt sich trotzdem.</string>
+    <string name="notify_permission_denied">Android hat es abgelehnt; in den Android-Einstellungen der App änderbar.</string>
+    <string name="notify_section_ring">Was soll klingeln?</string>
+    <string name="notify_footer">Was das NAS überhaupt meldet, steht in der Systemsteuerung unter Benachrichtigungen.</string>
+
+    <string name="notify_kind_nas">NAS-Warnungen</string>
+    <string name="notify_kind_nas_text">Platten, Volumes, USV, Sicherungen</string>
+    <string name="notify_kind_mail">Neue Mail</string>
+    <string name="notify_kind_mail_text">Nur Posteingang</string>
+    <string name="notify_kind_calendar">Termine und Erinnerungen</string>
+    <string name="notify_kind_calendar_text">Wenn die Kalender-App des Handys das nicht schon tut</string>
+    <string name="notify_kind_agent">KI-Agent</string>
+    <string name="notify_kind_agent_text">Antworten und Rückfragen (Agent-App)</string>
+    <string name="notify_kind_nvr">NVR</string>
+    <string name="notify_kind_nvr_text">Personen, Fahrzeuge</string>
+
+    <string name="notify_action_view">Ansehen</string>
+    <string name="notify_action_read">Gelesen</string>
+    <string name="notify_live_channel">Verbindung zum NAS</string>
+    <string name="notify_live_channel_text">Ruhige, dauerhafte Mitteilung, solange „Direkt zum NAS“ an ist</string>
+    <string name="notify_live_title">Mit dem NAS verbunden</string>
+    <string name="notify_live_text">Für Mitteilungen ohne Google</string>
+</resources>

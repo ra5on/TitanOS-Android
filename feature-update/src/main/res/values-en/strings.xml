@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="upd_title">About the app</string>
+    <string name="upd_app_name">TitanOS for Android</string>
+    <string name="upd_version">Version %1$s</string>
+    <string name="upd_nas">NAS %1$s</string>
+    <string name="upd_available">Version %1$s is available</string>
+    <string name="upd_available_text">From GitHub (ra5on/TitanOS-Android), signature checked before installing · %1$s</string>
+    <string name="upd_new_in">New in %1$s</string>
+    <string name="upd_checking">Looking for a new version …</string>
+    <string name="upd_current">The app is up to date</string>
+    <string name="upd_checked">last checked %1$s</string>
+    <string name="upd_today">today</string>
+    <string name="upd_yesterday">yesterday</string>
+    <string name="upd_check_now">Check now</string>
+    <string name="upd_check_failed">GitHub was not reachable. The app checks again later.</string>
+    <string name="upd_failed">Update failed: %1$s</string>
+    <string name="upd_allow_note">To install, Android asks once whether TitanOS may “install unknown apps”. The “Install” button leads there.</string>
+    <string name="upd_section">Updates</string>
+    <string name="upd_auto">Check automatically</string>
+    <string name="upd_auto_text">Daily; installed only after your tap – Android may ask once more</string>
+    <string name="upd_test">Include test versions</string>
+    <string name="upd_test_text">Also offer pre-releases before 1.00</string>
+    <string name="upd_agent">Agent app</string>
+    <string name="upd_agent_missing">not installed</string>
+    <string name="upd_agent_update">Version %1$s · %2$s is available</string>
+    <string name="upd_agent_current">Version %1$s · up to date</string>
+    <string name="upd_agent_get">Get</string>
+    <string name="upd_install">Install</string>
+    <string name="upd_downloading">Downloading %1$s of %2$s …</string>
+    <string name="upd_installing">Installing …</string>
+    <string name="upd_signature">Only what is signed with the same key as this app and matches the checksum of the release gets installed.</string>
+    <string name="upd_channel">Updates</string>
+    <string name="upd_note_title">TitanOS %1$s is available</string>
+    <string name="upd_note_text">Tap to install the new version.</string>
+    <string name="upd_confirm_title">Update ready</string>
+    <string name="upd_confirm_text">Android still asks whether to install the new version.</string>
+</resources>

@@ -6,6 +6,7 @@ import io.github.ra5on.titanos.model.FileRoot
 import io.github.ra5on.titanos.model.PublicSession
 import io.github.ra5on.titanos.model.RenameRequest
 import io.github.ra5on.titanos.model.StorageInfo
+import io.github.ra5on.titanos.model.MonitorSample
 import io.github.ra5on.titanos.model.SystemInfo
 import io.github.ra5on.titanos.model.UndoResponse
 import io.github.ra5on.titanos.model.UploadStartRequest
@@ -38,6 +39,9 @@ class TitanApi(private val nas: NasConnection) {
     suspend fun publicSession(): PublicSession = get("session")
     suspend fun system(): SystemInfo = get("system")
     suspend fun storage(): StorageInfo = get("storage")
+
+    /** Messwerte der letzten Stunde; 403 für Konten ohne Verwaltungsrecht, leer ohne Monitoring. */
+    suspend fun monitoring(hours: Int = 1): List<MonitorSample> = get("monitoring/history", listOf("hours" to hours.toString()))
 
     /** `GET /services/state`: welche Bereiche eingeschaltet sind (docker, vms, lxc, agent, mail, calendar, contacts). */
     suspend fun services(): Map<String, Boolean> = get("services/state")

@@ -50,9 +50,20 @@ import io.github.ra5on.titanos.ui.theme.TitanType
 import io.github.ra5on.titanos.ui.theme.warnInk
 import io.github.ra5on.titanos.ui.theme.okInk
 
-/** Erster Start (Entwurf 01). */
+/**
+ * Erster Start (Entwurf 01). Die Agent-App zeigt hier ihren eigenen Namen,
+ * Text und ihr Symbol ([title], [text], [glyph], [gradient]).
+ */
 @Composable
-fun WelcomeScreen(onScan: () -> Unit, onManual: () -> Unit, problem: String? = null) {
+fun WelcomeScreen(
+    onScan: () -> Unit,
+    onManual: () -> Unit,
+    problem: String? = null,
+    title: String? = null,
+    text: String? = null,
+    glyph: String = "storage",
+    gradient: String = "dark",
+) {
     val c = Titan.colors
     BoxWithConstraints(Modifier.fillMaxSize().wallpaper(c.dark).statusBarsPadding().navigationBarsPadding()) {
         val minHeight = maxHeight
@@ -66,10 +77,10 @@ fun WelcomeScreen(onScan: () -> Unit, onManual: () -> Unit, problem: String? = n
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically),
             ) {
-                AppIcon("storage", "dark", 96.dp)
-                Text(stringResource(R.string.pair_app_name), style = TitanType.big.copy(fontSize = TitanType.big.fontSize * (30f / 28f)), color = c.text)
+                AppIcon(glyph, gradient, 96.dp)
+                Text(title ?: stringResource(R.string.pair_app_name), style = TitanType.big.copy(fontSize = TitanType.big.fontSize * (30f / 28f)), color = c.text)
                 Text(
-                    stringResource(R.string.pair_welcome_text),
+                    text ?: stringResource(R.string.pair_welcome_text),
                     style = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize, lineHeight = TitanType.rowTitle.lineHeight),
                     color = c.muted,
                     textAlign = TextAlign.Center,

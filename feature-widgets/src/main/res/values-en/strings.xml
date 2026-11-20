@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="w_nas_label">NAS status</string>
+    <string name="w_nas_desc">Status of the NAS and use of the volumes</string>
+    <string name="w_photos_desc">State of the photo backup</string>
+    <string name="w_agent_desc">Type or talk to the AI agent</string>
+    <string name="w_ok">All good</string>
+    <string name="w_certificate">Certificate changed – pair again in the app</string>
+    <string name="w_unpaired">Not paired</string>
+    <string name="w_offline">Not reachable – last state</string>
+    <string name="w_cpu">CPU %1$d %%</string>
+    <string name="w_ram">RAM %1$d %%</string>
+    <string name="w_at">as of %1$s</string>
+    <string name="w_volume">%1$s %2$d %%</string>
+    <string name="w_photos">Photos</string>
+    <string name="w_photos_open">Open the app to set up the photo backup</string>
+    <string name="w_agent">Ask the agent</string>
+    <string name="w_agent_missing">The Agent app is not installed. Tap for “About the app”.</string>
+    <string name="w_agent_write">Type</string>
+    <string name="w_agent_speak">Talk</string>
+    <plurals name="w_problem">
+        <item quantity="one">%1$d volume needs attention</item>
+        <item quantity="other">%1$d volumes need attention</item>
+    </plurals>
+</resources>

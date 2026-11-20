@@ -10,11 +10,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.glance.appwidget.updateAll
+import io.github.ra5on.titanos.photos.upToDate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,7 +24,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -44,6 +45,11 @@ import io.github.ra5on.titanos.model.FileEntry
 import io.github.ra5on.titanos.net.AddressKind
 import io.github.ra5on.titanos.net.PairLink
 import io.github.ra5on.titanos.net.ServerAddress
+import io.github.ra5on.titanos.notify.NotifyRuntime
+import io.github.ra5on.titanos.notify.NotifyScheduler
+import io.github.ra5on.titanos.notify.NotifyTab
+import io.github.ra5on.titanos.notify.notificationsOn
+import io.github.ra5on.titanos.notify.setNotificationsOn
 import io.github.ra5on.titanos.pairing.ConfirmScreen
 import io.github.ra5on.titanos.pairing.LOCAL_NETWORK
 import io.github.ra5on.titanos.pairing.localNetworkGranted
@@ -61,13 +67,10 @@ import io.github.ra5on.titanos.ui.components.BottomNav
 import io.github.ra5on.titanos.ui.components.Card
 import io.github.ra5on.titanos.ui.components.ConfirmDialog
 import io.github.ra5on.titanos.ui.components.DialogAction
-import io.github.ra5on.titanos.ui.components.EmptyState
 import io.github.ra5on.titanos.ui.components.ListRow
 import io.github.ra5on.titanos.ui.components.NavItem
-import io.github.ra5on.titanos.ui.components.Page
 import io.github.ra5on.titanos.ui.components.RowIcon
 import io.github.ra5on.titanos.ui.components.Sheet
-import io.github.ra5on.titanos.ui.components.TopBar
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanIcons
 import kotlinx.coroutines.launch
@@ -107,6 +110,12 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
             // Eingeschaltet wird hier; das Ziel wählt man danach unter Fotos.
             onPhotos = { on ->
                 graph.photos?.update(SettingsStore(context).load().copy(enabled = on)) ?: SettingsStore(context).let { it.save(it.load().copy(enabled = on)) }
+            },
+            // Mitteilungen ohne Google; danach die Bitte um die Akku-Ausnahme (TECHNIK §5).
+            notifyOn = { notificationsOn(context) },
+            onNotify = { on ->
+                setNotificationsOn(context, on)
+                if (on) NotifyScheduler.askBatteryExemption(context)
             },
         )
         else -> MainShell(graph)
@@ -205,6 +214,26 @@ private fun MainShell(graph: AppGraph) {
     val api = graph.api ?: return
     val files = graph.files ?: return
     val photos = graph.photos ?: return
+    // Widget „Fotos“: den Stand, den die Startseite zeigt, auch dort.
+    val photoLine = io.github.ra5on.titanos.photos.homeTileText(photos.view)
+    LaunchedEffect(photoLine, photos.view.upToDate, photos.view.settings.enabled) {
+        val snap = io.github.ra5on.titanos.widgets.PhotosSnapshot(
+            enabled = photos.view.settings.enabled,
+            line = photoLine,
+            upToDate = photos.view.upToDate,
+            atMs = System.currentTimeMillis(),
+        )
+        if (io.github.ra5on.titanos.widgets.WidgetStore.savePhotos(context, snap)) {
+            runCatching { io.github.ra5on.titanos.widgets.PhotosWidget().updateAll(context) }
+        }
+    }
+    // Tippen auf das Widget „Fotos“ öffnet den Reiter.
+    LaunchedEffect(graph.openPhotos) {
+        if (graph.openPhotos) {
+            tab = Tab.Photos
+            graph.openPhotos = false
+        }
+    }
     val nav = @Composable {
         BottomNav(
             listOf(
@@ -228,9 +257,33 @@ private fun MainShell(graph: AppGraph) {
         }
         onDispose { home.stop() }
     }
+    // Beim Öffnen der App: neue Mitteilungen holen und die Dauerverbindung prüfen
+    // (Android kann sie beendet haben; eine Berechtigung kam vielleicht später).
+    val resumeScope = rememberCoroutineScope()
+    LifecycleResumeEffect(Unit) {
+        NotifyScheduler.arm(context)
+        val job = resumeScope.launch { NotifyRuntime.fetch(context) }
+        onPauseOrDispose { job.cancel() }
+    }
+    // Getippte Mitteilung: zur Liste.
+    val openList by NotifyRuntime.openList.collectAsStateWithLifecycle()
+    LaunchedEffect(openList) {
+        if (openList) {
+            tab = Tab.Notifications
+            NotifyRuntime.listOpened()
+        }
+    }
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
     if (tab != Tab.Home) BackHandler { tab = Tab.Home }
     var menu by remember { mutableStateOf(false) }
+    // „Über die App“ mit Selbst-Update; die Mitteilung „Version … ist da“ öffnet es direkt.
+    if (graph.openAbout) {
+        BackHandler { graph.openAbout = false }
+        var nasVersion by remember { mutableStateOf<String?>(null) }
+        LaunchedEffect(Unit) { nasVersion = runCatching { api.system().version }.getOrNull()?.takeIf { it.isNotBlank() } }
+        io.github.ra5on.titanos.update.AboutScreen(nasVersion, onBack = { graph.openAbout = false })
+        return
+    }
     var confirmUnpair by remember { mutableStateOf(false) }
     when (tab) {
         Tab.Home -> Box(Modifier.fillMaxSize()) {
@@ -254,6 +307,8 @@ private fun MainShell(graph: AppGraph) {
                             stringResource(HomeR.string.home_menu_about),
                             sub = stringResource(HomeR.string.home_about_text, BuildConfigInfo.versionName(context)),
                             icon = { RowIcon(TitanIcons.info) },
+                            chevron = true,
+                            onClick = { menu = false; graph.openAbout = true },
                         )
                         ListRow(
                             stringResource(HomeR.string.home_menu_unpair),
@@ -280,14 +335,7 @@ private fun MainShell(graph: AppGraph) {
         }
         Tab.Files -> FilesTab(files, filesRoute, { filesRoute = it }, nav, toastLater)
         Tab.Photos -> PhotosTab(photos, nav)
-        Tab.Notifications -> Placeholder(stringResource(R.string.app_notifications), stringResource(R.string.app_notifications_text), nav)
-    }
-}
-
-@Composable
-private fun Placeholder(title: String, text: String, nav: @Composable () -> Unit) {
-    Page(topBar = { Box(Modifier.statusBarsPadding()) { TopBar(title) } }, bottomBar = nav) {
-        EmptyState(stringResource(UiR.string.ui_later_title), text, Modifier.padding(top = 80.dp))
+        Tab.Notifications -> NotifyTab(nav)
     }
 }
 

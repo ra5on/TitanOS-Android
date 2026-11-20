@@ -16,8 +16,8 @@ android {
         applicationId = "io.github.ra5on.titanos"
         minSdk = 33
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.02"
+        versionCode = 3
+        versionName = "0.03"
     }
     signingConfigs {
         if (releaseKeystore != null && releasePassword != null) {
@@ -67,7 +67,11 @@ dependencies {
     implementation(project(":feature-pairing"))
     implementation(project(":feature-home"))
     implementation(project(":feature-files"))
+    implementation(project(":feature-update"))
+    implementation(project(":feature-widgets"))
+    implementation(libs.androidx.glance)
     implementation(project(":feature-photos"))
+    implementation(project(":feature-notify"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.zxing.embedded)
     implementation(libs.androidx.activity.compose)

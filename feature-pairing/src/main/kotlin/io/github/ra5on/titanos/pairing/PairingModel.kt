@@ -83,6 +83,8 @@ class PairingModel(
     private val store: PairingStore,
     private val shared: OkHttpClient,
     defaultName: String,
+    /** Welche App sich koppelt (`titanos` oder `agent`, docs/ANDROID-APP.md Ablauf 2). */
+    private val app: String = PairingClient.APP,
     private val onPaired: (Pairing) -> Unit,
 ) : ViewModel() {
     private val client = PairingClient(key)
@@ -208,7 +210,7 @@ class PairingModel(
                         false
                     }
                 } ?: throw IOException("unreachable")
-                client.claim(endpoint, code, name)
+                client.claim(endpoint, code, name, app)
                 confirm = confirm.copy(phase = PairPhase.Waiting)
                 val r = client.await(endpoint, code)
                 when (r.state) {

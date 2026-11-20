@@ -35,3 +35,12 @@ data class Volume(
     val sizeBytes: Long = 0,
     val usedBytes: Long = 0,
 )
+
+/** Ein Messpunkt aus `GET /api/v1/monitoring/history` (nur Besitzer/Administratoren). */
+@Serializable
+data class MonitorSample(
+    val at: String = "",
+    val cpu: Double = 0.0,
+    val ramTotal: Long = 0,
+    val ramAvailable: Long = 0,
+)

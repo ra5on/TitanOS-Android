@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="agent_title">AI Agent</string>
+    <string name="agent_menu">Chats and menu</string>
+    <string name="agent_new_chat">New chat</string>
+    <string name="agent_more">More actions</string>
+    <string name="agent_head_hint">Choose project and model</string>
+    <string name="agent_input">Message to the agent …</string>
+    <string name="agent_send">Send</string>
+    <string name="agent_stop">Stop</string>
+    <string name="agent_attach">Attach a picture or file</string>
+    <string name="agent_attach_remove">Remove attachment %1$s</string>
+    <string name="agent_voice">Speak</string>
+    <string name="agent_voice_prompt">Ask the agent</string>
+    <string name="agent_sending">Sending …</string>
+    <string name="agent_fresh">How can I help?</string>
+    <string name="agent_thinking">Thinking …</string>
+    <string name="agent_working">Working …</string>
+    <string name="agent_steps_show">Show steps</string>
+    <string name="agent_steps_hide">Hide steps</string>
+    <string name="agent_step_failed">failed</string>
+    <string name="agent_step_approved">Approved</string>
+    <string name="agent_step_declined">Declined</string>
+    <string name="agent_step_verify">Checked</string>
+    <string name="agent_thought">Thoughts</string>
+    <string name="agent_seconds">%1$s s</string>
+    <string name="agent_copy">Copy</string>
+    <string name="agent_copied">Copied</string>
+    <string name="agent_regenerate">Regenerate answer</string>
+    <string name="agent_table_copy">Copy table</string>
+    <string name="agent_code">Code</string>
+    <string name="agent_checked">done</string>
+    <string name="agent_unchecked">open</string>
+    <string name="agent_note_stopped">Stopped.</string>
+    <string name="agent_note_interrupted">Interrupted – TitanOS was restarted.</string>
+    <string name="agent_note_error">Error: %1$s</string>
+    <string name="agent_note_memory">Remembered: %1$s</string>
+    <string name="agent_note_limit">The limit of steps is reached.</string>
+    <string name="agent_note_timelimit">The time limit is reached.</string>
+    <string name="agent_note_summary">Older lines summarised.</string>
+    <string name="agent_note_other">Note: %1$s</string>
+    <string name="agent_state_error">The agent reported an error: %1$s</string>
+    <string name="agent_read_only">Chat of %1$s – read only</string>
+    <string name="agent_files_made">File: %1$s</string>
+    <string name="agent_sources">Sources</string>
+
+    <string name="agent_tab_chat">Chat</string>
+    <string name="agent_tab_projects">Projects</string>
+    <string name="agent_tab_planned">Tasks</string>
+    <string name="agent_tab_notes">Notes</string>
+
+    <string name="agent_project">Project</string>
+    <string name="agent_no_project">No project</string>
+    <string name="agent_model">Model</string>
+    <string name="agent_model_default">%1$s (default)</string>
+    <string name="agent_think">Thinking</string>
+    <string name="agent_think_default">Default</string>
+    <string name="agent_level_off">Off</string>
+    <string name="agent_level_on">On</string>
+    <string name="agent_level_minimal">Minimal</string>
+    <string name="agent_level_low">Low</string>
+    <string name="agent_level_medium">Medium</string>
+    <string name="agent_level_high">High</string>
+    <string name="agent_level_xhigh">Extra high</string>
+    <string name="agent_level_max">Max</string>
+    <string name="agent_cap_thinking">Thinking</string>
+    <string name="agent_cap_vision">Pictures</string>
+    <string name="agent_models_none">No model with tools is set up on the NAS.</string>
+    <string name="agent_selected">selected</string>
+
+    <string name="agent_chats">Chats</string>
+    <string name="agent_search">Search chats</string>
+    <string name="agent_search_none">No chat matches the search.</string>
+    <string name="agent_no_chats">No chats yet. Write a message below.</string>
+    <string name="agent_group_pinned">Pinned</string>
+    <string name="agent_group_today">Today</string>
+    <string name="agent_group_yesterday">Yesterday</string>
+    <string name="agent_group_week">Last 7 days</string>
+    <string name="agent_group_older">Older</string>
+    <string name="agent_chat_running">working</string>
+    <string name="agent_chat_waiting">waits for you</string>
+    <string name="agent_chat_error">error</string>
+    <string name="agent_chat_unread">new</string>
+    <string name="agent_offline_list">No NAS reachable. This is the last known state from %1$s; sending works again once connected.</string>
+    <string name="agent_offline_list_plain">No NAS reachable. This is the last known state; sending works again once connected.</string>
+    <string name="agent_pin">Pin</string>
+    <string name="agent_unpin">Unpin</string>
+    <string name="agent_delete">Delete chat</string>
+    <string name="agent_delete_title">Delete chat?</string>
+    <string name="agent_delete_text">“%1$s” is deleted with all its messages.</string>
+    <string name="agent_delete_do">Delete</string>
+    <string name="agent_about">About the app</string>
+    <string name="agent_about_text">Agent %1$s for TitanOS. Paired with %2$s.</string>
+    <string name="agent_unpair">Unpair</string>
+    <string name="agent_unpair_text">The app forgets the NAS and its key. On the NAS you end it under My account › Devices.</string>
+    <string name="agent_unpair_do">Unpair</string>
+
+    <string name="agent_err_offline">No NAS reachable – nothing sent. Is the phone in the home network or in Tailscale?</string>
+    <string name="agent_err_no_volume">The agent needs a mounted data volume on the NAS for its chats.</string>
+    <string name="agent_err_not_allowed">The AI agent is not enabled for your account. An owner can change that under Settings › AI Agent.</string>
+    <string name="agent_err_busy">The agent is still working on this chat. Stop it first.</string>
+    <string name="agent_err_nothing_pending">This step no longer waits – maybe it was decided on another device.</string>
+    <string name="agent_err_too_large">The attachment is too large (at most 20 MB).</string>
+    <string name="agent_err_cert">The certificate of the NAS changed. The app does not connect like this; check it or pair again.</string>
+    <string name="agent_err_unavailable">The agent cannot start right now. Is a model reachable from the NAS?</string>
+    <string name="agent_err_other">That did not work (%1$s).</string>
+    <string name="agent_err_share">The shared file could not be read.</string>
+
+    <string name="agent_off_title">The AI agent is off</string>
+    <string name="agent_off_text">An owner can switch it on in the browser under Settings › AI Agent.</string>
+    <string name="agent_not_allowed_title">The AI agent is not enabled for your account</string>
+    <string name="agent_no_volume_title">No data volume</string>
+
+    <string name="agent_projects_title">Projects</string>
+    <string name="agent_projects_empty">No projects yet. A project collects chats with its own instructions.</string>
+    <string name="agent_project_new">New project</string>
+    <string name="agent_project_name">Name of the project</string>
+    <string name="agent_project_create">Create</string>
+    <string name="agent_project_shared">shared by %1$s</string>
+    <string name="agent_project_new_chat">New chat in this project</string>
+    <string name="agent_project_no_chats">There are no chats in this project yet.</string>
+
+    <string name="agent_planned_title">Tasks</string>
+    <string name="agent_planned_empty">No planned tasks yet. Tell the agent, for example, “remind me every Monday at 8 about the bins”.</string>
+    <string name="agent_planned_run">Run now</string>
+    <string name="agent_planned_started">Started – the chat is in the list.</string>
+    <string name="agent_planned_last_ok">last %1$s, successful</string>
+    <string name="agent_planned_last_failed">last %1$s, failed</string>
+    <string name="agent_planned_never">not run yet</string>
+    <string name="agent_planned_kind_reminder">Reminder</string>
+    <string name="agent_planned_kind_morning">Morning report</string>
+    <string name="agent_planned_kind_task">Task</string>
+    <string name="agent_every_once">once</string>
+    <string name="agent_every_once_at">once on %1$s</string>
+    <string name="agent_every_daily">daily</string>
+    <string name="agent_every_weekdays">on weekdays</string>
+    <string name="agent_every_weekly">weekly</string>
+    <string name="agent_every_monthly">monthly</string>
+    <string name="agent_every_hourly">hourly</string>
+    <string name="agent_every_cron">on schedule %1$s</string>
+    <string name="agent_every_trigger">on an event in Home Assistant</string>
+    <string name="agent_every_at">%1$s at %2$s</string>
+    <string name="agent_enabled_on">switched on</string>
+    <string name="agent_enabled_off">switched off</string>
+
+    <string name="agent_notes_title">Notes</string>
+    <string name="agent_notes_empty">No notes yet. Add one with “+”, or tell the agent “write me a note …”.</string>
+    <string name="agent_notes_search">Search notes</string>
+    <string name="agent_notes_new">New note</string>
+    <string name="agent_notes_untitled">New note</string>
+    <string name="agent_notes_save">Save</string>
+    <string name="agent_notes_saved">saved</string>
+    <string name="agent_notes_unsaved">not saved</string>
+    <string name="agent_notes_pinned">pinned</string>
+    <string name="agent_notes_text">Text of the note</string>
+    <plurals name="agent_steps">
+        <item quantity="one">%1$d step</item>
+        <item quantity="other">%1$d steps</item>
+    </plurals>
+    <plurals name="agent_project_chats">
+        <item quantity="one">%1$d chat</item>
+        <item quantity="other">%1$d chats</item>
+    </plurals>
+    <plurals name="agent_every_minutes">
+        <item quantity="one">every minute</item>
+        <item quantity="other">every %1$d minutes</item>
+    </plurals>
+    <plurals name="agent_every_hours">
+        <item quantity="one">every hour</item>
+        <item quantity="other">every %1$d hours</item>
+    </plurals>
+    <plurals name="agent_every_days">
+        <item quantity="one">every day</item>
+        <item quantity="other">every %1$d days</item>
+    </plurals>
+    <plurals name="agent_err_limit">
+        <item quantity="one">Your account allows one running chat. Wait until it is done, or stop it.</item>
+        <item quantity="other">Your account allows %1$d running chats at once. Wait for one, or stop it.</item>
+    </plurals>
+</resources>

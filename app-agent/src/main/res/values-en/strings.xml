@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="agent_app_name">Agent</string>
+    <string name="agent_share_label">Ask agent</string>
+    <string name="agent_welcome_text">The AI agent of your NAS on your phone: ask, speak, approve – with the rights of your account.</string>
+    <string name="agent_unpaired">The NAS no longer knows this phone (ended or expired). Please pair again.</string>
 </resources>
