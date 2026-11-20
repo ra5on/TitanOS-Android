@@ -2,12 +2,14 @@ package io.github.ra5on.titanos.update
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +21,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.Dp
+import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -43,6 +48,16 @@ import io.github.ra5on.titanos.ui.theme.TitanType
 import io.github.ra5on.titanos.ui.theme.okInk
 import kotlinx.coroutines.launch
 import java.time.Instant
+
+/** Das echte Symbol einer installierten App (das „T“, das Agent-Zeichen); fehlt sie, das Programmsymbol. */
+@Composable
+private fun InstalledIcon(packageName: String, size: Dp, fallback: @Composable () -> Unit) {
+    val context = LocalContext.current
+    val bitmap = remember(packageName) {
+        runCatching { context.packageManager.getApplicationIcon(packageName).toBitmap(192, 192).asImageBitmap() }.getOrNull()
+    }
+    if (bitmap == null) fallback() else Image(bitmap, contentDescription = null, modifier = Modifier.size(size))
+}
 
 /** „Über die App“ mit Selbst-Update (Entwurf 91). */
 @Composable
@@ -76,7 +91,7 @@ fun AboutScreen(nasVersion: String?, onBack: () -> Unit) {
 
     Page(topBar = { Box(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.upd_title), onBack = onBack, backLabel = stringResource(UiR.string.ui_back)) } }) {
         Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            AppIcon("storage", "dark", 72.dp)
+            InstalledIcon(context.packageName, 72.dp) { AppIcon("storage", "dark", 72.dp) }
             Text(stringResource(R.string.upd_app_name), style = TitanType.title, color = c.text)
             Text(
                 listOfNotNull(stringResource(R.string.upd_version, mineName), nasVersion?.let { stringResource(R.string.upd_nas, it) }).joinToString(" · "),
@@ -140,7 +155,7 @@ fun AboutScreen(nasVersion: String?, onBack: () -> Unit) {
                     agentNew != null -> stringResource(R.string.upd_agent_update, agentName, agentNew.versionName)
                     else -> stringResource(R.string.upd_agent_current, agentName)
                 },
-                icon = { AppIcon("agent", "ember", 30.dp) },
+                icon = { InstalledIcon(AppKind.Agent.packageName, 30.dp) { AppIcon("agent", "ember", 30.dp) } },
                 right = when {
                     agentName == null -> ({
                         TitanButton(stringResource(R.string.upd_agent_get), {
