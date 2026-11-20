@@ -29,19 +29,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
-import io.github.ra5on.titanos.files.DeleteDialog
-import io.github.ra5on.titanos.files.FileSheet
-import io.github.ra5on.titanos.files.FolderSheet
-import io.github.ra5on.titanos.files.FilesHomeScreen
 import io.github.ra5on.titanos.files.FilesModel
-import io.github.ra5on.titanos.files.FolderScreen
-import io.github.ra5on.titanos.files.Location
-import io.github.ra5on.titanos.files.RenameDialog
-import io.github.ra5on.titanos.files.TransferState
-import io.github.ra5on.titanos.files.TransfersScreen
 import io.github.ra5on.titanos.home.HomeModel
 import io.github.ra5on.titanos.home.HomeScreen
-import io.github.ra5on.titanos.model.FileEntry
 import io.github.ra5on.titanos.net.AddressKind
 import io.github.ra5on.titanos.net.PairLink
 import io.github.ra5on.titanos.net.ServerAddress
@@ -196,21 +186,12 @@ private fun SetupFlow(graph: AppGraph, model: PairingModel, step: SetupStep, go:
 
 private enum class Tab { Home, Files, Photos, Notifications }
 
-private sealed interface FilesRoute {
-    data object Roots : FilesRoute
-    data class Folder(val location: Location) : FilesRoute
-    data object Transfers : FilesRoute
-    data object Offline : FilesRoute
-    data class OfflineFolder(val pin: io.github.ra5on.titanos.files.OfflinePin) : FilesRoute
-}
-
 @Composable
 private fun MainShell(graph: AppGraph) {
     val context = LocalContext.current
     val later = stringResource(R.string.app_later_toast)
     val toastLater = { Toast.makeText(context, later, Toast.LENGTH_SHORT).show() }
     var tab by rememberSaveable { mutableStateOf(Tab.Home) }
-    var filesRoute by remember { mutableStateOf<FilesRoute>(FilesRoute.Roots) }
     val api = graph.api ?: return
     val files = graph.files ?: return
     val photos = graph.photos ?: return
@@ -333,145 +314,9 @@ private fun MainShell(graph: AppGraph) {
                 )
             }
         }
-        Tab.Files -> FilesTab(files, filesRoute, { filesRoute = it }, nav, toastLater)
+        Tab.Files -> io.github.ra5on.titanos.files.FilesTab(files, nav)
         Tab.Photos -> PhotosTab(photos, nav)
         Tab.Notifications -> NotifyTab(nav)
-    }
-}
-
-@Composable
-private fun FilesTab(files: FilesModel, route: FilesRoute, go: (FilesRoute) -> Unit, nav: @Composable () -> Unit, later: () -> Unit) {
-    val scope = rememberCoroutineScope()
-    when (route) {
-        FilesRoute.Roots -> {
-            LaunchedEffect(Unit) { files.loadRoots() }
-            FilesHomeScreen(
-                files.roots,
-                running = files.transfers.running,
-                finished = files.transfers.finished,
-                offlineSummary = io.github.ra5on.titanos.files.offlineSummary(files.offline),
-                onRoot = { r -> Location(r).let { files.open(it); go(FilesRoute.Folder(it)) } },
-                onTransfers = { go(FilesRoute.Transfers) },
-                onOffline = { go(FilesRoute.Offline) },
-                onLater = later,
-                bottomBar = nav,
-            )
-        }
-        FilesRoute.Transfers -> {
-            BackHandler { go(FilesRoute.Roots) }
-            TransfersScreen(
-                files.transfers.items,
-                onBack = { go(FilesRoute.Roots) },
-                onCancel = files::cancel,
-                onRetry = files::retry,
-                onClear = { files.transfers.clearFinished() },
-            )
-        }
-        FilesRoute.Offline -> {
-            BackHandler { go(FilesRoute.Roots) }
-            val context = LocalContext.current
-            val notYet = stringResource(io.github.ra5on.titanos.files.R.string.off_open_failed)
-            val openWith = stringResource(io.github.ra5on.titanos.files.R.string.off_open_with)
-            io.github.ra5on.titanos.files.OfflineScreen(
-                files.offline,
-                onBack = { go(FilesRoute.Roots) },
-                onPin = { p ->
-                    if (p.dir) go(FilesRoute.OfflineFolder(p))
-                    else if (!files.openOffline(p.root, p.path, openWith)) Toast.makeText(context, notYet, Toast.LENGTH_SHORT).show()
-                },
-                onRemove = { p -> files.offline.unpin(p.root, p.path) },
-                onSyncNow = files::syncOfflineNow,
-                onWifiOnly = files::setOfflineWifiOnly,
-                bottomBar = nav,
-            )
-        }
-        is FilesRoute.OfflineFolder -> {
-            BackHandler { go(FilesRoute.Offline) }
-            val context = LocalContext.current
-            val notYet = stringResource(io.github.ra5on.titanos.files.R.string.off_open_failed)
-            val openWith = stringResource(io.github.ra5on.titanos.files.R.string.off_open_with)
-            io.github.ra5on.titanos.files.OfflineFolderScreen(
-                route.pin,
-                files.offline.copiesFor(route.pin),
-                onBack = { go(FilesRoute.Offline) },
-                onOpen = { cp -> if (!files.openOffline(cp.root, cp.path, openWith)) Toast.makeText(context, notYet, Toast.LENGTH_SHORT).show() },
-                bottomBar = nav,
-            )
-        }
-        is FilesRoute.Folder -> {
-            val state = files.folder ?: return
-            val location = state.location
-            val up = {
-                if (location.segments.isEmpty()) {
-                    files.close(); go(FilesRoute.Roots)
-                } else {
-                    location.upTo(location.segments.size - 1).let { files.open(it); go(FilesRoute.Folder(it)) }
-                }
-            }
-            BackHandler(onBack = up)
-            var selected by remember { mutableStateOf<FileEntry?>(null) }
-            var renaming by remember { mutableStateOf<FileEntry?>(null) }
-            var renameTo by remember { mutableStateOf("") }
-            var deleting by remember { mutableStateOf<FileEntry?>(null) }
-            var folderMenu by remember { mutableStateOf(false) }
-            val chooser = stringResource(io.github.ra5on.titanos.files.R.string.files_share_chooser)
-            val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-                uris.forEach { files.upload(location, it) }
-            }
-            val uploads = files.transfers.items.filter {
-                it.root == location.root.id && it.dir == location.path && it.direction == io.github.ra5on.titanos.files.Direction.Upload &&
-                    (it.state == TransferState.Running || it.state == TransferState.Waiting)
-            }
-            FolderScreen(
-                state,
-                uploads,
-                onBack = up,
-                onCrumb = { i -> location.upTo(i).let { files.open(it); go(FilesRoute.Folder(it)) } },
-                onEntry = { e -> if (e.dir) location.child(e.name).let { files.open(it); go(FilesRoute.Folder(it)) } else selected = e },
-                onUpload = { pick.launch(arrayOf("*/*")) },
-                onLater = later,
-                bottomBar = nav,
-                onMore = { folderMenu = true },
-            ) {
-                if (folderMenu) {
-                    val here = location.path
-                    FolderSheet(
-                        location.segments.lastOrNull() ?: location.root.name,
-                        offline = files.offline.isPinned(location.root.id, here),
-                        onOffline = { on ->
-                            if (on) files.offline.pin(location.root.id, location.root.name, here, dir = true) else files.offline.unpin(location.root.id, here)
-                            if (on) files.syncOfflineNow()
-                        },
-                        onDismiss = { folderMenu = false },
-                    )
-                }
-                selected?.let { e ->
-                    FileSheet(
-                        e,
-                        withTrash = files.hasTrash(location, e.name),
-                        writable = location.root.writable,
-                        offline = files.isOffline(location, e),
-                        onOffline = { on -> files.setOffline(location, e, on) },
-                        onShare = { selected = null; files.share(location, e, chooser) },
-                        onDownload = { selected = null; files.saveToDownloads(location, e) },
-                        onRename = { selected = null; files.actionError = null; renameTo = e.name; renaming = e },
-                        onDelete = { selected = null; deleting = e },
-                        onDismiss = { selected = null },
-                    )
-                }
-                renaming?.let { e ->
-                    RenameDialog(e.name, renameTo, { renameTo = it }, files.actionError, onDo = {
-                        scope.launch { if (renameTo.isNotBlank() && files.rename(location, e, renameTo)) renaming = null }
-                    }, onDismiss = { renaming = null })
-                }
-                deleting?.let { e ->
-                    DeleteDialog(e.name, files.hasTrash(location, e.name), onDo = {
-                        deleting = null
-                        scope.launch { files.delete(location, e) }
-                    }, onDismiss = { deleting = null })
-                }
-            }
-        }
     }
 }
 

@@ -36,6 +36,8 @@ object FilesRuntime {
     @Volatile var offline: OfflineStore? = null
     /** Nach einem fertigen Upload: die offene Ordneransicht lädt neu. */
     @Volatile var onUploaded: ((root: String, dir: String) -> Unit)? = null
+    /** Kopplung und Sitzung für die weiteren Dateirouten und die eingebetteten Office-Programme. */
+    @Volatile var access: () -> FilesAccess? = { null }
 }
 
 /** Uploads und „In Downloads speichern“ als WorkManager-Aufträge. */

@@ -36,8 +36,29 @@ data class Location(val root: FileRoot, val path: String = "") {
 sealed interface FilesError {
     data object Offline : FilesError
     data object Exists : FilesError
+    data object ReadOnly : FilesError
+    data object NoSpace : FilesError
+    data object SameFolder : FilesError
+    data object IntoItself : FilesError
+    data object NotText : FilesError
+    data object InvalidName : FilesError
+    data object NoIndex : FilesError
+    data object DownloadLimit : FilesError
+    data object DownloadBlocked : FilesError
+    data object DownloadFailed : FilesError
+    data object NotFound : FilesError
+    data object Locked : FilesError
     data class Other(val detail: String) : FilesError
 }
+
+/** Kopierte oder ausgeschnittene Einträge eines Ordners. */
+data class Clip(val from: Location, val names: List<String>, val move: Boolean)
+
+enum class UndoKind { Rename, Move, Trash }
+
+data class UndoOffer(val id: String, val kind: UndoKind, val count: Int)
+
+data class Notice(val text: Int)
 
 data class RootsState(val roots: List<FileRoot>? = null, val error: FilesError? = null)
 
@@ -74,9 +95,85 @@ class FilesModel(
 
     private val jobs = ConcurrentHashMap<Long, Job>()
 
+    /** Die weiteren Routen (Vorschau, Kopieren, Papierkorb …); null ohne Kopplung. */
+    val access: FilesAccess? = FilesRuntime.access()
+    val files: FilesApi? = access?.api
+    private val prefsApi = access?.let { PrefsApi(it.connection) }
+
+    /** Einstellungen des Dateimanagers im Konto (mit dem Web geteilt). */
+    var prefs by mutableStateOf(FilePrefs())
+        private set
+
+    /** Kopiert oder ausgeschnitten, zum Einfügen in einem anderen Ordner. */
+    var clipboard by mutableStateOf<Clip?>(null)
+
+    /** Aufträge des NAS (Kopieren, Verschieben, aus dem Netz laden, Entpacken). */
+    var nasJobs by mutableStateOf<List<io.github.ra5on.titanos.files.Job>>(emptyList())
+        private set
+
+    /** Was sich gerade rückgängig machen lässt (30 Minuten am NAS). */
+    var undo by mutableStateOf<UndoOffer?>(null)
+
+    /** Kurze Meldung nach einer Aktion (Text-ID und Wert). */
+    var notice by mutableStateOf<Notice?>(null)
+
+    private var polling: Job? = null
+
+    // ---------- Seiten ----------
+
+    private val stack = androidx.compose.runtime.mutableStateListOf<FilesRoute>(FilesRoute.Roots)
+
+    /** Die oberste Seite im Reiter. */
+    val route: FilesRoute get() = stack.last()
+
+    fun push(r: FilesRoute) {
+        stack.add(r)
+    }
+
+    fun pop() {
+        if (stack.size > 1) stack.removeAt(stack.lastIndex)
+        if (route !is FilesRoute.Folder) close()
+    }
+
+    fun replaceTop(r: FilesRoute) {
+        stack[stack.lastIndex] = r
+    }
+
+    /** Einen Ordner öffnen: von einer anderen Seite aus oben drauf, im Ordner an seiner Stelle. */
+    fun openFolder(location: Location) {
+        selection = emptySet()
+        if (route is FilesRoute.Folder) replaceTop(FilesRoute.Folder(location)) else push(FilesRoute.Folder(location))
+    }
+
+    /** Markierte Einträge des offenen Ordners. */
+    var selection by mutableStateOf<Set<String>>(emptySet())
+
+    /** Eigenschaften einer Datei anzeigen (Name, Pfad); die offene Seite zeigt das Blatt. */
+    var showProperties by mutableStateOf<Pair<String, String>?>(null)
+
+    // ---------- Office ----------
+
+    var webapps by mutableStateOf<List<WebApp>>(emptyList())
+        private set
+    private var fileApps: Map<String, String> = emptyMap()
+
+    fun loadOffice() {
+        val api = files ?: return
+        scope.launch {
+            runCatching { api.webapps() }.onSuccess { webapps = it }
+            runCatching { api.fileApps() }.onSuccess { fileApps = it }
+        }
+    }
+
+    /** Das Office-Programm für eine Datei, wenn TitanOS eines dafür hat. */
+    fun officeFor(name: String): WebApp? = OfficeChoice.any(name, webapps, fileApps)
+
+    /** Name des Kontos (der eigene Papierkorb liegt unter diesem Namen). */
+    val userName: String? get() = access?.sessions?.user?.name
+
     suspend fun loadRoots() {
         roots = try {
-            RootsState(api.roots().filter { it.kind == "share" || it.kind.isEmpty() })
+            RootsState(api.roots())
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -112,27 +209,9 @@ class FilesModel(
         return location.root.recycle || location.root.bins.orEmpty().any { path.startsWith("$it/") }
     }
 
-    suspend fun rename(location: Location, entry: FileEntry, newName: String): Boolean = try {
-        api.rename(location.root.id, location.full(entry.name), location.full(newName.trim()))
-        reload()
-        true
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        actionError = errorOf(e)
-        false
-    }
+    suspend fun rename(location: Location, entry: FileEntry, newName: String): Boolean = renameTo(location, entry, newName)
 
-    suspend fun delete(location: Location, entry: FileEntry): Boolean = try {
-        api.delete(location.root.id, listOf(location.full(entry.name)), permanent = !hasTrash(location, entry.name))
-        reload()
-        true
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        actionError = errorOf(e)
-        false
-    }
+    suspend fun delete(location: Location, entry: FileEntry): Boolean = deleteMany(location, listOf(entry))
 
     /** In Downloads speichern (MediaStore, ohne Berechtigung) – als Auftrag, der das Schließen der App übersteht. */
     fun saveToDownloads(location: Location, entry: FileEntry) {
@@ -140,23 +219,42 @@ class FilesModel(
     }
 
     /** Teilen: erst in den Cache laden, dann mit eigener Leseerlaubnis weitergeben. */
-    fun share(location: Location, entry: FileEntry, chooserTitle: String) {
-        val t = transfers.add(Transfer(0, entry.name, Direction.Share, location.place, location.root.id, location.path, total = entry.size))
+    fun share(location: Location, entry: FileEntry, chooserTitle: String) = handOver(location, listOf(entry), chooserTitle, view = false)
+
+    /** Mehrere Dateien auf einmal teilen (ACTION_SEND_MULTIPLE). */
+    fun shareMany(location: Location, entries: List<FileEntry>, chooserTitle: String) = handOver(location, entries.filter { !it.dir }, chooserTitle, view = false)
+
+    /** Mit einer anderen App öffnen (ACTION_VIEW, nur lesend). */
+    fun openWith(location: Location, entry: FileEntry, chooserTitle: String) = handOver(location, listOf(entry), chooserTitle, view = true)
+
+    private fun handOver(location: Location, entries: List<FileEntry>, chooserTitle: String, view: Boolean) {
+        if (entries.isEmpty()) return
+        val label = if (entries.size == 1) entries[0].name else entries.joinToString(", ") { it.name }
+        val t = transfers.add(Transfer(0, label, Direction.Share, location.place, location.root.id, location.path, total = entries.sumOf { it.size }))
         run(t) {
             val dir = File(context.cacheDir, "shared/${t.id}").apply { mkdirs() }
-            val file = File(dir, entry.name.replace('/', '_'))
-            file.outputStream().use { out ->
-                api.download(location.root.id, location.full(entry.name), out) { done, total -> progress(t.id, done, total) }
+            var before = 0L
+            val uris = entries.map { entry ->
+                val file = File(dir, entry.name.replace('/', '_'))
+                file.outputStream().use { out ->
+                    api.download(location.root.id, location.full(entry.name), out) { done, _ -> progress(t.id, before + done, t.total) }
+                }
+                before += entry.size
+                FileProvider.getUriForFile(context, "${context.packageName}.files", file)
             }
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-            val send = Intent(Intent.ACTION_SEND).apply {
-                type = mimeOf(entry.name)
-                putExtra(Intent.EXTRA_STREAM, uri)
-                clipData = android.content.ClipData.newRawUri(entry.name, uri)
+            val intent = when {
+                view -> Intent(Intent.ACTION_VIEW).apply { setDataAndType(uris[0], mimeOf(entries[0].name)) }
+                uris.size == 1 -> Intent(Intent.ACTION_SEND).apply { type = mimeOf(entries[0].name); putExtra(Intent.EXTRA_STREAM, uris[0]) }
+                else -> Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                    type = entries.map { mimeOf(it.name) }.distinct().singleOrNull() ?: "*/*"
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+                }
+            }.apply {
+                clipData = android.content.ClipData.newRawUri(entries[0].name, uris[0]).also { clip -> uris.drop(1).forEach { clip.addItem(android.content.ClipData.Item(it)) } }
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             withContext(Dispatchers.Main) {
-                context.startActivity(Intent.createChooser(send, chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION))
+                context.startActivity(Intent.createChooser(intent, chooserTitle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION))
             }
         }
     }
@@ -232,6 +330,177 @@ class FilesModel(
         return true
     }
 
+    // ---------- Ansicht ----------
+
+    fun loadPrefs() {
+        val api = prefsApi ?: return
+        scope.launch { runCatching { api.load() }.onSuccess { prefs = it } }
+    }
+
+    fun updatePrefs(next: FilePrefs) {
+        prefs = next
+        val api = prefsApi ?: return
+        scope.launch { runCatching { api.save(next) }.onFailure { notice = Notice(R.string.files_prefs_failed) } }
+    }
+
+    /** Die Einträge des offenen Ordners in der gewählten Reihenfolge. */
+    fun sorted(location: Location, entries: List<FileEntry>): List<FileEntry> {
+        val (_, sort, desc) = prefs.forFolder(location.root.id, location.path)
+        return sortEntries(entries, localSort ?: sort, desc, prefs.showHidden)
+    }
+
+    /** „Typ“ kennt das Web nicht; die App merkt es sich nur für sich. */
+    var localSort by mutableStateOf<SortBy?>(null)
+
+    // ---------- Anlegen ----------
+
+    suspend fun mkdir(location: Location, name: String): Boolean = act {
+        files!!.mkdir(location.root.id, location.full(name.trim()))
+        reload()
+    }
+
+    suspend fun createFile(location: Location, name: String): Boolean = act {
+        files!!.create(location.root.id, location.full(name.trim()))
+        reload()
+    }
+
+    // ---------- Löschen und Umbenennen mit Rückgängig ----------
+
+    suspend fun deleteMany(location: Location, entries: List<FileEntry>): Boolean = act {
+        val trash = entries.all { hasTrash(location, it.name) }
+        val r = api.delete(location.root.id, entries.map { location.full(it.name) }, permanent = !trash)
+        if (r.undo.isNotEmpty()) undo = UndoOffer(r.undo, UndoKind.Trash, entries.size)
+        reload()
+    }
+
+    /** Löscht Pfade einer Ablage (etwa aus „Doppelte“). */
+    suspend fun deletePaths(root: FileRoot, paths: List<String>, trash: Boolean): Boolean = act {
+        val r = api.delete(root.id, paths, permanent = !trash)
+        if (r.undo.isNotEmpty()) undo = UndoOffer(r.undo, UndoKind.Trash, paths.size)
+        reload()
+    }
+
+    suspend fun renameTo(location: Location, entry: FileEntry, newName: String): Boolean = act {
+        val r = api.rename(location.root.id, location.full(entry.name), location.full(newName.trim()))
+        if (r.undo.isNotEmpty()) undo = UndoOffer(r.undo, UndoKind.Rename, 1)
+        reload()
+    }
+
+    suspend fun undoLast(): Boolean {
+        val u = undo ?: return false
+        undo = null
+        return act {
+            files!!.undo(u.id)
+            reload()
+            notice = Notice(R.string.files_undone)
+        }
+    }
+
+    // ---------- Kopieren und Verschieben ----------
+
+    fun copyToClipboard(location: Location, entries: List<FileEntry>, move: Boolean) {
+        clipboard = Clip(location, entries.map { it.name }, move)
+    }
+
+    /** Vor dem Einfügen: was im Ziel schon liegt (wie CopyDialog im Web). */
+    suspend fun inspectPaste(target: Location): Inspection? {
+        val clip = clipboard ?: return null
+        return try {
+            files!!.inspect(InspectRequest(clip.from.root.id, clip.names.map { clip.from.full(it) }, target.root.id, target.path))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            actionError = errorOf(e)
+            null
+        }
+    }
+
+    /** Einfügen als Auftrag am NAS; [conflict] ist rename, skip, replace oder missing. */
+    suspend fun paste(target: Location, conflict: String): Boolean {
+        val clip = clipboard ?: return false
+        return act {
+            val job = files!!.copy(CopyRequest(clip.from.root.id, clip.names.map { clip.from.full(it) }, target.root.id, target.path, clip.move, conflict))
+            if (clip.move) clipboard = null
+            nasJobs = listOf(job) + nasJobs.filter { it.id != job.id }
+            watchJobs()
+        }
+    }
+
+    /** Fragt die Aufträge ab, solange einer läuft; danach lädt der Ordner neu. */
+    fun watchJobs(force: Boolean = false) {
+        val api = files ?: return
+        if (force) {
+            polling?.cancel()
+            polling = null
+        }
+        if (polling?.isActive == true) return
+        polling = scope.launch {
+            var wasRunning = false
+            while (true) {
+                val list = runCatching { api.jobs() }.getOrNull() ?: break
+                nasJobs = list
+                val running = list.any { it.running }
+                if (wasRunning && !running) reload()
+                if (!running) {
+                    if (wasRunning) {
+                        list.firstOrNull()?.let { j ->
+                            notice = when (j.state) {
+                                "done" -> Notice(if (j.failed > 0) R.string.jobs_done_with_problems else R.string.jobs_done)
+                                "failed" -> Notice(R.string.jobs_failed)
+                                else -> null
+                            }
+                        }
+                    }
+                    break
+                }
+                wasRunning = true
+                kotlinx.coroutines.delay(1000)
+            }
+        }
+    }
+
+    suspend fun cancelJob(id: String) = act { files!!.cancelJob(id); watchJobsNow() }
+    suspend fun retryJob(id: String) = act { files!!.retryJob(id); watchJobsNow() }
+    suspend fun pauseJob(id: String, paused: Boolean) = act { files!!.pauseJob(id, paused); watchJobsNow() }
+
+    private fun watchJobsNow() {
+        polling?.cancel()
+        polling = null
+        watchJobs()
+    }
+
+    // ---------- Aus dem Netz ----------
+
+    suspend fun probeUrl(location: Location, url: String): UrlProbe? = try {
+        files!!.probeUrl(location.root.id, location.path, url.trim())
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        actionError = errorOf(e)
+        null
+    }
+
+    suspend fun downloadUrl(location: Location, url: String, name: String, rename: Boolean): Boolean = act {
+        val job = files!!.downloadUrl(UrlDownloadRequest(location.root.id, location.path, url.trim(), name.trim(), if (rename) "rename" else ""))
+        nasJobs = listOf(job) + nasJobs
+        watchJobs()
+    }
+
+    /** Mehrere Dateien in Downloads speichern. */
+    fun saveManyToDownloads(location: Location, entries: List<FileEntry>) = entries.filter { !it.dir }.forEach { saveToDownloads(location, it) }
+
+    /** Führt eine Aktion aus und hält den Fehler fest; true bei Erfolg. */
+    private suspend fun act(block: suspend () -> Unit): Boolean = try {
+        actionError = null
+        block()
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        actionError = errorOf(e)
+        false
+    }
+
     private fun progress(id: Long, done: Long, total: Long) {
         transfers.update(id) { it.copy(done = done, total = if (total > 0) total else it.total) }
     }
@@ -264,8 +533,20 @@ class FilesModel(
     private fun mimeOf(name: String): String =
         MimeTypeMap.getSingleton().getMimeTypeFromExtension(name.substringAfterLast('.', "").lowercase()) ?: "application/octet-stream"
 
-    private fun errorOf(e: Throwable): FilesError = when {
+    fun errorOf(e: Throwable): FilesError = when {
         e is ApiException && e.status == 409 && e.code == "file_exists" -> FilesError.Exists
+        e is ApiException && e.status == 403 && e.code == "read_only_share" -> FilesError.ReadOnly
+        e is ApiException && e.status == 507 -> FilesError.NoSpace
+        e is ApiException && e.status == 409 && e.code == "copy_same_folder" -> FilesError.SameFolder
+        e is ApiException && e.status == 400 && e.code == "copy_into_itself" -> FilesError.IntoItself
+        e is ApiException && e.status == 400 && e.code == "not_text" -> FilesError.NotText
+        e is ApiException && e.status == 400 && e.code == "invalid_path" -> FilesError.InvalidName
+        e is ApiException && e.status == 409 && e.code == "index_unavailable" -> FilesError.NoIndex
+        e is ApiException && e.status == 429 && e.code == "download_limit" -> FilesError.DownloadLimit
+        e is ApiException && e.status == 403 && e.code == "download_blocked" -> FilesError.DownloadBlocked
+        e is ApiException && e.status == 502 -> FilesError.DownloadFailed
+        e is ApiException && e.status == 404 -> FilesError.NotFound
+        e is ApiException && e.status == 423 -> FilesError.Locked
         e is ApiException -> FilesError.Other("${e.status} ${e.code}".trim())
         e is IOException -> FilesError.Offline
         else -> FilesError.Other(e.javaClass.simpleName)

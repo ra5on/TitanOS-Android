@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -55,10 +56,33 @@ import io.github.ra5on.titanos.ui.theme.dangerInk
 fun errorText(e: FilesError): String = when (e) {
     FilesError.Offline -> stringResource(R.string.files_offline_nas)
     FilesError.Exists -> stringResource(R.string.files_exists)
+    FilesError.ReadOnly -> stringResource(R.string.err_read_only)
+    FilesError.NoSpace -> stringResource(R.string.err_no_space)
+    FilesError.SameFolder -> stringResource(R.string.err_same_folder)
+    FilesError.IntoItself -> stringResource(R.string.err_into_itself)
+    FilesError.NotText -> stringResource(R.string.err_not_text)
+    FilesError.InvalidName -> stringResource(R.string.err_invalid_name)
+    FilesError.NoIndex -> stringResource(R.string.err_no_index)
+    FilesError.DownloadLimit -> stringResource(R.string.err_download_limit)
+    FilesError.DownloadBlocked -> stringResource(R.string.err_download_blocked)
+    FilesError.DownloadFailed -> stringResource(R.string.err_download_failed)
+    FilesError.NotFound -> stringResource(R.string.err_not_found)
+    FilesError.Locked -> stringResource(R.string.err_locked)
     is FilesError.Other -> stringResource(R.string.files_failed, e.detail)
 }
 
-/** Freigaben und „Auf diesem Handy“ (Entwurf 20). */
+/** Überschrift je Art der Ablage (wie Places im Web). */
+@Composable
+private fun kindTitle(kind: String): String = stringResource(
+    when (kind) {
+        "volume" -> R.string.files_volumes
+        "usb" -> R.string.files_usb
+        "stick" -> R.string.files_stick
+        else -> R.string.files_shares
+    },
+)
+
+/** Freigaben, Favoriten, NAS und „Auf diesem Handy“ (Entwurf 20). */
 @Composable
 fun FilesHomeScreen(
     state: RootsState,
@@ -68,43 +92,102 @@ fun FilesHomeScreen(
     onRoot: (FileRoot) -> Unit,
     onTransfers: () -> Unit,
     onOffline: () -> Unit,
-    onLater: () -> Unit,
+    onSearch: () -> Unit,
+    onTrash: () -> Unit,
+    onJobs: () -> Unit,
     bottomBar: @Composable () -> Unit,
+    favorites: List<Favorite> = emptyList(),
+    onFavorite: (Favorite) -> Unit = {},
+    jobsRunning: Int = 0,
 ) {
+    val c = Titan.colors
     Page(
         topBar = {
             Box(Modifier.statusBarsPadding()) {
                 TopBar(
                     stringResource(R.string.files_title),
                     icon = { AppIcon("files", "orange", 30.dp) },
-                    actions = {
-                        IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), onLater)
-                        IconButton(TitanIcons.more, stringResource(UiR.string.ui_more), onLater)
-                    },
+                    actions = { IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), onSearch) },
                 )
             }
         },
         bottomBar = bottomBar,
     ) {
-        SectionHeader(stringResource(R.string.files_shares), top = 14.dp)
         val roots = state.roots
-        when {
-            roots == null && state.error != null -> Problem(errorText(state.error))
-            roots == null -> Text(stringResource(UiR.string.ui_loading), style = TitanType.body, color = Titan.colors.muted)
-            roots.isEmpty() -> Text(stringResource(R.string.files_no_shares), style = TitanType.body, color = Titan.colors.muted)
-            else -> Card {
-                roots.forEachIndexed { i, r ->
-                    val free = stringResource(R.string.files_free, Format.bytes(r.freeBytes), Format.bytes(r.totalBytes))
+        if (roots != null && favorites.isNotEmpty()) {
+            SectionHeader(stringResource(R.string.files_favorites), top = 14.dp)
+            Card {
+                favorites.forEachIndexed { i, f ->
+                    val root = roots.firstOrNull { it.id == f.root }
                     ListRow(
-                        title = r.name,
-                        sub = if (r.writable) free else "$free · ${stringResource(R.string.files_read_only)}",
-                        icon = { AppIcon("shares", "yellow", 38.dp) },
+                        title = f.label ?: f.path.substringAfterLast('/').ifEmpty { root?.name ?: f.root },
+                        sub = (listOf(root?.name ?: f.root) + f.path.split('/').filter { it.isNotEmpty() }).joinToString(" › "),
+                        icon = { RowIcon(TitanIcons.pin, size = 24.dp) },
                         chevron = true,
                         divider = i > 0,
-                        onClick = { onRoot(r) },
+                        onClick = { onFavorite(f) },
                     )
                 }
             }
+        }
+        when {
+            roots == null && state.error != null -> {
+                SectionHeader(stringResource(R.string.files_shares), top = 14.dp)
+                Problem(errorText(state.error))
+            }
+            roots == null -> {
+                SectionHeader(stringResource(R.string.files_shares), top = 14.dp)
+                Text(stringResource(UiR.string.ui_loading), style = TitanType.body, color = c.muted)
+            }
+            roots.isEmpty() -> {
+                SectionHeader(stringResource(R.string.files_shares), top = 14.dp)
+                Text(stringResource(R.string.files_no_shares), style = TitanType.body, color = c.muted)
+            }
+            else -> {
+                val groups = roots.groupBy { it.kind.ifEmpty { "share" } }
+                var first = favorites.isEmpty()
+                for (kind in listOf("share", "volume", "usb", "stick")) {
+                    val list = groups[kind] ?: continue
+                    SectionHeader(kindTitle(kind), top = if (first) 14.dp else 18.dp)
+                    first = false
+                    Card {
+                        list.forEachIndexed { i, r ->
+                            val free = if (r.totalBytes > 0) stringResource(R.string.files_free, Format.bytes(r.freeBytes), Format.bytes(r.totalBytes)) else null
+                            ListRow(
+                                title = r.name,
+                                sub = listOfNotNull(free, if (r.writable) null else stringResource(R.string.files_read_only)).joinToString(" · ").ifEmpty { null },
+                                icon = { if (kind == "share") AppIcon("shares", "yellow", 38.dp) else RowIcon(TitanIcons.hdd, size = 26.dp) },
+                                chevron = true,
+                                divider = i > 0,
+                                onClick = { onRoot(r) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        SectionHeader(stringResource(R.string.files_on_nas))
+        Card {
+            val bins = roots.orEmpty().filter { it.recycle }
+            ListRow(
+                stringResource(R.string.files_trash),
+                sub = when {
+                    roots == null -> null
+                    bins.isEmpty() -> stringResource(R.string.trash_none_text)
+                    else -> pluralStringResource(R.plurals.trash_shares, bins.size, bins.size)
+                },
+                icon = { RowIcon(TitanIcons.trash, size = 24.dp) },
+                chevron = true,
+                onClick = onTrash,
+            )
+            ListRow(
+                stringResource(R.string.jobs_title),
+                sub = if (jobsRunning > 0) pluralStringResource(R.plurals.jobs_running, jobsRunning, jobsRunning) else stringResource(R.string.jobs_text),
+                icon = { RowIcon(TitanIcons.sync, size = 24.dp) },
+                chevron = true,
+                divider = true,
+                onClick = onJobs,
+            )
         }
         SectionHeader(stringResource(R.string.files_on_phone))
         Card {
@@ -123,15 +206,8 @@ fun FilesHomeScreen(
                 divider = true,
                 onClick = onTransfers,
             )
-            ListRow(
-                stringResource(R.string.files_trash),
-                sub = stringResource(UiR.string.ui_later),
-                icon = { RowIcon(TitanIcons.trash, size = 24.dp) },
-                chevron = true,
-                divider = true,
-                onClick = onLater,
-            )
         }
+        Box(Modifier.padding(bottom = 12.dp))
     }
 }
 
@@ -140,170 +216,23 @@ fun entryDate(modified: String): String? = Format.instant(modified)?.let {
     Format.shortDate(it, stringResource(R.string.files_today), stringResource(R.string.files_yesterday))
 }
 
-private fun iconFor(name: String) = when (name.substringAfterLast('.', "").lowercase()) {
-    "pdf" -> TitanIcons.pdf
-    "jpg", "jpeg", "png", "gif", "webp", "heic", "avif" -> TitanIcons.image
-    "mp4", "mov", "mkv", "webm", "avi" -> TitanIcons.video
+internal fun iconFor(name: String) = when (Kinds.of(name)) {
+    FileKind.Pdf -> TitanIcons.pdf
+    FileKind.Image -> TitanIcons.image
+    FileKind.Video -> TitanIcons.video
+    FileKind.Audio -> TitanIcons.mic
+    FileKind.Archive -> TitanIcons.archive
+    FileKind.Text -> TitanIcons.edit
     else -> TitanIcons.file
 }
 
 @Composable
-private fun EntryIcon(e: FileEntry) {
+internal fun EntryIcon(e: FileEntry, size: androidx.compose.ui.unit.Dp = 40.dp) {
     if (e.dir) {
-        AppIcon("files", "orange", 40.dp)
+        AppIcon("files", "orange", size)
     } else {
-        val pdf = e.name.lowercase().endsWith(".pdf")
-        FileTypeIcon(iconFor(e.name), tint = if (pdf) Titan.colors.dangerInk else Titan.colors.muted)
-    }
-}
-
-/** Ordner (Entwurf 21): Pfad als Chips, Einträge, laufende Uploads in der Zeile, „+“ unten rechts. */
-@Composable
-fun FolderScreen(
-    state: FolderState,
-    uploads: List<Transfer>,
-    onBack: () -> Unit,
-    onCrumb: (Int) -> Unit,
-    onEntry: (FileEntry) -> Unit,
-    onUpload: () -> Unit,
-    onLater: () -> Unit,
-    bottomBar: @Composable () -> Unit,
-    onMore: () -> Unit = onLater,
-    overlay: @Composable BoxScope.() -> Unit = {},
-) {
-    val c = Titan.colors
-    val title = state.location.segments.lastOrNull() ?: state.location.root.name
-    Box {
-        Page(
-            topBar = {
-                Box(Modifier.statusBarsPadding()) {
-                    TopBar(title, onBack = onBack, backLabel = stringResource(UiR.string.ui_back), actions = {
-                        IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), onLater)
-                        IconButton(TitanIcons.more, stringResource(UiR.string.ui_more), onMore)
-                    })
-                }
-            },
-            bottomBar = bottomBar,
-            overlay = {
-                if (state.location.root.writable) {
-                    Fab(TitanIcons.plus, stringResource(R.string.files_upload), onUpload, Modifier.align(Alignment.BottomEnd).padding(18.dp))
-                }
-                overlay()
-            },
-        ) {
-            val crumbs = listOf(state.location.root.name) + state.location.segments
-            FlowRow(
-                Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 12.dp).semantics { contentDescription = crumbs.joinToString(" › ") },
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                itemVerticalAlignment = Alignment.CenterVertically,
-            ) {
-                crumbs.forEachIndexed { i, name ->
-                    if (i > 0) Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(16.dp))
-                    Chip(name, on = i == crumbs.lastIndex, onClick = { onCrumb(i) })
-                }
-            }
-            Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.files_sort_name), style = TitanType.body.copy(fontSize = TitanType.small.fontSize * (14f / 13f)), color = c.muted, modifier = Modifier.weight(1f))
-            }
-            state.error?.let { Problem(errorText(it), Modifier.padding(bottom = 12.dp)) }
-            val entries = state.entries
-            when {
-                entries == null && state.error == null -> Text(stringResource(UiR.string.ui_loading), style = TitanType.body, color = c.muted)
-                entries == null -> Unit
-                entries.isEmpty() && uploads.isEmpty() -> EmptyState(stringResource(R.string.files_empty), "")
-                else -> Card {
-                    var first = true
-                    for (e in entries) {
-                        val up = uploads.firstOrNull { it.name == e.name }
-                        EntryRow(e, up, divider = !first, onClick = { onEntry(e) })
-                        first = false
-                    }
-                    for (u in uploads.filter { u -> entries.none { it.name == u.name } }) {
-                        ListRow(
-                            title = u.name,
-                            sub = Format.bytes(u.total),
-                            icon = { FileTypeIcon(iconFor(u.name)) },
-                            right = { Text(stringResource(R.string.files_uploading, Format.percent(u.fraction.toDouble())), style = TitanType.small, color = c.muted) },
-                            divider = !first,
-                        )
-                        first = false
-                    }
-                }
-            }
-            Box(Modifier.padding(bottom = 72.dp))
-        }
-    }
-}
-
-@Composable
-private fun EntryRow(e: FileEntry, upload: Transfer?, divider: Boolean, onClick: () -> Unit) {
-    val c = Titan.colors
-    val date = entryDate(e.modified)
-    val sub = if (e.dir) date else listOfNotNull(Format.bytes(e.size), date).joinToString(" · ")
-    ListRow(
-        title = e.name,
-        sub = sub,
-        icon = { EntryIcon(e) },
-        right = upload?.let { u -> { Text(stringResource(R.string.files_uploading, Format.percent(u.fraction.toDouble())), style = TitanType.small, color = c.muted) } },
-        chevron = e.dir,
-        divider = divider,
-        onClick = onClick,
-    )
-}
-
-/** Blatt einer Datei (Entwurf 22). */
-@Composable
-fun BoxScope.FileSheet(
-    entry: FileEntry,
-    withTrash: Boolean,
-    writable: Boolean,
-    offline: Boolean,
-    onOffline: (Boolean) -> Unit,
-    onShare: () -> Unit,
-    onDownload: () -> Unit,
-    onRename: () -> Unit,
-    onDelete: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val c = Titan.colors
-    val on = stringResource(UiR.string.ui_on)
-    val off = stringResource(UiR.string.ui_off)
-    Sheet(onDismiss) {
-        Row(Modifier.padding(bottom = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            EntryIcon(entry)
-            Column(Modifier.weight(1f)) {
-                Text(entry.name, style = TitanType.rowTitle, color = c.text)
-                val date = Format.instant(entry.modified)?.let { Format.longDate(it) }
-                Text(
-                    if (date != null) stringResource(R.string.files_changed, Format.bytes(entry.size), date) else Format.bytes(entry.size),
-                    style = TitanType.rowSub,
-                    color = c.muted,
-                )
-            }
-        }
-        Card(background = c.bg) {
-            ListRow(stringResource(R.string.files_share), sub = stringResource(R.string.files_share_text), icon = { RowIcon(TitanIcons.share) }, onClick = onShare)
-            ListRow(
-                stringResource(R.string.files_offline),
-                sub = stringResource(R.string.files_offline_text),
-                icon = { RowIcon(TitanIcons.offline) },
-                right = { Toggle(offline, onOffline, on, off) },
-                divider = true,
-            )
-            ListRow(stringResource(R.string.files_download), icon = { RowIcon(TitanIcons.download) }, divider = true, onClick = onDownload)
-            if (writable) {
-                ListRow(stringResource(R.string.files_rename), icon = { RowIcon(TitanIcons.edit) }, divider = true, onClick = onRename)
-                ListRow(stringResource(R.string.files_move), sub = stringResource(R.string.files_move_text), icon = { RowIcon(TitanIcons.move) }, divider = true)
-                ListRow(
-                    stringResource(if (withTrash) R.string.files_to_trash else R.string.files_delete_forever),
-                    icon = { RowIcon(TitanIcons.trash, tint = c.dangerInk) },
-                    titleColor = c.dangerInk,
-                    divider = true,
-                    onClick = onDelete,
-                )
-            }
-        }
+        val pdf = Kinds.ext(e.name) == "pdf"
+        FileTypeIcon(iconFor(e.name), tint = if (pdf) Titan.colors.dangerInk else Titan.colors.muted, size = size)
     }
 }
 
@@ -327,9 +256,13 @@ fun BoxScope.RenameDialog(name: String, value: String, onValue: (String) -> Unit
 
 /** In den Papierkorb bzw. endgültig löschen: gefährlicher Knopf links von „Abbrechen“. */
 @Composable
-fun BoxScope.DeleteDialog(name: String, withTrash: Boolean, onDo: () -> Unit, onDismiss: () -> Unit) {
+fun BoxScope.DeleteDialog(name: String, withTrash: Boolean, onDo: () -> Unit, onDismiss: () -> Unit, count: Int = 1) {
     ConfirmDialog(
-        title = stringResource(if (withTrash) R.string.files_trash_confirm_title else R.string.files_delete_confirm_title, name),
+        title = if (count > 1) {
+            pluralStringResource(if (withTrash) R.plurals.files_trash_many else R.plurals.files_delete_many, count, count)
+        } else {
+            stringResource(if (withTrash) R.string.files_trash_confirm_title else R.string.files_delete_confirm_title, name)
+        },
         text = stringResource(if (withTrash) R.string.files_trash_confirm_text else R.string.files_delete_confirm_text),
         actions = listOf(
             DialogAction(stringResource(if (withTrash) R.string.files_to_trash else R.string.files_delete_forever), danger = true, onClick = onDo),

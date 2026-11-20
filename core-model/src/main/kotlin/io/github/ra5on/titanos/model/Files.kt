@@ -14,6 +14,8 @@ data class FileRoot(
     val bins: List<String>? = null,
     val totalBytes: Long = 0,
     val freeBytes: Long = 0,
+    /** Der Volltext-Index deckt die Ablage ab (Inhaltssuche möglich). */
+    val indexed: Boolean = false,
 )
 
 /** Ein Eintrag aus `GET /api/v1/files/list`. modified: RFC 3339 (UTC). */

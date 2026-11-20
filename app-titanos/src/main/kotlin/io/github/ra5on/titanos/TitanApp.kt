@@ -53,6 +53,13 @@ class TitanApp : Application(), Configuration.Provider {
         FilesRuntime.store = graph.transfers
         FilesRuntime.offline = graph.offline
         FilesRuntime.api = { graph.api }
+        // Dateien, Fotos und Office: eigene Verbindung über dieselbe Kopplung und Sitzung (je Kopplung einmal).
+        var filesAccess: io.github.ra5on.titanos.files.FilesAccess? = null
+        FilesRuntime.access = {
+            graph.pairing?.let { p ->
+                filesAccess?.takeIf { it.pairing == p } ?: io.github.ra5on.titanos.files.FilesAccess(graph.shared, p, graph.sessions).also { filesAccess = it }
+            }
+        }
         Outbox.prune(this, graph.transfers)
         io.github.ra5on.titanos.update.UpdateCheck.schedule(this)
         io.github.ra5on.titanos.widgets.WidgetRuntime.api = { graph.api }
