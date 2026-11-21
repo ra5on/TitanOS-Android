@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
@@ -103,9 +104,11 @@ fun AdminDialog(
 ) {
     AdminWindow(onDismiss) {
         val c = Titan.colors
+        val closeLabel = t("common.close")
         Box(
             Modifier.fillMaxSize().background(Color.Black.copy(alpha = .5f))
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClickLabel = t("common.close"), onClick = onDismiss)
+                .semantics { contentDescription = closeLabel }
                 .statusBarsPadding().navigationBarsPadding().imePadding(),
             contentAlignment = Alignment.Center,
         ) {
@@ -152,10 +155,12 @@ fun AdminSheet(
 ) {
     AdminWindow(onDismiss) {
         val c = Titan.colors
+        val closeLabel = t("common.close")
         val phone = !currentWidth().twoPanes
         Box(
             Modifier.fillMaxSize().background(Color.Black.copy(alpha = .5f))
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
+                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClickLabel = t("common.close"), onClick = onDismiss)
+                .semantics { contentDescription = closeLabel }
                 .statusBarsPadding().imePadding(),
             contentAlignment = if (phone) Alignment.BottomCenter else Alignment.Center,
         ) {
