@@ -4,4 +4,26 @@
     <!-- Ab targetSdk 37 braucht jede Verbindung ins Heimnetz diese Laufzeit-Berechtigung (TECHNIK §2). -->
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Eine Kopplung für beide Apps (Sibling.kt): nur Apps mit derselben Signatur. -->
+    <permission
+        android:name="io.github.ra5on.titanos.permission.SIBLING"
+        android:label="@string/pair_sibling_permission"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="io.github.ra5on.titanos.permission.SIBLING" />
+    <queries>
+        <package android:name="io.github.ra5on.titanos" />
+        <package android:name="io.github.ra5on.titanos.agent" />
+    </queries>
+    <application>
+        <receiver
+            android:name="io.github.ra5on.titanos.pairing.SiblingReceiver"
+            android:exported="true"
+            android:permission="io.github.ra5on.titanos.permission.SIBLING">
+            <intent-filter>
+                <action android:name="io.github.ra5on.titanos.sibling.REQUEST" />
+                <action android:name="io.github.ra5on.titanos.sibling.OFFER" />
+                <action android:name="io.github.ra5on.titanos.sibling.PAIRED" />
+            </intent-filter>
+        </receiver>
+    </application>
 </manifest>

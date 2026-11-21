@@ -9,8 +9,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -68,6 +71,7 @@ private sealed interface ChatRoute {
  * Chats, Projekte, Aufträge, Notizen. [ask] ist ein Wunsch von außen
  * (Teilen, Widget); er füllt nur das Eingabefeld, gesendet wird erst nach Tippen.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AgentRoot(
     model: AgentModel,
@@ -128,15 +132,19 @@ fun AgentRoot(
         if (a.voice && voice) listen()
     }
 
+    // Beim Tippen keine Leiste unten (wie im Web): mehr Platz für Verlauf und Eingabe.
+    val typing = WindowInsets.isImeVisible
     val nav = @Composable {
-        AgentNav(tab) {
+        if (!typing) AgentNav(tab) {
             if (it == tab && it == AgentTab.Chat) route = ChatRoute.Chat
             tab = it
         }
     }
     if (tab != AgentTab.Chat) BackHandler { tab = AgentTab.Chat }
 
-    Box(Modifier.fillMaxSize()) {
+    // Randlos (ab Android 15 Pflicht) schiebt adjustResize nichts mehr hoch:
+    // der Abstand zur Tastatur hält Eingabefeld und Blätter über ihr.
+    Box(Modifier.fillMaxSize().imePadding()) {
         when (tab) {
             AgentTab.Chat -> when (route) {
                 ChatRoute.List -> {
