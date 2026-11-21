@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Erzeugt aus web/src/lib/i18n/features/mail.*.json und den Texten nur der App. -->
+<resources>
+    <string name="desktop_app_mail">Mail</string>
+    <string name="error_mail_auth_failed">Login at the mail server failed: the user name or password is wrong (some providers need an app password).</string>
+    <string name="error_mail_busy">Mail is busy with other large requests (sending, attachments). Try again in a moment.</string>
+    <string name="error_mail_disabled">Mail is not enabled for your account.</string>
+    <string name="error_mail_folder_exists">A folder with this name already exists.</string>
+    <string name="error_mail_host_forbidden">This server is not allowed: only mail servers on the internet. Only an administrator may enter servers in the home network; the NAS itself never.</string>
+    <string name="error_mail_invalid">An entry is not valid.</string>
+    <string name="error_mail_key_damaged">The key of the stored mail passwords is damaged. Restore it from the backup of the stick or add the mailboxes anew.</string>
+    <string name="error_mail_key_missing">The key of the stored mail passwords is missing on the stick. Restore it from the backup of the stick or add the mailboxes anew.</string>
+    <string name="error_mail_no_password">No password is stored for this mailbox. Enter it in the settings of the mailbox.</string>
+    <string name="error_mail_not_found">The message or folder is no longer there.</string>
+    <string name="error_mail_password_required">The server or user name was changed: enter the password again. A stored password never goes to another server.</string>
+    <string name="error_mail_rate_limited">Too many tries with new servers or connection checks – please wait a minute.</string>
+    <string name="error_mail_send_failed">The mail server did not accept the e-mail.</string>
+    <string name="error_mail_settings_unreadable">The Mail settings of this account could not be read at start. So that nothing is lost, Mail saves nothing over them.</string>
+    <string name="error_mail_timeout">The mail server did not answer in time.</string>
+    <string name="error_mail_tls">No secure connection: the server offers no TLS or its certificate is not valid.</string>
+    <string name="error_mail_too_large">Too large: attachments may add up to at most 25 MB.</string>
+    <string name="error_mail_unavailable">Mail is not ready on this NAS right now. Try again in a moment.</string>
+    <string name="error_mail_unreachable">No connection to the mail server: not reachable, refused, no secure connection or no answer. Check the server, port and encryption.</string>
+    <string name="mail_action_archive">Archive</string>
+    <string name="mail_action_compose">New e-mail</string>
+    <string name="mail_action_delete">Delete</string>
+    <string name="mail_action_deleteForever">Delete for good</string>
+    <string name="mail_action_flag">Flag</string>
+    <string name="mail_action_forward">Forward</string>
+    <string name="mail_action_junk">Move to Junk</string>
+    <string name="mail_action_markRead">Mark as read</string>
+    <string name="mail_action_markUnread">Mark as unread</string>
+    <string name="mail_action_more">More</string>
+    <string name="mail_action_move">Move</string>
+    <string name="mail_action_reply">Reply</string>
+    <string name="mail_action_replyAll">Reply all</string>
+    <string name="mail_action_unflag">Remove flag</string>
+    <string name="mail_all_failed" formatted="true">Not reachable, missing in the list: %1$s</string>
+    <string name="mail_all_sub" formatted="true">%1$s mailboxes</string>
+    <string name="mail_attachment_download">Download</string>
+    <string name="mail_attachment_noName">(no name)</string>
+    <string name="mail_attachment_save">Save to Files</string>
+    <string name="mail_attachment_saveTitle" formatted="true">Save “%1$s” to …</string>
+    <string name="mail_attachment_saved" formatted="true">“%1$s” is saved in %2$s.</string>
+    <string name="mail_attachment_title">Attachments</string>
+    <string name="mail_back_folders">Mailboxes</string>
+    <string name="mail_bar_filter">Filter</string>
+    <string name="mail_bar_filteredBy">Filtered by:</string>
+    <string name="mail_bar_justNow">Updated just now</string>
+    <string name="mail_bar_mark">Mark</string>
+    <string name="mail_bar_markMany" formatted="true">%1$s mails</string>
+    <string name="mail_bar_markOne">1 mail</string>
+    <string name="mail_bar_move">Move</string>
+    <string name="mail_bar_moveOne">Moving works within one mailbox only</string>
+    <string name="mail_bar_updatedAt" formatted="true">Updated %1$s</string>
+    <string name="mail_box_allInboxes">All Inboxes</string>
+    <string name="mail_box_done">Done</string>
+    <string name="mail_box_edit">Edit</string>
+    <string name="mail_box_flagged">Flagged</string>
+    <string name="mail_box_show" formatted="true">Show “%1$s”</string>
+    <string name="mail_box_title">Mailboxes</string>
+    <string name="mail_bulk_deleteText">The messages are in the trash. They are deleted for good at the provider and cannot be brought back.</string>
+    <string name="mail_bulk_deleteTitle" formatted="true">Delete %1$s messages for good?</string>
+    <string name="mail_compose_attachments">Attachments</string>
+    <string name="mail_compose_badRecipients" formatted="true">Not a valid address: %1$s</string>
+    <string name="mail_compose_date">Date:</string>
+    <string name="mail_compose_discard">Discard</string>
+    <string name="mail_compose_discardDraft">What you wrote is lost, and the saved draft goes to the trash.</string>
+    <string name="mail_compose_discardText">What you wrote is lost.</string>
+    <string name="mail_compose_discardTitle">Discard e-mail?</string>
+    <string name="mail_compose_draftFailed" formatted="true">Draft not saved: %1$s</string>
+    <string name="mail_compose_draftSaved" formatted="true">Draft saved at %1$s.</string>
+    <string name="mail_compose_forwardHead">-------- Forwarded message --------</string>
+    <string name="mail_compose_forwarded">from the forwarded message</string>
+    <string name="mail_compose_from">From</string>
+    <string name="mail_compose_fromContacts">contact</string>
+    <string name="mail_compose_fromDraft">saved in the draft</string>
+    <string name="mail_compose_fromNas">From the NAS\'s files</string>
+    <string name="mail_compose_invalid">not a valid address</string>
+    <string name="mail_compose_noAccount">Choose the mailbox you write from.</string>
+    <string name="mail_compose_noRecipient">Enter at least one recipient.</string>
+    <string name="mail_compose_noSignature">No signature</string>
+    <string name="mail_compose_removeFile" formatted="true">Remove “%1$s”</string>
+    <string name="mail_compose_removeRecipient" formatted="true">Remove %1$s</string>
+    <string name="mail_compose_send">Send</string>
+    <string name="mail_compose_showCopies">Cc and Bcc</string>
+    <string name="mail_compose_signature">Signature</string>
+    <string name="mail_compose_signaturePreview">Signature, added when sent</string>
+    <string name="mail_compose_subject">Subject</string>
+    <string name="mail_compose_suggestions">Suggestions from the address book</string>
+    <string name="mail_compose_text">Text of the e-mail</string>
+    <string name="mail_compose_title">New e-mail</string>
+    <string name="mail_compose_tooLarge" formatted="true">The attachments add up to %1$s; at most %2$s are allowed.</string>
+    <string name="mail_compose_tooMany" formatted="true">At most %1$s recipients per e-mail.</string>
+    <string name="mail_compose_wrote" formatted="true">On %1$s, %2$s wrote:</string>
+    <string name="mail_delete_forever">It is deleted for good at the provider and cannot be brought back.</string>
+    <string name="mail_delete_text" formatted="true">The message “%1$s” is in the trash.</string>
+    <string name="mail_delete_title">Delete for good?</string>
+    <string name="mail_disabled_text">An owner or administrator enables Mail for your account under Users › Account › Apps.</string>
+    <string name="mail_disabled_title">Mail is not enabled for your account</string>
+    <string name="mail_done_archived" formatted="true">%1$s archived.</string>
+    <string name="mail_done_deleted" formatted="true">%1$s deleted.</string>
+    <string name="mail_done_junk" formatted="true">%1$s moved to Junk.</string>
+    <string name="mail_done_moved" formatted="true">%1$s moved to “%2$s”.</string>
+    <string name="mail_empty_add">Set up mailbox</string>
+    <string name="mail_empty_text">Set up a mailbox with its address and password. Only your account sees it.</string>
+    <string name="mail_empty_title">No mailbox yet</string>
+    <string name="mail_fav_add" formatted="true">Pin “%1$s” as a favourite</string>
+    <string name="mail_fav_remove" formatted="true">Unpin “%1$s” from the favourites</string>
+    <string name="mail_fav_title">Favourites</string>
+    <string name="mail_filter_allFolders">All folders</string>
+    <string name="mail_filter_areFlagged">are flagged</string>
+    <string name="mail_filter_areUnread">are unread</string>
+    <string name="mail_filter_attachmentWord">with attachment</string>
+    <string name="mail_filter_flagged">Flagged</string>
+    <string name="mail_filter_fromWord" formatted="true">from “%1$s”</string>
+    <string name="mail_filter_haveAttachment">have an attachment</string>
+    <string name="mail_filter_include">Include</string>
+    <string name="mail_filter_mailsThat">Mails that …</string>
+    <string name="mail_filter_thisFolder">This folder</string>
+    <string name="mail_filter_unread">Unread</string>
+    <string name="mail_group_older">Older</string>
+    <string name="mail_group_today">Today</string>
+    <string name="mail_group_week">This week</string>
+    <string name="mail_group_yesterday">Yesterday</string>
+    <string name="mail_head_andMore" formatted="true">%1$s and %2$s more</string>
+    <string name="mail_head_bcc">Bcc:</string>
+    <string name="mail_head_cc">Cc:</string>
+    <string name="mail_head_from">From:</string>
+    <string name="mail_head_less">Hide recipients</string>
+    <string name="mail_head_more">Show all recipients</string>
+    <string name="mail_head_replyTo">Reply to:</string>
+    <string name="mail_head_to">To:</string>
+    <string name="mail_hint_app_password" formatted="true">%1$s: create an app password for Mail in your account at the provider and enter it here.</string>
+    <string name="mail_hint_app_password_2fa" formatted="true">%1$s: with two-step sign-in you need an app password, which you create in your account at the provider.</string>
+    <string name="mail_hint_imap_enable" formatted="true">%1$s: allow access through IMAP/POP3 in your mailbox settings at the provider.</string>
+    <string name="mail_hint_mail_password" formatted="true">%1$s: use the separate password for e-mail programs, not that of your customer account.</string>
+    <string name="mail_hint_oauth_only" formatted="true">%1$s requires signing in with the provider (OAuth), which Mail cannot do yet.</string>
+    <string name="mail_hit_folder" formatted="true">in %1$s</string>
+    <string name="mail_images_blocked">External images blocked – they would tell the sender that and when you open the message.</string>
+    <string name="mail_images_load">Load images</string>
+    <string name="mail_keys_archive">Archive</string>
+    <string name="mail_keys_delete">Delete</string>
+    <string name="mail_keys_help">This overview</string>
+    <string name="mail_keys_next">Next message</string>
+    <string name="mail_keys_note">The keys do nothing while you type in a field.</string>
+    <string name="mail_keys_prev">Previous message</string>
+    <string name="mail_keys_reply">Reply</string>
+    <string name="mail_keys_search">Search field</string>
+    <string name="mail_keys_title">Keyboard shortcuts</string>
+    <string name="mail_link_someWarn">Careful: a link leads somewhere other than its text says</string>
+    <string name="mail_link_title" formatted="true">Link targets in this message (%1$s)</string>
+    <string name="mail_link_warn" formatted="true">The text names another address – the link leads to %1$s</string>
+    <string name="mail_list_empty">This folder is empty.</string>
+    <string name="mail_list_more">Load more messages</string>
+    <string name="mail_list_noneFound">No matching message.</string>
+    <string name="mail_list_tooLarge">Mail too large to show</string>
+    <string name="mail_live_down">No live connection to the NAS – new e-mail shows up again once it is back. Mail reconnects by itself.</string>
+    <string name="mail_mark_answered">Answered</string>
+    <string name="mail_mark_attachment">With attachment</string>
+    <string name="mail_mark_flagged">Flagged</string>
+    <string name="mail_mark_forwarded">Forwarded</string>
+    <string name="mail_mark_unread">Unread</string>
+    <string name="mail_move_none">No other folder.</string>
+    <string name="mail_move_title">Move to …</string>
+    <string name="mail_noSender">(no sender)</string>
+    <string name="mail_noSubject">(no subject)</string>
+    <string name="mail_overview_flagged" formatted="true">Flagged in %1$s</string>
+    <string name="mail_overview_flaggedMore">Show all flagged</string>
+    <string name="mail_overview_flaggedNone">No flagged messages.</string>
+    <string name="mail_overview_hint">Choose a message in the list to read it here.</string>
+    <string name="mail_overview_links">Quick links</string>
+    <string name="mail_overview_live">New mail in the inbox arrives by itself.</string>
+    <string name="mail_overview_notYet">Not loaded yet.</string>
+    <string name="mail_overview_poll">The list reloads every 2 minutes while Mail is open.</string>
+    <string name="mail_overview_refreshed" formatted="true">Last refreshed: %1$s</string>
+    <string name="mail_overview_settings">Mail settings</string>
+    <string name="mail_overview_showUnread">Show unread</string>
+    <string name="mail_overview_title">Overview</string>
+    <string name="mail_overview_unreadNone" formatted="true">No unread messages in %1$s.</string>
+    <string name="mail_overview_unreadSome" formatted="true">%1$s unread messages in %2$s</string>
+    <string name="mail_pick_all">Select all</string>
+    <string name="mail_rawText">This mail is too large in structure to be prepared (for example a digest with a great many posts). Mail shows the beginning of its content as it came – without formatting and without attachments.</string>
+    <string name="mail_resize_folders">Width of the folder column</string>
+    <string name="mail_resize_list">Width of the message list</string>
+    <string name="mail_role_archive">Archive</string>
+    <string name="mail_role_drafts">Drafts</string>
+    <string name="mail_role_inbox">Inbox</string>
+    <string name="mail_role_junk">Junk</string>
+    <string name="mail_role_sent">Sent</string>
+    <string name="mail_role_trash">Trash</string>
+    <string name="mail_rule_account">Mailbox</string>
+    <string name="mail_rule_add">Add rule</string>
+    <string name="mail_rule_empty">without condition</string>
+    <string name="mail_rule_flag">Flag</string>
+    <string name="mail_rule_from">Sender contains</string>
+    <string name="mail_rule_fromHas" formatted="true">sender contains “%1$s”</string>
+    <string name="mail_rule_legend" formatted="true">Rule %1$s</string>
+    <string name="mail_rule_markRead">Mark as read</string>
+    <string name="mail_rule_moveTo">Move to</string>
+    <string name="mail_rule_noMove">do not move</string>
+    <string name="mail_rule_none">No rule yet.</string>
+    <string name="mail_rule_off">Rule is off</string>
+    <string name="mail_rule_on">Rule is on</string>
+    <string name="mail_rule_remove">Delete rule</string>
+    <string name="mail_rule_removeText" formatted="true">The rule “%1$s” is deleted once you save.</string>
+    <string name="mail_rule_removeTitle">Delete rule?</string>
+    <string name="mail_rule_subject">Subject contains</string>
+    <string name="mail_rule_subjectHas" formatted="true">subject contains “%1$s”</string>
+    <string name="mail_rule_then">Then</string>
+    <string name="mail_rule_to">Recipient contains</string>
+    <string name="mail_rule_toHas" formatted="true">recipient contains “%1$s”</string>
+    <string name="mail_rule_when">If</string>
+    <string name="mail_search_attachmentHint">Finds mail with attached files. A mail that is a file and nothing else is not found.</string>
+    <string name="mail_search_foundAll" formatted="true">%1$s found in %2$s folders</string>
+    <string name="mail_search_from">From</string>
+    <string name="mail_search_fromHint">Name or address of the sender</string>
+    <string name="mail_search_label">Search this folder</string>
+    <string name="mail_search_labelAll">Search all folders</string>
+    <string name="mail_search_needCriteria">Type a search or choose a filter to search all folders.</string>
+    <string name="mail_search_newest" formatted="true">The newest %1$s are shown.</string>
+    <string name="mail_search_period">Period (received)</string>
+    <string name="mail_search_placeholderAll">Search all folders</string>
+    <string name="mail_search_placeholderShort">Search</string>
+    <string name="mail_search_reset">Reset the filters</string>
+    <string name="mail_search_since">From</string>
+    <string name="mail_search_truncated">Not every folder was searched. Narrow the search, for example with a period.</string>
+    <string name="mail_search_until">Until</string>
+    <string name="mail_settings_accounts">Mailboxes</string>
+    <string name="mail_settings_authFailed">The login at the provider failed. Mail tries again only after you change the password, user name or server.</string>
+    <string name="mail_settings_defaultSignature">Default signature</string>
+    <string name="mail_settings_notify">Notifications</string>
+    <string name="mail_settings_notifyDesc">Bell and push for new e-mail in the inbox, per mailbox.</string>
+    <string name="mail_settings_password">New password</string>
+    <string name="mail_settings_passwordAgain">Server or user name changed: enter the password again. A stored password never goes to another server.</string>
+    <string name="mail_settings_passwordHint">Leave empty to keep the stored password.</string>
+    <string name="mail_settings_pushContent">Sender and subject in push messages</string>
+    <string name="mail_settings_pushContentDesc">Off: push messages only say “New e-mail in &lt;mailbox&gt;”. The bell never names sender or subject.</string>
+    <string name="mail_settings_remove">Remove mailbox</string>
+    <string name="mail_settings_removeHint">Removes the mailbox from Mail. Nothing changes at the provider.</string>
+    <string name="mail_settings_removeKeeps">Your e-mail stays at the provider; you can set the mailbox up again at any time.</string>
+    <string name="mail_settings_removeText" formatted="true">Mail forgets “%1$s” with its servers, password and the rules for this mailbox.</string>
+    <string name="mail_settings_removeTitle">Remove mailbox?</string>
+    <string name="mail_settings_rules">Rules</string>
+    <string name="mail_settings_rulesDesc">Run on the NAS for new e-mail in the inbox, in order.</string>
+    <string name="mail_settings_rulesNew">Rules apply only to e-mail that newly arrives, not to existing mail.</string>
+    <string name="mail_settings_saveAll">Save signatures and rules</string>
+    <string name="mail_settings_saved">Saved.</string>
+    <string name="mail_settings_signatures">Signatures</string>
+    <string name="mail_settings_signaturesDesc">Text below your e-mails. Which one a mailbox uses by default is set at the mailbox.</string>
+    <string name="mail_settings_threadsDesc">Replies show as one entry with their count in the list. Applies to this device.</string>
+    <string name="mail_settings_title">Settings</string>
+    <string name="mail_settings_view">View</string>
+    <string name="mail_setup_addressTitle">E-mail address</string>
+    <string name="mail_setup_appPassword">This provider wants an app password: a password only for Mail that you create in your account settings at the provider. Your normal password does not work here.</string>
+    <string name="mail_setup_appPasswordLabel">App password</string>
+    <string name="mail_setup_back">Back</string>
+    <string name="mail_setup_badAddress">That is not a complete e-mail address.</string>
+    <string name="mail_setup_check">Check connection</string>
+    <string name="mail_setup_editServers">Change servers</string>
+    <string name="mail_setup_email">Address</string>
+    <string name="mail_setup_failed">Failed</string>
+    <string name="mail_setup_host">Server</string>
+    <string name="mail_setup_imap">Incoming (IMAP)</string>
+    <string name="mail_setup_imapShort">Incoming (IMAP)</string>
+    <string name="mail_setup_intro">Mail connects through IMAP and SMTP, always encrypted (TLS). The password is kept encrypted on the NAS and never shown on a page again.</string>
+    <string name="mail_setup_known" formatted="true">%1$s is known; the servers are already filled in.</string>
+    <string name="mail_setup_name">Name of the mailbox</string>
+    <string name="mail_setup_nameHint">What Mail calls the mailbox, e.g. “Personal”. Empty: the address.</string>
+    <string name="mail_setup_next">Next</string>
+    <string name="mail_setup_ok">Login works</string>
+    <string name="mail_setup_password">Password of the mailbox</string>
+    <string name="mail_setup_passwordTitle">Password</string>
+    <string name="mail_setup_port">Port</string>
+    <string name="mail_setup_save">Save</string>
+    <string name="mail_setup_saveAnyway">Save anyway</string>
+    <string name="mail_setup_security">Encryption</string>
+    <string name="mail_setup_senderName">Sender name</string>
+    <string name="mail_setup_senderNameHint">Shown to recipients before your address, e.g. “Alex Example”. Empty: the address alone.</string>
+    <string name="mail_setup_serversTitle">Servers</string>
+    <string name="mail_setup_smtp">Outgoing (SMTP)</string>
+    <string name="mail_setup_smtpShort">Outgoing (SMTP)</string>
+    <string name="mail_setup_starttls">STARTTLS</string>
+    <string name="mail_setup_step" formatted="true">Step %1$s of %2$s</string>
+    <string name="mail_setup_title">Set up mailbox</string>
+    <string name="mail_setup_tls">TLS</string>
+    <string name="mail_setup_tlsOnly">Encrypted connections only; the server\'s certificate must be valid.</string>
+    <string name="mail_setup_unknown" formatted="true">Mail knows no servers for %1$s. Enter them as your provider names them.</string>
+    <string name="mail_setup_unsupported" formatted="true">%1$s no longer accepts a password, only signing in with the provider (OAuth). Mail cannot do that in this version.</string>
+    <string name="mail_setup_user">User name</string>
+    <string name="mail_setup_working">One moment …</string>
+    <string name="mail_side_add">Add mailbox</string>
+    <string name="mail_side_settings">Settings</string>
+    <string name="mail_signature_add">Add signature</string>
+    <string name="mail_signature_name">Name</string>
+    <string name="mail_signature_newName">New signature</string>
+    <string name="mail_signature_none">No signature yet.</string>
+    <string name="mail_signature_remove">Delete signature</string>
+    <string name="mail_signature_removeText" formatted="true">The signature “%1$s” is deleted once you save.</string>
+    <string name="mail_signature_removeTitle">Delete signature?</string>
+    <string name="mail_signature_text">Text</string>
+    <string name="mail_state_auth_failed">Login failed</string>
+    <string name="mail_state_connecting">Connecting …</string>
+    <string name="mail_state_off">No lasting connection</string>
+    <string name="mail_state_ok">Connected</string>
+    <string name="mail_state_unreachable">Not reachable</string>
+    <string name="mail_thread_count" formatted="true">%1$s messages in this conversation</string>
+    <string name="mail_thread_toggle">Group conversations</string>
+    <string name="mail_tree_collapse" formatted="true">Hide the subfolders of “%1$s”</string>
+    <string name="mail_tree_expand" formatted="true">Show the subfolders of “%1$s”</string>
+    <string name="mail_truncated">The message is very large: parts are shortened or left out. The attachments are above.</string>
+    <string name="mail_unreadCount" formatted="true">%1$s unread</string>
+    <string name="mailx_after">After deleting, moving or archiving</string>
+    <string name="mailx_after_list">Back to the list</string>
+    <string name="mailx_after_next">Open the next message</string>
+    <string name="mailx_all_recipients">Show all recipients at once</string>
+    <string name="mailx_all_recipients_desc">Otherwise the head shows two names and “and … more”.</string>
+    <string name="mailx_android_notify">Whether and how the phone rings is set under Notifications › What should ring? (kind “Mail”).</string>
+    <string name="mailx_any_day">any</string>
+    <string name="mailx_ask_subject">Ask before sending without subject</string>
+    <string name="mailx_autosave">Save the draft automatically</string>
+    <string name="mailx_autosave_minutes" formatted="true">every %1$s minutes</string>
+    <string name="mailx_autosave_off">Never (only when leaving)</string>
+    <string name="mailx_autosave_seconds" formatted="true">every %1$s seconds</string>
+    <string name="mailx_avatars">Sender pictures</string>
+    <string name="mailx_avatars_desc">Picture from the contacts, else initials in a fixed colour.</string>
+    <string name="mailx_box_hint">The arrows sort mailboxes and folders. The top mailbox is your main one: new e-mails go from there. Without a tick a folder is hidden, the star adds it to the favourites (on this phone).</string>
+    <string name="mailx_cert_changed">The NAS shows another certificate than when paired. The app asks on the start page how to go on.</string>
+    <string name="mailx_clear_day" formatted="true">Clear %1$s</string>
+    <string name="mailx_collapsed">collapsed</string>
+    <string name="mailx_compact">Denser list</string>
+    <string name="mailx_compact_desc">Less space between mails; text stays whole.</string>
+    <string name="mailx_confirm_delete">Ask before deleting</string>
+    <string name="mailx_confirm_delete_desc">By default Mail asks only in the trash, where deleting is for good.</string>
+    <string name="mailx_delete_ask">Delete the message?</string>
+    <string name="mailx_delete_ask_many" formatted="true">Delete %1$s messages?</string>
+    <string name="mailx_delete_to_trash">They go to the mailbox’s trash.</string>
+    <string name="mailx_device_only">Applies to this phone.</string>
+    <string name="mailx_draft_auto" formatted="true">The draft is saved every %1$s seconds while you write; “Back” keeps it.</string>
+    <string name="mailx_drag">Drag and drop</string>
+    <string name="mailx_drag_desc">On large screens: mails onto a folder of the same mailbox, attachments into other apps. Files into writing always work.</string>
+    <string name="mailx_drag_hint">ready to drag</string>
+    <string name="mailx_drop_files">Release to attach the files.</string>
+    <string name="mailx_edit_draft">Edit draft</string>
+    <string name="mailx_error_detail" formatted="true">Error: %1$s</string>
+    <string name="mailx_fav_off">Remove from favourites</string>
+    <string name="mailx_fav_on">Pin as favourite</string>
+    <string name="mailx_file_exists">A file of this name exists there already.</string>
+    <string name="mailx_folder_counts">Count unread next to folders</string>
+    <string name="mailx_folder_delete">Delete folder</string>
+    <string name="mailx_folder_delete_text">The folder and the e-mails in it are deleted at the provider and cannot be brought back.</string>
+    <string name="mailx_folder_delete_title" formatted="true">Delete “%1$s”?</string>
+    <string name="mailx_folder_new">New folder</string>
+    <string name="mailx_folder_new_in" formatted="true">In “%1$s”</string>
+    <string name="mailx_folder_new_inside">New subfolder</string>
+    <string name="mailx_folder_rename">Rename folder</string>
+    <string name="mailx_forget">Forget</string>
+    <string name="mailx_forget_text" formatted="true">Take the learned address %1$s out of the suggestions? Contacts stay as they are.</string>
+    <string name="mailx_from_nas">from the NAS</string>
+    <string name="mailx_from_phone">File from the phone</string>
+    <string name="mailx_group_input">Gestures, keyboard and mouse</string>
+    <string name="mailx_group_input_desc">Swiping, shortcuts, dragging and columns on large screens. Applies to this phone.</string>
+    <string name="mailx_group_list">List and reading</string>
+    <string name="mailx_home">Home</string>
+    <string name="mailx_images">External pictures</string>
+    <string name="mailx_images_always">Always load</string>
+    <string name="mailx_images_ask">Only on tapping (recommended)</string>
+    <string name="mailx_images_contacts">Load for senders in the contacts</string>
+    <string name="mailx_is_fav">Favourite</string>
+    <string name="mailx_keys_back">Back, end selection</string>
+    <string name="mailx_keys_open">Open message</string>
+    <string name="mailx_link_go">Open</string>
+    <string name="mailx_link_open">Open the link?</string>
+    <string name="mailx_main_account">Main mailbox – new e-mails go from here</string>
+    <string name="mailx_move_down" formatted="true">Move “%1$s” down</string>
+    <string name="mailx_move_up" formatted="true">Move “%1$s” up</string>
+    <string name="mailx_narrower">Narrower</string>
+    <string name="mailx_nas_attach" formatted="true">Attach %1$s</string>
+    <string name="mailx_nas_attach_none">Tap files</string>
+    <string name="mailx_nas_here">Save here</string>
+    <string name="mailx_nas_readonly">Your account may not write to this share.</string>
+    <string name="mailx_nas_up">One level up</string>
+    <string name="mailx_new_window">Open in new window</string>
+    <string name="mailx_no_subject_text">The e-mail has no subject. Recipients then only see “(no subject)”.</string>
+    <string name="mailx_no_subject_title">Send without subject?</string>
+    <string name="mailx_not_paired">Mail needs a paired NAS. Open the TitanOS app first and pair it.</string>
+    <string name="mailx_notify_this">Notice on new e-mail</string>
+    <string name="mailx_open">Open</string>
+    <string name="mailx_order_failed" formatted="true">Order not saved: %1$s</string>
+    <string name="mailx_preview">Preview of the text</string>
+    <string name="mailx_preview_desc">The beginning of each mail below the subject, whole, never cut.</string>
+    <string name="mailx_quote">Quote when replying</string>
+    <string name="mailx_quote_desc">The message stands with “&gt; ” below your answer.</string>
+    <string name="mailx_reply_window">Reply in new window</string>
+    <string name="mailx_reset_columns">Reset column widths</string>
+    <string name="mailx_reset_columns_desc" formatted="true">Now: mailboxes %1$s dp, list %2$s dp. The separators can be dragged.</string>
+    <string name="mailx_saved_downloads" formatted="true">“%1$s” is in Downloads.</string>
+    <string name="mailx_share">Share</string>
+    <string name="mailx_share_text">Share text</string>
+    <string name="mailx_shortcuts">Keyboard shortcuts</string>
+    <string name="mailx_shortcuts_desc">With a keyboard: J/K, Enter, E, R, A, F, S, U, M, Del, N, /, ?, Esc. Never while you type in a field.</string>
+    <string name="mailx_shown">expanded</string>
+    <string name="mailx_start_at">When Mail opens</string>
+    <string name="mailx_start_boxes">Mailboxes (large: with the inbox)</string>
+    <string name="mailx_start_main">Inbox of the main mailbox</string>
+    <string name="mailx_swipe_left">Swipe all the way left</string>
+    <string name="mailx_swipe_none">Nothing</string>
+    <string name="mailx_swipe_right">Swipe right</string>
+    <string name="mailx_swipe_seen">Read/unread</string>
+    <string name="mailx_take_typed" formatted="true">Use “%1$s”</string>
+    <string name="mailx_unreachable">The NAS is not reachable.</string>
+    <string name="mailx_wider">Wider</string>
+</resources>

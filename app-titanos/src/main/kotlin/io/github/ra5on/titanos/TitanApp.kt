@@ -86,6 +86,12 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost {
         // Mitteilungen ohne Google: Abruf, Dauerverbindung und Empfänger holen sich hier die Verbindung.
         NotifyRuntime.api = { graph.notifyApi }
         if (graph.pairing != null) NotifyScheduler.arm(this)
+        // Kontakte und Kalender des Handys: der SyncAdapter holt sich hier die Verbindung.
+        io.github.ra5on.titanos.pim.sync.PimRuntime.nas = { graph.connection() }
+        // Mail in eigenen Fenstern (MailWindowActivity, auch für mailto:) holt sich hier die Verbindung.
+        io.github.ra5on.titanos.mail.MailRuntime.nas = { graph.connection() }
+        io.github.ra5on.titanos.mail.MailRuntime.stream = { graph.connection(io.github.ra5on.titanos.notify.NotifyApi.streamClient(graph.shared)) }
+        graph.pairing?.let { io.github.ra5on.titanos.pim.sync.PimAccount.ensure(this, io.github.ra5on.titanos.pim.sync.PimAccount.nameFor(it.user, it.hostname)) }
         // Ungekoppelt und die Agent-App ist gekoppelt: sie koppelt diese App mit.
         Sibling.ask(this, this)
     }
@@ -110,6 +116,19 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
 
     /** „Über die App“ offen (Menü oder Mitteilung „Version … ist da“). */
     var openAbout by mutableStateOf(false)
+
+    /** Mail, Kalender oder Kontakte in voller Größe (`mail`, `calendar`, `contacts`), sonst null. */
+    var openProgram by mutableStateOf<String?>(null)
+
+    /** Stelle im Programm, z. B. `/mail?a=…&f=INBOX&m=7` aus einer Mitteilung (null: Anfang). */
+    var programLink by mutableStateOf<String?>(null)
+
+    /**
+     * Eine Verbindung zum gekoppelten NAS über [client] (Mail, Kalender,
+     * Kontakte, Abgleich); null ohne Kopplung.
+     */
+    fun connection(client: okhttp3.OkHttpClient = shared): NasConnection? =
+        pairing?.let { NasConnection.forPairing(client, it, sessions) }
 
     /** Wird gesetzt, wenn das NAS das Gerät nicht mehr kennt; die Willkommensseite sagt es dann. */
     var unpairedByNas by mutableStateOf(false)
@@ -155,6 +174,7 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         io.github.ra5on.titanos.widgets.WidgetRefresh.now(app)
         notifyApi = notifyApiFor(p)
         NotifyScheduler.arm(app)
+        io.github.ra5on.titanos.pim.sync.PimAccount.ensure(app, io.github.ra5on.titanos.pim.sync.PimAccount.nameFor(p.user, p.hostname))
     }
 
     /** Kopplung aufheben: Schlüssel, Kopplung und Sitzung weg. Am NAS beendet man das Gerät im Browser. */
@@ -175,6 +195,9 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         // Mitteilungen dieser Kopplung: Stand, Einstellungen, Auftrag und Dienst weg.
         notifyApi = null
         NotifyRuntime.forget(app)
+        // Das Konto „TitanOS“ weg: Android löscht seine Kontakte und Termine vom Handy (am NAS bleiben sie).
+        io.github.ra5on.titanos.pim.sync.PimAccount.remove(app)
+        openProgram = null
         unpairedByNas = byNas
     }
 }

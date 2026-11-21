@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Das TitanOS-Zeichen aus docs/brand/titanos-mark-dark-bg.svg (Repo TitanOS):
+     Sechseck in der Akzentfarbe, „T“ in der Textfarbe des dunklen Themes.
+     Zeichenfläche 28 → 56 dp, mittig in der sicheren Zone (66 dp) des 108-dp-Symbols. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:scaleX="2" android:scaleY="2" android:translateX="26" android:translateY="26">
+        <path android:strokeColor="#6CB6FF" android:strokeWidth="2" android:strokeLineJoin="round"
+            android:pathData="M14 2 25 8.5v11L14 26 3 19.5v-11Z" />
+        <path android:fillColor="#E6E9ED" android:pathData="M8.6 9.3h10.8v2.3H8.6zM12.85 12.6h2.3v7.4h-2.3z" />
+    </group>
+</vector>

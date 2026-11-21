@@ -121,7 +121,7 @@ class ScreenshotTest {
 
     @Test
     fun s04_permissions() = shot("04-berechtigungen") {
-        PermissionsScreen(PermissionsState(localNetwork = Grant.Granted, notifications = Grant.NotAsked), {}, {}, {}, onBack = {})
+        PermissionsScreen(PermissionsState(localNetwork = Grant.Granted, notifications = Grant.NotAsked, contacts = Grant.Granted, calendar = Grant.NotAsked), {}, {}, {}, onBack = {})
     }
 
     @Test
@@ -145,6 +145,22 @@ class ScreenshotTest {
         Column(Modifier.fillMaxSize()) {
             HomeScreen(home, {}, {}, {}, {}, Modifier.weight(1f))
             NavBar("Home")
+        }
+    }
+
+    /** Kachel-Namen bei 200 % Schrift: ganze Wörter, weniger Spalten statt Trennung. */
+    @Test
+    fun s10_home_big_font() {
+        org.robolectric.RuntimeEnvironment.setFontScale(2f)
+        try {
+            shot("10-start-schrift-200") {
+                Column(Modifier.fillMaxSize()) {
+                    HomeScreen(home, {}, {}, {}, {}, Modifier.weight(1f))
+                    NavBar("Home")
+                }
+            }
+        } finally {
+            org.robolectric.RuntimeEnvironment.setFontScale(1f)
         }
     }
 

@@ -52,11 +52,33 @@ object NotifyRuntime {
     /** Eine Mitteilung wurde angetippt: die App zeigt die Liste. */
     val openList: StateFlow<Boolean> = _openList
 
+    private val _openLink = MutableStateFlow<String?>(null)
+
+    /** Eine Mitteilung mit Link in ein Programm der App (Mail, Kalender, Kontakte) wurde angetippt. */
+    val openLink: StateFlow<String?> = _openLink
+
+    /** Links, die die App selbst öffnet; alle anderen führen zur Liste. */
+    fun opensInApp(link: String?): Boolean =
+        link != null && listOf("/mail", "/calendar", "/contacts").any { link == it || link.startsWith("$it?") || link.startsWith("$it/") }
+
+    /** Öffnet [link] in der App, wenn sie ihn kennt. */
+    fun requestOpen(link: String?): Boolean {
+        if (!opensInApp(link)) return false
+        _openLink.value = link
+        return true
+    }
+
+    fun linkOpened() {
+        _openLink.value = null
+    }
+
     /** Aus dem Intent der Activity (Tippen auf eine Mitteilung, „Ansehen“). */
     fun take(intent: android.content.Intent?) {
         if (intent?.getBooleanExtra(Poster.EXTRA_OPEN, false) == true) {
             intent.removeExtra(Poster.EXTRA_OPEN)
-            _openList.value = true
+            val link = intent.getStringExtra(Poster.EXTRA_LINK)
+            intent.removeExtra(Poster.EXTRA_LINK)
+            if (!requestOpen(link)) _openList.value = true
         }
     }
 

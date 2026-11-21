@@ -6,4 +6,72 @@
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
     </queries>
+    <!-- Antworten des Agenten als Mitteilung (auch Android Auto). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Kurz vibrieren (Darstellung › Vibration). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application>
+        <!-- Android Auto: diese App ist eine Nachrichten-App (Mitteilungen mit MessagingStyle). -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
+        <!-- Digitaler Assistent: Ein-Taste lang drücken oder aus der Ecke wischen. -->
+        <service
+            android:name="io.github.ra5on.titanos.agent.system.AgentAssistService"
+            android:exported="true"
+            android:label="@string/agent_title"
+            android:permission="android.permission.BIND_VOICE_INTERACTION">
+            <meta-data android:name="android.voice_interaction" android:resource="@xml/agent_assistant" />
+            <intent-filter>
+                <action android:name="android.service.voice.VoiceInteractionService" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="io.github.ra5on.titanos.agent.system.AgentAssistSessionService"
+            android:exported="true"
+            android:permission="android.permission.BIND_VOICE_INTERACTION" />
+        <service
+            android:name="io.github.ra5on.titanos.agent.system.AgentRecognitionService"
+            android:exported="true"
+            android:label="@string/agent_title"
+            android:permission="android.permission.BIND_VOICE_INTERACTION">
+            <meta-data android:name="android.speech" android:resource="@xml/agent_recognizer" />
+            <intent-filter>
+                <action android:name="android.speech.RecognitionService" />
+            </intent-filter>
+        </service>
+        <activity
+            android:name="io.github.ra5on.titanos.agent.system.AssistActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=".assist"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Notizen-Rolle (ROLE_NOTES): Stift-Taste auf Tablets/Faltbaren, auch am Sperrbildschirm. -->
+        <activity
+            android:name="io.github.ra5on.titanos.agent.system.NotesActivity"
+            android:exported="true"
+            android:label="@string/agent_notes_title"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:resizeableActivity="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=".notes"
+            android:theme="@android:style/Theme.Material.NoActionBar"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.CREATE_NOTE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Antworten und „gelesen“ aus der Mitteilung (auch aus dem Auto). -->
+        <receiver
+            android:name="io.github.ra5on.titanos.agent.system.ReplyReceiver"
+            android:exported="false" />
+    </application>
 </manifest>

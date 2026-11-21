@@ -63,3 +63,21 @@ fun Modifier.onSecondaryClick(action: () -> Unit): Modifier = pointerInput(actio
         }
     }
 }
+
+/**
+ * Breite des längsten Wortes in [texts] (Pixel) bei [style] und der eingestellten
+ * Schriftgröße. Damit entscheiden Raster und Kartenreihen, ob sie nebeneinander
+ * passen, ohne ein Wort mitten durch zu trennen (Inhaber 21.11.2026: „Ganze Wörter“).
+ * Bindestrich-Wörter („Foto-Sicherung“) zählen als ein Wort: Android bricht sie
+ * sonst irgendwo im Wort statt am Bindestrich.
+ */
+@Composable
+fun rememberWidestWord(texts: List<String>, style: androidx.compose.ui.text.TextStyle): Int {
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    return androidx.compose.runtime.remember(texts, style, density) {
+        texts.flatMap { it.split(' ', ' ', '\n') }
+            .filter { it.isNotEmpty() }
+            .maxOfOrNull { measurer.measure(it, style, softWrap = false).size.width } ?: 0
+    }
+}

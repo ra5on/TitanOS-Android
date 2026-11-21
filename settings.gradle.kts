@@ -33,6 +33,8 @@ include(
     ":feature-docker",
     ":feature-vms",
     ":feature-nvr",
+    ":feature-mail",
+    ":feature-pim",
     ":app-titanos",
     ":app-agent",
     ":lint-rules",

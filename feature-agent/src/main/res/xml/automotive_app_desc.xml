@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Auto: Mitteilungen als Nachrichten-App (Vorlesen, Antworten per Sprache). -->
+<automotiveApp>
+    <uses name="notification" />
+</automotiveApp>

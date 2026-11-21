@@ -78,6 +78,8 @@ dependencies {
     implementation(project(":feature-docker"))
     implementation(project(":feature-vms"))
     implementation(project(":feature-nvr"))
+    implementation(project(":feature-mail"))
+    implementation(project(":feature-pim"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.zxing.embedded)
     implementation(libs.androidx.activity.compose)

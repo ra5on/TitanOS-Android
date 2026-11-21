@@ -97,20 +97,37 @@ Danach folgt Version 1.00 mit allem.
 Die zweite App „Agent“ (`io.github.ra5on.titanos.agent`) bringt den KI-Agenten deines NAS aufs Handy, in der Gestaltung der Handy-Seite des Agenten im Web. Nötig ist **TitanOS 1.16** oder neuer mit eingeschaltetem KI-Agenten, der für dein Konto freigegeben ist.
 
 <p>
-<img src="docs/screenshots/90-agent-chat-dunkel.png" width="200" alt="Agent: Chat mit Antwort">
-<img src="docs/screenshots/91-agent-freigabe-dunkel.png" width="200" alt="Agent: Freigabe">
+<img src="docs/screenshots/agent-14-start-dunkel.png" width="160" alt="Agent: Startseite">
+<img src="docs/screenshots/agent-10-chat-dunkel.png" width="160" alt="Agent: Chat mit Tabelle und Karten">
+<img src="docs/screenshots/agent-70-figur-1-dunkel.png" width="160" alt="Agent: arbeitende Figur">
+<img src="docs/screenshots/agent-11-kopf-blatt-dunkel.png" width="160" alt="Agent: Projekt, Modell und Denkstufe">
+<img src="docs/screenshots/agent-32-menu-dunkel.png" width="160" alt="Agent: Menü">
+<img src="docs/screenshots/agent-13-gedaechtnis-dunkel.png" width="160" alt="Agent: Gedächtnis">
+<img src="docs/screenshots/agent-15-einstellungen-dunkel.png" width="160" alt="Agent: Einstellungen">
+<img src="docs/screenshots/agent-80-sprechmodus-dunkel.png" width="160" alt="Agent: Sprechmodus">
+</p>
+<p>
+<img src="docs/screenshots/agent-90-breit-chat-dunkel.png" width="640" alt="Agent auf großem Bildschirm: Seitenleiste und Chat">
 </p>
 
 - **Eigene Kopplung:** Die Agent-App koppelt sich selbst, mit eigenem Schlüssel im Keystore, und steht unter Mein Konto › Geräte als eigenes Gerät (App „agent“). Der Ablauf ist derselbe wie bei der TitanOS-App: QR-Code, „Auf diesem Handy öffnen“ oder Adresse von Hand.
   - **Kopplungslink mit beiden Apps:** Der Link `titanos://pair?…` nennt keine App. Sind beide Apps installiert, fragt Android bei „Auf diesem Handy öffnen“, welche App ihn öffnen soll. Gekoppelt wird die gewählte; für die andere erzeugst du im Browser einen neuen Code.
-- **Chat:** runde Knöpfe oben (Chats, Titel mit Projekt · Modell, Neuer Chat, ⋯), Eingabefeld mit „+“ und Senden, Leiste unten mit Chat, Projekte, Aufträge und Notizen.
-  - Die Antwort kommt als Strom; „Anhalten“ beendet den Lauf am NAS.
-  - Schritte stehen als eine Zeile mit Zeichen und Zeit, Tippen klappt sie auf.
-  - Antworten mit Markdown: fett, Listen, Tabellen (Zellen brechen nur zwischen Wörtern um), Codeblöcke mit Kopf und „Kopieren“.
-  - Freigaben als Karte mit „Ausführen“ und „Abbrechen“ wie im Web; Rückfragen mit Wahlknöpfen.
-  - Modell und Denkstufe gelten je Chat; Projekt wählbar.
-  - Spracheingabe über die Spracherkennung des Handys. Gibt es keine (etwa ohne Google-Dienste), fehlt das Mikrofon.
-- **Projekte, Aufträge, Notizen:** Projekte ansehen und anlegen, geplante Aufträge ein- und ausschalten oder jetzt ausführen, Notizen lesen, anlegen und bearbeiten.
+- **Aufbau wie die Handy-Seite des Agenten im Web** (Version 1.00): Texte und Symbole kommen aus der Weboberfläche (`feature-agent/tools/i18n.mjs`, `tools/icons.mjs`), Deutsch und Englisch.
+  - **Startseite:** wechselnde Begrüßung, „N Dinge warten auf dich“, „Passt gerade“ mit „andere“, „Übersicht anzeigen“ mit Wartet auf dich (Freigaben, Vorschläge des Agenten), Läuft gerade, NAS-Zustand, Als Nächstes geplant, Zuletzt erledigt; „Neuer Chat“ nur mit der Frage und den Vorschlägen.
+  - **Arbeitende Figur:** die drei Punkte Zahl für Zahl aus dem Web (Choreografie aus Ring, Acht, Schraube, Dreieck, Sammeln, Planeten), eine Uhr über jeden Wechsel, das Wort der Tätigkeit mit Lichtschweif, „Fertig“ mit Haken; Farbe und Größe aus der Darstellung, still bei „Animationen: Aus“ oder „Animationen entfernen“ von Android. Gezeichnet nur im Zeichenschritt, ohne Layout je Bild.
+  - **Chat:** schwebender Kopf mit Titel, Projekt und Modell; Kopf-Blatt (Projekt, Modell mit Größe, Denkstufe); langer Druck oder Rechtsklick auf eine eigene Nachricht öffnet Bearbeiten und erneut senden, Kopieren, Antwort neu erzeugen, In diesem Chat suchen, Das merken; Zeile unter Antworten mit Vorlesen, Kopieren, Neu erzeugen; Schritte als Zeile mit Blatt und Rückgängig; Tabellen mit „Tabelle kopieren“; Karten für Container und Geräte, Fotos aus Immich; Plan, Freigaben, Rückfragen, erzeugte Dateien; Suche im Chat; „/“-Befehle; ⋯ mit Anheften, Umbenennen, Verschieben, Archivieren, Als Markdown/PDF speichern, Löschen; Plus-Blatt mit Foto, Datei, Dateien vom NAS, Sprechmodus und Arbeitsweise.
+  - **Menü** von links (Wischen vom Rand): Suche über Chats und Gemerktes, Start, Geplant, Gedächtnis, Wissen, Notizen, Archiv, die eingeschalteten Funktionen, Projekte mit ihren Chats, Chats nach Tagen; Chats zur Seite wischen (wie eingestellt) oder lange drücken.
+  - **Gedächtnis, Wissen, Geplant, Projekte, Notizen** mit allen Funktionen der Web-Seiten (Merksätze mit Thema, Anheften und Verblassen; Anweisungen, Skills, NAS-Landkarte, Suchorte, Protokoll; Morgenbericht, Aufträge und Erinnerungen mit allen Wiederholungen und Home-Assistant-Auslösern; Projekte mit Mitgliedern, Dateien und Gedächtnis; Notizen mit Ordnern, Anheften, Formatleiste).
+  - **Einstellungen:** Modelle, Sprache, Persönlichkeit, Eigeninitiative, Funktionen (Dokumente, Schutz, Vorausschau, Familie mit ihren Ansichten), Fotos (Immich), Mail/Termine/Kontakte, Mitteilungen, Darstellung (Thema und Akzent wie das Konto oder je Gerät, Schrift bis 200 %, Figur), Gesten, Beim Öffnen, Alle Chats löschen, Über die App und Entkoppeln.
+  - **Sprechmodus** mit der Figur des Webs, Ins-Wort-Fallen und Weckwort, über die Sprachdienste des NAS; Vorlesen über das NAS oder die Sprachausgabe des Handys; Spracheingabe über das NAS, sonst über die Erkennung des Handys.
+  - **Große Bildschirme** (Tablet, Faltbares, Desktop-Modus): ab 761 dp Seitenleiste links (ziehbar) und Inhalt rechts wie im Web am PC; Enter sendet, Umschalt+Enter macht eine Zeile, Strg+N, Strg+F, Strg+K, Strg+„,“, Esc; Bilder und Dateien in den Chat ziehen.
+  - **Digitaler Assistent:** in Android als Assistent wählbar; Ein-Taste lang drücken öffnet ein Blatt mit sofortiger Spracheingabe, die Antwort kommt mit der Figur darin. Bildschirminhalt nur nach Einstellung (Nie, Jedes Mal fragen – ab Werk –, Immer) und nur ans eigene NAS. Android muss dafür „Bildschirm- und App-Daten verwenden“ erlauben (die App weist darauf hin); im Emulator mit Android 17 lieferte das System trotz Schalter keinen Bildschirminhalt, mit Inhalt ist das noch nicht auf einem Gerät geprüft.
+  - **Notizen-App des Systems** (Rolle Notizen ab Android 14): Stift-Taste und Sperrbildschirm öffnen eine neue Notiz.
+  - **Funktionen** wie im Web und über dieselben Schnittstellen: Papierkram mit „zuordnen“ (Absender, Art, Datum), Fristen, Ransomware-Wächter, Notfallhandbuch als PDF oder Markdown speichern (über „Speichern unter“ von Android), Notfallzugang mit Code drucken (Druckdienst von Android), Hardware-Berater, Was-wäre-wenn mit „Durchspielen“, Backup-Buddy mit Kontingent und Freigaben je Partner, Skill-Katalog.
+  - **Entwurf „Öffnen und bearbeiten“:** ein wartender Schritt für Mail, Termin, Kontakt oder Aufgabe öffnet sich als Entwurf im Editor; Office-Dateien des Agenten öffnen sich im Office-Editor der TitanOS-App, ohne sie in der Weboberfläche in der App (siehe unten).
+  - **Uhrzeit und Datum** über die Wähler von Material 3 (24 Stunden nach der Einstellung von Android), im Wähler umschaltbar auf Eintippen; bei großer Schrift beginnt der Zeitwähler mit Eintippen.
+  - **Barrierefreiheit:** jeder Bildschirm ist als Bildtest mit Schrift 200 % von Android dabei; die Bildtests melden abgeschnittene Texte, nicht gefüllte Platzhalter und Bedienelemente ohne Namen. Schalter sagen TalkBack, was sie schalten; Wörter werden getrennt statt mitten durchgebrochen.
+  - **Android Auto:** Antworten, die kommen, während die App nicht vorne ist, erscheinen als Nachricht (MessagingStyle) mit „Antworten“ per Sprache und „Gelesen“. Ohne Play Store muss in den Entwickleroptionen von Android Auto „Unbekannte Quellen“ an sein. Nicht im Auto geprüft.
 - **Ohne NAS:** Die Chatliste zeigt den letzten bekannten Stand. Senden scheitert sofort mit einer klaren Meldung, nichts kommt in eine Warteschlange.
 - **Teilen → „Agent fragen“:** Text oder ein Bild aus einer anderen App landen in einem neuen Chat.
 
@@ -134,6 +151,24 @@ context.startActivity(
 - **Gesendet wird nie von selbst**, auch nicht mit `voice`: Jede App kann den Intent auslösen, deshalb schickt erst das Tippen auf Senden etwas ans NAS.
 - „Teilen“ nutzt `ACTION_SEND` mit `text/*` oder `image/*`. Ein Bild wird sofort in den Speicher der App kopiert und mit der Nachricht als Anhang hochgeladen, höchstens 20 MB.
 
+**Office in der TitanOS-App öffnen** (Entwurf „Öffnen und bearbeiten“, Dateien des Agenten): Die Agent-App ruft die TitanOS-App mit dieser Aktion auf. Die Namen stehen in `core-model` (`io.github.ra5on.titanos.model.OfficeIntent`), damit beide Seiten dieselben benutzen:
+
+```kotlin
+context.startActivity(
+    Intent(OfficeIntent.ACTION)                       // "io.github.ra5on.titanos.OPEN_OFFICE"
+        .setPackage(OfficeIntent.PACKAGE)             // "io.github.ra5on.titanos"
+        .putExtra(OfficeIntent.EXTRA_PATH, "share/Documents/Brief.docx") // Datei: "<Ablage>/<Pfad>"
+        // oder statt einer Datei eine Seite des Webs, etwa ein Entwurf des Agenten:
+        // .putExtra(OfficeIntent.EXTRA_HREF, "/mail/compose?agentDraft=<chat>%3A<eintrag>")
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+)
+```
+
+- `path`: Ablage und Pfad wie in der Dateiliste des Webs (`root=share`, `path=Documents/Brief.docx` → `share/Documents/Brief.docx`); die TitanOS-App öffnet die Datei in ihrem Office-Editor.
+- `href`: eine Seite der Weboberfläche (Entwürfe für Mail, Termine, Kontakte, Aufgaben wie `draftHref` im Web).
+- Ob die TitanOS-App die Aktion kann, prüft die Agent-App vorher (`queryIntentActivities`). Kann sie es nicht oder ist sie nicht installiert, öffnet die Agent-App dieselbe Seite des Webs in einer WebView mit ihrer eigenen Sitzung; fremde Zertifikate gelten dort nur, wenn sie das bei der Kopplung festgehaltene sind. Für eine Datei ist das der Ordner in den Dateien des Webs, weil das Web keine eigene Adresse für den Editor einer Datei hat.
+- Die Seite der TitanOS-App fehlt noch: bis sie die Aktion annimmt, nimmt die Agent-App immer die WebView.
+
 ## Bauen
 
 Nötig sind JDK 21 und das Android-SDK mit `platforms;android-37.0` und `build-tools;37.0.0`.
@@ -146,7 +181,7 @@ export ANDROID_HOME=/pfad/zu/android-sdk
 
 Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/debug/` und `app-agent/build/outputs/apk/debug/`.
 
-- **Bildtests:** `./gradlew recordRoborazziDebug` schreibt alle Bildschirme in 412 dp Breite, hell und dunkel, nach `app-titanos/build/outputs/roborazzi/`, die der Agent-App nach `feature-agent/build/outputs/roborazzi/`.
+- **Bildtests:** `./gradlew recordRoborazziDebug` schreibt alle Bildschirme in 412 dp Breite, hell und dunkel, nach `app-titanos/build/outputs/roborazzi/`. Die Agent-App (`AgentScreenshotTest`) zeigt jeden Bildschirm in 390 dp wie die Aufnahmen des Webs, hell und dunkel, dazu die Figur als Bildserie, 1280 dp breit und Schrift 200 %; die App spricht dabei mit einem MockWebServer mit den Testdaten des Webs. Bilder nach `feature-agent/build/outputs/roborazzi/`.
 - **Release:** Ein Tag `vX.Y.0` startet `.github/workflows/release.yml`.
   - **Version:** angezeigt X.YY, `versionCode` X·100+Y. Der Workflow prüft, dass `build.gradle.kts` dazu passt.
   - **Signieren:** nur im Job „publish“ der Umgebung `release`. Die Umgebung lässt nur Tags `v*` zu und wartet auf die Freigabe des Inhabers. Der Schlüssel liegt dort als Secret.

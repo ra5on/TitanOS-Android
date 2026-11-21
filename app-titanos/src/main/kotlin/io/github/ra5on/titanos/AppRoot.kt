@@ -1,5 +1,10 @@
 package io.github.ra5on.titanos
 
+import android.Manifest
+import android.provider.CalendarContract
+import android.provider.ContactsContract
+import io.github.ra5on.titanos.pim.sync.PimSync
+import io.github.ra5on.titanos.pim.sync.SyncStore
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
@@ -106,6 +111,16 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
             onNotify = { on ->
                 setNotificationsOn(context, on)
                 if (on) NotifyScheduler.askBatteryExemption(context)
+            },
+            // Kontakte und Kalender über das Android-Konto der Kopplung (feature-pim).
+            contactsPermissions = arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS),
+            calendarPermissions = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR),
+            pimOn = { kind -> SyncStore(context).load().let { if (kind == "contacts") it.contacts else it.calendars } },
+            onPim = { kind, on ->
+                val store = SyncStore(context)
+                store.save(store.load().let { if (kind == "contacts") it.copy(contacts = on) else it.copy(calendars = on) })
+                PimSync.configure(context)
+                if (on) PimSync.requestNow(context, manual = false, only = if (kind == "contacts") ContactsContract.AUTHORITY else CalendarContract.AUTHORITY)
             },
         )
         else -> MainShell(graph)
@@ -254,6 +269,14 @@ private fun MainShell(graph: AppGraph) {
             NotifyRuntime.listOpened()
         }
     }
+    // Mitteilung mit Link in Mail, Kalender oder Kontakte: das Programm an dieser Stelle öffnen.
+    val openLink by NotifyRuntime.openLink.collectAsStateWithLifecycle()
+    LaunchedEffect(openLink) {
+        val link = openLink ?: return@LaunchedEffect
+        graph.programLink = link
+        graph.openProgram = link.removePrefix("/").substringBefore('?').substringBefore('/')
+        NotifyRuntime.linkOpened()
+    }
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
     if (tab != Tab.Home) BackHandler { tab = Tab.Home }
     var menu by remember { mutableStateOf(false) }
@@ -263,6 +286,11 @@ private fun MainShell(graph: AppGraph) {
         var nasVersion by remember { mutableStateOf<String?>(null) }
         LaunchedEffect(Unit) { nasVersion = runCatching { api.system().version }.getOrNull()?.takeIf { it.isNotBlank() } }
         io.github.ra5on.titanos.update.AboutScreen(nasVersion, onBack = { graph.openAbout = false })
+        return
+    }
+    PimLive(graph)
+    graph.openProgram?.let { id ->
+        ProgramHost(graph, id) { graph.openProgram = null; graph.programLink = null }
         return
     }
     var confirmUnpair by remember { mutableStateOf(false) }
@@ -278,7 +306,15 @@ private fun MainShell(graph: AppGraph) {
             Column(Modifier.fillMaxSize()) {
                 HomeScreen(
                     home.state,
-                    onProgram = { p -> if (p.id == "shares") tab = Tab.Files else if (p.id in COMPUTE_PROGRAMS) compute = p.id else toastLater() },
+                    onProgram = { p ->
+                        when (p.id) {
+                            "shares" -> tab = Tab.Files
+                            // Mail, Kalender, Kontakte (feature-mail, feature-pim) in voller Größe.
+                            in PROGRAMS -> graph.openProgram = p.id
+                            in COMPUTE_PROGRAMS -> compute = p.id
+                            else -> toastLater()
+                        }
+                    },
                     onSearch = toastLater,
                     onNotifications = { tab = Tab.Notifications },
                     onMenu = { menu = true },
@@ -297,6 +333,14 @@ private fun MainShell(graph: AppGraph) {
                             icon = { RowIcon(TitanIcons.info) },
                             chevron = true,
                             onClick = { menu = false; graph.openAbout = true },
+                        )
+                        ListRow(
+                            stringResource(io.github.ra5on.titanos.pim.R.string.sync_title),
+                            sub = stringResource(io.github.ra5on.titanos.pim.R.string.sync_menu_sub),
+                            icon = { RowIcon(TitanIcons.sync) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; graph.openProgram = PIM_SYNC },
                         )
                         ListRow(
                             stringResource(HomeR.string.home_menu_unpair),
