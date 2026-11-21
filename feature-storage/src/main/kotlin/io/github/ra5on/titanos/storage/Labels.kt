@@ -25,11 +25,11 @@ internal fun fsText(fs: String) = t("fs.$fs")
 
 @Composable
 @ReadOnlyComposable
-internal fun stateText(state: String) = t("state.$state")
+internal fun stateText(state: String) = tKey("state.$state", state)
 
 @Composable
 @ReadOnlyComposable
-internal fun memberText(state: String) = t("member.$state")
+internal fun memberText(state: String) = tKey("member.$state", state)
 
 /** „HDD · 7200 U/min“, „NVMe-SSD“, … */
 @Composable
@@ -146,3 +146,8 @@ internal fun storageErrorText(e: Throwable, detailCodes: Set<String> = setOf("st
 @Composable
 @ReadOnlyComposable
 internal fun opError(e: Throwable): String = t("ops.failed") + " " + errorText(e, detail = true)
+
+/** Text zu einem Schlüssel aus einem Wert des NAS; ein Wert, den diese App noch nicht kennt, steht roh da (nie der Schlüssel). */
+@Composable
+@ReadOnlyComposable
+internal fun tKey(key: String, fallback: String): String = if (hasText(key)) t(key) else fallback

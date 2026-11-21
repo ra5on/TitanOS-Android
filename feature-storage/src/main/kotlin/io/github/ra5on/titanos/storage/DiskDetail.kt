@@ -80,7 +80,7 @@ private fun DiskSleepSection(model: StorageModel, name: String, admin: Boolean, 
     var draft by remember { mutableStateOf(INHERIT) }
     SettingGroup(t("storage.sleepCard"), expandable = true) {
         if (disk == null) {
-            SettingRow(entry.reason?.let { t("storage.sleepReason.$it") } ?: "–", icon = "power")
+            SettingRow(entry.reason?.let { tKey("storage.sleepReason.$it", it) } ?: "–", icon = "power")
             return@SettingGroup
         }
         SettingRow(
@@ -88,14 +88,13 @@ private fun DiskSleepSection(model: StorageModel, name: String, admin: Boolean, 
             icon = "power",
             desc = listOfNotNull("(${sleepOrigin(disk.origin)})", sleepSince(disk)).joinToString("\n"),
             below = {
+                StatusChip(if (disk.state == "asleep") t("storage.sleepAsleep") else t("storage.sleepAwake"), if (disk.state == "asleep") Tone.Ok else Tone.Neutral, Modifier.padding(top = 6.dp))
                 if (disk.error != null) StatusChip(t("storage.sleepStandbyFailed"), Tone.Error)
                 disk.error?.let { Mono(it, style = TitanType.small, color = Titan.colors.muted) }
                 if (disk.id.isEmpty()) Text(t("storage.sleepNoIdentity"), style = TitanType.small, color = Titan.colors.muted)
                 DiskWakes(disk)
             },
-        ) {
-            StatusChip(if (disk.state == "asleep") t("storage.sleepAsleep") else t("storage.sleepAwake"), if (disk.state == "asleep") Tone.Ok else Tone.Neutral)
-        }
+        )
         if (!admin) return@SettingGroup
         if (editing) {
             ChoiceRow(

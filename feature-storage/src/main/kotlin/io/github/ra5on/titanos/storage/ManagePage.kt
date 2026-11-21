@@ -216,7 +216,7 @@ internal fun ManagePage(env: AdminEnv, model: StorageModel, nav: StorageNav) {
                         SettingRow(
                             e.name,
                             divider = true,
-                            desc = t("ops.usage.${e.kind ?: "other"}"),
+                            desc = usageKind(e.kind),
                             below = {
                                 Text(
                                     "${t("ops.logical")}: ${formatBytes(e.bytes)} · ${t("ops.allocated")}: ${formatBytes(e.allocated)} · ${t("ops.files")}: ${e.files}",
@@ -479,7 +479,7 @@ private fun UsageBreakdown(entries: List<UsageEntry>) {
     }
     for (g in groups) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(t("ops.usage.${g.key}"), style = TitanType.body, color = c.text, modifier = Modifier.weight(1f))
+            Text(usageKind(g.key), style = TitanType.body, color = c.text, modifier = Modifier.weight(1f))
             Text(formatBytes(g.value), style = TitanType.rowTitle, color = c.text)
         }
     }
@@ -508,7 +508,7 @@ private fun RestoreJobs(
             val progress = folderRestoreProgress(job)
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Mono("${job.volume} / ${job.snapshot} / ${job.path}", style = TitanType.rowTitle)
-                Text(t("snapshotRestore.state.${job.state}"), style = TitanType.small, color = c.text)
+                Text(tKey("snapshotRestore.state.${job.state}", job.state), style = TitanType.small, color = c.text)
                 Text(
                     listOfNotNull(
                         t(if (job.mode == "copy") "snapshotRestore.copy" else "snapshotRestore.original"),
@@ -632,3 +632,7 @@ private fun FolderRestoreSheet(api: StorageApi, volume: String, snapshot: String
         }
     }
 }
+
+/** Art eines Eintrags der Belegung; eine unbekannte Art eines neueren NAS steht als „Sonstiges“. */
+@Composable
+private fun usageKind(kind: String?) = if (kind != null && hasText("ops.usage.$kind")) t("ops.usage.$kind") else t("ops.usage.other")

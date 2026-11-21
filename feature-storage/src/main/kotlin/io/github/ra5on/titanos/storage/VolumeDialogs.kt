@@ -89,7 +89,7 @@ internal fun DiskPicker(disks: List<Disk>, selected: List<String>, single: Boole
                         style = TitanType.rowSub,
                         color = c.muted,
                     )
-                    d.unavailableReason?.takeIf { it.isNotEmpty() }?.let { Text(t("disk.blocked.$it"), style = TitanType.small, color = c.warnInk) }
+                    d.unavailableReason?.takeIf { it.isNotEmpty() }?.let { Text(tKey("disk.blocked.$it", it), style = TitanType.small, color = c.warnInk) }
                     if (d.role == "used") {
                         val contents = d.contents.orEmpty()
                         Text(

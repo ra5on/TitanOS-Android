@@ -112,7 +112,7 @@ private fun SmartList(reports: List<SmartReport>?, loading: Boolean, error: Stri
                         desc = r.model.ifEmpty { t("disk.${r.kind}") },
                         below = {
                             ChipLine {
-                                StatusChip(t("smart.state.${r.state}"), smartTone(r.state))
+                                StatusChip(tKey("smart.state.${r.state}", r.state), smartTone(r.state))
                                 if (r.sleeping) StatusChip(t("smart.sleeping"), Tone.Neutral)
                             }
                             val sectors = sectorProblems(v)
@@ -178,7 +178,7 @@ private fun SmartDetail(env: AdminEnv, api: StorageApi, nav: StorageNav, disk: S
             else -> {
                 val v = d.values
                 ChipLine {
-                    StatusChip(t("smart.state.${d.state}"), smartTone(d.state))
+                    StatusChip(tKey("smart.state.${d.state}", d.state), smartTone(d.state))
                     if (d.sleeping) StatusChip(t("smart.sleeping"), Tone.Neutral)
                 }
                 when {
@@ -188,7 +188,7 @@ private fun SmartDetail(env: AdminEnv, api: StorageApi, nav: StorageNav, disk: S
                 }
                 if (d.warnings.isNotEmpty()) {
                     SettingGroup(t("smart.warningsTitle")) {
-                        d.warnings.forEachIndexed { i, w -> SettingRow(t("smart.warn.$w"), icon = "info", divider = i > 0) }
+                        d.warnings.forEachIndexed { i, w -> SettingRow(tKey("smart.warn.$w", w), icon = "info", divider = i > 0) }
                     }
                 }
                 SettingGroup(t("smart.facts"), expandable = true) {
@@ -223,7 +223,7 @@ private fun SmartDetail(env: AdminEnv, api: StorageApi, nav: StorageNav, disk: S
                     rows.forEachIndexed { i, (k, value) -> SettingRow(k, value = value, divider = i > 0) }
                 }
                 ButtonRow {
-                    ActionButton(t("smart.openStorage"), { nav.go("overview") }, icon = "disk")
+                    ActionButton(t("smart.openStorage"), { nav.go("overview", disk = d.disk) }, icon = "disk")
                     d.volume?.let { vol -> ActionButton("${t("smart.volume")}: $vol", { nav.go("overview", volume = vol) }) }
                 }
                 SmartHistorySection(api, d.disk)

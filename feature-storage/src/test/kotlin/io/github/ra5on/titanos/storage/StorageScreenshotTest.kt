@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import io.github.ra5on.titanos.admin.testing.FakeNas
@@ -42,11 +43,13 @@ class StorageScreenshotTest {
     }
 
     /** Klickt das erste anklickbare Element mit diesem Text (oder dessen Eltern). */
-    private fun click(text: String) {
+    private fun click(text: String, last: Boolean = false) {
         val nodes = compose.onAllNodes(hasText(text, substring = false) and hasClickAction(), useUnmergedTree = false)
-        nodes.onFirst().performScrollTo().performClick()
+        (if (last) nodes.onLast() else nodes.onFirst()).performScrollTo().performClick()
         shots.settle()
     }
+
+    private fun text(key: String) = io.github.ra5on.titanos.admin.adminTextForTest(key)
 
     private fun screens(dark: Boolean) {
         val env = nas.env()
@@ -102,6 +105,39 @@ class StorageScreenshotTest {
         shots.capture("20-platte-ersetzen", dark)
         go(Screen("memory"), "12")
         shots.capture("21-arbeitsspeicher", dark)
+        go(Screen(null, overview = { selected = "Vault" }), "Vault")
+        click(text("crypt.unlock"))
+        shots.captureScreen("22-entsperren", dark)
+        go(Screen(null, overview = { selected = "Data" }), text("cache.changeMode"))
+        click(text("cache.changeMode"))
+        shots.captureScreen("23-cache-modus", dark)
+        go(Screen(null, overview = { selected = "Fast" }), "Fast")
+        click(text("snapshot.title"), last = true)
+        shots.untilText("before-update")
+        shots.captureScreen("24-snapshots-blatt", dark)
+        go(Screen("import"), "md:fixture")
+        click(text("ops.preview"))
+        shots.untilText("Photos")
+        shots.captureScreen("25-import-vorschau", dark)
+        go(Screen("manage", nav = { volume = "Data"; mode = "usage" }), text("ops.analyze"))
+        click(text("ops.analyze"))
+        shots.untilText("Dokumente")
+        shots.capture("26-belegung", dark)
+        go(Screen("manage", nav = { volume = "Fast"; mode = "snapshots" }), "Fast")
+        click(text("snapshot.title"), last = true)
+        click("nightly-2026-11-19")
+        shots.untilText("liste.txt")
+        shots.capture("27-snapshot-inhalt", dark)
+        click(text("snapshotRestore.restore"))
+        shots.untilText("Fotos")
+        shots.captureScreen("28-ordner-wiederherstellen", dark)
+        go(Screen(null, overview = { dialog = OverviewDialog.Create }), "sdj")
+        click(text("level.raid0"))
+        shots.captureScreen("29-anlegen-raid0", dark)
+        nas.on("GET", "storage/growth", res("growth-pending.json"))
+        go(Screen("manage", nav = { volume = "Data"; mode = "grow" }), text("ops.cancelGrowth"))
+        shots.capture("30-erweitern-offen", dark)
+        nas.on("GET", "storage/growth", """{"pending":false,"operation":{},"error":""}""")
     }
 
     @Test fun hell() = screens(false)

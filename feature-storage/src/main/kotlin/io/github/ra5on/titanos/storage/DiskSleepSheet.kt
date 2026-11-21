@@ -158,7 +158,7 @@ internal fun DiskSleepSheet(model: StorageModel, status: DiskSleepStatus?, focus
                         SettingRow(
                             d.model.ifEmpty { d.name },
                             desc = listOf(d.name, formatDiskBytes(d.sizeBytes), if (!d.volume.isNullOrEmpty()) t("storage.sleepInVolume", "volume" to d.volume) else t("storage.sleepNoVolume")).joinToString(" · "),
-                            value = t("storage.sleepReason.${d.reason}"),
+                            value = tKey("storage.sleepReason.${d.reason}", d.reason),
                             divider = i > 0,
                         )
                     }

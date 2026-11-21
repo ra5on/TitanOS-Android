@@ -156,6 +156,20 @@ internal fun OverviewPage(env: AdminEnv, model: StorageModel, nav: StorageNav, s
             state.hintsLoaded = true
         }
     }
+    // Von einer anderen Seite des Programms (z. B. Platten prüfen) mit Volume oder Platte geöffnet.
+    LaunchedEffect(nav.volume, nav.disk, status != null) {
+        val s = status ?: return@LaunchedEffect
+        nav.volume?.let { v ->
+            state.tab = "volumes"; state.query = ""; state.filter = "all"; state.selected = v
+            nav.volume = null
+        }
+        nav.disk?.let { d ->
+            s.disks.firstOrNull { it.name == d }?.let { disk ->
+                state.tab = "disks"; state.query = ""; state.filter = "all"; state.volumeFilter = ""; state.selectedDisk = disk.key
+            }
+            nav.disk = null
+        }
+    }
     val detailName = if (state.tab == "volumes") status?.volumes?.firstOrNull { it.name == state.selected }?.name.orEmpty() else ""
     LaunchedEffect(detailName) { if (env.admin && detailName.isNotEmpty()) state.loadUsage(model.api, detailName) }
 
@@ -491,7 +505,7 @@ private fun DiskList(env: AdminEnv, status: StorageStatus, state: OverviewState)
                         sleepSince(sd)?.let { Text(it, style = TitanType.small, color = c.muted) }
                     }
                 } else if (sleep?.reason != null) {
-                    Text("${t("storage.sleepColumn")}: ${t("storage.sleepReason.${sleep.reason}")}", style = TitanType.small, color = c.muted)
+                    Text("${t("storage.sleepColumn")}: ${tKey("storage.sleepReason.${sleep.reason}", sleep.reason)}", style = TitanType.small, color = c.muted)
                 }
             }
         }

@@ -75,12 +75,13 @@ internal fun VolumeSleepBlock(model: StorageModel, volume: String, admin: Boolea
             if (info.total > 0) sleepDuration(info.minutes) else t("storage.sleepNoSleeper"),
             icon = "power",
             desc = if (info.total > 0) "(${sleepOrigin(info.origin)})" else null,
-        ) {
-            if (info.total > 0) StatusChip(t("storage.sleepCount", "asleep" to info.asleep, "total" to info.total), if (info.asleep > 0) Tone.Ok else Tone.Neutral)
-        }
+            below = if (info.total > 0) ({
+                StatusChip(t("storage.sleepCount", "asleep" to info.asleep, "total" to info.total), if (info.asleep > 0) Tone.Ok else Tone.Neutral, Modifier.padding(top = 6.dp))
+            }) else null,
+        )
         if (info.total == 0 && unavailable.isNotEmpty()) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
-                for (d in unavailable) Text("${d.name}: ${t("storage.sleepReason.${d.reason}")}", style = TitanType.small, color = c.muted)
+                for (d in unavailable) Text("${d.name}: ${tKey("storage.sleepReason.${d.reason}", d.reason)}", style = TitanType.small, color = c.muted)
             }
         }
         if (editing) {
@@ -136,10 +137,11 @@ internal fun VolumeSleepBlock(model: StorageModel, volume: String, admin: Boolea
                     d.name,
                     divider = true,
                     desc = listOfNotNull(sleepSince(d), "${sleepDuration(d.effective)} · ${sleepOrigin(d.origin)}").joinToString("\n"),
-                    below = { DiskWakes(d) },
-                ) {
-                    StatusChip(if (d.state == "asleep") t("storage.sleepAsleep") else t("storage.sleepAwake"), if (d.state == "asleep") Tone.Ok else Tone.Neutral)
-                }
+                    below = {
+                        StatusChip(if (d.state == "asleep") t("storage.sleepAsleep") else t("storage.sleepAwake"), if (d.state == "asleep") Tone.Ok else Tone.Neutral, Modifier.padding(top = 6.dp))
+                        DiskWakes(d)
+                    },
+                )
             }
             if (admin) {
                 ButtonRow(Modifier.padding(14.dp)) {

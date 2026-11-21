@@ -216,7 +216,7 @@ private fun QuotaGroup(model: StorageModel, volume: Volume, busy: Boolean) {
     val q = volume.shareQuotas.orEmpty()
     SettingGroup(t("storage.shareQuotas")) {
         ActionRow(
-            t("storage.shareQuotas.$q"),
+            tKey("storage.shareQuotas.$q", q),
             icon = "shield",
             below = {
                 volume.shareQuotasError?.let { Mono(it, color = Titan.colors.dangerInk, style = TitanType.small) }
