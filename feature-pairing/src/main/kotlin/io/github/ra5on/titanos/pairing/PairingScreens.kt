@@ -240,7 +240,7 @@ fun ConfirmScreen(
                         when (a.kind) {
                             AddressKind.TAILSCALE -> R.string.pair_kind_tailscale
                             AddressKind.LAN -> R.string.pair_kind_lan
-                            AddressKind.OTHER -> R.string.pair_kind_other
+                            AddressKind.VPN, AddressKind.OTHER -> R.string.pair_kind_other
                         },
                     ),
                     icon = { RowIcon(if (a.kind == AddressKind.LAN) TitanIcons.wifi else TitanIcons.globe) },

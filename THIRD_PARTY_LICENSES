@@ -103,6 +103,7 @@ androidx.window:window-core-android                        1.5.0       Apache-2.
 com.google.guava:listenablefuture                          1.0         Apache-2.0
 com.google.zxing:core                                      3.5.4       Apache-2.0
 com.journeyapps:zxing-android-embedded                     4.3.0       Apache-2.0
+com.wireguard.android:tunnel                               1.0.20260102 Apache-2.0
 com.squareup.okhttp3:okhttp                                5.5.1       Apache-2.0
 com.squareup.okhttp3:okhttp-android                        5.5.1       Apache-2.0
 com.squareup.okio:okio                                     3.18.1      Apache-2.0
@@ -119,6 +120,15 @@ org.jetbrains.kotlinx:kotlinx-serialization-core-jvm       1.13.0      Apache-2.
 org.jetbrains.kotlinx:kotlinx-serialization-json           1.13.0      Apache-2.0
 org.jetbrains.kotlinx:kotlinx-serialization-json-jvm       1.13.0      Apache-2.0
 org.jspecify:jspecify                                      1.0.0       Apache-2.0
+
+WireGuard (com.wireguard.android:tunnel, feature-vpn, https://git.zx2c4.com/
+wireguard-android): the Java library is Apache-2.0; its native libwg-go.so
+contains wireguard-go (MIT), the Go runtime and golang.org/x modules
+(BSD-3-Clause), Copyright WireGuard LLC / The Go Authors. The AAR also ships libwg.so and
+libwg-quick.so (wireguard-tools, GPL-2.0) for its root backend; the app does
+not use that backend and leaves both out of the APK (packaging excludes in
+app-titanos/build.gradle.kts). "WireGuard" is a registered trademark of
+Jason A. Donenfeld; the app is not made or endorsed by the WireGuard project.
 
 Fonts (core-ui/src/main/res/font, converted from the web UI's @fontsource
 5.3.0 WOFF files to TTF without changing the font tables):

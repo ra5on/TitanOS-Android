@@ -288,6 +288,11 @@ private fun MainShell(graph: AppGraph) {
         io.github.ra5on.titanos.update.AboutScreen(nasVersion, onBack = { graph.openAbout = false })
         return
     }
+    // Eigenes VPN (feature-vpn): Seite über der Leiste.
+    if (graph.openVpn) {
+        io.github.ra5on.titanos.vpn.VpnPage(onBack = { graph.openVpn = false })
+        return
+    }
     PimLive(graph)
     graph.openProgram?.let { id ->
         ProgramHost(graph, id) { graph.openProgram = null; graph.programLink = null }
@@ -333,6 +338,14 @@ private fun MainShell(graph: AppGraph) {
                             chevron = true,
                             divider = true,
                             onClick = { menu = false; graph.openProgram = PIM_SYNC },
+                        )
+                        ListRow(
+                            stringResource(io.github.ra5on.titanos.vpn.R.string.vpn_title),
+                            sub = stringResource(io.github.ra5on.titanos.vpn.R.string.vpn_menu_sub),
+                            icon = { RowIcon(TitanIcons.shield) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; graph.openVpn = true },
                         )
                         ListRow(
                             stringResource(HomeR.string.home_menu_unpair),

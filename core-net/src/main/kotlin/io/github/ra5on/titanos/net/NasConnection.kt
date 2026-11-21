@@ -25,7 +25,7 @@ class Endpoint(val base: HttpUrl, val client: OkHttpClient, val kind: AddressKin
                 .sslSocketFactory(tls.socketFactory, tls.trustManager)
                 .hostnameVerifier(tls.hostnameVerifier)
                 .build()
-            return Endpoint(address.baseUrl(), client)
+            return Endpoint(address.baseUrl(), client, if (pinned.isVpn) AddressKind.VPN else address.kind)
         }
     }
 }
@@ -50,18 +50,34 @@ class NasConnection(endpoints: List<Endpoint>, private val sessions: SessionMana
 
     val endpoints: List<Endpoint> get() = ordered
 
+    /**
+     * Die Adressen für diese Anfrage: läuft der eigene Tunnel ([VpnRoute]), das NAS
+     * darin zuerst; sonst ohne sie (ohne Tunnel liefe sie nur in die Zeitgrenze).
+     */
+    private fun candidates(): List<Int> {
+        val up = VpnRoute.isUp()
+        val vpn = authed.indices.filter { authed[it].first.kind == AddressKind.VPN }
+        if (vpn.isEmpty()) return authed.indices.toList()
+        val rest = authed.indices.filter { authed[it].first.kind != AddressKind.VPN }
+        return if (up) vpn + rest else rest
+    }
+
     /** Führt die Anfrage aus; [build] bekommt die Basisadresse (`https://host:port/`). */
     fun execute(build: (HttpUrl) -> Request): Response {
-        if (authed.isEmpty()) throw IOException("no address")
+        val order = candidates()
+        if (order.isEmpty()) throw IOException("no address")
         var last: IOException? = null
         var changed: IOException? = null
-        val start = active
-        for (i in authed.indices) {
-            val index = (start + i) % authed.size
+        // Die zuletzt erfolgreiche Adresse zuerst; mit Tunnel immer das NAS darin.
+        val tunnelFirst = authed[order[0]].first.kind == AddressKind.VPN
+        val start = if (tunnelFirst) 0 else order.indexOf(active).coerceAtLeast(0)
+        for (i in order.indices) {
+            val index = order[(start + i) % order.size]
             val (endpoint, client) = authed[index]
             try {
                 val response = client.newCall(build(endpoint.base)).execute()
                 active = index
+                if (endpoint.kind == AddressKind.LAN && !VpnRoute.isUp()) VpnRoute.reachedAtHome()
                 return response
             } catch (e: IOException) {
                 val cert = e.certificateChange()

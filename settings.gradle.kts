@@ -29,6 +29,7 @@ include(
     ":feature-agent",
     ":feature-mail",
     ":feature-pim",
+    ":feature-vpn",
     ":app-titanos",
     ":app-agent",
     ":lint-rules",

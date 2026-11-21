@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!--
+        Den Namen des WLANs (SSID) gibt Android nur mit Standort heraus; die App
+        braucht ihn für „Automatisch außerhalb des Heim-WLANs“ und fragt erst nach
+        Tippen mit Erklärung. Im Hintergrund (Wechsel des Netzes bei geschlossener
+        App) zusätzlich „Immer zulassen“.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <queries>
+        <package android:name="io.github.ra5on.titanos.agent" />
+    </queries>
+    <application>
+        <!-- Schnelleinstellungs-Kachel „TitanOS VPN“. -->
+        <service
+            android:name=".VpnTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_vpn_shield"
+            android:label="@string/vpn_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+        <!-- Netzwechsel bei geschlossener App (registerNetworkCallback mit PendingIntent). -->
+        <receiver
+            android:name=".NetworkReceiver"
+            android:exported="false" />
+        <!-- „Trennen“ und „Verbinden“ aus der Mitteilung. -->
+        <receiver
+            android:name=".VpnActionReceiver"
+            android:exported="false" />
+        <!-- Nach dem Neustart des Handys oder einem Update: Netzwechsel wieder beobachten. -->
+        <receiver
+            android:name=".VpnBootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

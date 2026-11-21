@@ -105,7 +105,10 @@ data class OfficeHost(val base: HttpUrl, val spki: String, val allowPublic: Bool
     companion object {
         /** Die erste Adresse, die antwortet; das Heimnetz zuerst (wie NasConnection). */
         suspend fun resolve(access: FilesAccess): OfficeHost? = withContext(Dispatchers.IO) {
-            val ordered = access.pairing.addresses.sortedBy { if (it.address?.kind == AddressKind.LAN) 0 else 1 }
+            // Das NAS im eigenen Tunnel nur, solange er läuft, dann zuerst (wie NasConnection).
+            val up = io.github.ra5on.titanos.net.VpnRoute.isUp()
+            val ordered = access.pairing.addresses.filter { up || !it.isVpn }
+                .sortedBy { if (it.isVpn) -1 else if (it.address?.kind == AddressKind.LAN) 0 else 1 }
             for (pa in ordered) {
                 val endpoint = Endpoint.pinned(access.shared, pa) ?: continue
                 val ok = runCatching {

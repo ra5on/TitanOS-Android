@@ -39,6 +39,10 @@ class MainActivity : ComponentActivity() {
         if (intent?.getBooleanExtra(io.github.ra5on.titanos.widgets.PhotosWidget.EXTRA_OPEN_PHOTOS, false) == true) {
             (application as TitanApp).graph.openPhotos = true
         }
+        // Mitteilung oder Kachel des VPN: die Seite „VPN“.
+        if (intent?.getBooleanExtra(io.github.ra5on.titanos.vpn.VpnNotify.EXTRA_OPEN_VPN, false) == true) {
+            (application as TitanApp).graph.openVpn = true
+        }
         // Tippen auf eine Mitteilung: die Liste der Mitteilungen.
         io.github.ra5on.titanos.notify.NotifyRuntime.take(intent)
         if (intent?.action != Intent.ACTION_VIEW) return
