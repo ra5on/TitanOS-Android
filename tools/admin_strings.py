@@ -36,7 +36,7 @@ WHOLE = ["storage", "share", "shares", "users", "user", "plugins", "plugin", "to
          "desktop.app", "ui", "import", "replace", "swap", "recovery", "bundle", "hardware", "nvidia", "drivers",
          "unbound", "volume", "volumes", "raid", "account", "access", "quota", "quotas", "sysdata", "uas", "wake",
          "phone", "format", "backup.day", "backup.dayShort", "report.day", "usage", "danger", "stay", "dashboard",
-         "temperatures", "fans", "services", "tailscale", "netbird", "agentData", "accountAgent", "growth", "smr", "fs", "member", "memoryPolicy", "files.conflict", "addDisk"]
+         "temperatures", "fans", "services", "tailscale", "netbird", "agentData", "accountAgent", "growth", "smr", "fs", "member", "memoryPolicy", "files.conflict", "addDisk", "role", "menubar.shares", "menubar.users", "menubar.plugins", "pluginSteps", "twofa", "passkeys", "password"]
 
 # Jede Zeichenkette in den Seiten und den Bausteinen, die sie benutzen und die ein Schlüssel ist.
 src_dirs = ["routes/storage", "routes/shares", "routes/users", "routes/plugins", "routes/tools", "routes/logs",
