@@ -64,7 +64,13 @@ fun AccountApp(env: SettingsEnv, onClose: () -> Unit, start: String? = null) {
                     Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp).navigationBarsPadding(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Column(Modifier.widthIn(max = 1000.dp).fillMaxWidth().padding(bottom = 24.dp)) {
+                    // Am Handy wie das Web am Handy; ab 900 dp breiter wie das Web am PC, ab 1280 dp zwei Spalten.
+                    val max = when (io.github.ra5on.titanos.ui.currentWidth()) {
+                        io.github.ra5on.titanos.ui.Width.Desktop -> 1600.dp
+                        io.github.ra5on.titanos.ui.Width.Wide -> 1200.dp
+                        else -> 1000.dp
+                    }
+                    Column(Modifier.widthIn(max = max).fillMaxWidth().padding(bottom = 24.dp)) {
                         AccountPage()
                     }
                 }

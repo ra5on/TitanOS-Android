@@ -1,4 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="acc_title">Mein Konto</string>
+    <!-- Kein Web-Text: die App kann keine Passkeys anlegen (WebAuthn ist an die Adresse der Weboberfläche gebunden). -->
+    <string name="acc_passkeys_app">In der App lässt sich kein Passkey anlegen: Ein Passkey gehört zu der Adresse der Weboberfläche, unter der er entsteht, und Android gibt ihn einer App nur mit einer Freigabe auf dieser Domain (Digital Asset Links). Lege neue Passkeys im Browser in der Weboberfläche an; entfernen kannst du sie auch hier.</string>
+    <!-- Kein Web-Text: Web Push gibt es nur im Browser. -->
+    <string name="acc_push_app">Diese App bekommt ihre Mitteilungen über ihre Kopplung, nicht über Web Push. Hier stehen die Browser, in denen du Mitteilungen eingeschaltet hast; einschalten geht im jeweiligen Browser.</string>
+    <!-- Kein Web-Text: im Web steht davor „Auf diesem Handy öffnen“, das in der schon gekoppelten App nicht passt. -->
+    <string name="acc_pair_scan">Scanne diesen Code mit dem anderen Handy in der TitanOS-App:</string>
+    <!-- Gerätepasswörter: Texte aus pim/Devices.svelte (iphone.*), die nicht im Asset settings-i18n stehen. -->
+    <string name="acc_dav_title">Gerätepasswörter für Kalender und Kontakte</string>
+    <string name="acc_dav_desc">Das iPhone meldet sich mit deinem Kontonamen und einem eigenen Passwort an. Dein Kontopasswort und der zweite Faktor kommen nie aufs iPhone.</string>
+    <string name="acc_dav_created">Angelegt am %1$s</string>
+    <string name="acc_dav_revoke">Entziehen …</string>
+    <string name="acc_dav_revoke_title">Gerätepasswort entziehen</string>
+    <string name="acc_dav_revoke_text">„%1$s“ kann sich danach nicht mehr anmelden und gleicht nichts mehr ab. Kalender und Kontakte auf dem NAS bleiben. Am Gerät entfernst du den Account in den Einstellungen von iOS.</string>
+    <string name="acc_dav_revoke_confirm">Entziehen</string>
+    <string name="acc_dav_new">Neues Gerätepasswort</string>
+    <string name="acc_dav_new_desc">Ein eigenes für jedes Gerät: ein verlorenes iPhone sperrst du einzeln aus, die anderen laufen weiter. Zum Erzeugen fragt TitanOS nach deinem Kontopasswort.</string>
+    <string name="acc_dav_full">Ein Konto hat höchstens %1$d Geräte. Entziehe zuerst ein altes, um ein neues zu erzeugen.</string>
+    <string name="acc_dav_name_placeholder">Name des Geräts</string>
+    <string name="acc_dav_create">Erzeugen …</string>
+    <string name="acc_dav_create_title">Gerätepasswort für „%1$s“</string>
+    <string name="acc_dav_create_confirm">Erzeugen</string>
+    <string name="acc_dav_sync_never">noch nie abgeglichen</string>
+    <string name="acc_dav_sync_today">zuletzt abgeglichen heute %1$s</string>
+    <string name="acc_dav_sync_yesterday">zuletzt abgeglichen gestern %1$s</string>
+    <string name="acc_dav_sync_on">zuletzt abgeglichen am %1$s %2$s</string>
+    <string name="acc_dav_sync_before_restart">zuletzt abgeglichen vor dem Neustart: %1$s</string>
+    <string name="acc_dav_kind_caldav">Kalender</string>
+    <string name="acc_dav_kind_carddav">Kontakte</string>
+    <string name="acc_dav_once_title">Gerätepasswort für „%1$s“</string>
+    <string name="acc_dav_once_hint">Nur jetzt sichtbar. Trage es gleich am Gerät ein; TitanOS speichert nur einen Abdruck und kann es nicht noch einmal zeigen.</string>
+    <string name="acc_dav_copy">Kopieren</string>
+    <string name="acc_dav_copied">Kopiert</string>
 </resources>
