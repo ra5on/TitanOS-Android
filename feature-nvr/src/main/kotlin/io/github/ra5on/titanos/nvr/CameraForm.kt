@@ -403,8 +403,8 @@ fun CameraForm(
                     initial!!.id,
                     d.zones,
                     d.masks,
-                    onZones = { z -> d = d.copy(zones = z, zonesOnly = d.zonesOnly && z.isNotEmpty()) },
-                    onMasks = { m -> d = d.copy(masks = m) },
+                    onZonesIn = { z -> d = d.copy(zones = z, zonesOnly = d.zonesOnly && z.isNotEmpty()) },
+                    onMasksIn = { m -> d = d.copy(masks = m) },
                     onZoneGone = { id, name ->
                         val before = d.notify.zones.orEmpty()
                         val after = before - id

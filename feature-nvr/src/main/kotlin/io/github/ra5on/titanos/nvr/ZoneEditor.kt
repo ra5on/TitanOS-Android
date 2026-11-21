@@ -88,12 +88,17 @@ private fun inside(p: Offset, pts: List<List<Double>>): Boolean {
 @Composable
 fun ZoneEditor(
     camera: String,
-    zones: List<CameraZone>,
-    masks: CameraMasks,
-    onZones: (List<CameraZone>) -> Unit,
-    onMasks: (CameraMasks) -> Unit,
+    zonesIn: List<CameraZone>,
+    masksIn: CameraMasks,
+    onZonesIn: (List<CameraZone>) -> Unit,
+    onMasksIn: (CameraMasks) -> Unit,
     onZoneGone: (String, String) -> Unit,
 ) {
+    // Der Berührungs-Handler lebt über viele Zusammenstellungen: er liest immer den neuesten Stand.
+    val zones by rememberUpdatedState(zonesIn)
+    val masks by rememberUpdatedState(masksIn)
+    val onZones by rememberUpdatedState(onZonesIn)
+    val onMasks by rememberUpdatedState(onMasksIn)
     val c = Titan.colors
     var selected by remember { mutableStateOf<Sel?>(null) }
     var pointAt by remember { mutableStateOf<Int?>(null) }
@@ -101,15 +106,15 @@ fun ZoneEditor(
     var picture by remember { mutableStateOf("loading") }
     var aspect by remember { mutableFloatStateOf(16f / 9f) }
     var stamp by remember { mutableLongStateOf(0L) }
-    val motion = masks.motion.orEmpty()
-    val objects = masks.objects.orEmpty()
-    fun areas(kind: String): List<List<List<Double>>> = when (kind) { "zone" -> zones.map { it.points }; "motion" -> motion.map { it.points }; else -> objects.map { it.points } }
+    fun motionNow() = masks.motion.orEmpty()
+    fun objectsNow() = masks.objects.orEmpty()
+    fun areas(kind: String): List<List<List<Double>>> = when (kind) { "zone" -> zones.map { it.points }; "motion" -> motionNow().map { it.points }; else -> objectsNow().map { it.points } }
     fun room(kind: String) = areas(kind).size < if (kind == "zone") MAX_ZONES else MAX_MASKS
     fun setPoints(s: Sel, pts: List<List<Double>>) {
         when (s.kind) {
             "zone" -> onZones(zones.mapIndexed { i, z -> if (i == s.index) z.copy(points = pts) else z })
-            "motion" -> onMasks(masks.copy(motion = motion.mapIndexed { i, m -> if (i == s.index) CameraMask(pts) else m }))
-            else -> onMasks(masks.copy(objects = objects.mapIndexed { i, m -> if (i == s.index) CameraMask(pts) else m }))
+            "motion" -> onMasks(masks.copy(motion = motionNow().mapIndexed { i, m -> if (i == s.index) CameraMask(pts) else m }))
+            else -> onMasks(masks.copy(objects = objectsNow().mapIndexed { i, m -> if (i == s.index) CameraMask(pts) else m }))
         }
     }
     val kindNames = AREA_KINDS.associateWith { t("nvr.areas.kind.$it") }
@@ -129,11 +134,11 @@ fun ZoneEditor(
             onZones(zones + CameraZone(zoneId(name, zones.mapNotNull { it.id }), name, d.second))
             selected = Sel("zone", zones.size)
         } else if (d.first == "motion") {
-            onMasks(masks.copy(motion = motion + CameraMask(d.second)))
-            selected = Sel("motion", motion.size)
+            onMasks(masks.copy(motion = motionNow() + CameraMask(d.second)))
+            selected = Sel("motion", motionNow().size)
         } else {
-            onMasks(masks.copy(objects = objects + CameraMask(d.second)))
-            selected = Sel("objects", objects.size)
+            onMasks(masks.copy(objects = objectsNow() + CameraMask(d.second)))
+            selected = Sel("objects", objectsNow().size)
         }
         drawing = null
         pointAt = null
@@ -162,8 +167,8 @@ fun ZoneEditor(
                 onZones(zones.filterIndexed { i, _ -> i != s.index })
                 if (gone?.id != null) onZoneGone(gone.id, gone.name)
             }
-            "motion" -> onMasks(masks.copy(motion = motion.filterIndexed { i, _ -> i != s.index }))
-            else -> onMasks(masks.copy(objects = objects.filterIndexed { i, _ -> i != s.index }))
+            "motion" -> onMasks(masks.copy(motion = motionNow().filterIndexed { i, _ -> i != s.index }))
+            else -> onMasks(masks.copy(objects = objectsNow().filterIndexed { i, _ -> i != s.index }))
         }
         selected = null
         pointAt = null

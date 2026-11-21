@@ -120,6 +120,7 @@ fun LiveTile(
     ptzStart: Boolean = false,
     onSolo: (() -> Unit)? = null,
     onPtz: (() -> Unit)? = null,
+    pictureModifier: Modifier = Modifier,
 ) {
     val loc = locale()
     val condition = camera.condition(running)
@@ -137,7 +138,7 @@ fun LiveTile(
         if (condition != Condition.Off) {
             LocalNvrMedia.current.Live(
                 camera.id, t("nvr.live.videoOf", "name" to camera.name), small, sound, solo, if (solo) 1080 else 480,
-                Modifier.fillMaxSize(),
+                Modifier.fillMaxSize().then(pictureModifier),
             ) { shown = it }
         }
         val middle = when {

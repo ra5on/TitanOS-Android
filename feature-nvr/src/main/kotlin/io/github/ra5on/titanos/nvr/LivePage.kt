@@ -496,13 +496,14 @@ private fun SoloView(
     ) {
         LiveTile(
             camera, running, prefs, activity[camera.id], api,
-            Modifier.fillMaxSize().graphicsLayer {
+            Modifier.fillMaxSize(),
+            solo = true,
+            pictureModifier = Modifier.graphicsLayer {
                 scaleX = scale
                 scaleY = scale
                 translationX = pan.x
                 translationY = pan.y
             },
-            solo = true,
             ptzStart = live.soloPtz,
             onSolo = { live.solo = "" },
         )
