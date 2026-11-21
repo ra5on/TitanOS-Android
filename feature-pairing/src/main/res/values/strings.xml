@@ -74,4 +74,5 @@
     <string name="perm_denied_suffix">%1$s. Android hat es abgelehnt; in den Android-Einstellungen der App änderbar.</string>
     <string name="perm_note">Mitteilungen kommen ohne Google über eine eigene Verbindung zum NAS. Damit Android sie nicht trennt, bittet die App danach, sie vom Akku-Sparen auszunehmen.</string>
     <string name="perm_next">Weiter</string>
+    <string name="pair_sibling_permission">TitanOS-Apps untereinander koppeln</string>
 </resources>
