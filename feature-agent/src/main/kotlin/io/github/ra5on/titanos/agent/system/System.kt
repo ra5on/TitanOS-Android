@@ -88,7 +88,10 @@ class AgentAssistSession(context: Context) : VoiceInteractionSession(context) {
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
         AssistContent.clear()
+        launched = false
+        // Ohne Bildschirminhalt sofort; sonst warten, bis Text und Bild da sind (höchstens 0,8 s).
         if (AssistScreen.get(context) == AssistScreen.NEVER) launch()
+        else android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ launch() }, 800)
     }
 
     override fun onHandleAssist(state: AssistState) {
