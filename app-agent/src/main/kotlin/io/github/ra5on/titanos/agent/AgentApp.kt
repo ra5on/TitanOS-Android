@@ -1,5 +1,7 @@
 package io.github.ra5on.titanos.agent
 
+import io.github.ra5on.titanos.pairing.Sibling
+import io.github.ra5on.titanos.pairing.SiblingHost
 import android.app.Application
 import android.net.ConnectivityManager
 import android.os.Handler
@@ -23,7 +25,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import java.io.File
 
-class AgentApp : Application() {
+class AgentApp : Application(), SiblingHost {
+    // Eine Kopplung für beide Apps (feature-pairing Sibling.kt).
+    override val siblingApp get() = "agent"
+    override val siblingStore get() = graph.store
+    override val siblingKey get() = graph.key
+    override val siblingShared get() = graph.shared
+    override val siblingSessions get() = graph.sessions
+    override fun siblingPaired(pairing: Pairing) = graph.paired(pairing)
+
     lateinit var graph: AgentGraph
         private set
 
@@ -31,6 +41,8 @@ class AgentApp : Application() {
         super.onCreate()
         // Eigener Schlüssel im Keystore dieser App, eigene Kopplung: die Agent-App ist am NAS ein eigenes Gerät.
         graph = AgentGraph(this, PrefsPairingStore(this), KeystoreDeviceKey())
+        // Ungekoppelt und die TitanOS-App ist gekoppelt: sie koppelt diese App mit.
+        Sibling.ask(this, this)
     }
 }
 
@@ -74,6 +86,8 @@ class AgentGraph(private val app: Application, val store: PairingStore, val key:
     )
 
     fun paired(p: Pairing) {
+        // Die TitanOS-App darf sich jetzt mitkoppeln lassen.
+        (app as? SiblingHost)?.let { Sibling.announce(app, it) }
         sessions.forget()
         pairing = p
         unpairedByNas = false

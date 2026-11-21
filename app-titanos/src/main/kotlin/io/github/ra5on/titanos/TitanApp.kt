@@ -1,5 +1,7 @@
 package io.github.ra5on.titanos
 
+import io.github.ra5on.titanos.pairing.Sibling
+import io.github.ra5on.titanos.pairing.SiblingHost
 import android.app.Application
 import androidx.work.Configuration
 import android.os.Handler
@@ -35,7 +37,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
-class TitanApp : Application(), Configuration.Provider {
+class TitanApp : Application(), Configuration.Provider, SiblingHost {
+    // Eine Kopplung für beide Apps (feature-pairing Sibling.kt).
+    override val siblingApp get() = "titanos"
+    override val siblingStore get() = graph.store
+    override val siblingKey get() = graph.key
+    override val siblingShared get() = graph.shared
+    override val siblingSessions get() = graph.sessions
+    override fun siblingPaired(pairing: Pairing) = graph.paired(pairing)
+
     /**
      * WorkManager nutzt JobScheduler-Kennungen unterhalb von 0x70000000;
      * darüber liegt die eigene Kennung von „Jetzt sichern“ (BackupNowService).
@@ -71,7 +81,9 @@ class TitanApp : Application(), Configuration.Provider {
         if (graph.pairing != null) NotifyScheduler.arm(this)
         // Kontakte und Kalender des Handys: der SyncAdapter holt sich hier die Verbindung.
         io.github.ra5on.titanos.pim.sync.PimRuntime.nas = { graph.connection() }
-        graph.pairing?.let { io.github.ra5on.titanos.pim.sync.PimAccount.ensure(this, it.user) }
+        graph.pairing?.let { io.github.ra5on.titanos.pim.sync.PimAccount.ensure(this, io.github.ra5on.titanos.pim.sync.PimAccount.nameFor(it.user, it.hostname)) }
+        // Ungekoppelt und die Agent-App ist gekoppelt: sie koppelt diese App mit.
+        Sibling.ask(this, this)
     }
 }
 
@@ -135,6 +147,8 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
     private fun photosModelFor(t: TitanApi?, p: PhotosApi?) = if (t != null && p != null) PhotosModel(app, t, p, scope) else null
 
     fun paired(p: Pairing) {
+        // Die Agent-App darf sich jetzt mitkoppeln lassen.
+        (app as? SiblingHost)?.let { Sibling.announce(app, it) }
         sessions.forget()
         pairing = p
         unpairedByNas = false
@@ -147,7 +161,7 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         io.github.ra5on.titanos.widgets.WidgetRefresh.now(app)
         notifyApi = notifyApiFor(p)
         NotifyScheduler.arm(app)
-        io.github.ra5on.titanos.pim.sync.PimAccount.ensure(app, p.user)
+        io.github.ra5on.titanos.pim.sync.PimAccount.ensure(app, io.github.ra5on.titanos.pim.sync.PimAccount.nameFor(p.user, p.hostname))
     }
 
     /** Kopplung aufheben: Schlüssel, Kopplung und Sitzung weg. Am NAS beendet man das Gerät im Browser. */
