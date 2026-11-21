@@ -261,6 +261,10 @@ class RfbClientTest {
                 override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
                     fromApp.put(bytes)
                 }
+
+                override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                    webSocket.close(1000, null)
+                }
             }).build(),
         )
         val access = ComputeAccess(listOf(Endpoint(server.url("/"), OkHttpClient())), null)
