@@ -1,5 +1,10 @@
 package io.github.ra5on.titanos
 
+import android.Manifest
+import android.provider.CalendarContract
+import android.provider.ContactsContract
+import io.github.ra5on.titanos.pim.sync.PimSync
+import io.github.ra5on.titanos.pim.sync.SyncStore
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
@@ -106,6 +111,16 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
             onNotify = { on ->
                 setNotificationsOn(context, on)
                 if (on) NotifyScheduler.askBatteryExemption(context)
+            },
+            // Kontakte und Kalender über das Android-Konto der Kopplung (feature-pim).
+            contactsPermissions = arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS),
+            calendarPermissions = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR),
+            pimOn = { kind -> SyncStore(context).load().let { if (kind == "contacts") it.contacts else it.calendars } },
+            onPim = { kind, on ->
+                val store = SyncStore(context)
+                store.save(store.load().let { if (kind == "contacts") it.copy(contacts = on) else it.copy(calendars = on) })
+                PimSync.configure(context)
+                if (on) PimSync.requestNow(context, manual = false, only = if (kind == "contacts") ContactsContract.AUTHORITY else CalendarContract.AUTHORITY)
             },
         )
         else -> MainShell(graph)
@@ -254,6 +269,14 @@ private fun MainShell(graph: AppGraph) {
             NotifyRuntime.listOpened()
         }
     }
+    // Mitteilung mit Link in Mail, Kalender oder Kontakte: das Programm an dieser Stelle öffnen.
+    val openLink by NotifyRuntime.openLink.collectAsStateWithLifecycle()
+    LaunchedEffect(openLink) {
+        val link = openLink ?: return@LaunchedEffect
+        graph.programLink = link
+        graph.openProgram = link.removePrefix("/").substringBefore('?').substringBefore('/')
+        NotifyRuntime.linkOpened()
+    }
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
     if (tab != Tab.Home) BackHandler { tab = Tab.Home }
     var menu by remember { mutableStateOf(false) }
@@ -267,7 +290,7 @@ private fun MainShell(graph: AppGraph) {
     }
     PimLive(graph)
     graph.openProgram?.let { id ->
-        ProgramHost(graph, id) { graph.openProgram = null }
+        ProgramHost(graph, id) { graph.openProgram = null; graph.programLink = null }
         return
     }
     var confirmUnpair by remember { mutableStateOf(false) }

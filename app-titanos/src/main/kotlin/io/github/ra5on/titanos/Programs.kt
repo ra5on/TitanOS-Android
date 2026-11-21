@@ -23,7 +23,7 @@ internal fun ProgramHost(graph: AppGraph, id: String, onClose: () -> Unit) {
     val nas = remember(pairing) { graph.connection() } ?: return
     val stream = remember(pairing) { graph.connection(NotifyApi.streamClient(graph.shared)) } ?: return
     when (id) {
-        "mail" -> MailApp(nas, stream, onClose)
+        "mail" -> MailApp(nas, stream, onClose, start = graph.programLink?.let { io.github.ra5on.titanos.mail.MailStart.fromLink(it) } ?: io.github.ra5on.titanos.mail.MailStart.Boxes)
         "calendar" -> CalendarApp(nas, stream, onClose)
         "contacts" -> ContactsApp(nas, stream, onClose)
         PIM_SYNC -> io.github.ra5on.titanos.pim.sync.SyncScreen(nas, onClose)

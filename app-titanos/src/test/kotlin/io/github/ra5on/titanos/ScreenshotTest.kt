@@ -121,7 +121,7 @@ class ScreenshotTest {
 
     @Test
     fun s04_permissions() = shot("04-berechtigungen") {
-        PermissionsScreen(PermissionsState(localNetwork = Grant.Granted, notifications = Grant.NotAsked), {}, {}, {}, onBack = {})
+        PermissionsScreen(PermissionsState(localNetwork = Grant.Granted, notifications = Grant.NotAsked, contacts = Grant.Granted, calendar = Grant.NotAsked), {}, {}, {}, onBack = {})
     }
 
     @Test

@@ -124,6 +124,8 @@ fun NotifyTab(nav: @Composable () -> Unit) {
                 Poster.cancel(context, n.notificationTag)
                 if (n.app == "agent" || n.kind == Category.Agent) {
                     Poster.openIntent(context, n)?.let { runCatching { it.send() } }
+                } else {
+                    NotifyRuntime.requestOpen(n.link)
                 }
             },
             onMenu = { menu = true },

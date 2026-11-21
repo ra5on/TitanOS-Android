@@ -43,11 +43,15 @@ data class PermissionsState(
     val photos: Grant? = null,
     /** Nur ausgewählte Fotos freigegeben: neue sieht die App nicht. */
     val photosPartial: Boolean = false,
+    /** Kontakte abgleichen (null: diese App gleicht keine Kontakte ab). */
+    val contacts: Grant? = null,
+    /** Kalender abgleichen (null: diese App gleicht keine Kalender ab). */
+    val calendar: Grant? = null,
 )
 
 /**
- * Was soll die App tun? (Entwurf 04). Fotos, Heimnetz und Mitteilungen fragt
- * die App wirklich ab; Kontakte und Kalender sagen, dass sie später kommen.
+ * Was soll die App tun? (Entwurf 04). Jede Zeile fragt Android wirklich;
+ * eine Zeile ohne Wert (null) zeigt, dass sie in dieser App nicht kommt.
  */
 @Composable
 fun PermissionsScreen(
@@ -57,6 +61,8 @@ fun PermissionsScreen(
     onNext: () -> Unit,
     onBack: (() -> Unit)? = null,
     onPhotos: () -> Unit = {},
+    onContacts: () -> Unit = {},
+    onCalendar: () -> Unit = {},
 ) {
     val on = stringResource(UiR.string.ui_on)
     val off = stringResource(UiR.string.ui_off)
@@ -92,8 +98,22 @@ fun PermissionsScreen(
                     onClick = onPhotos,
                 )
             }
-            later(R.string.perm_contacts, R.string.perm_contacts_text, "contacts", "green", true)
-            later(R.string.perm_calendar, R.string.perm_calendar_text, "calendar", "violet", true)
+            val real = @Composable { g: Grant?, title: Int, text: Int, glyph: String, gradient: String, click: () -> Unit ->
+                if (g == null) {
+                    later(title, text, glyph, gradient, true)
+                } else {
+                    ListRow(
+                        title = stringResource(title),
+                        sub = subFor(g, text),
+                        icon = { AppIcon(glyph, gradient, 40.dp) },
+                        right = { Toggle(g == Grant.Granted, { click() }, on, off) },
+                        divider = true,
+                        onClick = click,
+                    )
+                }
+            }
+            real(state.contacts, R.string.perm_contacts, R.string.perm_contacts_text, "contacts", "green", onContacts)
+            real(state.calendar, R.string.perm_calendar, R.string.perm_calendar_text, "calendar", "violet", onCalendar)
             ListRow(
                 title = stringResource(R.string.perm_local),
                 sub = subFor(state.localNetwork, R.string.perm_local_text),
@@ -136,6 +156,13 @@ fun PermissionsRoute(
     onPhotos: (Boolean) -> Unit = {},
     notifyOn: () -> Boolean = { true },
     onNotify: (Boolean) -> Unit = {},
+    /** Kontakte und Kalender: null = gibt es in dieser App nicht. */
+    contactsPermissions: Array<String>? = null,
+    calendarPermissions: Array<String>? = null,
+    /** Ist der Abgleich an (Einstellung der App, unabhängig von der Berechtigung)? */
+    pimOn: (kind: String) -> Boolean = { false },
+    /** Abgleich ein- oder ausschalten; [kind] ist `contacts` oder `calendar`. */
+    onPim: (kind: String, on: Boolean) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     fun grant(p: String, asked: Boolean): Grant = when {
@@ -154,11 +181,19 @@ fun PermissionsRoute(
         asked -> Grant.Denied
         else -> Grant.NotAsked
     }
+    fun pimGrant(perms: Array<String>?, kind: String, asked: Boolean): Grant? = when {
+        perms == null -> null
+        perms.all { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED } && pimOn(kind) -> Grant.Granted
+        asked && perms.any { context.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED } -> Grant.Denied
+        else -> Grant.NotAsked
+    }
     var state by remember {
         mutableStateOf(
             PermissionsState(
                 grant(LOCAL_NETWORK, false), notifyGrant(false),
                 photos = photoGrant(false), photosPartial = photosPartial(),
+                contacts = pimGrant(contactsPermissions, "contacts", false),
+                calendar = pimGrant(calendarPermissions, "calendar", false),
             ),
         )
     }
@@ -167,6 +202,27 @@ fun PermissionsRoute(
         val any = result.entries.any { it.value && it.key != Manifest.permission.ACCESS_MEDIA_LOCATION }
         onPhotos(any)
         state = state.copy(photos = photoGrant(true), photosPartial = photosPartial())
+    }
+    val contactsAsk = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        onPim("contacts", result.values.all { it })
+        state = state.copy(contacts = pimGrant(contactsPermissions, "contacts", true))
+    }
+    val calendarAsk = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        onPim("calendar", result.values.all { it })
+        state = state.copy(calendar = pimGrant(calendarPermissions, "calendar", true))
+    }
+    fun togglePim(kind: String, perms: Array<String>?, ask: () -> Unit) {
+        perms ?: return
+        val current = if (kind == "contacts") state.contacts else state.calendar
+        when {
+            current == Grant.Granted -> onPim(kind, false)
+            perms.all { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED } -> onPim(kind, true)
+            else -> { ask(); return }
+        }
+        state = state.copy(
+            contacts = pimGrant(contactsPermissions, "contacts", false),
+            calendar = pimGrant(calendarPermissions, "calendar", false),
+        )
     }
     val local = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         state = state.copy(localNetwork = grant(LOCAL_NETWORK, true))
@@ -201,6 +257,8 @@ fun PermissionsRoute(
                 media.launch(photoPermissions)
             }
         },
+        onContacts = { togglePim("contacts", contactsPermissions) { contactsAsk.launch(contactsPermissions!!) } },
+        onCalendar = { togglePim("calendar", calendarPermissions) { calendarAsk.launch(calendarPermissions!!) } },
     )
 }
 

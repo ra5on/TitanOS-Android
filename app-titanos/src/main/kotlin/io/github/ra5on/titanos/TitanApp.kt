@@ -120,6 +120,9 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
     /** Mail, Kalender oder Kontakte in voller Größe (`mail`, `calendar`, `contacts`), sonst null. */
     var openProgram by mutableStateOf<String?>(null)
 
+    /** Stelle im Programm, z. B. `/mail?a=…&f=INBOX&m=7` aus einer Mitteilung (null: Anfang). */
+    var programLink by mutableStateOf<String?>(null)
+
     /**
      * Eine Verbindung zum gekoppelten NAS über [client] (Mail, Kalender,
      * Kontakte, Abgleich); null ohne Kopplung.
