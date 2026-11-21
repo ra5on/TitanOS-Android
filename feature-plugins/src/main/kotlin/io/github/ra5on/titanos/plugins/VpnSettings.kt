@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos.plugins
 
+import io.github.ra5on.titanos.admin.breakAfterHyphens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -157,7 +158,7 @@ internal fun TailscaleGroup(api: PluginsApi, pollMs: Long, onPending: (Boolean) 
         Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(t("tailscale.httpsNeeds"), style = TitanType.body, color = c.text)
             Bullets(listOf(t("tailscale.httpsNeedMagicDNS"), t("tailscale.httpsNeedCertificates")))
-            Notice(t("tailscale.httpsPublic"), tone = Tone.Warn)
+            Notice(breakAfterHyphens(t("tailscale.httpsPublic")), tone = Tone.Warn)
             httpsError?.let { Notice(errorText(it), tone = Tone.Error) }
             if (https?.enabled == true) {
                 when {

@@ -178,6 +178,8 @@ fun ToggleRow(
     icon: String? = null,
     enabled: Boolean = true,
     divider: Boolean = false,
+    /** Name für TalkBack, wenn der Titel allein nicht reicht (Web: aria-label, z. B. „Live für Einfahrt“). */
+    label: String? = null,
 ) {
     val on = stringResource(R.string.admin_on)
     val off = stringResource(R.string.admin_off)
@@ -186,7 +188,10 @@ fun ToggleRow(
         Row(
             Modifier.fillMaxWidth()
                 .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
-                .semantics { stateDescription = if (checked) on else off }
+                .semantics(mergeDescendants = label != null) {
+                    stateDescription = if (checked) on else off
+                    if (label != null) contentDescription = label
+                }
                 .heightIn(min = 56.dp).padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),

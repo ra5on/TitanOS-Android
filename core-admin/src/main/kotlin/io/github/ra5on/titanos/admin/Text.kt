@@ -232,3 +232,6 @@ fun osVersion(version: String?): String {
     val (major, minor, rest) = m.destructured
     return if (major.toInt() > 0 || minor.toInt() >= 72) "$major.$minor$rest" else version.removePrefix("v")
 }
+
+/** Lange Wortverbindungen mit Bindestrich („Benachrichtigungs-Einstellungen“) dürfen nach dem Bindestrich umbrechen, nie mitten im Wort. */
+fun breakAfterHyphens(text: String): String = text.replace(Regex("(?<=\\p{L})-(?=\\p{L})"), "-\u200B")

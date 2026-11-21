@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos.plugins
 
+import io.github.ra5on.titanos.admin.breakAfterHyphens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.draw.clip
@@ -71,8 +72,8 @@ internal fun PluginDetail(env: AdminEnv, state: PluginsState, status: PluginsSta
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.Top) {
             Monogram(p, 64.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Heading(p.title)
-                Text(localized(p.description, language), style = TitanType.body, color = c.text)
+                Heading(breakAfterHyphens(p.title))
+                Text(breakAfterHyphens(localized(p.description, language)), style = TitanType.body, color = c.text)
                 Mono(listOf(p.name, p.version.ifEmpty { "–" }, formatBytes(p.size)).joinToString(" · "), style = TitanType.small, color = c.muted)
                 Text(originText(p, state), style = TitanType.small, color = c.muted)
             }

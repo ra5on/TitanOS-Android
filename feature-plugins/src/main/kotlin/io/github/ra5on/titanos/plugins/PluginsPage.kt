@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos.plugins
 
+import io.github.ra5on.titanos.admin.breakAfterHyphens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -165,7 +166,7 @@ private fun PluginList(state: PluginsState) {
                 state.recommendations.forEachIndexed { i, r ->
                     val offered = state.plugins.firstOrNull { it.name == r.plugin }
                     SettingRow(
-                        offered?.title ?: r.title,
+                        breakAfterHyphens(offered?.title ?: r.title),
                         icon = "chip",
                         divider = i > 0,
                         below = {
@@ -260,9 +261,9 @@ private fun PluginTile(state: PluginsState, p: Plugin, selected: Boolean) {
     ) {
         Monogram(p)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(p.title, style = TitanType.rowTitle, color = c.text)
+            Text(breakAfterHyphens(p.title), style = TitanType.rowTitle, color = c.text)
             Text(originText(p, state), style = TitanType.rowSub, color = c.muted)
-            Text(localized(p.description, lang()), style = TitanType.body, color = c.text)
+            Text(breakAfterHyphens(localized(p.description, lang())), style = TitanType.body, color = c.text)
             ChipLine {
                 if (state.fits(p)) StatusChip(t("plugins.fits"), Tone.Ok)
                 if (p.update != null) StatusChip(t("plugins.updateChip"), Tone.Info)

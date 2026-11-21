@@ -483,9 +483,9 @@ private fun AccountDetail(state: UsersState, account: Account, onDialog: (UserDi
                             }
                             io.github.ra5on.titanos.ui.components.Divider()
                             Text(cam.name, style = TitanType.rowTitle, color = c.text, modifier = Modifier.padding(start = 14.dp, top = 12.dp))
-                            ToggleRow(t("nvr.rights.live"), cam.live, { save("live", it) }, enabled = !camsBusy && can)
-                            ToggleRow(t("nvr.rights.recordings"), cam.recordings, { save("recordings", it) }, enabled = !camsBusy && can)
-                            ToggleRow(t("nvr.rights.names"), cam.recordings && cam.names == true, { save("names", it) }, enabled = !camsBusy && can && cam.recordings)
+                            ToggleRow(t("nvr.rights.live"), cam.live, { save("live", it) }, enabled = !camsBusy && can, label = t("nvr.rights.liveFor", "camera" to cam.name))
+                            ToggleRow(t("nvr.rights.recordings"), cam.recordings, { save("recordings", it) }, enabled = !camsBusy && can, label = t("nvr.rights.recordingsFor", "camera" to cam.name))
+                            ToggleRow(t("nvr.rights.names"), cam.recordings && cam.names == true, { save("names", it) }, enabled = !camsBusy && can && cam.recordings, label = t("nvr.rights.namesFor", "camera" to cam.name))
                         }
                     }
                 }

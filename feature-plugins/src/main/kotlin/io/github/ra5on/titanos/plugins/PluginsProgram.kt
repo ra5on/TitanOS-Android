@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos.plugins
 
+import io.github.ra5on.titanos.admin.breakAfterHyphens
 import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -203,7 +204,7 @@ internal fun PluginsProgram(
         current = page,
         onSelect = { page = it },
         onExit = onBack,
-        page = if (onUp != null) shown!!.title else groups[0].entries.first { it.id == page }.label,
+        page = if (onUp != null) breakAfterHyphens(shown!!.title) else groups[0].entries.first { it.id == page }.label,
         onUp = onUp,
         // F5: Katalog neu lesen (Befehl „Aktualisieren“ der Menüleiste des Webs).
         onKey = { e ->

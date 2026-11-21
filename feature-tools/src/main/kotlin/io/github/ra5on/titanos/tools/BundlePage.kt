@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos.tools
 
+import io.github.ra5on.titanos.admin.breakAfterHyphens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding

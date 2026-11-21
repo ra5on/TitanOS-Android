@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos.plugins
 
+import io.github.ra5on.titanos.admin.breakAfterHyphens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -74,7 +75,7 @@ private fun InstallSheet(state: PluginsState, p: Plugin) {
     val status = state.status ?: return
     val shown = state.stepsFor(p.name)
     val busyText = t(if (p.download) "plugins.downloadingChecking" else "plugins.installing")
-    AdminSheet(p.title, onDismiss = { if (!state.busy) state.asking = false }, footer = {
+    AdminSheet(breakAfterHyphens(p.title), onDismiss = { if (!state.busy) state.asking = false }, footer = {
         SheetButtons {
             ActionButton(t("common.cancel"), { state.asking = false }, enabled = !state.busy)
             ActionButton(
@@ -117,7 +118,7 @@ private fun RemoveDialog(state: PluginsState, target: Target) {
     val scope = rememberCoroutineScope()
     val steps = state.stepsFor(target.name)
     Confirm(
-        t("plugins.removeTitle", "name" to target.title),
+        t("plugins.removeTitle", "name" to breakAfterHyphens(target.title)),
         t("plugins.removeText"),
         t("plugins.removeSubmit"),
         { scope.launch { state.run(target.name) { state.api.remove(target.name) } } },
@@ -135,7 +136,7 @@ private fun UpdateDialog(state: PluginsState, target: UpdateTarget) {
     val scope = rememberCoroutineScope()
     val steps = state.stepsFor(target.name)
     Confirm(
-        t("plugins.updateTitle", "name" to target.title, "version" to target.version),
+        t("plugins.updateTitle", "name" to breakAfterHyphens(target.title), "version" to target.version),
         t("plugins.updateText"),
         t(if (state.busy) "plugins.updating" else "plugins.update"),
         { scope.launch { state.run(target.name) { state.api.update(target.name, target.path) } } },
@@ -213,9 +214,9 @@ private fun LinkSheet(state: PluginsState) {
         )
         if (preview != null) {
             SettingGroup(null) {
-                SettingRow(preview.title, below = {
+                SettingRow(breakAfterHyphens(preview.title), below = {
                     Mono(listOf(preview.name, preview.version.ifEmpty { "–" }, formatBytes(preview.size)).joinToString(" · "), style = TitanType.small, color = c.muted)
-                    localized(preview.description, lang()).takeIf { it.isNotEmpty() }?.let { Text(it, style = TitanType.rowSub, color = c.muted) }
+                    breakAfterHyphens(localized(preview.description, lang())).takeIf { it.isNotEmpty() }?.let { Text(it, style = TitanType.rowSub, color = c.muted) }
                 })
             }
             Notice(t(if (preview.official) "plugins.trustOfficial" else "plugins.trustLink"), tone = Tone.Warn)
