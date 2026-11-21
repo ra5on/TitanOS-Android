@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Texte der Gruppe „Netzwerk“, die es im Web nicht gibt (App-eigene Lage: gekoppelte Adressen, Zwischenablage). -->
+<resources>
+    <string name="net_trial_address">Ändert sich dabei die Adresse des NAS, kennt die App die neue nicht: Sie erreicht das NAS nur über die Adressen, mit denen sie gekoppelt ist. Öffne dann die neue Adresse im Browser, melde dich an und bestätige dort.</string>
+    <string name="net_trial_retrying">Das NAS antwortet gerade nicht. Während einer Probe ist das normal; die App fragt weiter nach.</string>
+    <string name="net_trial_over">Die Probezeit ist abgelaufen. Ohne Bestätigung stellt das NAS die vorherige Einstellung wieder her; die App fragt weiter nach.</string>
+    <string name="net_confirm_elsewhere">Die App erreicht das NAS nicht über die neue Verwaltungsadresse – sie kennt nur die gekoppelten Adressen. Öffne die neue Adresse im Browser, melde dich dort an und bestätige die Änderung.</string>
+    <string name="net_copy">Kopieren</string>
+    <string name="net_copied">Kopiert</string>
+    <string name="net_more">Weitere Aktionen</string>
+</resources>
