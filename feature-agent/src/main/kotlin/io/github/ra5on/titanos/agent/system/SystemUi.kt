@@ -169,7 +169,7 @@ fun NotesRole(context: Context, model: AgentModel?, locked: Boolean, onClose: ()
                     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
                         Notice(if (tr.de) "Die Agent-App ist noch mit keinem NAS gekoppelt." else "The agent app is not paired with a NAS yet.", tone = "warn")
                     }
-                } else NotesPanel(model, onClose = onClose, startNew = true)
+                } else NotesPanel(model, onClose = onClose, startNew = true, single = locked)
             }
         }
     }

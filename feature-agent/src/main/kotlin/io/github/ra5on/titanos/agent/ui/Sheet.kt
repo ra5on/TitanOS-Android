@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -114,10 +115,11 @@ fun BoxScope.AgentSheet(
         val scope = rememberCoroutineScope()
         val density = LocalDensity.current
         val shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
+        // Auf großen Bildschirmen steht das Blatt höchstens 640 dp breit in der Mitte (wie das kleine Fenster im Web am PC).
+        BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
             val max = maxHeight * 0.86f
             Column(
-                Modifier.fillMaxWidth().offset { IntOffset(0, drag.value.roundToInt()) }
+                Modifier.widthIn(max = 640.dp).fillMaxWidth().offset { IntOffset(0, drag.value.roundToInt()) }
                     .heightIn(max = max)
                     .clip(shape).background(c.surface).border(1.dp, c.border, shape)
                     .semantics { paneTitle = label }

@@ -341,7 +341,7 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
         onTitanOS = if (titanOSInstalled(context)) ({ openTitanOS(context, null) }) else null,
     )
 
-    Box(Modifier.fillMaxSize().background(c.bg).imePadding().agentKeys(model, nav).dropFiles(context, model, scope)) {
+    Box(Modifier.fillMaxSize().background(c.bg).imePadding().agentKeys(model, nav, width.twoPanes).dropFiles(context, model, scope)) {
       Row(Modifier.fillMaxSize()) {
         if (ready && width.twoPanes) Sidebar(model, nav, menuActs)
         Column(Modifier.weight(1f).fillMaxHeight()) {
@@ -626,7 +626,8 @@ private fun BoxScope.Layers(
         SheetItem("camera", tr.t("agent.attachPhoto"), { close(); pickPhoto() })
         SheetItem("upload", tr.t("agent.attachDevice"), { close(); pickFile() })
         SheetItem("folder", tr.t("agent.attachNas"), { nav.layer = Layer.Nas })
-        if (speech.canHear(model) || speech.deviceHear) {
+        // Wie im Web nur, wenn das NAS zuhören kann (Sprachdienste oder Whisper).
+        if (speech.nasHear(model)) {
             SheetRule()
             SheetItem("mic", tr.t("agent.talk.open"), { nav.layer = Layer.Talk })
         }
@@ -664,6 +665,7 @@ private fun BoxScope.Layers(
 
     // ⋯ des offenen Chats (chatMenu).
     // Wie das Web am Handy: ein Menü oben rechts, das aus dem ⋯ aufgeht.
+    BackHandler(enabled = layer == Layer.More, onBack = close)
     Scrim(layer == Layer.More, close)
     androidx.compose.animation.AnimatedVisibility(
         layer == Layer.More,

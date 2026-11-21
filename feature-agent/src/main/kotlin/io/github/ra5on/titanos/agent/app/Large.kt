@@ -74,13 +74,14 @@ fun Sidebar(model: AgentModel, nav: AgentNav, act: MenuActions) {
  * Chats durchsuchen (Menü), Strg+, Einstellungen, Esc schließt, was oben liegt.
  * (Enter sendet und Umschalt+Enter macht eine neue Zeile in der Eingabe.)
  */
-fun Modifier.agentKeys(model: AgentModel, nav: AgentNav): Modifier = onPreviewKeyEvent { e ->
+fun Modifier.agentKeys(model: AgentModel, nav: AgentNav, wide: Boolean): Modifier = onPreviewKeyEvent { e ->
     if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
     val ctrl = e.isCtrlPressed || e.isMetaPressed
     when {
         ctrl && e.key == Key.N -> { model.newChat(null, asFresh = true); nav.show(AgentView.Chat); true }
         ctrl && e.key == Key.F && model.current != null -> { model.find = model.find ?: ""; true }
-        ctrl && e.key == Key.K -> { nav.menuOpen = true; true }
+        // Mit Seitenleiste steht die Suche schon links; am Handy öffnet Strg+K das Menü.
+        ctrl && e.key == Key.K && !wide -> { nav.menuOpen = true; true }
         ctrl && e.key == Key.Comma -> { nav.show(AgentView.Settings); true }
         e.key == Key.Escape -> when {
             nav.layer != null -> { nav.layer = null; true }

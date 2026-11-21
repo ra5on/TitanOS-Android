@@ -339,7 +339,7 @@ fun applyFormat(text: String, start: Int, end: Int, f: String): Triple<String, I
 
 /** Die Notizen (NotesPanel.svelte): Ordner, Angeheftet, Suche, Notiz mit Formatleiste, Speichern im Hintergrund, Umbenennen, Verschieben, Löschen. */
 @Composable
-fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false) {
+fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false, single: Boolean = false) {
     val c = Titan.colors
     val tr = tr()
     val scope = rememberCoroutineScope()
@@ -372,7 +372,8 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false
             if (saving != "conflict") error = problemText(tr, problemOf(e))
         }
     }
-    LaunchedEffect(Unit) { load(); if (startNew) newNoteRef[0]?.invoke() }
+    LaunchedEffect(Unit) { if (!single) load(); if (startNew) newNoteRef[0]?.invoke() }
+    if (single) androidx.activity.compose.BackHandler { scope.launch { if (saving == "saving") save(); onClose() } }
     LaunchedEffect(dirty) { if (dirty > 0) { delay(700); save() } }
     DisposableEffect(Unit) { onDispose { if (saving == "saving") scope.launch { save() } } }
     fun run(block: suspend () -> Unit) { scope.launch { try { block(); dialog = null; load() } catch (e: CancellationException) { throw e } catch (e: Exception) { error = problemText(tr, problemOf(e)) } } }
@@ -408,7 +409,7 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false
         val o = open
         if (o != null) {
             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FloatButton("chevronLeft", tr.t("agent.set.back"), { scope.launch { if (saving == "saving") save(); open = null; load() } })
+                FloatButton(if (single) "check" else "chevronLeft", if (single) tr.t("common.done") else tr.t("agent.set.back"), { scope.launch { if (saving == "saving") save(); if (single) onClose() else { open = null; load() } } })
                 Text(o.title, style = AgentText.lg.copy(fontWeight = FontWeight.SemiBold), color = c.text, modifier = Modifier.weight(1f))
                 Text(when (saving) { "saving" -> tr.t("agent.notes.saving"); "saved" -> tr.t("agent.notes.saved"); else -> "" }, style = AgentText.sm, color = c.muted)
             }
@@ -431,6 +432,9 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false
                 modifier = Modifier.weight(1f).fillMaxWidth().padding(16.dp).semantics { contentDescription = tr.t("agent.notes.text") },
                 decorationBox = { inner -> Box { if (o.content.text.isEmpty()) Text(tr.t("agent.notes.placeholder"), style = AgentText.lg, color = c.muted); inner() } },
             )
+        } else if (single) {
+            // Am Sperrbildschirm: nur die neue Notiz, keine Liste, keine anderen Notizen.
+            Text(tr.t("common.loading"), style = AgentText.md, color = c.muted, modifier = Modifier.padding(24.dp))
         } else {
             Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FloatButton("close", tr.t("common.close"), onClose)

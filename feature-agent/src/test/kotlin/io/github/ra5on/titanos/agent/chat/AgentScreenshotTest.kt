@@ -184,9 +184,11 @@ class AgentScreenshotTest {
         }
     }
 
+    private var prefix = ""
+
     private fun capture(name: String, dark: Boolean) {
         settle(600)
-        compose.onRoot().captureRoboImage("build/outputs/roborazzi/$name-${if (dark) "dunkel" else "hell"}.png")
+        compose.onRoot().captureRoboImage("build/outputs/roborazzi/$prefix$name-${if (dark) "dunkel" else "hell"}.png")
     }
 
     private fun screens(dark: Boolean) {
@@ -235,16 +237,15 @@ class AgentScreenshotTest {
         for (i in 0 until 4) { settle(500); compose.onRoot().captureRoboImage("build/outputs/roborazzi/70-figur-$i-dunkel.png") }
     }
 
-    /** Große Bildschirme wie das Web am PC: Seitenleiste und Inhalt. */
+    /** Split (761–899 dp): Seitenleiste und Inhalt, Leiste unten bleibt – jeder Bildschirm. */
+    @Test
+    @Config(qualifiers = "de-w840dp-h1000dp-xhdpi")
+    fun split() { prefix = "split-"; screens(true) }
+
+    /** Wide wie das Web am PC: Seitenleiste und Inhalt – jeder Bildschirm. */
     @Test
     @Config(qualifiers = "de-w1280dp-h800dp-xhdpi")
-    fun breit() {
-        show(true)
-        model.open("c9aaaaaaaaaa0001"); until { model.current?.entries?.size == 5 }
-        capture("90-breit-chat", true)
-        nav.show(AgentView.Settings); capture("91-breit-einstellungen", true)
-        nav.show(AgentView.Memory); capture("92-breit-gedaechtnis", true)
-    }
+    fun breit() { prefix = "breit-"; screens(true) }
 
     /** Schrift 200 %: nichts wird abgeschnitten, alles bricht um. */
     @Test

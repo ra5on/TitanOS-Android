@@ -91,23 +91,30 @@ private class FeatureState(private val model: AgentModel, private val tr: Tr) {
     }
 
     /** Speichert die NAS-Einstellungen mit ihrer Version; geändert anderswo: neu lesen und noch einmal. */
+    /**
+     * Speichert die NAS-Einstellungen mit ihrer Version. Hat sie jemand anderes
+     * inzwischen geändert, gehen nur die Teile hinüber, die hier geändert wurden
+     * und dort nicht (rebaseFeatures im Web, je Funktion); sonst gilt die neue
+     * Fassung und die App sagt, dass die eigene Änderung verloren ist.
+     */
     suspend fun saveNas(next: JsonObject) {
         error = null; notice = null
+        val base = nas ?: next
         nas = next
         try {
             nas = model.api.sendJson("PUT", "agent/features", next).obj()
             saved = true
         } catch (e: CancellationException) { throw e } catch (e: Exception) {
             val code = (e as? io.github.ra5on.titanos.net.ApiException)?.code
-            if (code == "agent_features_changed") {
-                val fresh = runCatching { model.api.getJson("agent/features").obj() }.getOrNull()
-                if (fresh != null) {
-                    // Die eigenen Änderungen über die neue Fassung legen (rebaseFeatures, vereinfacht je Teil).
-                    val merged = JsonObject(fresh + next.filterKeys { it != "rev" })
-                    runCatching { nas = model.api.sendJson("PUT", "agent/features", merged.put("rev", fresh.str("rev"))).obj(); notice = tr.t("agent.f.changedKept") }
-                        .onFailure { nas = fresh; error = tr.t("agent.f.changedLost") }
-                }
-            } else error = problemText(tr, problemOf(e))
+            if (code != "agent_features_changed") { nas = base; error = problemText(tr, problemOf(e)); return }
+            val fresh = runCatching { model.api.getJson("agent/features").obj() }.getOrNull()
+            if (fresh == null) { nas = base; error = problemText(tr, problemOf(e)); return }
+            val mine = next.keys.filter { it != "rev" && next[it] != base[it] }
+            val clash = mine.any { fresh[it] != base[it] }
+            if (clash || mine.isEmpty()) { nas = fresh; error = tr.t("agent.f.changedLost"); return }
+            val merged = JsonObject(fresh + mine.associateWith { next.getValue(it) })
+            try { nas = model.api.sendJson("PUT", "agent/features", merged).obj(); notice = tr.t("agent.f.changedKept") }
+            catch (e2: CancellationException) { throw e2 } catch (_: Exception) { nas = fresh; error = tr.t("agent.f.changedLost") }
         }
         runCatching { pub = model.api.getJson("agent/features/me").obj().o("nas") }
     }
