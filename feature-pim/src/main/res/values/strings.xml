@@ -227,8 +227,6 @@
     <string name="cal_month_titles">Titel im Monat</string>
     <string name="cal_month_titles_sub">Statt Balken die Titel der Termine (am großen Bildschirm immer)</string>
     <string name="cal_more_for">Exportieren, importieren, löschen</string>
-    <string name="cal_motion">Bewegte Übergänge</string>
-    <string name="cal_motion_sub">Folgt zusätzlich „Animationen entfernen“ des Systems</string>
     <string name="cal_move_text">„%1$s“ auf %2$s, %3$s – %4$s legen?</string>
     <string name="cal_move_title">Termin verschieben</string>
     <string name="cal_new_calendar">Neuer Kalender</string>

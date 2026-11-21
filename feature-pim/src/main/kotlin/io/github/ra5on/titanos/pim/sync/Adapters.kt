@@ -160,7 +160,7 @@ object PimSync {
                 s.copy(
                     collections = s.collections.filter { it.kind != kind } + states,
                     lastRun = now, lastOk = System.currentTimeMillis(), problem = null,
-                    conflicts = s.conflicts + counts.conflicts, uploaded = counts.up, downloaded = counts.down,
+                    conflicts = s.conflicts + counts.conflicts, up = s.up + (kind to counts.up), down = s.down + (kind to counts.down),
                 )
             }
         } catch (e: SyncNotSupportedException) {

@@ -119,7 +119,7 @@ object IcsTime {
         return Prop(name, mutableListOf("TZID" to z.id), LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), z).format(LOCAL))
     }
 
-    fun date(millis: Long): String = LocalDate.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC).format(DATE)
+    fun date(millis: Long): String = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().format(DATE)
     fun utc(millis: Long): String = LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC).format(LOCAL) + "Z"
 
     /** Dauer nach RFC 5545 3.3.6 in Sekunden (negativ mit „-“); null, wenn unlesbar. */

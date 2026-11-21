@@ -219,6 +219,14 @@ private fun ContactsHome(model: ContactsModel, width: Width, group: String?, sel
                 e.key == Key.E && selected != null && !searching -> { go(ConRoute.Edit(selected)); true }
                 e.key == Key.Slash || (e.isCtrlPressed && e.key == Key.F) -> { searching = true; true }
                 e.key == Key.Escape && selected != null -> { go(ConRoute.Home); true }
+                // Pfeile wählen den nächsten bzw. vorigen Kontakt (Liste und Karte nebeneinander).
+                (e.key == Key.DirectionDown || e.key == Key.DirectionUp || e.key == Key.J || e.key == Key.K) && width.twoPanes && !searching -> {
+                    val ordered = model.overview.groups.firstOrNull { it.id == group }?.let { g -> model.sorted(model.items.filter { it.id in g.members }) } ?: model.sorted()
+                    val i = ordered.indexOfFirst { it.id == selected }
+                    val next = if (e.key == Key.DirectionDown || e.key == Key.J) i + 1 else i - 1
+                    ordered.getOrNull(next.coerceIn(0, (ordered.size - 1).coerceAtLeast(0)))?.let { go(ConRoute.Detail(it.id)) }
+                    true
+                }
                 else -> false
             }
         },

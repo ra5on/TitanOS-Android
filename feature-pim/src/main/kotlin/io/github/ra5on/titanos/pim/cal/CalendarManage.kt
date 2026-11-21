@@ -478,7 +478,6 @@ internal fun CalendarSettingsPage(model: CalendarModel, onBack: () -> Unit, onSy
             ToggleRow(stringResource(R.string.cal_month_titles), p.monthTitles, { set(p.copy(monthTitles = it)) }, sub = stringResource(R.string.cal_month_titles_sub))
             ToggleRow(stringResource(R.string.cal_show_tasks), p.showTasks, { set(p.copy(showTasks = it)); model.reload() }, divider = true)
             ToggleRow(stringResource(R.string.cal_show_done_default), p.showDone, { set(p.copy(showDone = it)) }, divider = true)
-            ToggleRow(stringResource(R.string.cal_motion), p.motion, { set(p.copy(motion = it)) }, sub = stringResource(R.string.cal_motion_sub), divider = true)
         }
         SettingsGroup(stringResource(R.string.cal_set_day_start), CalDates.time(LocalTime.of(p.dayStartHour, 0))) {
             ChoiceRows((0..12).map { it to CalDates.time(LocalTime.of(it, 0)) }, p.dayStartHour, { set(p.copy(dayStartHour = it)) })

@@ -58,9 +58,13 @@ data class SyncStatus(
     /** Warum zuletzt nichts geschah oder was schiefging (Code, siehe SyncScreen). */
     val problem: String? = null,
     val conflicts: Int = 0,
-    val uploaded: Int = 0,
-    val downloaded: Int = 0,
-)
+    /** Zuletzt geholt bzw. hochgeladen, je Art (contacts, calendar). */
+    val down: Map<String, Int> = emptyMap(),
+    val up: Map<String, Int> = emptyMap(),
+) {
+    val downloaded: Int get() = down.values.sum()
+    val uploaded: Int get() = up.values.sum()
+}
 
 class SyncStore(context: Context) {
     private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences("pim_sync", Context.MODE_PRIVATE)

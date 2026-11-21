@@ -47,8 +47,6 @@ data class CalPrefs(
     val confirmDelete: Boolean = true,
     /** Tage, die die Liste nach vorne zeigt. */
     val listDays: Int = 30,
-    /** Bewegte Übergänge (folgt sonst „Animationen entfernen“ des Systems). */
-    val motion: Boolean = true,
 )
 
 class CalPrefsStore(context: Context) {

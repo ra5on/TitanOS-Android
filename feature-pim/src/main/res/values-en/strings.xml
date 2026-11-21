@@ -227,8 +227,6 @@
     <string name="cal_month_titles">Titles in month view</string>
     <string name="cal_month_titles_sub">Event titles instead of bars (always on large screens)</string>
     <string name="cal_more_for">Export, import, delete</string>
-    <string name="cal_motion">Animated transitions</string>
-    <string name="cal_motion_sub">Also follows the system\'s “Remove animations”</string>
     <string name="cal_move_text">Move “%1$s” to %2$s, %3$s – %4$s?</string>
     <string name="cal_move_title">Move event</string>
     <string name="cal_new_calendar">New calendar</string>

@@ -152,7 +152,7 @@ class CalendarSync(
         val event: LocalEvent,
     )
 
-    private fun row(c: Cursor): Row {
+    private fun row(c: Cursor, full: Boolean = true): Row {
         val id = c.getLong(0)
         val allDay = c.int(Events.ALL_DAY) == 1
         val start = c.long(Events.DTSTART) ?: 0
@@ -176,8 +176,8 @@ class CalendarSync(
             availability = c.int(Events.AVAILABILITY) ?: Events.AVAILABILITY_BUSY,
             accessLevel = c.int(Events.ACCESS_LEVEL) ?: Events.ACCESS_DEFAULT,
             organizer = c.str(Events.ORGANIZER)?.takeIf { it.contains('@') && it != account.name },
-            reminders = readReminders(id),
-            attendees = readAttendees(id),
+            reminders = if (full) readReminders(id) else emptyList(),
+            attendees = if (full) readAttendees(id) else emptyList(),
             originalInstanceTime = c.long(Events.ORIGINAL_INSTANCE_TIME),
             originalAllDay = c.int(Events.ORIGINAL_ALL_DAY) == 1,
         )
@@ -211,9 +211,9 @@ class CalendarSync(
         return out
     }
 
-    private fun rows(selection: String, args: Array<String>): List<Row> {
+    private fun rows(selection: String, args: Array<String>, full: Boolean = true): List<Row> {
         val out = mutableListOf<Row>()
-        provider.query(events, eventColumns, selection, args, null)?.use { c -> while (c.moveToNext()) out += row(c) }
+        provider.query(events, eventColumns, selection, args, null)?.use { c -> while (c.moveToNext()) out += row(c, full) }
         return out
     }
 
@@ -339,7 +339,7 @@ class CalendarSync(
         }
         // Hauptzeilen am Handy: Name → (Zeile, ETag, geändert).
         val known = mutableMapOf<String, Row>()
-        rows("${Events.CALENDAR_ID}=? AND ${Events._SYNC_ID} IS NOT NULL AND ${Events.ORIGINAL_ID} IS NULL AND ${Events.ORIGINAL_SYNC_ID} IS NULL", arrayOf(cal.id.toString()))
+        rows("${Events.CALENDAR_ID}=? AND ${Events._SYNC_ID} IS NOT NULL AND ${Events.ORIGINAL_ID} IS NULL AND ${Events.ORIGINAL_SYNC_ID} IS NULL", arrayOf(cal.id.toString()), full = false)
             .forEach { r -> r.name?.let { known[it] = r } }
         val fetch = mutableListOf<String>()
         val latest = changes.associateBy { it.name }

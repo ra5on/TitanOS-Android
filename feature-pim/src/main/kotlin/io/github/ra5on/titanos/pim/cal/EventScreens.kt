@@ -140,7 +140,7 @@ internal fun EventDetail(model: CalendarModel, ev: CalEvent, onBack: () -> Unit,
             style = TitanType.body, color = Titan.colors.muted,
         )
         full.rule?.let { r ->
-            val text = r.text?.get(if (Locale.getDefault().language == "de") "de" else "en") ?: ""
+            val text = r.text?.get(ruleLang()) ?: ""
             Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(TitanIcons.restart, null, tint = Titan.colors.muted, modifier = Modifier.size(16.dp))
                 Text(text.ifBlank { stringResource(R.string.cal_recurring) }, style = TitanType.body, color = Titan.colors.muted)
@@ -401,7 +401,7 @@ internal fun EventEditor(model: CalendarModel, ev: CalEvent?, day: LocalDate?, t
         }
         if (keepRule) Note(stringResource(R.string.cal_recur_kept), Modifier.padding(top = 8.dp))
         preview?.let { p ->
-            val words = p.text?.get(if (Locale.getDefault().language == "de") "de" else "en")
+            val words = p.text?.get(ruleLang())
             val next = p.occurrences.take(4).joinToString(", ") { runCatching { CalDates.mediumDate(CalDates.parse(it.start, allDay, z).toLocalDate()) }.getOrDefault(it.start) }
             Note(listOfNotNull(words, if (next.isNotBlank()) stringResource(R.string.cal_next_dates, next) else null,
                 p.total?.let { pluralStringResource(R.plurals.cal_total, it, it) }).joinToString("\n"), Modifier.padding(top = 8.dp))
@@ -464,7 +464,7 @@ internal fun repeatLabel(kind: RepeatKind, start: LocalDate, custom: Simple?): S
         stringResource(if (last) R.string.cal_repeat_monthly_last else R.string.cal_repeat_monthly_nth, n, CalDates.dayName(start.dayOfWeek))
     }
     RepeatKind.Yearly -> stringResource(R.string.cal_repeat_yearly, CalDates.mediumDate(start))
-    RepeatKind.Custom -> custom?.text?.get(if (Locale.getDefault().language == "de") "de" else "en") ?: stringResource(R.string.cal_repeat_custom)
+    RepeatKind.Custom -> custom?.text?.get(ruleLang()) ?: stringResource(R.string.cal_repeat_custom)
 }
 
 /** Eigene Regel: alle N Tage/Wochen/Monate/Jahre, Wochentage, Ende nie/am Datum/nach Anzahl. */
@@ -549,3 +549,8 @@ internal fun TimePick(initial: LocalTime, onPick: (LocalTime) -> Unit, onDismiss
         }
     }
 }
+
+/** Sprache der Regeltexte vom NAS (de/en) nach der Sprache der Oberfläche. */
+@Composable
+internal fun ruleLang(): String =
+    if (androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "de") "de" else "en"
