@@ -2,4 +2,5 @@
 <resources>
     <string name="cal_title">Kalender</string>
     <string name="con_title">Kontakte</string>
+    <string name="pim_account_label">TitanOS</string>
 </resources>

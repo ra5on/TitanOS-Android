@@ -71,7 +71,7 @@ class TitanApp : Application(), Configuration.Provider {
         if (graph.pairing != null) NotifyScheduler.arm(this)
         // Kontakte und Kalender des Handys: der SyncAdapter holt sich hier die Verbindung.
         io.github.ra5on.titanos.pim.sync.PimRuntime.nas = { graph.connection() }
-        graph.pairing?.let { io.github.ra5on.titanos.pim.sync.PimAccount.ensure(this, it.user) }
+        graph.pairing?.let { io.github.ra5on.titanos.pim.sync.PimAccount.ensure(this, io.github.ra5on.titanos.pim.sync.PimAccount.nameFor(it.user, it.hostname)) }
     }
 }
 
@@ -147,7 +147,7 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         io.github.ra5on.titanos.widgets.WidgetRefresh.now(app)
         notifyApi = notifyApiFor(p)
         NotifyScheduler.arm(app)
-        io.github.ra5on.titanos.pim.sync.PimAccount.ensure(app, p.user)
+        io.github.ra5on.titanos.pim.sync.PimAccount.ensure(app, io.github.ra5on.titanos.pim.sync.PimAccount.nameFor(p.user, p.hostname))
     }
 
     /** Kopplung aufheben: Schlüssel, Kopplung und Sitzung weg. Am NAS beendet man das Gerät im Browser. */
