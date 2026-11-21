@@ -2,7 +2,6 @@ package io.github.ra5on.titanos.settings.pages.hardware
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -308,7 +307,7 @@ private fun FanControl(sensors: List<JsonObject>) {
                                     if (i < list.size) list[i] = list[i].with(key to v)
                                     cur.with("points" to list)
                                 }
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                FlowRow(itemVerticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     NumberField(point.int("celsius"), { v -> if (v != null) setPoint("celsius", v.coerceIn(0, 110)) }, label = t("fans.celsius"), enabled = !off)
                                     Plain("°C →")
                                     NumberField(point.int("percent"), { v -> if (v != null) setPoint("percent", v.coerceIn(0, 100)) }, label = t("fans.percent"), enabled = !off)

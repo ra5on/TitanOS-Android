@@ -365,7 +365,7 @@ private fun IntelGuc() {
                         SmallButton(t("common.save"), {
                             // Die GuC-Übermittlung ist die eine Wahl mit Risiko: vorher klar fragen.
                             if (mode == "guc") {
-                                ov.confirm(tr.t("intelGuc.confirmTitle"), tr.t("intelGuc.confirmText"), action = tr.t("intelGuc.confirmAction"), cancel = tr.t("common.cancel"), danger = true) { save() }
+                                ov.ask(tr.t("intelGuc.confirmTitle"), tr.t("intelGuc.confirmText"), action = tr.t("intelGuc.confirmAction"), cancel = tr.t("common.cancel"), danger = true) { save() }
                             } else {
                                 save()
                             }

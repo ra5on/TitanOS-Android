@@ -223,7 +223,7 @@ fun FilesPage(a: PageArgs) {
                             }
                         }, enabled = state == "idle" && !dirty && !run.running)
                         SmallButton(t("fileIndex.remove"), {
-                            ov.confirm(tr.t("fileIndex.removeTitle"), tr.t("fileIndex.removeText", "volume" to volume), action = tr.t("fileIndex.remove"), cancel = tr.t("common.cancel")) {
+                            ov.ask(tr.t("fileIndex.removeTitle"), tr.t("fileIndex.removeText", "volume" to volume), action = tr.t("fileIndex.remove"), cancel = tr.t("common.cancel")) {
                                 run.run(id = "remove-$volume", guard = GuardAction.Settings) {
                                     env.api.delete("files/index/${Uri.encode(volume)}")
                                     refresh()
@@ -242,7 +242,7 @@ fun FilesPage(a: PageArgs) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 for (volume in mounted) {
                     SmallButton(t("fileIndex.clearThumbs", "volume" to volume), {
-                        ov.confirm(tr.t("fileIndex.clearThumbsTitle"), tr.t("fileIndex.clearThumbsText", "volume" to volume), action = tr.t("fileIndex.clearThumbsShort"), cancel = tr.t("common.cancel")) {
+                        ov.ask(tr.t("fileIndex.clearThumbsTitle"), tr.t("fileIndex.clearThumbsText", "volume" to volume), action = tr.t("fileIndex.clearThumbsShort"), cancel = tr.t("common.cancel")) {
                             run.run(id = "thumbs-$volume", guard = GuardAction.Settings) {
                                 env.api.delete("files/thumbs/${Uri.encode(volume)}")
                                 refresh()

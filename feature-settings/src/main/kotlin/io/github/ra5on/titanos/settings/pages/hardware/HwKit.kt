@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -181,9 +182,11 @@ internal fun BoxScope.HwDialog(
 ) {
     BackHandler(onBack = { if (!locked) onDismiss() })
     val c = Titan.colors
+    val closeLabel = io.github.ra5on.titanos.ui.i18n.t("common.close")
     Box(
         Modifier.matchParentSize().background(Color.Black.copy(alpha = .5f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { if (!locked) onDismiss() },
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { if (!locked) onDismiss() }
+            .semantics { contentDescription = closeLabel },
     )
     val shape = RoundedCornerShape(22.dp)
     Column(
@@ -230,3 +233,16 @@ internal fun Bullet(text: String, muted: Boolean = false) {
         Text(text, style = TitanType.body, color = if (muted) Titan.colors.muted else Titan.colors.text, modifier = Modifier.weight(1f))
     }
 }
+
+/**
+ * Rückfrage wie `Overlays.confirm`, aber mit benannter Abdunkelung (die
+ * Prüfung der Bildtests verlangt für jedes Bedienelement einen Namen): der
+ * gefährliche Knopf links von „Abbrechen“, nichts per Enter oder Autofokus.
+ */
+internal fun io.github.ra5on.titanos.ui.components.Overlays.ask(title: String, text: String, action: String, cancel: String, danger: Boolean = true, onConfirm: () -> Unit) =
+    show { close ->
+        HwDialog(title, onDismiss = close, buttons = {
+            DialogButton(action, { close(); onConfirm() }, danger = danger)
+            DialogButton(cancel, close)
+        }) { Text(text, style = TitanType.body, color = Titan.colors.muted) }
+    }
