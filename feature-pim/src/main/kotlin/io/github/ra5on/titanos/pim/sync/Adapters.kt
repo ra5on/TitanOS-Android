@@ -93,6 +93,9 @@ object Problems {
 object PimSync {
     val AUTHORITIES = listOf(ContactsContract.AUTHORITY, CalendarContract.AUTHORITY)
 
+    /** true: vom Nutzer angestoßen („Jetzt abgleichen“), dann gilt die Netzregel nicht. */
+    private const val EXTRA_USER = "titanos_user"
+
     /** Richtet Abgleich und Zeitplan nach den Einstellungen ein (nach dem Koppeln und bei jeder Änderung). */
     fun configure(context: Context) {
         val account = PimAccount.current(context) ?: return
@@ -111,9 +114,12 @@ object PimSync {
     /** „Jetzt abgleichen“ bzw. eine Änderung am NAS: sofort, auch außerhalb des Zeitplans. */
     fun requestNow(context: Context, manual: Boolean = true, only: String? = null) {
         val account = PimAccount.current(context) ?: return
+        // Für Android immer „von Hand“ (sofort, auch wenn der automatische Abgleich gerade ruht);
+        // ob die Netzregel gilt, sagt das eigene Extra.
         val extras = Bundle().apply {
-            putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, manual)
+            putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
             putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+            putBoolean(EXTRA_USER, manual)
         }
         for (a in AUTHORITIES) if (only == null || only == a) ContentResolver.requestSync(account, a, extras)
     }
@@ -140,7 +146,7 @@ object PimSync {
     internal fun perform(context: Context, account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, result: SyncResult) {
         val store = SyncStore(context)
         val p = store.load()
-        val manual = extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL)
+        val manual = if (extras.containsKey(EXTRA_USER)) extras.getBoolean(EXTRA_USER) else extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL)
         val kind = if (authority == ContactsContract.AUTHORITY) "contacts" else "calendar"
         val now = System.currentTimeMillis()
         fun problem(code: String?) = store.updateStatus { it.copy(lastRun = now, problem = code) }
