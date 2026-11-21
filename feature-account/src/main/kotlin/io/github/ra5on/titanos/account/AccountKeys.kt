@@ -320,11 +320,7 @@ internal fun BoxScope.ReconfirmDialog(
 }
 
 /** Die Adresse des NAS, über die die App gerade spricht (`location.origin` im Web). */
-internal fun nasOrigin(api: io.github.ra5on.titanos.settings.common.SettingsApi): String = runCatching {
-    val field = io.github.ra5on.titanos.settings.common.SettingsApi::class.java.getDeclaredField("nas").apply { isAccessible = true }
-    val nas = field.get(api) as io.github.ra5on.titanos.net.NasConnection
-    nas.endpoints.first().base.toString().removeSuffix("/")
-}.getOrDefault("")
+internal fun nasOrigin(api: io.github.ra5on.titanos.settings.common.SettingsApi): String = api.origin
 
 // ---------------------------------------------------------------- Gerätepasswörter
 

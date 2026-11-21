@@ -33,6 +33,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import io.github.ra5on.titanos.ui.R
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanType
 import io.github.ra5on.titanos.ui.theme.dangerInk
@@ -94,15 +97,18 @@ fun BoxScope.ConfirmDialog(
 ) {
     BackHandler(onBack = onDismiss)
     val c = Titan.colors
+    val closeLabel = androidx.compose.ui.res.stringResource(R.string.ui_close)
     Box(
         Modifier.matchParentSize().background(Color.Black.copy(alpha = .5f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
+            .semantics { contentDescription = closeLabel },
     )
     val shape = RoundedCornerShape(22.dp)
     Column(
         Modifier.align(Alignment.Center).padding(horizontal = 24.dp).fillMaxWidth().clip(shape).background(c.surface)
             .border(1.dp, c.border, shape)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+            .verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, top = 22.dp, bottom = 16.dp),
     ) {
         Text(title, style = TitanType.title.copy(fontSize = TitanType.title.fontSize * (20f / 22f)), color = c.text, modifier = Modifier.padding(bottom = 10.dp))

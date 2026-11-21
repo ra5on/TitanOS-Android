@@ -127,6 +127,12 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
             val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
             val bottom = if (r.lineCount > 0) r.getLineBottom(r.lineCount - 1) else 0f
             val dots = (0 until r.lineCount).any { r.isLineEllipsized(it) }
+            // Nur zwischen ganzen Wörtern umbrechen (Inhaber 21.11.2026): nie mitten im Wort, keine Silbentrennung.
+            for (line in 0 until r.lineCount - 1) {
+                val end = r.getLineEnd(line, visibleEnd = false)
+                if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit())
+                    problems += "$prefix$name: mitten im Wort umbrochen „${text.substring(maxOf(0, end - 12), minOf(text.length, end + 12))}“"
+            }
             if (widest > node.size.width + 2 || bottom > node.size.height + 2 || dots)
                 problems += "$prefix$name: „${text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
         }
