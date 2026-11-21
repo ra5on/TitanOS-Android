@@ -1,0 +1,138 @@
+{
+ "session": {
+  "file": "001-session.json",
+  "status": 200
+ },
+ "login-appearance": {
+  "file": "002-login_appearance.json",
+  "status": 200
+ },
+ "preferences": {
+  "file": "003-preferences.json",
+  "status": 200
+ },
+ "services/state": {
+  "file": "004-services_state.json",
+  "status": 200
+ },
+ "mail/access": {
+  "file": "005-mail_access.json",
+  "status": 200
+ },
+ "storage": {
+  "file": "011-storage.json",
+  "status": 200
+ },
+ "maintenance": {
+  "file": "007-maintenance.json",
+  "status": 200
+ },
+ "notifications": {
+  "file": "008-notifications.json",
+  "status": 200
+ },
+ "cluster/nodes": {
+  "file": "009-cluster_nodes.json",
+  "status": 200
+ },
+ "system": {
+  "file": "010-system.json",
+  "status": 200
+ },
+ "storage/growth": {
+  "file": "012-storage_growth.json",
+  "status": 200
+ },
+ "storage/import": {
+  "file": "013-storage_import.json",
+  "status": 200
+ },
+ "storage/smart": {
+  "file": "014-storage_smart.json",
+  "status": 200
+ },
+ "shares": {
+  "file": "015-shares.json",
+  "status": 200
+ },
+ "users": {
+  "file": "016-users.json",
+  "status": 200
+ },
+ "users/alex/apps": {
+  "file": "017-users_alex_apps.json",
+  "status": 200
+ },
+ "users/alex/mail": {
+  "file": "018-users_alex_mail.json",
+  "status": 200
+ },
+ "users/alex/cameras": {
+  "file": "019-users_alex_cameras.json",
+  "status": 200
+ },
+ "plugins/progress": {
+  "file": "020-plugins_progress.json",
+  "status": 200
+ },
+ "plugins": {
+  "file": "021-plugins.json",
+  "status": 200
+ },
+ "plugins/releases": {
+  "file": "022-plugins_releases.json",
+  "status": 200
+ },
+ "operations": {
+  "file": "023-operations.json",
+  "status": 200
+ },
+ "scripts": {
+  "file": "024-scripts.json",
+  "status": 200
+ },
+ "monitoring": {
+  "file": "025-monitoring.json",
+  "status": 200
+ },
+ "backups/application-recovery": {
+  "file": "026-backups_application_recovery.json",
+  "status": 200
+ },
+ "vm-clones/Data": {
+  "file": "027-vm_clones_Data.json",
+  "status": 200
+ },
+ "vm-clones/Fast": {
+  "file": "028-vm_clones_Fast.json",
+  "status": 200
+ },
+ "vm-clones/Safe": {
+  "file": "029-vm_clones_Safe.json",
+  "status": 200
+ },
+ "monitoring/history?hours=24": {
+  "file": "030-monitoring_history_hours_24.json",
+  "status": 200
+ },
+ "activity?days=7&limit=200": {
+  "file": "031-activity_days_7_limit_200.json",
+  "status": 200
+ },
+ "logs?source=&priority=6&lines=500": {
+  "file": "032-logs_source_priority_6_lines_500.json",
+  "status": 200
+ },
+ "network": {
+  "file": "033-network.json",
+  "status": 200
+ },
+ "backups": {
+  "file": "034-backups.json",
+  "status": 200
+ },
+ "storage/tests": {
+  "file": "035-storage_tests.json",
+  "status": 200
+ }
+}

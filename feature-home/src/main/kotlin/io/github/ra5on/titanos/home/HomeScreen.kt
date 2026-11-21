@@ -54,6 +54,10 @@ fun programLabel(id: String): String = stringResource(
         "nvr" -> R.string.app_nvr
         "terminal" -> R.string.app_terminal
         "users" -> R.string.app_users
+        "plugins" -> R.string.app_plugins
+        "monitor" -> R.string.app_monitor
+        "logs" -> R.string.app_logs
+        "planner" -> R.string.app_planner
         else -> R.string.app_settings
     },
 )

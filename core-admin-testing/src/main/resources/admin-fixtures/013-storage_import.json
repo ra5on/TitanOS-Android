@@ -1,0 +1,1 @@
+[{"id":"md:fixture","filesystem":"ext4","filesystemUUID":"fs-fixture","arrayUUID":"md-fixture","level":"raid1","disks":["vde","vdf"],"size":8000000000000,"fingerprint":"fingerprint","reason":""}]

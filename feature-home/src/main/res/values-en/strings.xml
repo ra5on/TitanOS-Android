@@ -44,5 +44,9 @@
     <string name="app_nvr">NVR</string>
     <string name="app_terminal">Terminal</string>
     <string name="app_users">Users</string>
+    <string name="app_plugins">Plugins</string>
+    <string name="app_monitor">Monitor</string>
+    <string name="app_logs">Logs</string>
+    <string name="app_planner">Task planner</string>
     <string name="app_settings">Settings</string>
 </resources>
