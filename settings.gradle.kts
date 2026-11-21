@@ -29,6 +29,8 @@ include(
     ":feature-agent",
     ":feature-mail",
     ":feature-pim",
+    ":feature-settings",
+    ":feature-account",
     ":app-titanos",
     ":app-agent",
     ":lint-rules",

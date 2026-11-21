@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="set_title">Control panel</string>
+    <string name="set_this_app">This app</string>
+    <string name="set_app_look">Appearance on this device</string>
+    <string name="set_app_look_desc">Light/dark, variant, accent, text size</string>
+    <string name="set_app_guard_desc">Which actions ask for the fingerprint</string>
+    <string name="set_no_hits">No setting found.</string>
+    <string name="set_back">Back</string>
+    <string name="set_search_label">Search settings</string>
+    <string name="set_account">My account</string>
+    <string name="set_role_owner">Owner</string>
+    <string name="set_role_admin">Administrator</string>
+    <string name="set_role_user">User</string>
+    <string name="set_web_only">Only in the web interface</string>
+    <string name="set_in_web">Open in the browser</string>
+    <string name="look_mode">Light or dark</string>
+    <string name="look_mode_desc">By default like the phone</string>
+    <string name="look_mode_system">Like the phone</string>
+    <string name="look_mode_account">Like my account</string>
+    <string name="look_mode_light">Light</string>
+    <string name="look_mode_dark">Dark</string>
+    <string name="look_dark">Dark variant</string>
+    <string name="look_dark_desc">Which dark theme the app uses</string>
+    <string name="look_accent">Accent colour</string>
+    <string name="look_like_account">Like my account</string>
+    <string name="look_font">App text size</string>
+    <string name="look_font_desc">On top of the phone\'s text size</string>
+    <string name="look_font_system">Like the phone</string>
+    <string name="look_device_intro">Theme and accent come from your account (Control panel › Appearance). Here you override them for this device only.</string>
+    <string name="look_reset">Everything like the account</string>
+    <string name="look_account_now">Account: %1$s</string>
+</resources>

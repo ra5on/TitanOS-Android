@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="set_title">Systemsteuerung</string>
+    <string name="set_this_app">Diese App</string>
+    <string name="set_app_look">Darstellung auf diesem Gerät</string>
+    <string name="set_app_look_desc">Hell/Dunkel, Variante, Akzent, Schriftgröße</string>
+    <string name="set_app_guard_desc">Welche Aktionen den Fingerabdruck verlangen</string>
+    <string name="set_no_hits">Keine Einstellung gefunden.</string>
+    <string name="set_back">Zurück</string>
+    <string name="set_search_label">Einstellungen durchsuchen</string>
+    <string name="set_account">Mein Konto</string>
+    <string name="set_role_owner">Besitzer</string>
+    <string name="set_role_admin">Administrator</string>
+    <string name="set_role_user">Benutzer</string>
+    <string name="set_web_only">Nur in der Weboberfläche</string>
+    <string name="set_in_web">Im Browser öffnen</string>
+    <string name="look_mode">Hell oder dunkel</string>
+    <string name="look_mode_desc">Ab Werk wie das Handy</string>
+    <string name="look_mode_system">Wie das Handy</string>
+    <string name="look_mode_account">Wie mein Konto</string>
+    <string name="look_mode_light">Hell</string>
+    <string name="look_mode_dark">Dunkel</string>
+    <string name="look_dark">Dunkle Variante</string>
+    <string name="look_dark_desc">Welches dunkle Thema die App nimmt</string>
+    <string name="look_accent">Akzentfarbe</string>
+    <string name="look_like_account">Wie mein Konto</string>
+    <string name="look_font">Schriftgröße der App</string>
+    <string name="look_font_desc">Zusätzlich zur Schriftgröße des Handys</string>
+    <string name="look_font_system">Wie das Handy</string>
+    <string name="look_device_intro">Thema und Akzent kommen aus deinem Konto (Systemsteuerung › Darstellung). Hier überschreibst du sie nur für dieses Gerät.</string>
+    <string name="look_reset">Alles wie das Konto</string>
+    <string name="look_account_now">Konto: %1$s</string>
+</resources>

@@ -37,11 +37,23 @@ object TitanType {
     val code = TextStyle(fontFamily = TitanFonts.mono, fontSize = 18.sp, lineHeight = 24.sp, letterSpacing = 0.2.em)
 }
 
-/** TitanOS-Theme: Graphit (dunkel) oder Hell, folgt dem System. */
+/**
+ * TitanOS-Theme. Ohne [dark] gilt die Darstellung des Kontos und des Geräts
+ * ([TitanAppearance]; ab Werk Graphit oder Hell wie das Handy). Mit [dark]
+ * fest Graphit bzw. Hell (Vorschauen, Bildtests, eigene Themen darüber).
+ */
 @Composable
-fun TitanTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    val c = if (dark) TitanColors.Graphit else TitanColors.Hell
-    val material = if (dark) {
+fun TitanTheme(dark: Boolean? = null, content: @Composable () -> Unit) {
+    val system = isSystemInDarkTheme()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val c = if (dark != null) {
+        if (dark) TitanColors.Graphit else TitanColors.Hell
+    } else {
+        androidx.compose.runtime.remember { TitanAppearance.ensureLoaded(context) }
+        TitanAppearance.colors(system)
+    }
+    val scale = if (dark == null) TitanAppearance.fontScale else 1f
+    val material = if (c.dark) {
         darkColorScheme(
             primary = c.accent, onPrimary = c.onAccent, background = c.bg, onBackground = c.text,
             surface = c.surface, onSurface = c.text, onSurfaceVariant = c.muted, outline = c.border,
@@ -56,7 +68,9 @@ fun TitanTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () ->
             error = c.statusError,
         )
     }
-    CompositionLocalProvider(LocalTitanColors provides c) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val scaled = if (scale == 1f) density else androidx.compose.ui.unit.Density(density.density, density.fontScale * scale)
+    CompositionLocalProvider(LocalTitanColors provides c, androidx.compose.ui.platform.LocalDensity provides scaled) {
         MaterialTheme(colorScheme = material, content = content)
     }
 }
