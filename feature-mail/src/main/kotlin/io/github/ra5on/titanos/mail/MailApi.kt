@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -236,16 +237,19 @@ class MailApi(private val nas: NasConnection, private val stream: NasConnection 
 
     /** `GET /mail/events` bis zum Abbruch; endet, wenn der Strom endet oder scheitert. */
     fun events(): Flow<MailEvent> = callbackFlow {
+        // Beim Abbruch die Antwort schließen: das bricht das blockierende Lesen ab.
+        val open = java.util.concurrent.atomic.AtomicReference<Response?>(null)
         val job = launch(Dispatchers.IO) {
             try {
                 stream.execute { base ->
                     Request.Builder().url(url(base, "mail/events")).header("Accept", "text/event-stream").build()
                 }.use { r ->
+                    open.set(r)
                     r.throwIfError()
                     trySend(MailEvent.Open)
                     val source = r.body.source()
                     val block = StringBuilder()
-                    while (!source.exhausted()) {
+                    while (isActive && !source.exhausted()) {
                         val line = source.readUtf8Line() ?: break
                         if (line.isEmpty()) {
                             parseEvent(block.toString())?.let { trySend(it) }
@@ -256,11 +260,12 @@ class MailApi(private val nas: NasConnection, private val stream: NasConnection 
                     }
                 }
             } catch (_: Exception) {
-                // Verloren oder abgelehnt: das Modell verbindet neu.
+                // Verloren, abgelehnt oder abgebrochen: das Modell verbindet neu.
             }
             channel.close()
         }
         awaitClose {
+            runCatching { open.get()?.close() }
             job.cancel()
         }
     }.flowOn(Dispatchers.IO)
