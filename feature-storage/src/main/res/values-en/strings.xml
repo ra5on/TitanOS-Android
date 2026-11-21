@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="storage_snapshot_name_hint">Letters, digits, _ and -, at most 64 characters; starts with a letter or digit.</string>
+    <string name="storage_select_hint">Choose a volume or a disk on the left.</string>
+</resources>
