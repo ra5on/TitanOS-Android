@@ -10,15 +10,18 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.core.app.ApplicationProvider
 import io.github.ra5on.titanos.admin.adminText
 import io.github.ra5on.titanos.admin.testing.FakeNas
 import io.github.ra5on.titanos.admin.testing.Shots
 import io.github.ra5on.titanos.tools.Fixtures.rich
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -217,10 +220,28 @@ class ScreensTest {
         assertTrue(nas.seen.isEmpty())
     }
 
+    /** Vorgefilterte Verweise: Protokoll nach Quelle und Stufe, Task-Manager auf einem Reiter. */
+    @Test fun verweise() {
+        page = "logs?source=storage&priority=3&search=smartd"
+        shots.show(false) { key(page, role) { ToolsRoot(nas.env(role), page) {} } }
+        shots.untilText("Fotos sichern finished", substring = true)
+        compose.onAllNodes(androidx.compose.ui.test.hasScrollToIndexAction()).onFirst().performScrollToIndex(0)
+        shots.settle(600)
+        assertTrue(compose.onAllNodes(hasText(tx("tools.source.storage")), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty())
+        assertTrue(compose.onAllNodes(hasText("smartd"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty())
+        open("taskmanager?tab=disks")
+        shots.untilText(tx("taskmanager.disk.hint"))
+        assertEquals("storage", startQuery("logs?source=storage&priority=3")["source"])
+    }
+
     @After fun end() {
         nas.close()
         // Die abgedunkelte Fläche hinter Dialogen (AdminWindow in core-admin) schließt beim Tippen; sie ist kein eigenes Bedienelement.
-        shots.audit.found.removeAll { it.contains("Bedienelement ohne Namen bei Rect.fromLTRB(0.0, 0.0,") }
+        val root = compose.onRoot().fetchSemanticsNode().size
+        shots.audit.found.removeAll { f ->
+            val m = Regex("""ohne Namen bei Rect\.fromLTRB\(0\.0, 0\.0, ([0-9.]+), ([0-9.]+)\)""").find(f) ?: return@removeAll false
+            m.groupValues[1].toFloat() >= root.width - 1 && m.groupValues[2].toFloat() >= root.height * 0.95f
+        }
         shots.audit.assertClean()
     }
 }

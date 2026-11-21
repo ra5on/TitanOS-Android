@@ -1,0 +1,22 @@
+{
+ "settings": {
+  "managementUrl": "",
+  "acceptRoutes": false,
+  "serveRoutes": false,
+  "acceptDNS": true
+ },
+ "setupKeySet": false,
+ "connect": false,
+ "active": true,
+ "readOnly": false,
+ "state": "NeedsLogin",
+ "version": "0.24.0",
+ "fqdn": "",
+ "ips": [],
+ "management": "https://api.netbird.io:443",
+ "managementConnected": true,
+ "signalConnected": false,
+ "peersConnected": 0,
+ "peersTotal": 0,
+ "health": []
+}

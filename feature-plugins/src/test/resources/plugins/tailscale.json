@@ -1,0 +1,35 @@
+{
+ "settings": {
+  "routes": [
+   "192.168.10.0/24"
+  ],
+  "advertiseExit": false,
+  "exitNode": "",
+  "acceptRoutes": true,
+  "acceptDNS": false
+ },
+ "active": true,
+ "readOnly": false,
+ "state": "Running",
+ "version": "1.84.0",
+ "name": "titan-nas",
+ "ips": [
+  "100.110.69.66",
+  "fd7a:115c:a1e0::1"
+ ],
+ "exitNodes": [
+  {
+   "id": "n1",
+   "name": "router",
+   "ip": "100.64.0.2",
+   "online": true
+  }
+ ],
+ "health": [],
+ "https": {
+  "name": "titan-nas.tail1234.ts.net",
+  "state": "ok",
+  "enabled": true,
+  "notAfter": "2027-02-01T00:00:00Z"
+ }
+}

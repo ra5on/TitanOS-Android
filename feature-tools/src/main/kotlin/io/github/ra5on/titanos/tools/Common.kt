@@ -84,7 +84,13 @@ fun tKnown(key: String, fallback: String, vararg params: Pair<String, Any?>): St
 class ToolsCtx(
     val env: AdminEnv,
     val api: ToolsApi,
+    /** Die Seite, mit der das Programm geöffnet wurde, und ihre Vorgaben aus dem Verweis. */
+    private val startPage: String? = null,
+    private val startValues: Map<String, String> = emptyMap(),
 ) {
+    /** Vorgaben aus dem Verweis für [page] (nur für die Startseite). */
+    fun startArgs(page: String): Map<String, String> = if (page == startPage) startValues else emptyMap()
+
     /** Öffnet eine andere Seite der Werkzeuge (null: Übersicht). */
     var go: (String?) -> Unit = {}
 

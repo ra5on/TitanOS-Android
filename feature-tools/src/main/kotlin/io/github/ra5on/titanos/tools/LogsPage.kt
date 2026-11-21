@@ -84,10 +84,12 @@ import java.time.format.DateTimeFormatter
 internal fun LogsPage(ctx: ToolsCtx) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var source by rememberSaveable { mutableStateOf("") }
-    var priority by rememberSaveable { mutableIntStateOf(6) }
-    var search by rememberSaveable { mutableStateOf("") }
-    var range by rememberSaveable { mutableStateOf("") }
+    // Vorgefiltert wie /tools/logs?source=&priority=&search=&range= im Web (Meldungen verweisen so hierher).
+    val args = ctx.startArgs("logs")
+    var source by rememberSaveable { mutableStateOf(args["source"]?.takeIf { it in LOG_SOURCES } ?: "") }
+    var priority by rememberSaveable { mutableIntStateOf(args["priority"]?.toIntOrNull()?.takeIf { p -> LOG_LEVELS.any { it.first == p } } ?: 6) }
+    var search by rememberSaveable { mutableStateOf(args["search"].orEmpty().take(200)) }
+    var range by rememberSaveable { mutableStateOf(args["range"]?.takeIf { r -> LOG_RANGES.any { it.first == r } } ?: "") }
     var follow by rememberSaveable { mutableStateOf(true) }
     var entries by remember { mutableStateOf<List<LogEntry>>(emptyList()) }
     var cursor by remember { mutableStateOf("") }

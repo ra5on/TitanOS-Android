@@ -65,10 +65,11 @@ private fun glyphOf(start: String?): Pair<String, String> = when (start) {
  */
 @Composable
 internal fun ToolsProgram(env: AdminEnv, start: String?, onBack: () -> Unit) {
-    val first = start?.takeIf { it in TOOLS_PAGES }
+    // Verweise wie im Web: „logs?source=storage&priority=3“, „taskmanager?tab=disks“.
+    val first = start?.substringBefore('?')?.takeIf { it in TOOLS_PAGES }
     var page by rememberSaveable(start) { mutableStateOf(first) }
     val stack = rememberSaveable(start, saver = listSaver()) { mutableStateListOf<String>() }
-    val ctx = remember(env) { ToolsCtx(env, ToolsApi(env.http)) }
+    val ctx = remember(env, start) { ToolsCtx(env, ToolsApi(env.http), first, startQuery(start)) }
     var leave by remember { mutableStateOf<(() -> Unit)?>(null) }
     fun guarded(action: () -> Unit) {
         if (ctx.dirty) leave = action else action()
@@ -171,3 +172,10 @@ private fun listSaver() = androidx.compose.runtime.saveable.listSaver<androidx.c
     save = { it.toList() },
     restore = { it.toMutableStateList() },
 )
+
+/** Die Werte nach „?“ eines Verweises (vorgefilterte Seiten). */
+internal fun startQuery(start: String?): Map<String, String> =
+    start?.substringAfter('?', "")?.split('&')?.filter { it.contains('=') }?.associate { part ->
+        val (k, v) = part.split('=', limit = 2)
+        java.net.URLDecoder.decode(k, "UTF-8") to java.net.URLDecoder.decode(v, "UTF-8")
+    }.orEmpty()

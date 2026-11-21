@@ -107,6 +107,18 @@ class ApiTest {
         assertEquals(Seen("POST", "maintenance/j2/review", """{"confirm":"j2"}"""), last())
     }
 
+    /** Auftrag entfernen wie im Dialog: auf den gespeicherten Einstellungen, ungespeicherte Änderungen am Formular bleiben draußen. */
+    @Test fun removesMaintenanceJob() = runBlocking {
+        val stored = api.maintenance().settings
+        val edited = stored.copy(windowFrom = "23:00")
+        check(edited != stored)
+        api.saveMaintenance(jobsPayload(stored, null) { jobs -> jobs.filter { it.id != "j2" } })
+        val b = body()
+        assertEquals(listOf("j1", "j3"), b["jobs"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.content })
+        assertEquals("01:00", b["windowFrom"]!!.jsonPrimitive.content)
+        assertEquals("Daten", b["volume"]!!.jsonPrimitive.content)
+    }
+
     @Test fun scriptsAreCreatedRunAndDeleted() = runBlocking {
         api.createScript(ScriptDraft("Aufräumen", "", "schedule", "0 4 * * 0", "#!/bin/bash\ndocker system prune -f\n"))
         assertEquals("POST", last().method)

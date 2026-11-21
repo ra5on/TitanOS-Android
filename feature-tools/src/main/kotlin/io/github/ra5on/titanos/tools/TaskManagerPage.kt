@@ -79,7 +79,7 @@ internal fun TaskManagerPage(ctx: ToolsCtx) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val admin = ctx.env.admin
-    var chosen by rememberSaveable { mutableStateOf("overview") }
+    var chosen by rememberSaveable { mutableStateOf(ctx.startArgs("taskmanager")["tab"]?.takeIf { it in TABS } ?: "overview") }
     val tab = if (admin) chosen else "overview"
     var system by remember { mutableStateOf<TaskSystem?>(null) }
     var storage by remember { mutableStateOf<StorageStatus?>(null) }
