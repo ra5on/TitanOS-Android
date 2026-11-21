@@ -97,7 +97,7 @@ import io.github.ra5on.titanos.agent.core.tr
 import io.github.ra5on.titanos.agent.figure.FigureClock
 import io.github.ra5on.titanos.agent.figure.stepLabel
 import io.github.ra5on.titanos.agent.home.HomePage
-import io.github.ra5on.titanos.agent.pages.FeatureView
+import io.github.ra5on.titanos.agent.features.FeatureView
 import io.github.ra5on.titanos.agent.pages.KnowledgePage
 import io.github.ra5on.titanos.agent.pages.MemoryPage
 import io.github.ra5on.titanos.agent.pages.NasPicker
