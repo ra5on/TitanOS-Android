@@ -7,8 +7,6 @@ import io.github.ra5on.titanos.compute.ComputeEnv
 fun VmScreenTab(env: ComputeEnv, state: VmsState, vm: Vm, full: Boolean, onFull: () -> Unit) =
     io.github.ra5on.titanos.vms.screen.VmScreen(env, state.api, vm, full, onFull)
 
-@Composable
-fun VmForm(env: ComputeEnv, api: VmApi, existing: Vm?, onDone: (String) -> Unit, onCancel: () -> Unit, onStartFailed: (String, Throwable) -> Unit = { _, _ -> }) {}
 
 @Composable
 fun MediaPage(api: VmApi) {}

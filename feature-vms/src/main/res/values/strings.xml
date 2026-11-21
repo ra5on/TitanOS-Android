@@ -45,4 +45,5 @@
     <string name="vms_zoom_reset">Zoom zurück</string>
     <string name="vms_touch_zoom_hint">Zwei Finger spreizen zoomt; vergrößert verschieben zwei Finger das Bild.</string>
     <string name="vms_on_state">an</string>
+    <string name="vms_time_invalid">Uhrzeit als hh:mm, etwa 07:30.</string>
 </resources>

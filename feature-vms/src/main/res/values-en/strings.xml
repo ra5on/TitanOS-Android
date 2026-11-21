@@ -45,4 +45,5 @@
     <string name="vms_zoom_reset">Reset zoom</string>
     <string name="vms_touch_zoom_hint">Spread two fingers to zoom; when zoomed, two fingers move the picture.</string>
     <string name="vms_on_state">on</string>
+    <string name="vms_time_invalid">Time as hh:mm, for example 07:30.</string>
 </resources>
