@@ -27,7 +27,7 @@ WHOLE = ["nvr", "vms", "docker", "dres", "appform", "lxc", "apps", "media", "ter
          "dnet", "appopens", "tailnetPublish", "lan", "schedule", "hardware", "proxy", "netx", "autoUpdate",
          "appaccess", "error", "common", "cleanup", "ops", "report.day", "backup.dayShort", "backup.day",
          "desktop.side", "desktop.app", "state", "status", "duration", "confirm", "delete", "keep", "digest",
-         "bridge", "network", "webapps", "viewer"]
+         "bridge", "network", "webapps", "viewer", "settings.terminal", "settings.terminalDesc", "settings.consoles", "settings.consoleIdle", "settings.consoleIdleMinutes", "settings.consoleIdleNever", "settings.consoleIdleDesc", "ui"]
 
 # Einzelne Schlüssel aus anderen Bereichen, die die Seiten nutzen.
 src_dirs = ["routes/docker", "routes/vms", "routes/lxc", "routes/nvr", "routes/terminal", "routes/apps", "lib/nvr",

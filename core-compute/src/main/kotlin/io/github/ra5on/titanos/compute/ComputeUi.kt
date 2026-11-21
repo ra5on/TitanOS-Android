@@ -127,6 +127,11 @@ class ComputeUi internal constructor(private val scope: CoroutineScope, private 
         menu = title to entries.filter { true }
     }
 
+    /** Text des Webs außerhalb von Composables (Rückfragen, Menüs). */
+    fun text(key: String, vararg params: Pair<String, Any?>): String = context.webText(key, *params)
+
+    fun string(id: Int, vararg args: Any): String = context.getString(id, *args)
+
     fun toast(text: String) {
         Toast.makeText(context, text, Toast.LENGTH_LONG).show()
     }

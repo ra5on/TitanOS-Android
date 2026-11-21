@@ -4,7 +4,7 @@ package io.github.ra5on.titanos.compute
 /** Schlüssel der Weboberfläche (z. B. `docker.start`) → Ressource in core-compute. */
 internal object WebKeys {
     val map: Map<String, Int> by lazy {
-        HashMap<String, Int>(8462).apply {
+        HashMap<String, Int>(8498).apply {
             part0(this)
             part1(this)
             part2(this)
@@ -3387,6 +3387,8 @@ internal object WebKeys {
         m["settings.consoleIdleNever"] = R.string.w_settings_consoleIdleNever
         m["settings.consoles"] = R.string.w_settings_consoles
         m["settings.path"] = R.string.w_settings_path
+        m["settings.terminal"] = R.string.w_settings_terminal
+        m["settings.terminalDesc"] = R.string.w_settings_terminalDesc
         m["share.appText"] = R.string.w_share_appText
         m["share.appTitle"] = R.string.w_share_appTitle
         m["share.install"] = R.string.w_share_install
@@ -3615,15 +3617,23 @@ internal object WebKeys {
         m["terminal.vmBanner"] = R.string.w_terminal_vmBanner
         m["terminal.vmConsole"] = R.string.w_terminal_vmConsole
         m["toast.close"] = R.string.w_toast_close
+        m["ui.backupAccepted"] = R.string.w_ui_backupAccepted
+        m["ui.clear"] = R.string.w_ui_clear
         m["ui.columns.hint"] = R.string.w_ui_columns_hint
         m["ui.columns.list"] = R.string.w_ui_columns_list
         m["ui.columns.side"] = R.string.w_ui_columns_side
         m["ui.connectionLost"] = R.string.w_ui_connectionLost
+        m["ui.cpu"] = R.string.w_ui_cpu
         m["ui.dangerZone"] = R.string.w_ui_dangerZone
         m["ui.more"] = R.string.w_ui_more
         m["ui.neverConnected"] = R.string.w_ui_neverConnected
+        m["ui.noResults"] = R.string.w_ui_noResults
+        m["ui.noSettings"] = R.string.w_ui_noSettings
         m["ui.open"] = R.string.w_ui_open
         m["ui.progressUnknown"] = R.string.w_ui_progressUnknown
+        m["ui.ram"] = R.string.w_ui_ram
+        m["ui.rebooting"] = R.string.w_ui_rebooting
+        m["ui.results"] = R.string.w_ui_results
         m["ui.retry"] = R.string.w_ui_retry
         m["ui.saved"] = R.string.w_ui_saved
         m["ui.saving"] = R.string.w_ui_saving
@@ -3634,11 +3644,22 @@ internal object WebKeys {
         m["ui.sort.moved"] = R.string.w_ui_sort_moved
         m["ui.sort.saveFailed"] = R.string.w_ui_sort_saveFailed
         m["ui.stale"] = R.string.w_ui_stale
+        m["ui.starting"] = R.string.w_ui_starting
+        m["ui.stopping"] = R.string.w_ui_stopping
         m["ui.taskAttention"] = R.string.w_ui_taskAttention
+        m["ui.taskBackup"] = R.string.w_ui_taskBackup
+        m["ui.taskCopy"] = R.string.w_ui_taskCopy
+        m["ui.taskUpdate"] = R.string.w_ui_taskUpdate
+        m["ui.taskUpload"] = R.string.w_ui_taskUpload
+        m["ui.taskVM"] = R.string.w_ui_taskVM
+        m["ui.taskVolume"] = R.string.w_ui_taskVolume
         m["ui.tasks"] = R.string.w_ui_tasks
         m["ui.tasksBadge"] = R.string.w_ui_tasksBadge
         m["ui.tasksEmpty"] = R.string.w_ui_tasksEmpty
         m["ui.tasksHint"] = R.string.w_ui_tasksHint
+    }
+
+    private fun part12(m: HashMap<String, Int>) {
         m["ui.tasksHintShort"] = R.string.w_ui_tasksHintShort
         m["ui.tasksPartial"] = R.string.w_ui_tasksPartial
         m["ui.vmAccepted"] = R.string.w_ui_vmAccepted
@@ -3657,9 +3678,6 @@ internal object WebKeys {
         m["users.newPassword"] = R.string.w_users_newPassword
         m["users.passwordNote"] = R.string.w_users_passwordNote
         m["users.passwordTitle"] = R.string.w_users_passwordTitle
-    }
-
-    private fun part12(m: HashMap<String, Int>) {
         m["users.savePassword"] = R.string.w_users_savePassword
         m["viewer.bye.error"] = R.string.w_viewer_bye_error
         m["viewer.bye.forbidden"] = R.string.w_viewer_bye_forbidden
@@ -3942,6 +3960,9 @@ internal object WebKeys {
         m["vms.form.secure"] = R.string.w_vms_form_secure
         m["vms.form.secureChip"] = R.string.w_vms_form_secureChip
         m["vms.form.secureNote"] = R.string.w_vms_form_secureNote
+    }
+
+    private fun part13(m: HashMap<String, Int>) {
         m["vms.form.sizePresets"] = R.string.w_vms_form_sizePresets
         m["vms.form.step4"] = R.string.w_vms_form_step4
         m["vms.form.step5"] = R.string.w_vms_form_step5
@@ -3960,9 +3981,6 @@ internal object WebKeys {
         m["vms.fullscreen"] = R.string.w_vms_fullscreen
         m["vms.hint"] = R.string.w_vms_hint
         m["vms.ioError"] = R.string.w_vms_ioError
-    }
-
-    private fun part13(m: HashMap<String, Int>) {
         m["vms.iso.browse"] = R.string.w_vms_iso_browse
         m["vms.iso.chosen"] = R.string.w_vms_iso_chosen
         m["vms.iso.clear"] = R.string.w_vms_iso_clear
@@ -4245,6 +4263,9 @@ internal object WebKeys {
         m["webapps.office.kind.gridcraft"] = R.string.w_webapps_office_kind_gridcraft
         m["webapps.office.kind.pdfcraft"] = R.string.w_webapps_office_kind_pdfcraft
         m["webapps.office.kind.wordcraft"] = R.string.w_webapps_office_kind_wordcraft
+    }
+
+    private fun part14(m: HashMap<String, Int>) {
         m["webapps.openFailed"] = R.string.w_webapps_openFailed
         m["webapps.openTitle"] = R.string.w_webapps_openTitle
         m["webapps.overwrite"] = R.string.w_webapps_overwrite
@@ -4263,9 +4284,6 @@ internal object WebKeys {
         m["webapps.standard.intro"] = R.string.w_webapps_standard_intro
         m["webapps.standard.none"] = R.string.w_webapps_standard_none
         m["webapps.standard.reset"] = R.string.w_webapps_standard_reset
-    }
-
-    private fun part14(m: HashMap<String, Int>) {
         m["webapps.standard.saved"] = R.string.w_webapps_standard_saved
         m["webapps.standard.titanos"] = R.string.w_webapps_standard_titanos
         m["webapps.standard.title"] = R.string.w_webapps_standard_title
