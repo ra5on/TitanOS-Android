@@ -485,10 +485,13 @@ internal fun LoginLookEditor(s: LoginLookState, account: JsonObject) {
                 s.change(d.with("background" to bg.with("source" to src, "id" to if (src == "builtin") bg.str("id").takeIf { it in BACKGROUND_IDS } ?: BACKGROUND_IDS[0] else "")))
                 if (src == "custom" && d.image() == null) pick.launch(LOGIN_IMAGE_TYPES.toTypedArray())
             }, label = t("loginLook.background"))
-        }) {
+        }, id = "login-bg", startOpen = true) {
             if (source == "builtin") {
                 FlowRow(Modifier.padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for (id in BACKGROUND_IDS) Motif(id, bg.str("id") == id) { setBg("id", id) }
+                    val motifWidth = with(androidx.compose.ui.platform.LocalDensity.current) {
+                        maxOf(104.dp, io.github.ra5on.titanos.ui.rememberWidestWord(BACKGROUND_IDS.map { tr.t("dashboard.bg.$it") }, TitanType.small).toDp() + 14.dp)
+                    }
+                    for (id in BACKGROUND_IDS) Motif(id, bg.str("id") == id, motifWidth) { setBg("id", id) }
                 }
             }
             if (source == "custom") {
@@ -581,12 +584,12 @@ private fun SubSlider(title: String, value: Int, range: IntRange, onChange: (Int
 
 /** Ein Motiv der Galerie (static/backgrounds/<id>.webp) mit Namen. */
 @Composable
-private fun Motif(id: String, on: Boolean, onClick: () -> Unit) {
+private fun Motif(id: String, on: Boolean, width: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
     val env = LocalEnv.current
     val image = rememberWebImage(env.api, "/backgrounds/$id.webp")
     val shape = RoundedCornerShape(10.dp)
     Column(
-        Modifier.width(104.dp).clip(shape).border(if (on) 3.dp else 1.dp, if (on) Titan.colors.accent else Titan.colors.border, shape)
+        Modifier.width(width).clip(shape).border(if (on) 3.dp else 1.dp, if (on) Titan.colors.accent else Titan.colors.border, shape)
             .clickable(role = Role.RadioButton, onClick = onClick)
             .semantics(mergeDescendants = true) { stateDescription = if (on) "✓" else "" },
     ) {
@@ -614,10 +617,14 @@ private fun LoginPreview(d: JsonObject, p: TitanAppearance.Palette, picture: Ima
     val tr = tr()
     val bg = d.o("background")
     val title = d.o("texts").o(tr.lang).str("title").ifEmpty { d.o("texts").o(if (tr.lang == "de") "en" else "de").str("title") }.ifEmpty { if (tr.de) "Anmelden" else "Log in" }
+    // Eine verkleinerte Abbildung: ihre Schrift folgt nicht der Schriftgröße des Handys.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, 1f)) {
     BoxWithConstraints(
         Modifier.fillMaxWidth().aspectRatio(16f / 10f).clip(RoundedCornerShape(12.dp)).background(p.bg.color())
             .border(1.dp, Titan.colors.border, RoundedCornerShape(12.dp)).semantics { contentDescription = tr.t("loginLook.preview") },
     ) {
+        if (picture == null && bg.str("source") == "builtin") Box(Modifier.matchParentSize().background(wallpaperBrush(Wall(false, bg.str("id"), 0, true), false)))
         if (picture != null) {
             val cover = bg.str("fit") != "contain"
             val zoom = if (cover) bg.int("zoom", 100) / 100f else 1f
@@ -644,4 +651,5 @@ private fun LoginPreview(d: JsonObject, p: TitanAppearance.Palette, picture: Ima
             Box(Modifier.fillMaxWidth(.6f).height(10.dp).clip(RoundedCornerShape(4.dp)).background(accent))
         }
     }
+}
 }

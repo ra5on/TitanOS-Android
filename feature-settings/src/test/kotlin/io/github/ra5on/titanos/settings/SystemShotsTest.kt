@@ -141,6 +141,25 @@ class SystemShotsTest {
         shots.assertClean()
     }
 
+
+    /** Zusätzlich: Texte brechen nur zwischen ganzen Wörtern um (Inhaber 21.11.2026). */
+    private fun cap(name: String, dark: Boolean) {
+        shots.capture(name, dark)
+        for (node in compose.onAllNodes(androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.isRoot()), useUnmergedTree = true).fetchSemanticsNodes()) {
+            val get = node.config.getOrElseNullable(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { null } ?: continue
+            val out = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            get.action?.invoke(out)
+            val r = out.firstOrNull() ?: continue
+            val text = r.layoutInput.text.text
+            for (i in 0 until r.lineCount - 1) {
+                val end = r.getLineEnd(i)
+                if (end <= 0 || end >= text.length) continue
+                if (text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit())
+                    shots.problems += "${shots.prefix}$name: mitten im Wort umbrochen „${text.take(60)}“"
+            }
+        }
+    }
+
     private fun open(nav: SettingsNav, path: String, waitFor: String) {
         nav.openPath(path)
         shots.until { nas.requests.any { it.first == "GET" && it.second.substringBefore('?') == waitFor } }
@@ -150,37 +169,37 @@ class SystemShotsTest {
     private fun pages(dark: Boolean, wide: Boolean = false) {
         val nav = SettingsNav()
         shots.show(dark) { SettingsApp(nas.env(), onClose = {}, nav = nav) }
-        open(nav, "/settings/about", "about"); shots.capture("20-ueber", dark)
-        open(nav, "/settings/services", "system/startup"); shots.capture("21-dienste", dark)
-        open(nav, "/settings/viewer", "viewer/status"); shots.capture("22-fernansicht", dark)
+        open(nav, "/settings/about", "about"); cap("20-ueber", dark)
+        open(nav, "/settings/services", "system/startup"); cap("21-dienste", dark)
+        open(nav, "/settings/viewer", "viewer/status"); cap("22-fernansicht", dark)
         // Die Übersicht steht nur am großen Bildschirm (Alle Einstellungen).
         if (wide) nav.openPath("/settings")
         if (wide) shots.until { nas.requests.any { it.second.startsWith("activity") } }
-        if (wide) { shots.settle(1500); shots.capture("23-uebersicht", dark) }
+        if (wide) { shots.settle(1500); cap("23-uebersicht", dark) }
     }
 
     private fun updates(dark: Boolean) {
         val nav = SettingsNav()
         shots.show(dark) { SettingsApp(nas.env(), onClose = {}, nav = nav) }
-        open(nav, "/settings/updates", "update/versions"); shots.capture("30-updates", dark)
+        open(nav, "/settings/updates", "update/versions"); cap("30-updates", dark)
         nav.openPath("/settings/about"); shots.settle(300)
         nas.on("GET update", SystemFixtures.UPDATE_PENDING)
         nas.requests.clear()
-        open(nav, "/settings/updates", "update"); shots.capture("31-updates-wartet", dark)
+        open(nav, "/settings/updates", "update"); cap("31-updates-wartet", dark)
         nav.openPath("/settings/about"); shots.settle(300)
         nas.on("GET update", SystemFixtures.UPDATE_WORKING)
         nas.requests.clear()
-        open(nav, "/settings/updates", "update"); shots.capture("32-updates-laedt", dark)
+        open(nav, "/settings/updates", "update"); cap("32-updates-laedt", dark)
     }
 
     private fun appearance(dark: Boolean) {
         val nav = SettingsNav()
         shots.show(dark) { SettingsApp(nas.env(), onClose = {}, nav = nav) }
-        open(nav, "/settings/appearance", "preferences"); shots.capture("40-darstellung", dark)
-        nav.tab = "glass"; shots.capture("41-darstellung-feinheiten", dark)
-        nav.tab = "background"; shots.until { nas.requests.any { it.second == "app-icon" } }; shots.capture("42-darstellung-hintergrund", dark)
-        nav.tab = "dock"; shots.until { nas.requests.any { it.second == "webapps" } }; shots.capture("43-darstellung-dock", dark)
-        nav.tab = "login"; shots.until { nas.requests.any { it.second == "login-appearance" } }; shots.capture("44-darstellung-anmeldung", dark)
+        open(nav, "/settings/appearance", "preferences"); cap("40-darstellung", dark)
+        nav.tab = "glass"; cap("41-darstellung-feinheiten", dark)
+        nav.tab = "background"; shots.until { nas.requests.any { it.second == "app-icon" } }; cap("42-darstellung-hintergrund", dark)
+        nav.tab = "dock"; shots.until { nas.requests.any { it.second == "webapps" } }; cap("43-darstellung-dock", dark)
+        nav.tab = "login"; shots.until { nas.requests.any { it.second == "login-appearance" } }; cap("44-darstellung-anmeldung", dark)
     }
 
     @Test fun hell() = pages(false)

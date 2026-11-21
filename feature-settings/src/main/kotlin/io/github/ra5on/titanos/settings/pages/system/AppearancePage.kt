@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -426,12 +427,19 @@ private fun ColorsTab(s: LookState, look: JsonObject) {
         SettingRow(t("look.liquid"), desc = t("look.liquidHint"), control = {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Muted(t("look.liquidClear"))
-                Box(Modifier.weight(1f)) {
-                    SliderField(liquid.toFloat(), { f ->
-                        val v = (jsRound(f / 5.0) * 5)
-                        s.change(look.with("glass" to jsRound((80 - 0.75 * v) / 5) * 5, "blur" to jsRound((10 + 0.2 * v) / 2) * 2))
-                    }, 0f..100f, t("look.liquid"), t("look.liquidValue", "value" to liquid), steps = 19)
-                }
+                val valueText = t("look.liquidValue", "value" to liquid)
+                val label = t("look.liquid")
+                val c = Titan.colors
+                androidx.compose.material3.Slider(
+                    value = liquid.toFloat(),
+                    onValueChange = { f ->
+                        val v = jsRound(f / 5.0) * 5
+                        if (v != liquid) s.change(look.with("glass" to jsRound((80 - 0.75 * v) / 5) * 5, "blur" to jsRound((10 + 0.2 * v) / 2) * 2))
+                    },
+                    valueRange = 0f..100f,
+                    colors = androidx.compose.material3.SliderDefaults.colors(thumbColor = c.accent, activeTrackColor = c.accent, inactiveTrackColor = c.track),
+                    modifier = Modifier.weight(1f).widthIn(min = 100.dp).semantics { contentDescription = label; stateDescription = valueText },
+                )
                 Muted(t("look.liquidTinted"))
             }
         })
@@ -498,7 +506,6 @@ internal fun LookSlider(title: String, hint: String?, value: Int, range: IntRang
             range.first.toFloat()..range.last.toFloat(),
             title,
             "$value $unit",
-            steps = (range.last - range.first) / step - 1,
         )
     })
 }
@@ -555,17 +562,17 @@ private fun LiquidPreview(look: JsonObject, desktop: JsonObject?, systemDark: Bo
     val p = paletteOf(look, look.str("theme", "graphit"), systemDark)
     val glass = look.int("glass", 45)
     Box(
-        Modifier.fillMaxWidth().height(110.dp).clip(RoundedCornerShape(12.dp))
+        Modifier.fillMaxWidth().heightIn(min = 110.dp).clip(RoundedCornerShape(12.dp))
             .background(wallpaperBrush(wallpaperOf(desktop), !p.dark)),
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            Modifier.widthIn(max = 260.dp).clip(RoundedCornerShape(16.dp)).background(p.surface.color().copy(alpha = (100 - glass) / 100f))
+            Modifier.padding(12.dp).widthIn(max = 300.dp).clip(RoundedCornerShape(16.dp)).background(p.surface.color().copy(alpha = (100 - glass) / 100f))
                 .border(1.dp, Color.White.copy(alpha = .25f), RoundedCornerShape(16.dp)).padding(horizontal = 20.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("15:11", style = TitanType.title, color = p.text.color())
-            Text(t("look.liquidSample"), style = TitanType.small, color = p.text.color())
+            Text(t("look.liquidSample"), style = TitanType.small, color = p.text.color(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }
