@@ -1683,6 +1683,10 @@
     <string name="a_fileIndex_volumes">Ganze Volumes</string>
     <string name="a_fileIndex_when">Wann indexiert wird</string>
     <string name="a_files_conflict">Gibt es den Namen schon</string>
+    <string name="a_files_conflict_missing">Nur fehlende oder geänderte Dateien</string>
+    <string name="a_files_conflict_rename">Beide behalten</string>
+    <string name="a_files_conflict_replace">Ersetzen</string>
+    <string name="a_files_conflict_skip">Überspringen</string>
     <string name="a_files_delete">Löschen</string>
     <string name="a_files_jobDownload">Von Link herunterladen</string>
     <string name="a_files_move">Verschieben nach …</string>
@@ -1714,6 +1718,12 @@
     <string name="a_firewall_zoneList">Zonen und ihre Netze</string>
     <string name="a_firewall_zoneName">Der Name braucht 1 bis 40 Zeichen ohne Anführungszeichen.</string>
     <string name="a_firewall_zones">Zonenmatrix</string>
+    <string name="a_fs_btrfs">Btrfs</string>
+    <string name="a_fs_btrfsDesc">Prüfsummen, Snapshots und flexible Profile mit einer bis vielen Platten.</string>
+    <string name="a_fs_ext4">ext4</string>
+    <string name="a_fs_ext4Desc">Bewährt, lässt sich auch verkleinern.</string>
+    <string name="a_fs_xfs">XFS</string>
+    <string name="a_fs_xfsDesc">Gut für große Dateien und große Volumes.</string>
     <string name="a_ha_accountLabel">Handeln als</string>
     <string name="a_ha_conn_first">Erste Verbindung</string>
     <string name="a_ha_conn_name">Name</string>
@@ -2082,15 +2092,22 @@
     <string name="a_member_active">aktiv</string>
     <string name="a_member_faulty">ausgefallen</string>
     <string name="a_member_rebuilding">wird aufgebaut</string>
+    <string name="a_member_removing">Wird entfernt</string>
     <string name="a_member_spare">Ersatzplatte</string>
     <string name="a_memoryPolicy_available">Für neue Aufgaben verfügbar</string>
     <string name="a_memoryPolicy_budget">Aktuelles Zielbudget</string>
     <string name="a_memoryPolicy_dirty">Noch zu schreiben / in Übertragung</string>
     <string name="a_memoryPolicy_group_budget">Budget</string>
     <string name="a_memoryPolicy_group_now">Aktuelle Werte</string>
+    <string name="a_memoryPolicy_hint">Das Budget wird nach Abzug einer Systemreserve laufend angepasst. Dateien, die im Browser hochgeladen werden, werden abschnittsweise gespeichert und aus dem Cache freigegeben; SMB/NFS schreibt durch die angepassten Kernel-Schwellen früher zurück. Lesecache, VM-RAM und das Systemabbild haben dadurch keine feste Prozentgrenze.</string>
+    <string name="a_memoryPolicy_intro" formatted="false">Linux nutzt freien RAM als Lesecache und gibt ihn bei Bedarf selbst wieder frei – das ist nicht einstellbar und kein Problem. Hier legst du fest, wie viele noch nicht geschriebene Daten (Schreibcache) bei Dateiübertragungen im RAM liegen dürfen, bevor sie auf die Platte müssen. Standard: 20 % des verfügbaren RAM nach Abzug der Systemreserve.</string>
+    <string name="a_memoryPolicy_lowAvailable">Wenig verfügbarer RAM seit mindestens 30 Sekunden. Prüfe laufende Apps und VMs.</string>
     <string name="a_memoryPolicy_percent">Schreibpufferbudget für Dateiübertragungen</string>
     <string name="a_memoryPolicy_pressure">Wartezeit durch RAM-Mangel (teilweise / vollständig)</string>
+    <string name="a_memoryPolicy_pressureHint">PSI zeigt den Anteil der letzten zehn Sekunden, in dem mindestens eine Aufgabe beziehungsweise alle aktiven Aufgaben auf Speicher warten mussten. Viel Dateicache allein bedeutet keinen RAM-Mangel.</string>
+    <string name="a_memoryPolicy_readOnly">Die RAM-Einstellungen sind derzeit nur lesbar.</string>
     <string name="a_memoryPolicy_reserve">Systemreserve</string>
+    <string name="a_memoryPolicy_saved">Gespeichert und angewendet.</string>
     <string name="a_memoryPolicy_title">Schreibcache</string>
     <string name="a_menu_account">Mein Konto</string>
     <string name="a_menu_appearance">Darstellung</string>

@@ -1683,6 +1683,10 @@
     <string name="a_fileIndex_volumes">Whole volumes</string>
     <string name="a_fileIndex_when">When indexing runs</string>
     <string name="a_files_conflict">If the name exists</string>
+    <string name="a_files_conflict_missing">Only missing or changed files</string>
+    <string name="a_files_conflict_rename">Keep both</string>
+    <string name="a_files_conflict_replace">Replace</string>
+    <string name="a_files_conflict_skip">Skip</string>
     <string name="a_files_delete">Delete</string>
     <string name="a_files_jobDownload">Download from link</string>
     <string name="a_files_move">Move to …</string>
@@ -1714,6 +1718,12 @@
     <string name="a_firewall_zoneList">Zones and their networks</string>
     <string name="a_firewall_zoneName">The name needs 1 to 40 characters without quotes.</string>
     <string name="a_firewall_zones">Zone matrix</string>
+    <string name="a_fs_btrfs">Btrfs</string>
+    <string name="a_fs_btrfsDesc">Checksums, snapshots and flexible profiles with one disk to many.</string>
+    <string name="a_fs_ext4">ext4</string>
+    <string name="a_fs_ext4Desc">Proven, can also be shrunk.</string>
+    <string name="a_fs_xfs">XFS</string>
+    <string name="a_fs_xfsDesc">Good for large files and large volumes.</string>
     <string name="a_ha_accountLabel">Act as</string>
     <string name="a_ha_conn_first">First connection</string>
     <string name="a_ha_conn_name">Name</string>
@@ -2082,15 +2092,22 @@
     <string name="a_member_active">active</string>
     <string name="a_member_faulty">failed</string>
     <string name="a_member_rebuilding">rebuilding</string>
+    <string name="a_member_removing">Being removed</string>
     <string name="a_member_spare">spare</string>
     <string name="a_memoryPolicy_available">Available for new workloads</string>
     <string name="a_memoryPolicy_budget">Current target budget</string>
     <string name="a_memoryPolicy_dirty">Awaiting writeback / being written</string>
     <string name="a_memoryPolicy_group_budget">Budget</string>
     <string name="a_memoryPolicy_group_now">Current values</string>
+    <string name="a_memoryPolicy_hint">The budget follows available RAM after a system reserve. Browser uploads are saved and released from cache in sections; adjusted kernel thresholds trigger earlier SMB/NFS writeback. This is not a fixed percentage limit for read cache, VM memory or the system image.</string>
+    <string name="a_memoryPolicy_intro" formatted="false">Linux uses free RAM as read cache and releases it on its own when needed – that cannot be configured and is not a problem. Here you set how much not-yet-written data (write cache) file transfers may keep in RAM before it has to reach the disk. Default: 20% of available RAM after the system reserve.</string>
+    <string name="a_memoryPolicy_lowAvailable">Available RAM has been low for at least 30 seconds. Check running apps and VMs.</string>
     <string name="a_memoryPolicy_percent">Write buffer budget for file transfers</string>
     <string name="a_memoryPolicy_pressure">Time stalled on memory (some / all tasks)</string>
+    <string name="a_memoryPolicy_pressureHint">PSI shows the share of the last ten seconds during which at least one task or all active tasks had to wait for memory. A large file cache alone does not mean a memory shortage.</string>
+    <string name="a_memoryPolicy_readOnly">Memory settings are currently read-only.</string>
     <string name="a_memoryPolicy_reserve">System reserve</string>
+    <string name="a_memoryPolicy_saved">Saved and applied.</string>
     <string name="a_memoryPolicy_title">Write cache</string>
     <string name="a_menu_account">My account</string>
     <string name="a_menu_appearance">Appearance</string>

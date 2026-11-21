@@ -4,7 +4,7 @@ package io.github.ra5on.titanos.admin
 /** Schlüssel der Weboberfläche (z. B. `storage.create`) → Ressource in core-admin. */
 internal object AdminKeys {
     val map: Map<String, Int> by lazy {
-        HashMap<String, Int>(8714).apply {
+        HashMap<String, Int>(8748).apply {
             part0(this)
             part1(this)
             part2(this)
@@ -1721,6 +1721,10 @@ internal object AdminKeys {
         m["fileIndex.volumes"] = R.string.a_fileIndex_volumes
         m["fileIndex.when"] = R.string.a_fileIndex_when
         m["files.conflict"] = R.string.a_files_conflict
+        m["files.conflict.missing"] = R.string.a_files_conflict_missing
+        m["files.conflict.rename"] = R.string.a_files_conflict_rename
+        m["files.conflict.replace"] = R.string.a_files_conflict_replace
+        m["files.conflict.skip"] = R.string.a_files_conflict_skip
         m["files.delete"] = R.string.a_files_delete
         m["files.jobDownload"] = R.string.a_files_jobDownload
         m["files.move"] = R.string.a_files_move
@@ -1752,6 +1756,12 @@ internal object AdminKeys {
         m["firewall.zoneList"] = R.string.a_firewall_zoneList
         m["firewall.zoneName"] = R.string.a_firewall_zoneName
         m["firewall.zones"] = R.string.a_firewall_zones
+        m["fs.btrfs"] = R.string.a_fs_btrfs
+        m["fs.btrfsDesc"] = R.string.a_fs_btrfsDesc
+        m["fs.ext4"] = R.string.a_fs_ext4
+        m["fs.ext4Desc"] = R.string.a_fs_ext4Desc
+        m["fs.xfs"] = R.string.a_fs_xfs
+        m["fs.xfsDesc"] = R.string.a_fs_xfsDesc
         m["ha.accountLabel"] = R.string.a_ha_accountLabel
         m["ha.conn.first"] = R.string.a_ha_conn_first
         m["ha.conn.name"] = R.string.a_ha_conn_name
@@ -1829,6 +1839,9 @@ internal object AdminKeys {
         m["help.cron.title"] = R.string.a_help_cron_title
         m["help.filesystem.text"] = R.string.a_help_filesystem_text
         m["help.filesystem.title"] = R.string.a_help_filesystem_title
+    }
+
+    private fun part6(m: HashMap<String, Int>) {
         m["help.level.text"] = R.string.a_help_level_text
         m["help.level.title"] = R.string.a_help_level_title
         m["help.luks.text"] = R.string.a_help_luks_text
@@ -1839,9 +1852,6 @@ internal object AdminKeys {
         m["help.psi.title"] = R.string.a_help_psi_title
         m["help.raid.text"] = R.string.a_help_raid_text
         m["help.raid.title"] = R.string.a_help_raid_title
-    }
-
-    private fun part6(m: HashMap<String, Int>) {
         m["help.scopes.text"] = R.string.a_help_scopes_text
         m["help.scopes.title"] = R.string.a_help_scopes_title
         m["help.scriptTrigger.text"] = R.string.a_help_scriptTrigger_text
@@ -2123,15 +2133,25 @@ internal object AdminKeys {
         m["member.active"] = R.string.a_member_active
         m["member.faulty"] = R.string.a_member_faulty
         m["member.rebuilding"] = R.string.a_member_rebuilding
+        m["member.removing"] = R.string.a_member_removing
         m["member.spare"] = R.string.a_member_spare
         m["memoryPolicy.available"] = R.string.a_memoryPolicy_available
         m["memoryPolicy.budget"] = R.string.a_memoryPolicy_budget
         m["memoryPolicy.dirty"] = R.string.a_memoryPolicy_dirty
         m["memoryPolicy.group.budget"] = R.string.a_memoryPolicy_group_budget
         m["memoryPolicy.group.now"] = R.string.a_memoryPolicy_group_now
+        m["memoryPolicy.hint"] = R.string.a_memoryPolicy_hint
+        m["memoryPolicy.intro"] = R.string.a_memoryPolicy_intro
+    }
+
+    private fun part7(m: HashMap<String, Int>) {
+        m["memoryPolicy.lowAvailable"] = R.string.a_memoryPolicy_lowAvailable
         m["memoryPolicy.percent"] = R.string.a_memoryPolicy_percent
         m["memoryPolicy.pressure"] = R.string.a_memoryPolicy_pressure
+        m["memoryPolicy.pressureHint"] = R.string.a_memoryPolicy_pressureHint
+        m["memoryPolicy.readOnly"] = R.string.a_memoryPolicy_readOnly
         m["memoryPolicy.reserve"] = R.string.a_memoryPolicy_reserve
+        m["memoryPolicy.saved"] = R.string.a_memoryPolicy_saved
         m["memoryPolicy.title"] = R.string.a_memoryPolicy_title
         m["menu.account"] = R.string.a_menu_account
         m["menu.appearance"] = R.string.a_menu_appearance
@@ -2142,9 +2162,6 @@ internal object AdminKeys {
         m["menubar.short.showDesktop"] = R.string.a_menubar_short_showDesktop
         m["menubar.short.snap"] = R.string.a_menubar_short_snap
         m["menubar.short.switcher"] = R.string.a_menubar_short_switcher
-    }
-
-    private fun part7(m: HashMap<String, Int>) {
         m["nav.agent"] = R.string.a_nav_agent
         m["nav.apps"] = R.string.a_nav_apps
         m["nav.docker"] = R.string.a_nav_docker
@@ -2428,6 +2445,9 @@ internal object AdminKeys {
         m["ops.next"] = R.string.a_ops_next
         m["ops.noSamples"] = R.string.a_ops_noSamples
         m["ops.noSnapshots"] = R.string.a_ops_noSnapshots
+    }
+
+    private fun part8(m: HashMap<String, Int>) {
         m["ops.none"] = R.string.a_ops_none
         m["ops.openTasks"] = R.string.a_ops_openTasks
         m["ops.pgExport"] = R.string.a_ops_pgExport
@@ -2445,9 +2465,6 @@ internal object AdminKeys {
         m["ops.refresh"] = R.string.a_ops_refresh
         m["ops.register"] = R.string.a_ops_register
         m["ops.remove"] = R.string.a_ops_remove
-    }
-
-    private fun part8(m: HashMap<String, Int>) {
         m["ops.restartPrevious"] = R.string.a_ops_restartPrevious
         m["ops.restoreSelected"] = R.string.a_ops_restoreSelected
         m["ops.restored"] = R.string.a_ops_restored
@@ -2731,6 +2748,9 @@ internal object AdminKeys {
         m["plugins.step.download"] = R.string.a_plugins_step_download
         m["plugins.step.health"] = R.string.a_plugins_step_health
         m["plugins.step.modules"] = R.string.a_plugins_step_modules
+    }
+
+    private fun part9(m: HashMap<String, Int>) {
         m["plugins.step.remove"] = R.string.a_plugins_step_remove
         m["plugins.step.rollback"] = R.string.a_plugins_step_rollback
         m["plugins.step.services"] = R.string.a_plugins_step_services
@@ -2748,9 +2768,6 @@ internal object AdminKeys {
         m["plugins.stepsFailed"] = R.string.a_plugins_stepsFailed
         m["plugins.title"] = R.string.a_plugins_title
         m["plugins.trustCommunity"] = R.string.a_plugins_trustCommunity
-    }
-
-    private fun part9(m: HashMap<String, Int>) {
         m["plugins.trustLink"] = R.string.a_plugins_trustLink
         m["plugins.trustOfficial"] = R.string.a_plugins_trustOfficial
         m["plugins.update"] = R.string.a_plugins_update
@@ -3034,6 +3051,9 @@ internal object AdminKeys {
         m["scripts.outcome.timeout"] = R.string.a_scripts_outcome_timeout
         m["scripts.output"] = R.string.a_scripts_output
         m["scripts.outputOf"] = R.string.a_scripts_outputOf
+    }
+
+    private fun part10(m: HashMap<String, Int>) {
         m["scripts.outputSkipped"] = R.string.a_scripts_outputSkipped
         m["scripts.outputTruncated"] = R.string.a_scripts_outputTruncated
         m["scripts.path"] = R.string.a_scripts_path
@@ -3051,9 +3071,6 @@ internal object AdminKeys {
         m["scripts.statRunning"] = R.string.a_scripts_statRunning
         m["scripts.statusBar"] = R.string.a_scripts_statusBar
         m["scripts.title"] = R.string.a_scripts_title
-    }
-
-    private fun part10(m: HashMap<String, Int>) {
         m["scripts.tooLarge"] = R.string.a_scripts_tooLarge
         m["scripts.trigger"] = R.string.a_scripts_trigger
         m["scripts.trigger.manual"] = R.string.a_scripts_trigger_manual
@@ -3337,6 +3354,9 @@ internal object AdminKeys {
         m["smart.statOk"] = R.string.a_smart_statOk
         m["smart.statSleeping"] = R.string.a_smart_statSleeping
         m["smart.statWarning"] = R.string.a_smart_statWarning
+    }
+
+    private fun part11(m: HashMap<String, Int>) {
         m["smart.state.failed"] = R.string.a_smart_state_failed
         m["smart.state.ok"] = R.string.a_smart_state_ok
         m["smart.state.unavailable"] = R.string.a_smart_state_unavailable
@@ -3354,9 +3374,6 @@ internal object AdminKeys {
         m["smart.unknownHint"] = R.string.a_smart_unknownHint
         m["smart.unsafeShutdowns"] = R.string.a_smart_unsafeShutdowns
         m["smart.volume"] = R.string.a_smart_volume
-    }
-
-    private fun part11(m: HashMap<String, Int>) {
         m["smart.warn.attributeNow"] = R.string.a_smart_warn_attributeNow
         m["smart.warn.attributePast"] = R.string.a_smart_warn_attributePast
         m["smart.warn.crc"] = R.string.a_smart_warn_crc
@@ -3640,6 +3657,9 @@ internal object AdminKeys {
         m["storage.sleepFailed"] = R.string.a_storage_sleepFailed
         m["storage.sleepFromDefault"] = R.string.a_storage_sleepFromDefault
         m["storage.sleepFromDisk"] = R.string.a_storage_sleepFromDisk
+    }
+
+    private fun part12(m: HashMap<String, Int>) {
         m["storage.sleepFromVolume"] = R.string.a_storage_sleepFromVolume
         m["storage.sleepHint"] = R.string.a_storage_sleepHint
         m["storage.sleepHour"] = R.string.a_storage_sleepHour
@@ -3657,9 +3677,6 @@ internal object AdminKeys {
         m["storage.sleepPartly"] = R.string.a_storage_sleepPartly
         m["storage.sleepRaidNote"] = R.string.a_storage_sleepRaidNote
         m["storage.sleepReason.name"] = R.string.a_storage_sleepReason_name
-    }
-
-    private fun part12(m: HashMap<String, Int>) {
         m["storage.sleepReason.nvme"] = R.string.a_storage_sleepReason_nvme
         m["storage.sleepReason.removable"] = R.string.a_storage_sleepReason_removable
         m["storage.sleepReason.ssd"] = R.string.a_storage_sleepReason_ssd
@@ -3943,6 +3960,9 @@ internal object AdminKeys {
         m["taskmanager.lxc.title"] = R.string.a_taskmanager_lxc_title
         m["taskmanager.navText"] = R.string.a_taskmanager_navText
         m["taskmanager.net"] = R.string.a_taskmanager_net
+    }
+
+    private fun part13(m: HashMap<String, Int>) {
         m["taskmanager.net.down"] = R.string.a_taskmanager_net_down
         m["taskmanager.net.none"] = R.string.a_taskmanager_net_none
         m["taskmanager.net.up"] = R.string.a_taskmanager_net_up
@@ -3960,9 +3980,6 @@ internal object AdminKeys {
         m["taskmanager.proc.more"] = R.string.a_taskmanager_proc_more
         m["taskmanager.proc.name"] = R.string.a_taskmanager_proc_name
         m["taskmanager.proc.owner"] = R.string.a_taskmanager_proc_owner
-    }
-
-    private fun part13(m: HashMap<String, Int>) {
         m["taskmanager.proc.pid"] = R.string.a_taskmanager_proc_pid
         m["taskmanager.proc.protected"] = R.string.a_taskmanager_proc_protected
         m["taskmanager.proc.scale"] = R.string.a_taskmanager_proc_scale
@@ -4246,6 +4263,9 @@ internal object AdminKeys {
         m["ui.taskVolume"] = R.string.a_ui_taskVolume
         m["ui.tasks"] = R.string.a_ui_tasks
         m["ui.tasksBadge"] = R.string.a_ui_tasksBadge
+    }
+
+    private fun part14(m: HashMap<String, Int>) {
         m["ui.tasksEmpty"] = R.string.a_ui_tasksEmpty
         m["ui.tasksHint"] = R.string.a_ui_tasksHint
         m["ui.tasksHintShort"] = R.string.a_ui_tasksHintShort
@@ -4263,9 +4283,6 @@ internal object AdminKeys {
         m["update.choose.title"] = R.string.a_update_choose_title
         m["update.choose.version"] = R.string.a_update_choose_version
         m["update.install"] = R.string.a_update_install
-    }
-
-    private fun part14(m: HashMap<String, Int>) {
         m["update.kernel.title"] = R.string.a_update_kernel_title
         m["update.nas"] = R.string.a_update_nas
         m["update.rollback"] = R.string.a_update_rollback
