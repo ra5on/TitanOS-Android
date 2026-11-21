@@ -86,8 +86,16 @@ internal fun ReplacePage(env: AdminEnv, model: StorageModel, nav: StorageNav) {
     val fresh = known?.let { newlyAttached(it, options) }.orEmpty()
     val needsPassword = volume?.encryption != null && volume.filesystem == "btrfs"
     val syncing = volume?.sync != null || volume?.state == "rebuilding" || volume?.state == "syncing"
-    // Läuft es, geht es weiter, sobald Wiederaufbau oder Kopie fertig sind.
-    if (step == "running" && volume != null && !syncing && volume.state == "ok") {
+    // Erst wenn das NAS den Auftrag zeigt (Abgleich, Wiederaufbau oder die neue Platte unter den
+    // Mitgliedern), gilt „fertig“ als Nachweis; ein Zustand von vor dem Start zählt nie
+    // (strenger als das Web: sonst böte die Seite zu früh an, die alte Platte zu entfernen).
+    var sawJob by remember { mutableStateOf(false) }
+    if (step == "running" && volume != null && !sawJob &&
+        (syncing || volume.members.any { it.disk == chosenNew && chosenNew.isNotEmpty() })
+    ) {
+        sawJob = true
+    }
+    if (step == "running" && sawJob && volume != null && !syncing && volume.state == "ok") {
         step = if (candidate?.mode == "live" || candidate?.mode == "addRemove") "cleanup" else "done"
     }
 
@@ -262,6 +270,7 @@ internal fun ReplacePage(env: AdminEnv, model: StorageModel, nav: StorageNav) {
                 val cand = candidate
                 confirming = false
                 if (target != null && cand != null) {
+                    sawJob = false
                     scope.launch {
                         act("running") {
                             if (cand.mode == "live") api.replace(volumeName, diskName, target.name, target.identity)

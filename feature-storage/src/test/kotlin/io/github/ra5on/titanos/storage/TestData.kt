@@ -30,11 +30,13 @@ internal fun FakeNas.storageFixtures(): FakeNas {
 }
 
 /**
- * Die abgedunkelte Fläche hinter AdminDialog/AdminSheet (core-admin, Dialogs.kt)
- * ist anklickbar (schließt) und hat keinen Namen. Das ist ein Fund in core-admin,
- * nicht in diesem Modul (gemeldet); er bedeckt immer das ganze Fenster ab (0, 0).
+ * Die abgedunkelte Fläche hinter AdminDialog/AdminSheet (core-admin, Dialogs.kt) ist
+ * anklickbar (schließt) und hat keinen Namen. Das ist ein Fund in core-admin, nicht in
+ * diesem Modul (gemeldet). Nur genau diese Fläche wird übergangen: ein Bedienelement
+ * ohne Namen, das das ganze Fenster ([width] × [height] Pixel) bedeckt.
  */
-internal fun isCoreBackdrop(finding: String): Boolean =
-    finding.contains("Bedienelement ohne Namen bei Rect.fromLTRB(0.0, 0.0,")
-
-/** Text des Webs für einen Schlüssel (Deutsch, wie die Tests laufen). */
+internal fun isCoreBackdrop(finding: String, width: Float, height: Float): Boolean {
+    val m = Regex("""Bedienelement ohne Namen bei Rect\.fromLTRB\(([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+)\)""").find(finding) ?: return false
+    val (l, t, r, b) = m.destructured
+    return l.toFloat() == 0f && t.toFloat() == 0f && kotlin.math.abs(r.toFloat() - width) <= 2f && kotlin.math.abs(b.toFloat() - height) <= 2f
+}

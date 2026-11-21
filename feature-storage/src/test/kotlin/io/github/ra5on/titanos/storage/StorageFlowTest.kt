@@ -1,5 +1,7 @@
 package io.github.ra5on.titanos.storage
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -153,5 +155,46 @@ class StorageFlowTest {
         click(cancel, last = true)
         shots.until { sent("POST", "storage/growth/cancel") != null }
         assertEquals(json("""{"confirm":"Data"}"""), json(sent("POST", "storage/growth/cancel")!!.body))
+    }
+
+    @Test fun liveReplaceWaitsForTheNas() {
+        // Data ist gesund und bleibt es nach dem Start (das NAS hat noch nicht begonnen).
+        show("replace", nav = { volume = "Data"; disk = "sda" })
+        shots.untilText(io.github.ra5on.titanos.admin.adminTextForTest("swap.next"))
+        click(io.github.ra5on.titanos.admin.adminTextForTest("swap.next"))
+        shots.untilText("sdj")
+        compose.onAllNodes(hasText("sdj", substring = false) and hasClickAction()).onFirst().performScrollTo().performClick()
+        shots.settle()
+        click(io.github.ra5on.titanos.admin.adminTextForTest("swap.start"))
+        click(io.github.ra5on.titanos.admin.adminTextForTest("swap.confirm"))
+        shots.until { sent("POST", "storage/volumes/Data/replace") != null }
+        shots.settle(1500)
+        shots.untilText(io.github.ra5on.titanos.admin.adminTextForTest("swap.starting"))
+        assertEquals(0, compose.onAllNodes(hasText(io.github.ra5on.titanos.admin.adminTextForTest("swap.removeOld"))).fetchSemanticsNodes().size)
+    }
+
+    @Test fun userSeesNoAdministration() {
+        val env = nas.env("user")
+        var page by androidx.compose.runtime.mutableStateOf<String?>(null)
+        shots.show(false) { androidx.compose.runtime.key(page) { StorageProgram(env, page, {}, pollMs = 0) } }
+        shots.untilText("Scratch")
+        for (key in listOf("storage.newVolume", "storage.options", "storage.checksHint.setup")) {
+            assertEquals(key, 0, compose.onAllNodes(hasText(io.github.ra5on.titanos.admin.adminTextForTest(key))).fetchSemanticsNodes().size)
+        }
+        for (p in listOf("manage", "import", "replace", "smart", "memory")) {
+            page = p
+            shots.settle()
+            shots.untilText(io.github.ra5on.titanos.admin.adminTextForTest("error.forbidden"))
+        }
+        assertEquals(emptyList<Any>(), nas.seen.toList())
+    }
+
+    @Test fun userDetailHasNoActions() {
+        val env = nas.env("user")
+        shots.show(false) { StorageProgram(env, null, {}, pollMs = 0, overview = OverviewState().apply { selected = "Data" }) }
+        shots.untilText("/mnt/Data")
+        for (key in listOf("storage.delete", "storage.addDisk", "storage.sleepChange", "cache.changeMode", "ops.usage", "storage.checkStart")) {
+            assertEquals(key, 0, compose.onAllNodes(hasText(io.github.ra5on.titanos.admin.adminTextForTest(key))).fetchSemanticsNodes().size)
+        }
     }
 }

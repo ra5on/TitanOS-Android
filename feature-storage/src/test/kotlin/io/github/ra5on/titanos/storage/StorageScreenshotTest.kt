@@ -9,6 +9,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import io.github.ra5on.titanos.admin.testing.FakeNas
@@ -34,6 +35,8 @@ class StorageScreenshotTest {
 
     private var screen by mutableStateOf(Screen(null))
     private var round by mutableStateOf(0)
+    private var rootW = 0f
+    private var rootH = 0f
 
     private fun go(s: Screen, wait: String) {
         screen = s
@@ -64,6 +67,7 @@ class StorageScreenshotTest {
             }
         }
         shots.untilText("Scratch")
+        compose.onRoot().fetchSemanticsNode().boundsInRoot.let { rootW = it.width; rootH = it.height }
         shots.capture("01-uebersicht", dark)
         go(Screen(null, overview = { tab = "disks" }), "sdj")
         shots.capture("02-platten", dark)
@@ -149,7 +153,7 @@ class StorageScreenshotTest {
 
     @After fun end() {
         nas.close()
-        shots.audit.found.removeAll(::isCoreBackdrop)
+        shots.audit.found.removeAll { isCoreBackdrop(it, rootW, rootH) }
         shots.audit.assertClean()
     }
 }

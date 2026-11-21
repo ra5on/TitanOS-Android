@@ -87,6 +87,8 @@ internal fun VolumeDetail(env: AdminEnv, model: StorageModel, nav: StorageNav, s
             else -> null
         }
         problem?.let { Notice(it, tone = Tone.Error) }
+        // RAID 0 (mdadm) hat keine Redundanz: deutlich, auch nach dem Anlegen.
+        if (volume.level == "raid0" && volume.filesystem != "btrfs") Notice(t("create.raid0Warning"), tone = Tone.Warn)
 
         // Mitglieder: Platte, Zustand, wahlweise Entfernen.
         Text(t("storage.members"), style = TitanType.small, color = c.muted)
