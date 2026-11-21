@@ -47,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -353,7 +354,9 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
     )
 
     Box(Modifier.fillMaxSize().background(c.bg).imePadding().agentKeys(model, nav, width.twoPanes).dropFiles(context, model, scope)) {
-      Row(Modifier.fillMaxSize()) {
+      // Liegt ein Blatt, eine Seite oder das Menü darüber, liest TalkBack nur das: der Inhalt darunter ist verborgen.
+      val covered = nav.layer != null || (nav.menuOpen && !width.twoPanes)
+      Row(Modifier.fillMaxSize().then(if (covered) Modifier.clearAndSetSemantics { } else Modifier)) {
         if (ready && width.twoPanes) Sidebar(model, nav, menuActs)
         Column(Modifier.weight(1f).fillMaxHeight()) {
             Box(Modifier.weight(1f).fillMaxWidth()) {

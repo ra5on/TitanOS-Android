@@ -275,6 +275,8 @@ class AgentScreenshotTest {
         nav.layer = Layer.ProjectOpen(model.projects.first()); capture("62-projekt", dark)
         nav.layer = Layer.ProjectEdit(model.projects.first()); capture("63-projekt-bearbeiten", dark)
         nav.layer = Layer.Notes; capture("60-notizen", dark)
+        // Unter einer Seite liest TalkBack nichts vom Inhalt darunter (Leiste unten, Kopf).
+        check(compose.onAllNodesWithText("Projekte").fetchSemanticsNodes().isEmpty()) { "Inhalt unter den Notizen ist für TalkBack sichtbar" }
         nav.layer = Layer.Archive; capture("64-archiv", dark)
         for ((id, n) in listOf("guard" to "waechter", "whatif" to "was-waere-wenn", "paper" to "papierkram", "handbook" to "handbuch", "emergency" to "notfall", "advisor" to "berater", "buddy" to "partner")) {
             nav.layer = Layer.Feature(id); capture("65-funktion-$n", dark)
