@@ -491,7 +491,7 @@ internal fun WhatIfView(model: AgentModel, startDisk: String?) {
             r.o("risk").takeIf { it.isNotEmpty() }?.let { risk -> item {
                 SGroup(tk("risk")) {
                     SRow(tk("risk.${risk.str("level")}"), icon = "shield")
-                    for (x in risk.os("reasons")) SRow(tk("r.${x.str("code")}", "disk" to x.str("disk"), "value" to x.long("value"), "years" to String.format(Locale.getDefault(), "%.1f", x.num("value") / 8766.0)))
+                    for (x in risk.os("reasons")) SRow(tk("r.${x.str("code")}", "disk" to x.str("disk"), "value" to x.long("value"), "years" to String.format(if (tr.de) Locale.GERMAN else Locale.ENGLISH, "%.1f", x.num("value") / 8766.0)))
                 }
             } }
             r.o("rebuild").takeIf { it.isNotEmpty() }?.let { rb -> item {

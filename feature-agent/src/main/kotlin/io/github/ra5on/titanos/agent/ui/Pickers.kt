@@ -80,7 +80,7 @@ fun TimeField(value: String, onChange: (String) -> Unit, label: String, modifier
     val h = value.substringBefore(':').toIntOrNull()?.coerceIn(0, 23) ?: 7
     val m = value.substringAfter(':', "").toIntOrNull()?.coerceIn(0, 59) ?: 0
     val is24 = DateFormat.is24HourFormat(context)
-    val shown = if (value.isEmpty()) "" else if (is24) "%02d:%02d".format(h, m) else java.time.LocalTime.of(h, m).format(DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault()))
+    val shown = if (value.isEmpty()) "" else if (is24) "%02d:%02d".format(h, m) else java.time.LocalTime.of(h, m).format(DateTimeFormatter.ofPattern("h:mm a", if (tr.de) Locale.GERMAN else Locale.ENGLISH))
     PickerBox(shown, label, "clock", enabled, if (width != null) modifier.width(width) else modifier.fillMaxWidth()) { open = true }
     if (open) {
         val state = rememberTimePickerState(h, m, is24)
