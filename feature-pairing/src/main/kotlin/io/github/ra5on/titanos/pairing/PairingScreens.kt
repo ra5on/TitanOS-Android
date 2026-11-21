@@ -110,7 +110,12 @@ fun errorText(e: PairError): String = when (e) {
     is PairError.Rate -> e.seconds?.let { stringResource(R.string.pair_err_rate, it) } ?: stringResource(R.string.pair_err_rate_plain)
     PairError.Rejected -> stringResource(R.string.pair_err_rejected)
     PairError.Expired -> stringResource(R.string.pair_err_expired)
-    PairError.Unreachable -> stringResource(R.string.pair_err_unreachable)
+    // Android 17: ohne „Geräte im lokalen Netzwerk“ ist jede Heimnetz-Adresse gesperrt – das sagen statt „nicht erreichbar“.
+    PairError.Unreachable -> if (localNetworkGranted(androidx.compose.ui.platform.LocalContext.current)) {
+        stringResource(R.string.pair_err_unreachable)
+    } else {
+        stringResource(R.string.pair_err_local_network)
+    }
     PairError.Certificate -> stringResource(R.string.pair_err_cert)
     PairError.Busy -> stringResource(R.string.pair_err_busy)
     PairError.BadAddress -> stringResource(R.string.pair_manual_bad_address)
@@ -184,7 +189,10 @@ fun ManualScreen(
             )
         }
         Note(stringResource(R.string.pair_manual_ts_note), Modifier.padding(top = 16.dp))
-        state.error?.let { Problem(if (it == PairError.Certificate) stringResource(R.string.pair_manual_mismatch) else errorText(it), Modifier.padding(top = 12.dp)) }
+        state.error?.let {
+            Problem(if (it == PairError.Certificate) stringResource(R.string.pair_manual_mismatch) else errorText(it), Modifier.padding(top = 12.dp))
+            LocalNetworkFix(it)
+        }
     }
 }
 
@@ -253,7 +261,10 @@ fun ConfirmScreen(
             stringResource(if (waiting) R.string.pair_note_waiting else R.string.pair_note_before, state.deviceName),
             Modifier.padding(top = 16.dp),
         )
-        state.error?.let { Problem(errorText(it), Modifier.padding(top = 12.dp)) }
+        state.error?.let {
+            Problem(errorText(it), Modifier.padding(top = 12.dp))
+            LocalNetworkFix(it)
+        }
     }
 }
 
@@ -274,4 +285,32 @@ private fun ReachMark(s: CheckStatus) {
             CheckStatus.Checking -> Text(stringResource(R.string.pair_checking), style = TitanType.small, color = c.muted)
         }
     }
+}
+
+/**
+ * Fehlt „Geräte im lokalen Netzwerk“ (Android 17), ein Knopf, der Android
+ * erneut fragt; hat Android die Frage schon endgültig abgelehnt, öffnet er die
+ * Einstellungen der App.
+ */
+@Composable
+private fun LocalNetworkFix(error: PairError) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    if (error != PairError.Unreachable || localNetworkGranted(context)) return
+    val activity = context as? android.app.Activity
+    val ask = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (!granted && activity != null && !activity.shouldShowRequestPermissionRationale(LOCAL_NETWORK)) {
+            context.startActivity(
+                android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(android.net.Uri.fromParts("package", context.packageName, null)),
+            )
+        }
+    }
+    io.github.ra5on.titanos.ui.components.TitanButton(
+        stringResource(R.string.pair_local_network_allow),
+        { ask.launch(LOCAL_NETWORK) },
+        Modifier.fillMaxWidth().padding(top = 8.dp),
+        io.github.ra5on.titanos.ui.components.ButtonKind.Primary,
+    )
 }

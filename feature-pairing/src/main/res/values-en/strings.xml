@@ -75,4 +75,6 @@
     <string name="perm_note">Notifications arrive without Google over the app’s own connection to the NAS. So that Android does not cut it, the app then asks to be exempted from battery saving.</string>
     <string name="perm_next">Continue</string>
     <string name="pair_sibling_permission">Pair the TitanOS apps with each other</string>
+    <string name="pair_err_local_network">Android does not allow the app to reach devices on the local network. Without this permission it cannot reach the NAS at home.</string>
+    <string name="pair_local_network_allow">Allow local network</string>
 </resources>

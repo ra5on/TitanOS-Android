@@ -75,4 +75,6 @@
     <string name="perm_note">Mitteilungen kommen ohne Google über eine eigene Verbindung zum NAS. Damit Android sie nicht trennt, bittet die App danach, sie vom Akku-Sparen auszunehmen.</string>
     <string name="perm_next">Weiter</string>
     <string name="pair_sibling_permission">TitanOS-Apps untereinander koppeln</string>
+    <string name="pair_err_local_network">Android erlaubt der App den Zugriff auf Geräte im lokalen Netzwerk nicht. Ohne diese Erlaubnis erreicht sie das NAS im Heimnetz nicht.</string>
+    <string name="pair_local_network_allow">Lokales Netzwerk erlauben</string>
 </resources>
