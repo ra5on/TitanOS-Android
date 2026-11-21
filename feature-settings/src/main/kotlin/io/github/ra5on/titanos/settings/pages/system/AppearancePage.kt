@@ -562,17 +562,17 @@ private fun LiquidPreview(look: JsonObject, desktop: JsonObject?, systemDark: Bo
     val p = paletteOf(look, look.str("theme", "graphit"), systemDark)
     val glass = look.int("glass", 45)
     Box(
-        Modifier.fillMaxWidth().height(110.dp).clip(RoundedCornerShape(12.dp))
+        Modifier.fillMaxWidth().heightIn(min = 110.dp).clip(RoundedCornerShape(12.dp))
             .background(wallpaperBrush(wallpaperOf(desktop), !p.dark)),
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            Modifier.widthIn(max = 260.dp).clip(RoundedCornerShape(16.dp)).background(p.surface.color().copy(alpha = (100 - glass) / 100f))
+            Modifier.padding(12.dp).widthIn(max = 300.dp).clip(RoundedCornerShape(16.dp)).background(p.surface.color().copy(alpha = (100 - glass) / 100f))
                 .border(1.dp, Color.White.copy(alpha = .25f), RoundedCornerShape(16.dp)).padding(horizontal = 20.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("15:11", style = TitanType.title, color = p.text.color())
-            Text(t("look.liquidSample"), style = TitanType.small, color = p.text.color())
+            Text(t("look.liquidSample"), style = TitanType.small, color = p.text.color(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }

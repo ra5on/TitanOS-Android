@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -348,7 +349,7 @@ fun UpdatesPage(a: PageArgs) {
                             cancel = tr.t("common.cancel"),
                             danger = false,
                             body = {
-                                if (kernelSwitch) Text(tr.t("update.kernel.confirm", "kernel" to chosen?.str("kernel").orEmpty()), style = TitanType.body, color = Titan.colors.text, modifier = Modifier.padding(bottom = 10.dp))
+                                if (kernelSwitch) Text(tr.t("update.kernel.confirm", "kernel" to breakable(chosen?.str("kernel").orEmpty())), style = TitanType.body, color = Titan.colors.text, modifier = Modifier.padding(bottom = 10.dp))
                                 Muted(tr.t(if (appUpdate) "update.app.confirmSafe" else "update.confirmSafe"), Modifier.padding(bottom = 12.dp))
                             },
                         ) { act("install") }
@@ -417,7 +418,7 @@ fun UpdatesPage(a: PageArgs) {
             )
         }
         val installedDesc = buildString {
-            append(t(if (st.str("variant") == "new") "update.kernel.runningNew" else "update.kernel.runningStable", "kernel" to running?.str("kernel").orEmpty().ifEmpty { "–" }))
+            append(t(if (st.str("variant") == "new") "update.kernel.runningNew" else "update.kernel.runningStable", "kernel" to breakable(running?.str("kernel").orEmpty().ifEmpty { "–" })))
             if (loaderKey.isNotEmpty()) append(" · " + t(loaderKey))
             if (st.str("base").isNotEmpty() && st.str("base") != st.str("version")) append("\n" + t("update.app.onBase", "version" to Fmt.osVersion(st.str("base"))))
         }
@@ -465,7 +466,7 @@ fun UpdatesPage(a: PageArgs) {
                     val tries = slot.longOrNull("triesLeft")?.takeIf { it > 0 }?.let { " · " + t("update.slot.tries", "count" to it) }.orEmpty()
                     SettingSub(
                         t("update.slot", "name" to slot.str("name").uppercase()),
-                        desc = slot.str("kernel").takeIf { it.isNotEmpty() }?.let { t(if (slot.str("variant") == "new") "update.kernel.slotNew" else "update.kernel.slotStable", "kernel" to it) },
+                        desc = slot.str("kernel").takeIf { it.isNotEmpty() }?.let { t(if (slot.str("variant") == "new") "update.kernel.slotNew" else "update.kernel.slotStable", "kernel" to breakable(it)) },
                         control = {
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Mono(shown(slot))
@@ -494,7 +495,7 @@ fun UpdatesPage(a: PageArgs) {
                         })
                         list.firstOrNull { it.str("version") == picked }?.let { pick ->
                             Block {
-                                Muted(t("update.choose.meta", "date" to Fmt.date(tr, Fmt.instant(pick.str("released"))), "kernel" to pick.str("kernel"), "size" to Fmt.bytes(tr, pick.long("size"))))
+                                Muted(t("update.choose.meta", "date" to Fmt.date(tr, Fmt.instant(pick.str("released"))), "kernel" to breakable(pick.str("kernel")), "size" to Fmt.bytes(tr, pick.long("size"))))
                                 leadOf(pick.str("changelog")).takeIf { it.isNotEmpty() }?.let { Value(it) }
                                 SmallButton(
                                     t("update.choose.install", "version" to pick.str("version")),
@@ -659,7 +660,7 @@ private fun Hero(st: JsonObject, available: JsonObject, kernelName: String, appU
             }
             ToneChip(t(if (kernelSwitch) "update.kind.kernel" else if (appUpdate) "update.kind.app" else "update.kind.system"), if (appUpdate) Tone.Ok else Tone.Info)
             ToneChip(Fmt.bytes(tr, size), Tone.Inactive)
-            if (kernelName.isNotEmpty()) ToneChip(t("update.hero.kernel", "kernel" to kernelName), Tone.Inactive)
+            if (kernelName.isNotEmpty()) ToneChip(t("update.hero.kernel", "kernel" to breakable(kernelName)), Tone.Inactive)
             if (available.str("channel") == "beta") ToneChip(t("update.channel.beta"), Tone.Warn)
         }
         SmallButton(buttonText, onInstall, kind = ButtonKind.Primary, enabled = enabled)
@@ -676,11 +677,11 @@ private fun Steps(steps: List<Pair<String, String>>) {
                 val done = state == "done"
                 val now = state == "now"
                 Box(
-                    Modifier.size(26.dp).clip(CircleShape).background(if (done || now) c.accent else c.chip).border(1.dp, if (done || now) c.accent else c.border, CircleShape),
+                    Modifier.defaultMinSize(26.dp, 26.dp).clip(CircleShape).background(if (done || now) c.accent else c.chip).border(1.dp, if (done || now) c.accent else c.border, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (done) Icon(TitanIcons.check, null, tint = c.onAccent, modifier = Modifier.size(16.dp))
-                    else Text("${i + 1}", style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = if (now) c.onAccent else c.muted)
+                    else Text("${i + 1}", style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = if (now) c.onAccent else c.muted, modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp))
                 }
                 Text(
                     "$label (${t("update.steps.$state")})",
@@ -870,3 +871,6 @@ private fun androidx.compose.foundation.layout.BoxScope.UpdateAllDialog(nodes: L
         },
     )
 }
+
+/** Kernel-Namen wie „6.12.57+deb13-amd64“ dürfen nach „+“ umbrechen (wie nach „-“), nie mitten in einer Zahl. */
+private fun breakable(kernel: String): String = kernel.replace("+", "+\u200B")

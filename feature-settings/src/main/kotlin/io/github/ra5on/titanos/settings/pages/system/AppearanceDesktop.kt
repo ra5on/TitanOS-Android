@@ -152,6 +152,9 @@ private fun BoxScope.WallpaperDialog(env: SettingsEnv, s: LookState, close: () -
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     val w = wallpaperOf(s.desktop)
+    val tileWidth = with(androidx.compose.ui.platform.LocalDensity.current) {
+        maxOf(104.dp, (io.github.ra5on.titanos.ui.rememberWidestWord(WALLPAPERS.map { tr.t("desktop.wallpaper.$it") }, TitanType.small.copy(fontWeight = FontWeight.SemiBold))).toDp() + 16.dp)
+    }
     fun setWall(next: JsonObject) {
         val d = s.desktop ?: JsonObject(emptyMap())
         s.changeDesktop(d.with("wallpaper" to next))
@@ -185,7 +188,7 @@ private fun BoxScope.WallpaperDialog(env: SettingsEnv, s: LookState, close: () -
                         val shape = RoundedCornerShape(10.dp)
                         WallpaperFill(
                             Wall(false, id, 0, w.live), light,
-                            Modifier.size(104.dp, 64.dp).clip(shape).border(if (on) 3.dp else 1.dp, if (on) Titan.colors.accent else Titan.colors.border, shape)
+                            Modifier.size(tileWidth, 64.dp).clip(shape).border(if (on) 3.dp else 1.dp, if (on) Titan.colors.accent else Titan.colors.border, shape)
                                 .clickable(role = Role.RadioButton) { setWall(jobj("source" to "builtin", "id" to id, "live" to w.live)) }
                                 .semantics(mergeDescendants = true) { stateDescription = if (on) "✓" else "" },
                         ) {
@@ -241,7 +244,7 @@ internal suspend fun loadPrograms(env: SettingsEnv, tr: io.github.ra5on.titanos.
         if (app.admin && !env.admin) return@filter false
         val on = (services[app.id] as? JsonPrimitive)?.content
         if (app.optIn) on == "true" else app.service == null || (services[app.service] as? JsonPrimitive)?.content != "false"
-    }.map { Program("app:" + it.id, tr.t("desktop.app.${it.id}"), it.glyph, it.gradient) }.toMutableList()
+    }.map { Program("app:" + it.id, tr.t("desktop.app.${it.id}").replace("\u00AD", ""), it.glyph, it.gradient) }.toMutableList()
     runCatching { env.api.obj("apps/mine").a("apps").objects() }.getOrNull()?.let { mine ->
         out += mine.map { m -> Program("docker:" + m.str("app"), m.str("title").ifEmpty { m.str("app") }, "", "blue") }.sortedBy { it.label.lowercase() }
     }
@@ -333,14 +336,17 @@ internal fun DockTab(s: LookState) {
         pinned.forEachIndexed { i, key ->
             val p = byKey[key]
             val name = p?.label ?: key
-            Row(
+            FlowRow(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Titan.colors.surface).border(1.dp, Titan.colors.border, RoundedCornerShape(12.dp)).padding(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                if (p != null) AppIcon(p.glyph, p.gradient, 30.dp)
-                Text(name, style = TitanType.body, color = Titan.colors.text, modifier = Modifier.weight(1f))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (p != null) AppIcon(p.glyph, p.gradient, 30.dp)
+                    Text(name, style = TitanType.body, color = Titan.colors.text)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     IconKey(WebIcons["arrowUp"], t("look.dock.up", "name" to name), { setPinned(pinned.toMutableList().apply { add(i - 1, removeAt(i)) }) }, enabled = i > 0)
                     IconKey(WebIcons["arrowDown"], t("look.dock.down", "name" to name), { setPinned(pinned.toMutableList().apply { add(i + 1, removeAt(i)) }) }, enabled = i < pinned.size - 1)
                     IconKey(WebIcons["close"], t("desktop.dock.unpinNamed", "name" to name), { setPinned(pinned - key) })

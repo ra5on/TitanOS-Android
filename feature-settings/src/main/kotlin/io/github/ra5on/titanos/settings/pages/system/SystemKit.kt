@@ -60,18 +60,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 // Gemeinsame Kleinteile der Seiten unter „System“ (nur für dieses Paket).
 
 /**
- * Anfragen, die [SettingsApi] nicht kann: ein roher Inhalt (Bild als Body wie
- * `PUT /app-icon` und `PUT /background` im Web) und Dateien außerhalb von
- * `/api/v1` (`/icons/app-192.png`, `/backgrounds/<id>.webp`). Wünschenswert
- * wäre das als Teil von [SettingsApi] in `common/`.
+ * Rohe Inhalte (Bild als Body wie `PUT /app-icon` und `PUT /background`
+ * im Web) über [SettingsApi.putBytes], dazu Dateien außerhalb von `/api/v1`
+ * (`/icons/app-192.png`, `/backgrounds/<id>.webp`), die [SettingsApi] nicht
+ * kann. Wünschenswert wäre `SettingsApi.file(path)` in `common/`.
  */
 internal object Raw {
     private fun nas(api: SettingsApi): NasConnection =
@@ -86,16 +83,8 @@ internal object Raw {
     }
 
     /** Schickt [bytes] roh an `/api/v1/<path>` (Content-Type [mime]); Antwort als JSON. */
-    suspend fun send(api: SettingsApi, path: String, bytes: ByteArray, mime: String, method: String = "PUT"): JsonElement = withContext(Dispatchers.IO) {
-        nas(api).execute { base ->
-            Request.Builder().url(base.resolve("/api/v1/" + path.removePrefix("/")) ?: error("bad path"))
-                .method(method, bytes.toRequestBody(mime.toMediaType())).build()
-        }.use { r ->
-            r.throwIfError()
-            val text = r.body.string()
-            if (text.isBlank()) JsonNull else SettingsApi.JSON.parseToJsonElement(text)
-        }
-    }
+    suspend fun send(api: SettingsApi, path: String, bytes: ByteArray, mime: String, method: String = "PUT"): JsonElement =
+        api.putBytes(path, bytes, mime, method)
 }
 
 /** Für Speichervorgänge, die eine verlassene Seite überdauern sollen (wie `keepalive` im Web). */
