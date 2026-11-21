@@ -3,6 +3,22 @@ package io.github.ra5on.titanos.mail
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import io.github.ra5on.titanos.ui.onSecondaryClick
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -99,6 +115,12 @@ fun ListScreen(
     now: Instant = Instant.now(),
     startEditing: Boolean = false,
     startFilter: Boolean = false,
+    showBack: Boolean = true,
+    onReplyTo: (MessageRow, ComposeMode) -> Unit = { _, _ -> },
+    selected: String? = null,
+    newWindow: ((MessageRow) -> Unit)? = null,
+    dragRows: Boolean = false,
+    startHelp: Boolean = false,
 ) {
     val c = Titan.colors
     val scope = rememberCoroutineScope()
@@ -115,6 +137,11 @@ fun ListScreen(
     var notice by remember { mutableStateOf("") }
     var actionError by remember { mutableStateOf<Throwable?>(null) }
     var refreshing by remember { mutableStateOf(false) }
+    var helpOpen by remember { mutableStateOf(startHelp) }
+    var cursor by remember { mutableStateOf<String?>(null) }
+    var searchFocused by remember { mutableStateOf(false) }
+    val searchFocus = remember { FocusRequester() }
+    val rootFocus = remember { FocusRequester() }
     var busy by remember { mutableStateOf(false) }
     val prefs = model.prefs
     val ctx = LocalContext.current
@@ -233,10 +260,53 @@ fun ListScreen(
         stringResource(R.string.mail_filter_allFolders).takeIf { list.scope == Scope.All },
     )
 
+    // Die Zeilen in der gezeigten Reihenfolge (für Pfeile, j/k, Enter).
+    val order = shown.map { it.second }
+    val current = order.firstOrNull { rowKey(it.row) == (cursor ?: selected) }
+    fun move(by: Int) {
+        if (order.isEmpty()) return
+        val at = order.indexOfFirst { rowKey(it.row) == (cursor ?: selected) }
+        val next = order[(if (at < 0) 0 else (at + by)).coerceIn(0, order.size - 1)]
+        cursor = rowKey(next.row)
+        // Liest man nebenan schon, folgt der Lesebereich (wie j/k im Web).
+        if (selected != null) onOpen(next.row)
+    }
+    LaunchedEffect(Unit) { runCatching { rootFocus.requestFocus() } }
     Page(
+        modifier = Modifier.focusRequester(rootFocus).focusable().onPreviewKeyEvent { e ->
+            if (!prefs.shortcuts || e.type != KeyEventType.KeyDown || e.isCtrlPressed || e.isAltPressed || e.isMetaPressed) return@onPreviewKeyEvent false
+            if (searchFocused) {
+                if (e.key == Key.Escape) { runCatching { rootFocus.requestFocus() }; return@onPreviewKeyEvent true }
+                return@onPreviewKeyEvent false
+            }
+            val items = current?.let { if (it.child || it.thread.rows.size == 1) listOf(it.row) else it.thread.rows }
+            when (e.key) {
+                Key.J, Key.DirectionDown -> move(1)
+                Key.K, Key.DirectionUp -> move(-1)
+                Key.Enter, Key.NumPadEnter -> current?.let { onOpen(it.row) }
+                Key.E -> items?.let { act(Act.Archive, it) }
+                Key.Delete, Key.Backspace -> items?.let { askDelete(it) }
+                Key.S -> items?.let { act(if (it.any { r -> r.flags.flagged }) Act.Unflag else Act.Flag, it) }
+                Key.U -> items?.let { act(if (it.any { r -> !r.flags.seen }) Act.Seen else Act.Unseen, it) }
+                Key.R -> current?.let { onReplyTo(it.row, ComposeMode.Reply) }
+                Key.A -> current?.let { onReplyTo(it.row, ComposeMode.ReplyAll) }
+                Key.F -> current?.let { onReplyTo(it.row, ComposeMode.Forward) }
+                Key.N, Key.C -> onCompose()
+                Key.M -> items?.let { moveFor = it }
+                Key.Slash -> if (e.isShiftPressed) helpOpen = true else runCatching { searchFocus.requestFocus() }
+                Key.Escape -> when {
+                    helpOpen -> helpOpen = false
+                    editing -> { editing = false; picked = emptySet() }
+                    showBack -> onBack()
+                    else -> return@onPreviewKeyEvent false
+                }
+                else -> return@onPreviewKeyEvent false
+            }
+            true
+        },
         scroll = false,
         topBar = {
-            LevelHead(heading, sub, back = stringResource(R.string.mail_back_folders), onBack = if (editing) null else onBack) {
+            LevelHead(heading, sub, back = stringResource(R.string.mail_back_folders), onBack = if (editing || !showBack) null else onBack) {
                 if (editing) {
                     TextAction(stringResource(R.string.mail_pick_all), { picked = list.rows.map(::rowKey).toSet() })
                     Spacer(Modifier.weight(1f))
@@ -247,7 +317,7 @@ fun ListScreen(
             }
         },
         bottomBar = {
-            if (filterOpen || actionsFor != null || moveFor != null) {
+            if (filterOpen || actionsFor != null || moveFor != null || helpOpen) {
                 // Ein Blatt ist offen: es reicht bis unten.
             } else if (editing) {
                 Column(Modifier.fillMaxWidth().background(c.header)) {
@@ -275,12 +345,15 @@ fun ListScreen(
             actionsFor?.let { items ->
                 MarkSheet(
                     model, items, list,
+                    onReply = { mode -> actionsFor = null; onReplyTo(items.first(), mode) },
+                    onNewWindow = newWindow?.takeIf { items.size == 1 }?.let { open -> { actionsFor = null; open(items.first()) } },
                     onAct = { k -> actionsFor = null; act(k, items) },
                     onMove = { actionsFor = null; moveFor = items },
                     onDelete = { actionsFor = null; askDelete(items) },
                     onDismiss = { actionsFor = null },
                 )
             }
+            if (helpOpen) KeysSheet { helpOpen = false }
             moveFor?.let { items ->
                 val acc = accOf(items.first())
                 val from = items.first().folder.ifEmpty { list.folder }
@@ -317,7 +390,7 @@ fun ListScreen(
         ) {
             LazyColumn(state = state, modifier = Modifier.fillMaxSize()) {
                 item {
-                    SearchField(search, { search = it }, list.scope == Scope.All, list.filters.q) {
+                    SearchField(search, { search = it }, list.scope == Scope.All, list.filters.q, Modifier.focusRequester(searchFocus).onFocusChanged { searchFocused = it.isFocused }) {
                         list.filters = list.filters.copy(q = search)
                         scope.launch { list.load() }
                     }
@@ -382,6 +455,9 @@ fun ListScreen(
                         SwipeRow(swipeOf(prefs.swipeRight), trailing, enabled = !editing) {
                             Entry(
                                 model, s, list, prefs, now, locale, zone,
+                                current = rowKey(s.row) == selected || rowKey(s.row) == cursor,
+                                drag = { MailDrag(accOf(s.row), s.row.folder.ifEmpty { list.folder }, (if (rowKey(s.row) in picked) pickedRows else items).filter { accOf(it) == accOf(s.row) }.map { it.uid }) }.takeIf { dragRows },
+                                onMore = { actionsFor = items },
                                 editing = editing,
                                 picked = items.all { rowKey(it) in picked },
                                 expanded = isOpen(s.thread),
@@ -424,11 +500,12 @@ fun groupName(g: DayGroup): String = stringResource(
 )
 
 @Composable
-private fun SearchField(value: String, onChange: (String) -> Unit, all: Boolean, current: String, onSubmit: () -> Unit) {
+private fun SearchField(value: String, onChange: (String) -> Unit, all: Boolean, current: String, modifier: Modifier, onSubmit: () -> Unit) {
     val label = stringResource(if (all) R.string.mail_search_labelAll else R.string.mail_search_label)
     Box(Modifier.padding(bottom = 10.dp)) {
         TextInput(
             value, onChange, label,
+            modifier = modifier,
             leading = TitanIcons.search,
             placeholder = stringResource(if (all) R.string.mail_search_placeholderAll else R.string.mail_search_placeholderShort),
             keyboard = KeyboardOptions(imeAction = ImeAction.Search),
@@ -458,6 +535,9 @@ private fun Entry(
     onClick: () -> Unit,
     onLong: () -> Unit,
     onToggle: () -> Unit,
+    current: Boolean = false,
+    drag: (() -> MailDrag?)? = null,
+    onMore: () -> Unit = {},
 ) {
     val c = Titan.colors
     val r = s.row
@@ -469,10 +549,18 @@ private fun Entry(
     val subject = r.subject.trim().ifEmpty { stringResource(R.string.mail_noSubject) }
     val count = if (s.child) 1 else s.thread.rows.size
     val unreadWord = stringResource(R.string.mail_mark_unread)
+    val source = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+    val pad = if (prefs.compact) 5.dp else 10.dp
     Column(Modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().combinedClickable(onClick = onClick, onLongClick = onLong)
-                .padding(start = if (s.child) 30.dp else 0.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+            Modifier.fillMaxWidth()
+                .selectedRow(current, hovered)
+                .hoverable(source)
+                .onSecondaryClick(onMore)
+                .mailDragSource(drag != null) { drag?.invoke() }
+                .combinedClickable(onClick = onClick, onLongClick = onLong)
+                .padding(start = if (s.child) 30.dp else 0.dp, top = pad, bottom = pad, end = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (editing) {
@@ -485,12 +573,12 @@ private fun Entry(
             if (prefs.avatars) SenderAvatar(model, r.from)
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.Top) {
-                    Text(name, style = TitanType.rowTitle.copy(fontWeight = if (unread) FontWeight.Bold else FontWeight.SemiBold), color = c.text, modifier = Modifier.weight(1f))
+                    Text(name, style = TitanType.rowTitle.copy(fontWeight = if (unread) FontWeight.Bold else FontWeight.SemiBold, hyphens = androidx.compose.ui.text.style.Hyphens.Auto), color = c.text, modifier = Modifier.weight(1f))
                     Text(listDate(r.date, locale, zone, now), style = TitanType.rowSub, color = c.muted, modifier = Modifier.padding(start = 8.dp))
                     if (!editing) Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                 }
                 Row(verticalAlignment = Alignment.Top) {
-                    Text(subject, style = TitanType.body.copy(fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal), color = c.text, modifier = Modifier.weight(1f))
+                    Text(subject, style = TitanType.body.copy(fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal, hyphens = androidx.compose.ui.text.style.Hyphens.Auto), color = c.text, modifier = Modifier.weight(1f))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(start = 6.dp)) {
                         if (attachment) Mark(MailIcons.clip, stringResource(R.string.mail_mark_attachment), c.muted)
                         if (flagged) Mark(MailIcons.flag, stringResource(R.string.mail_mark_flagged), c.warnInk)
@@ -608,6 +696,8 @@ private fun androidx.compose.foundation.layout.BoxScope.MarkSheet(
     onMove: () -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
+    onReply: ((ComposeMode) -> Unit)? = null,
+    onNewWindow: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     val unread = items.any { !it.flags.seen }
@@ -625,6 +715,52 @@ private fun androidx.compose.foundation.layout.BoxScope.MarkSheet(
             if (oneBox) ListRow(stringResource(R.string.mail_action_move), icon = { RowIcon(TitanIcons.move) }, divider = true, onClick = onMove)
             ListRow(stringResource(R.string.mail_action_delete), icon = { RowIcon(TitanIcons.trash, tint = c.dangerInk) }, titleColor = c.dangerInk, divider = true, onClick = onDelete)
         }
+        if (items.size == 1 && (onReply != null || onNewWindow != null)) {
+            Gap(12.dp)
+            Card(background = c.bg) {
+                if (onReply != null) {
+                    ListRow(stringResource(R.string.mail_action_reply), icon = { RowIcon(MailIcons.reply) }, onClick = { onReply(ComposeMode.Reply) })
+                    ListRow(stringResource(R.string.mail_action_replyAll), icon = { RowIcon(MailIcons.replyAll) }, divider = true, onClick = { onReply(ComposeMode.ReplyAll) })
+                    ListRow(stringResource(R.string.mail_action_forward), icon = { RowIcon(MailIcons.forward) }, divider = true, onClick = { onReply(ComposeMode.Forward) })
+                }
+                if (onNewWindow != null) ListRow(stringResource(R.string.mailx_new_window), icon = { RowIcon(MailIcons.open) }, divider = onReply != null, onClick = onNewWindow)
+            }
+        }
+    }
+}
+
+/** Tastenkürzel (KeysHelp.svelte), erweitert um die Aktionen am Handy mit Tastatur. */
+@Composable
+fun androidx.compose.foundation.layout.BoxScope.KeysSheet(onDismiss: () -> Unit) {
+    val c = Titan.colors
+    val keys = listOf(
+        "J  ↓" to R.string.mail_keys_next,
+        "K  ↑" to R.string.mail_keys_prev,
+        "Enter" to R.string.mailx_keys_open,
+        "E" to R.string.mail_keys_archive,
+        "R" to R.string.mail_keys_reply,
+        "A" to R.string.mail_action_replyAll,
+        "F" to R.string.mail_action_forward,
+        "S" to R.string.mail_action_flag,
+        "U" to R.string.mailx_swipe_seen,
+        "M" to R.string.mail_action_move,
+        "Entf  ⌫" to R.string.mail_keys_delete,
+        "N  C" to R.string.mail_action_compose,
+        "/" to R.string.mail_keys_search,
+        "?" to R.string.mail_keys_help,
+        "Esc" to R.string.mailx_keys_back,
+    )
+    Sheet(onDismiss = onDismiss) {
+        Text(stringResource(R.string.mail_keys_title), style = TitanType.title, color = c.text, modifier = Modifier.padding(bottom = 10.dp))
+        Card(background = c.bg) {
+            keys.forEachIndexed { i, (k, label) ->
+                ListRow(stringResource(label), divider = i > 0, right = {
+                    Text(k, style = TitanType.code.copy(fontSize = TitanType.small.fontSize), color = c.text,
+                        modifier = Modifier.background(c.chip, RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 3.dp))
+                })
+            }
+        }
+        Text(stringResource(R.string.mail_keys_note), style = TitanType.small, color = c.muted, modifier = Modifier.padding(4.dp))
     }
 }
 

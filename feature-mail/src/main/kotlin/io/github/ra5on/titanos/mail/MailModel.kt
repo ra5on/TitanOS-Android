@@ -358,6 +358,9 @@ class MailModel(
 
     var settings by mutableStateOf<MailSettings?>(null)
 
+    /** Nur Bildtests ohne NAS ([autoload] aus): Nachrichten nach uid statt zu laden. */
+    val previews = HashMap<Long, Message>()
+
     suspend fun loadSettings(): MailSettings = api.settings().also { settings = it }
 
     companion object {

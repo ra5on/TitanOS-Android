@@ -27,8 +27,7 @@ import java.util.TimeZone
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(qualifiers = "de-w412dp-h915dp-xhdpi")
-class MailScreenshotTest {
+abstract class MailShots {
 
     @Before
     fun german() {
@@ -37,9 +36,9 @@ class MailScreenshotTest {
         ApplicationProvider.getApplicationContext<android.content.Context>().getSharedPreferences("mail", 0).edit().clear().commit()
     }
 
-    private val now = Instant.parse("2026-11-20T11:40:00Z")
+    protected val now = Instant.parse("2026-11-20T11:40:00Z")
 
-    private fun shot(name: String, content: @Composable (MailModel) -> Unit) {
+    protected fun shot(name: String, content: @Composable (MailModel) -> Unit) {
         for (dark in listOf(true, false)) {
             captureRoboImage("build/outputs/roborazzi/$name-${if (dark) "dunkel" else "hell"}.png") {
                 TitanTheme(dark = dark) {
@@ -72,10 +71,12 @@ class MailScreenshotTest {
             rules = listOf(MailRule("r1", "acc-privat", true, RuleWhen(from = "rechnung@stadtwerke.example"), RuleThen(moveTo = "Rechnungen", markRead = true))),
             pushContent = true,
         )
+        m.previews[1000] = message
+        m.list("acc-privat", "INBOX").show(rows().map { it.copy(account = "acc-privat", folder = "INBOX") }, 72)
         return m
     }
 
-    private fun rows(): List<MessageRow> = listOf(
+    protected fun rows(): List<MessageRow> = listOf(
         MessageRow(1000, Address("Sparkasse Beispiel", "service@bank.example"), subject = "Ihr Kontoauszug November", date = "2026-11-20T11:36:00Z", flags = Flags(seen = false), attachments = true, preview = "Guten Tag, Ihr Auszug für November liegt bei."),
         MessageRow(999, Address("Hausverwaltung Sonnenhof Nord Verwaltungsgesellschaft mbH & Co. KG", "info@hv.example"), subject = "Nebenkostenabrechnung 2026 für die Wohnung im dritten Obergeschoss links mit allen Belegen", date = "2026-11-20T10:59:00Z", flags = Flags(seen = true, flagged = true), attachments = true, preview = "Sehr geehrte Frau Beispiel, anbei die Abrechnung mit allen Belegen und den Zählerständen."),
         MessageRow(998, Address("", "noreply@paket.example"), subject = "Ihr Paket kommt heute", date = "2026-11-20T10:22:00Z", flags = Flags(seen = true, answered = true), messageId = "<p2@x>", inReplyTo = "<p1@x>"),
@@ -84,6 +85,22 @@ class MailScreenshotTest {
         MessageRow(995, Address("Anna Beispiel", "anna@example.org"), subject = "Termin am Freitag", date = "2026-11-10T09:08:00Z", flags = Flags(seen = true)),
     )
 
+
+    protected val message = Message(
+        uid = 1000, folder = "INBOX",
+        from = Address("Sparkasse Beispiel", "service@bank.example"),
+        to = listOf(Address("Alex", "alex@gmx.example"), Address("Kim Lang", "kim@example.org"), Address("", "ben@example.org"), Address("", "anna@example.org")),
+        subject = "Ihr Kontoauszug November", date = "2026-11-20T11:36:00Z",
+        text = "Guten Tag,\n\nIhr Auszug für November liegt bei. Fragen beantworten wir unter https://www.sparkasse.example/hilfe.\n\nFreundliche Grüße\nIhre Sparkasse",
+        externalImages = true,
+        flags = Flags(seen = true, flagged = true),
+        attachments = listOf(Attachment("2", "Kontoauszug_November_2026_Girokonto_DE12345678901234567890.pdf", "application/pdf", 182_000)),
+    )
+}
+
+/** Bildtests von Mail am Handy (412 dp), hell und dunkel. */
+@Config(qualifiers = "de-w412dp-h915dp-xhdpi")
+class MailScreenshotTest : MailShots() {
     @Test
     fun boxes() = shot("mail-01-postfaecher") { m -> BoxesScreen(m, {}, { _, _ -> }, {}, {}, {}) }
 
@@ -117,16 +134,6 @@ class MailScreenshotTest {
         ListScreen(m, l, {}, {}, {}, now = now)
     }
 
-    private val message = Message(
-        uid = 1000, folder = "INBOX",
-        from = Address("Sparkasse Beispiel", "service@bank.example"),
-        to = listOf(Address("Alex", "alex@gmx.example"), Address("Kim Lang", "kim@example.org"), Address("", "ben@example.org"), Address("", "anna@example.org")),
-        subject = "Ihr Kontoauszug November", date = "2026-11-20T11:36:00Z",
-        text = "Guten Tag,\n\nIhr Auszug für November liegt bei. Fragen beantworten wir unter https://www.sparkasse.example/hilfe.\n\nFreundliche Grüße\nIhre Sparkasse",
-        externalImages = true,
-        flags = Flags(seen = true, flagged = true),
-        attachments = listOf(Attachment("2", "Kontoauszug_November_2026_Girokonto_DE12345678901234567890.pdf", "application/pdf", 182_000)),
-    )
 
     @Test
     fun read() = shot("mail-07-nachricht") { m ->
@@ -150,7 +157,7 @@ class MailScreenshotTest {
     @Test
     fun disabled() = shot("mail-12-nicht-freigegeben") { m ->
         m.access = false
-        MailHost(m, null, androidx.compose.runtime.remember { mutableStateListOf<MailRoute>(MailRoute.Boxes) }) {}
+        MailHost(m, null, androidx.compose.runtime.remember { mutableStateListOf<MailRoute>(MailRoute.Boxes) }, onClose = {})
     }
 
     @Test
@@ -158,4 +165,52 @@ class MailScreenshotTest {
         m.accounts = emptyList()
         BoxesScreen(m, {}, { _, _ -> }, {}, {}, {})
     }
+}
+
+/** Breiten wie ein Tablet im Hochformat: Liste und Lesebereich nebeneinander. */
+@Config(qualifiers = "de-w840dp-h900dp-mdpi")
+class MailSplitScreenshotTest : MailShots() {
+    @Test
+    fun splitHost() = shot("mail-20-split") { m ->
+        MailHost(m, null, androidx.compose.runtime.remember { mutableStateListOf<MailRoute>(MailRoute.Boxes, MailRoute.Folder("acc-privat", "INBOX"), MailRoute.Read("acc-privat", "INBOX", 1000, "acc-privat", "INBOX")) }, onClose = {})
+    }
+}
+
+/** Großer Bildschirm: drei Spalten mit den Postfächern links, Übersicht im leeren Lesebereich. */
+@Config(qualifiers = "de-w1280dp-h800dp-mdpi")
+class MailWideScreenshotTest : MailShots() {
+    @Test
+    fun wideHost() = shot("mail-21-wide") { m ->
+        MailHost(m, null, androidx.compose.runtime.remember { mutableStateListOf<MailRoute>(MailRoute.Boxes, MailRoute.Folder("acc-privat", "INBOX"), MailRoute.Read("acc-privat", "INBOX", 1000, "acc-privat", "INBOX")) }, onClose = {})
+    }
+
+    @Test
+    fun wideOverview() = shot("mail-22-wide-uebersicht") { m ->
+        MailHost(m, null, androidx.compose.runtime.remember { mutableStateListOf<MailRoute>(MailRoute.Boxes, MailRoute.Folder("acc-privat", "INBOX")) }, onClose = {})
+    }
+
+    @Test
+    fun keys() = shot("mail-23-tastenkuerzel") { m ->
+        ListScreen(m, m.list("acc-privat", "INBOX"), {}, {}, {}, now = now, startHelp = true)
+    }
+}
+
+/** Schrift 200 %: nichts abgeschnitten, alles bricht um. */
+@Config(qualifiers = "de-w412dp-h915dp-xhdpi")
+class MailLargeFontScreenshotTest : MailShots() {
+    @org.junit.Before
+    fun bigFont() {
+        org.robolectric.RuntimeEnvironment.setFontScale(2f)
+    }
+
+    @Test
+    fun listBig() = shot("mail-30-liste-schrift200") { m -> ListScreen(m, m.list("acc-privat", "INBOX"), {}, {}, {}, now = now) }
+
+    @Test
+    fun readBig() = shot("mail-31-nachricht-schrift200") { m ->
+        ReadScreen(m, null, "acc-privat", "INBOX", 1000, "Posteingang", {}, { _, _ -> }, {}, {}, preset = message)
+    }
+
+    @Test
+    fun boxesBig() = shot("mail-32-postfaecher-schrift200") { m -> BoxesScreen(m, {}, { _, _ -> }, {}, {}, {}) }
 }

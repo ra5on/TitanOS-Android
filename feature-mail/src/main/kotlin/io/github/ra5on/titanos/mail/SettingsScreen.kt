@@ -1,7 +1,11 @@
 package io.github.ra5on.titanos.mail
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -122,10 +126,18 @@ fun SettingsScreen(model: MailModel, onBack: () -> Unit, onAccount: (String) -> 
     val imagesTitle = stringResource(R.string.mailx_images)
     val afterTitle = stringResource(R.string.mailx_after)
     val autosaveTitle = stringResource(R.string.mailx_autosave)
+    val startTitle = stringResource(R.string.mailx_start_at)
+    val startOptions = listOf(
+        StartAt.Boxes.name to stringResource(R.string.mailx_start_boxes),
+        StartAt.AllInboxes.name to stringResource(R.string.mail_box_allInboxes),
+        StartAt.MainInbox.name to stringResource(R.string.mailx_start_main),
+    )
+    var keysOpen by remember { mutableStateOf(false) }
 
     Page(
         topBar = { LevelHead(stringResource(R.string.mail_settings_title), back = stringResource(R.string.mail_box_title), onBack = onBack) },
         overlay = {
+            if (keysOpen) KeysSheet { keysOpen = false }
             ask?.let { a ->
                 Sheet(onDismiss = { ask = null }) {
                     Text(a.title, style = TitanType.title, color = c.text, modifier = Modifier.padding(bottom = 10.dp))
@@ -156,8 +168,7 @@ fun SettingsScreen(model: MailModel, onBack: () -> Unit, onAccount: (String) -> 
             }
         },
     ) {
-        // Postfächer
-        SectionHeader(stringResource(R.string.mail_settings_accounts), top = 4.dp)
+        ExpandGroup(stringResource(R.string.mail_settings_accounts), startOpen = true) {
         Card {
             val list = model.orderedAccounts()
             list.forEachIndexed { i, a ->
@@ -174,9 +185,8 @@ fun SettingsScreen(model: MailModel, onBack: () -> Unit, onAccount: (String) -> 
         }
         if (model.accounts.orEmpty().isEmpty()) Text(stringResource(R.string.mail_empty_text), style = TitanType.small, color = c.muted, modifier = Modifier.padding(4.dp))
 
-        // Ansicht (auf diesem Handy)
-        SectionHeader(stringResource(R.string.mail_settings_view))
-        Text(stringResource(R.string.mailx_device_only), style = TitanType.small, color = c.muted, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+        }
+        ExpandGroup(stringResource(R.string.mail_settings_view), stringResource(R.string.mailx_device_only)) {
         Card {
             ToggleRow(stringResource(R.string.mail_thread_toggle), p.threads, { model.updatePrefs(p.copy(threads = it)) }, sub = stringResource(R.string.mail_settings_threadsDesc))
             ToggleRow(stringResource(R.string.mailx_avatars), p.avatars, { model.updatePrefs(p.copy(avatars = it)) }, sub = stringResource(R.string.mailx_avatars_desc), divider = true)
@@ -195,11 +205,29 @@ fun SettingsScreen(model: MailModel, onBack: () -> Unit, onAccount: (String) -> 
             ToggleRow(stringResource(R.string.mailx_quote), p.quoteReply, { model.updatePrefs(p.copy(quoteReply = it)) }, sub = stringResource(R.string.mailx_quote_desc), divider = true)
         }
 
+        }
+        ExpandGroup(stringResource(R.string.mailx_group_list), stringResource(R.string.mailx_device_only)) {
+            Card {
+                ListRow(startTitle, sub = startOptions.first { it.first == p.startAt.name }.second, chevron = true,
+                    onClick = { ask = Ask(startTitle, startOptions, p.startAt.name) { k -> model.updatePrefs(model.prefs.copy(startAt = StartAt.valueOf(k))) } })
+                ToggleRow(stringResource(R.string.mailx_compact), p.compact, { model.updatePrefs(p.copy(compact = it)) }, sub = stringResource(R.string.mailx_compact_desc), divider = true)
+                ToggleRow(stringResource(R.string.mailx_folder_counts), p.folderCounts, { model.updatePrefs(p.copy(folderCounts = it)) }, divider = true)
+                ToggleRow(stringResource(R.string.mailx_all_recipients), p.showAllRecipients, { model.updatePrefs(p.copy(showAllRecipients = it)) }, sub = stringResource(R.string.mailx_all_recipients_desc), divider = true)
+                ToggleRow(stringResource(R.string.mailx_ask_subject), p.askEmptySubject, { model.updatePrefs(p.copy(askEmptySubject = it)) }, divider = true)
+            }
+        }
+        ExpandGroup(stringResource(R.string.mailx_group_input), stringResource(R.string.mailx_group_input_desc)) {
+            Card {
+                ToggleRow(stringResource(R.string.mailx_shortcuts), p.shortcuts, { model.updatePrefs(p.copy(shortcuts = it)) }, sub = stringResource(R.string.mailx_shortcuts_desc))
+                ListRow(stringResource(R.string.mail_keys_title), chevron = true, divider = true, onClick = { keysOpen = true })
+                ToggleRow(stringResource(R.string.mailx_drag), p.dragDrop, { model.updatePrefs(p.copy(dragDrop = it)) }, sub = stringResource(R.string.mailx_drag_desc), divider = true)
+                ListRow(stringResource(R.string.mailx_reset_columns), sub = stringResource(R.string.mailx_reset_columns_desc, p.sidebarDp.toString(), p.listDp.toString()), divider = true,
+                    onClick = { model.updatePrefs(p.copy(sidebarDp = MailPrefs().sidebarDp, listDp = MailPrefs().listDp)) })
+            }
+        }
         loadError?.let { Problem(errorText(it), Modifier.padding(top = 10.dp)) }
         val s = settings
-        // Meldungen
-        SectionHeader(stringResource(R.string.mail_settings_notify))
-        Text(stringResource(R.string.mail_settings_notifyDesc), style = TitanType.small, color = c.muted, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+        ExpandGroup(stringResource(R.string.mail_settings_notify), stringResource(R.string.mail_settings_notifyDesc)) {
         notifyError?.let { Problem(errorText(it), Modifier.padding(bottom = 8.dp)) }
         Card {
             if (s != null) {
@@ -221,10 +249,10 @@ fun SettingsScreen(model: MailModel, onBack: () -> Unit, onAccount: (String) -> 
         }
         Text(stringResource(R.string.mailx_android_notify), style = TitanType.small, color = c.muted, modifier = Modifier.padding(4.dp))
 
+
+        }
         if (s != null) {
-            // Signaturen
-            SectionHeader(stringResource(R.string.mail_settings_signatures))
-            Text(stringResource(R.string.mail_settings_signaturesDesc), style = TitanType.small, color = c.muted, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+            ExpandGroup(stringResource(R.string.mail_settings_signatures), stringResource(R.string.mail_settings_signaturesDesc)) {
             if (s.signatures.isEmpty()) Text(stringResource(R.string.mail_signature_none), style = TitanType.body, color = c.muted, modifier = Modifier.padding(4.dp))
             for (sig in s.signatures) {
                 Card(Modifier.padding(bottom = 10.dp)) {
@@ -239,9 +267,8 @@ fun SettingsScreen(model: MailModel, onBack: () -> Unit, onAccount: (String) -> 
             val newSig = stringResource(R.string.mail_signature_newName)
             TitanButton(stringResource(R.string.mail_signature_add), { touch(s.copy(signatures = s.signatures + Signature(newId(), newSig, ""))) }, icon = TitanIcons.plus)
 
-            // Regeln
-            SectionHeader(stringResource(R.string.mail_settings_rules))
-            Text(stringResource(R.string.mail_settings_rulesDesc), style = TitanType.small, color = c.muted, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+            }
+            ExpandGroup(stringResource(R.string.mail_settings_rules), stringResource(R.string.mail_settings_rulesDesc)) {
             if (s.rules.isEmpty()) Text(stringResource(R.string.mail_rule_none), style = TitanType.body, color = c.muted, modifier = Modifier.padding(4.dp))
             s.rules.forEachIndexed { n, r ->
                 fun set(next: MailRule) = touch(s.copy(rules = s.rules.map { if (it.id == r.id) next else it }))
@@ -274,6 +301,7 @@ fun SettingsScreen(model: MailModel, onBack: () -> Unit, onAccount: (String) -> 
                 touch(s.copy(rules = s.rules + MailRule(newId(), first, true)))
             }, icon = TitanIcons.plus, enabled = model.accounts.orEmpty().isNotEmpty())
             Note(stringResource(R.string.mail_settings_rulesNew), Modifier.padding(top = 10.dp))
+            }
             Gap(14.dp)
             saveError?.let { Problem(errorText(it), Modifier.padding(bottom = 8.dp)) }
             if (saved) Done(stringResource(R.string.mail_settings_saved), Modifier.padding(bottom = 8.dp))
@@ -281,6 +309,31 @@ fun SettingsScreen(model: MailModel, onBack: () -> Unit, onAccount: (String) -> 
         }
         Gap(24.dp)
     }
+}
+
+/**
+ * Eine aufklappbare Gruppe wie SettingGroup der Systemsteuerung: Kopf mit
+ * Titel, Beschreibung und Zustand in Worten (auf-/zugeklappt).
+ */
+@Composable
+fun ExpandGroup(title: String, desc: String? = null, startOpen: Boolean = false, content: @Composable () -> Unit) {
+    var open by androidx.compose.runtime.saveable.rememberSaveable(title) { mutableStateOf(startOpen) }
+    val c = Titan.colors
+    val stateWord = stringResource(if (open) R.string.mailx_shown else R.string.mailx_collapsed)
+    androidx.compose.foundation.layout.Row(
+        Modifier.fillMaxWidth().padding(top = 14.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+            .clickable(role = androidx.compose.ui.semantics.Role.Button) { open = !open }
+            .semantics { stateDescription = stateWord }
+            .padding(horizontal = 6.dp, vertical = 10.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = TitanType.rowTitle, color = c.text)
+            if (desc != null) Text(desc, style = TitanType.small, color = c.muted)
+        }
+        androidx.compose.material3.Icon(if (open) TitanIcons.down else TitanIcons.chev, null, tint = c.accent, modifier = Modifier.padding(start = 8.dp))
+    }
+    if (open) Column(Modifier.padding(top = 4.dp)) { content() }
 }
 
 /** Ein Ordner mit Rolle in Worten (Regeln). */

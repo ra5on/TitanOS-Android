@@ -178,7 +178,9 @@ fun SenderAvatar(model: MailModel?, from: Address, size: Dp = 40.dp) {
             Image(photo, null, Modifier.size(size), contentScale = ContentScale.Crop)
         } else {
             val name = from.name.ifBlank { from.addr.substringBefore('@') }
-            Text(initials(name), style = TitanType.rowTitle.copy(fontSize = TitanType.rowTitle.fontSize * (size.value / 44f)), color = IconSquareColors.on)
+            // Initialen in fester Größe zum Kreis: große Schrift des Systems sprengt ihn nicht.
+            val fixed = with(LocalDensity.current) { (size * 0.38f).toSp() }
+            Text(initials(name), style = TitanType.rowTitle.copy(fontSize = fixed, lineHeight = fixed), color = IconSquareColors.on)
         }
     }
 }
@@ -348,6 +350,14 @@ data class Swipe(val label: String, val icon: ImageVector, val color: Color, val
 @Composable
 fun SwipeRow(leading: Swipe?, trailing: List<Swipe>, enabled: Boolean = true, content: @Composable BoxScope.() -> Unit) {
     var offset by remember { mutableFloatStateOf(0f) }
+    var dragging by remember { androidx.compose.runtime.mutableStateOf(false) }
+    val still = reduceMotion()
+    // Zurückschnappen weich, außer beim Ziehen und wenn Android Animationen abgeschaltet hat.
+    val shown by androidx.compose.animation.core.animateFloatAsState(
+        offset,
+        if (still || dragging) androidx.compose.animation.core.snap() else androidx.compose.animation.core.tween(180),
+        label = "swipe",
+    )
     val density = LocalDensity.current
     val button = with(density) { 76.dp.toPx() }
     val open = button * trailing.size
@@ -361,7 +371,9 @@ fun SwipeRow(leading: Swipe?, trailing: List<Swipe>, enabled: Boolean = true, co
             .then(
                 if (!enabled) Modifier else Modifier.pointerInput(trailing.size, leading) {
                     detectHorizontalDragGestures(
+                        onDragStart = { dragging = true },
                         onDragEnd = {
+                            dragging = false
                             when {
                                 leading != null && offset > width * 0.25f -> { leading.run(); offset = 0f }
                                 trailing.isNotEmpty() && offset < -width * 0.6f -> { trailing.first().run(); offset = 0f }
@@ -369,7 +381,7 @@ fun SwipeRow(leading: Swipe?, trailing: List<Swipe>, enabled: Boolean = true, co
                                 else -> offset = 0f
                             }
                         },
-                        onDragCancel = { offset = 0f },
+                        onDragCancel = { dragging = false; offset = 0f },
                     ) { _, drag ->
                         offset = (offset + drag).coerceIn(if (trailing.isEmpty()) 0f else -width, if (leading == null) 0f else width * 0.5f)
                     }
@@ -377,12 +389,12 @@ fun SwipeRow(leading: Swipe?, trailing: List<Swipe>, enabled: Boolean = true, co
             ),
     ) {
         // Hinter der Zeile: links die führende Aktion, rechts die Knöpfe.
-        if (offset > 0 && leading != null) {
+        if (shown > 0 && leading != null) {
             Row(Modifier.matchParentSize().background(leading.color).padding(start = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                 SwipeLabel(leading)
             }
         }
-        if (offset < 0 && trailing.isNotEmpty()) {
+        if (shown < 0 && trailing.isNotEmpty()) {
             Row(Modifier.matchParentSize(), horizontalArrangement = Arrangement.End) {
                 for (s in trailing.reversed()) {
                     Box(
@@ -392,7 +404,7 @@ fun SwipeRow(leading: Swipe?, trailing: List<Swipe>, enabled: Boolean = true, co
                 }
             }
         }
-        Box(Modifier.offset { IntOffset(offset.roundToInt(), 0) }.background(Titan.colors.bg).fillMaxWidth()) {
+        Box(Modifier.offset { IntOffset(shown.roundToInt(), 0) }.background(Titan.colors.bg).fillMaxWidth()) {
             content()
             if (abs(offset) > 1f) Box(Modifier.matchParentSize().clickable { offset = 0f })
         }
@@ -405,6 +417,13 @@ private fun SwipeLabel(s: Swipe) {
         Icon(s.icon, null, tint = Color.White, modifier = Modifier.size(22.dp))
         Text(s.label, style = TitanType.small, color = Color.White, textAlign = TextAlign.Center)
     }
+}
+
+/** „Animationen entfernen“ in den Bedienungshilfen bzw. Animationsskala 0: dann nichts bewegen. */
+@Composable
+fun reduceMotion(): Boolean {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    return remember { android.provider.Settings.Global.getFloat(ctx.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
 }
 
 /** Die Sprache der Oberfläche, beobachtbar für Compose. */

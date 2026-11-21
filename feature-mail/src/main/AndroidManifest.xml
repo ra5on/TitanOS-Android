@@ -2,6 +2,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <application>
+        <!--
+            Mail in einem eigenen Fenster (Nachricht, Verfassen) und für mailto:.
+            Ohne Intent-Filter: den setzt app-titanos, wenn mailto: hierher soll.
+        -->
+        <activity
+            android:name=".MailWindowActivity"
+            android:exported="false"
+            android:resizeableActivity="true"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation|density|uiMode" />
         <!-- Anhänge öffnen und teilen (MailFileProvider, nur der Cache von Mail). -->
         <provider
             android:name=".MailFileProvider"

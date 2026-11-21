@@ -9,6 +9,9 @@ enum class SwipeAction { Seen, Flag, Archive, Delete, Move, Junk, None }
 /** Externe Bilder: wie im Web nur auf Tippen, oder immer bzw. nur von Kontakten. */
 enum class ImagesMode { Ask, Contacts, Always }
 
+/** Wo Mail beim Öffnen beginnt (ab Werk: Postfächer, auf großen Bildschirmen der Posteingang daneben). */
+enum class StartAt { Boxes, AllInboxes, MainInbox }
+
 /** Nach Löschen, Verschieben, Archivieren einer offenen Nachricht. */
 enum class AfterRemove { Next, List }
 
@@ -31,6 +34,23 @@ data class MailPrefs(
     val favourites: List<String> = emptyList(),
     val collapsed: Set<String> = emptySet(),
     val collapsedFolders: Set<String> = emptySet(),
+    /** Breiten der Spalten auf großen Bildschirmen (dp), gezogen am Trenner. */
+    val sidebarDp: Int = 300,
+    val listDp: Int = 400,
+    /** Wo Mail beim Öffnen beginnt. */
+    val startAt: StartAt = StartAt.Boxes,
+    /** Tastenkürzel (j/k, e, r …) mit Tastatur. */
+    val shortcuts: Boolean = true,
+    /** Vor dem Senden ohne Betreff fragen. */
+    val askEmptySubject: Boolean = true,
+    /** Zeilen der Liste: normal oder dichter. */
+    val compact: Boolean = false,
+    /** Zahl der Ungelesenen neben den Ordnern. */
+    val folderCounts: Boolean = true,
+    /** Ziehen auf großen Bildschirmen: Mails auf Ordner, Anhänge in andere Apps. */
+    val dragDrop: Boolean = true,
+    /** Kopf einer Nachricht: alle Empfänger gleich offen. */
+    val showAllRecipients: Boolean = false,
 ) {
     companion object {
         private const val FILE = "mail"
@@ -55,6 +75,15 @@ data class MailPrefs(
                 favourites = p.getString("favourites", null)?.split('\u0002')?.filter { it.isNotEmpty() } ?: emptyList(),
                 collapsed = p.getStringSet("collapsed", emptySet())!!.toSet(),
                 collapsedFolders = p.getStringSet("collapsedFolders", emptySet())!!.toSet(),
+                sidebarDp = p.getInt("sidebarDp", d.sidebarDp).coerceIn(200, 520),
+                listDp = p.getInt("listDp", d.listDp).coerceIn(260, 720),
+                startAt = e("startAt", StartAt.entries.toTypedArray(), d.startAt),
+                shortcuts = p.getBoolean("shortcuts", d.shortcuts),
+                askEmptySubject = p.getBoolean("askEmptySubject", d.askEmptySubject),
+                compact = p.getBoolean("compact", d.compact),
+                folderCounts = p.getBoolean("folderCounts", d.folderCounts),
+                dragDrop = p.getBoolean("dragDrop", d.dragDrop),
+                showAllRecipients = p.getBoolean("showAllRecipients", d.showAllRecipients),
             )
         }
 
@@ -73,6 +102,15 @@ data class MailPrefs(
                 putString("favourites", v.favourites.joinToString("\u0002"))
                 putStringSet("collapsed", v.collapsed)
                 putStringSet("collapsedFolders", v.collapsedFolders)
+                putInt("sidebarDp", v.sidebarDp)
+                putInt("listDp", v.listDp)
+                putString("startAt", v.startAt.name)
+                putBoolean("shortcuts", v.shortcuts)
+                putBoolean("askEmptySubject", v.askEmptySubject)
+                putBoolean("compact", v.compact)
+                putBoolean("folderCounts", v.folderCounts)
+                putBoolean("dragDrop", v.dragDrop)
+                putBoolean("showAllRecipients", v.showAllRecipients)
             }
         }
     }

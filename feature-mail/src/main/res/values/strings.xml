@@ -139,6 +139,15 @@
     <string name="mail_hit_folder" formatted="true">in %1$s</string>
     <string name="mail_images_blocked">Externe Bilder blockiert – sie würden dem Absender verraten, dass und wann du die Nachricht öffnest.</string>
     <string name="mail_images_load">Bilder laden</string>
+    <string name="mail_keys_archive">Archivieren</string>
+    <string name="mail_keys_delete">Löschen</string>
+    <string name="mail_keys_help">Diese Übersicht</string>
+    <string name="mail_keys_next">Nächste Nachricht</string>
+    <string name="mail_keys_note">Die Tasten wirken nicht, während du in ein Feld schreibst.</string>
+    <string name="mail_keys_prev">Vorige Nachricht</string>
+    <string name="mail_keys_reply">Antworten</string>
+    <string name="mail_keys_search">Suchfeld</string>
+    <string name="mail_keys_title">Tastenkürzel</string>
     <string name="mail_link_someWarn">Achtung: ein Link führt woanders hin, als sein Text sagt</string>
     <string name="mail_link_title" formatted="true">Linkziele in dieser Nachricht (%1$s)</string>
     <string name="mail_link_warn" formatted="true">Text nennt eine andere Adresse – der Link führt zu %1$s</string>
@@ -156,8 +165,24 @@
     <string name="mail_move_title">Verschieben nach …</string>
     <string name="mail_noSender">(ohne Absender)</string>
     <string name="mail_noSubject">(kein Betreff)</string>
+    <string name="mail_overview_flagged" formatted="true">Markiert in %1$s</string>
+    <string name="mail_overview_flaggedMore">Alle markierten anzeigen</string>
+    <string name="mail_overview_flaggedNone">Keine markierten Nachrichten.</string>
+    <string name="mail_overview_hint">Wähle eine Nachricht in der Liste, um sie hier zu lesen.</string>
+    <string name="mail_overview_links">Schnellzugriff</string>
+    <string name="mail_overview_live">Neue Mails im Posteingang kommen von selbst.</string>
+    <string name="mail_overview_notYet">Noch nicht geladen.</string>
+    <string name="mail_overview_poll">Die Liste lädt alle 2 Minuten neu, solange Mail offen ist.</string>
+    <string name="mail_overview_refreshed" formatted="true">Zuletzt aktualisiert: %1$s</string>
+    <string name="mail_overview_settings">Mail-Einstellungen</string>
+    <string name="mail_overview_showUnread">Ungelesene anzeigen</string>
+    <string name="mail_overview_title">Übersicht</string>
+    <string name="mail_overview_unreadNone" formatted="true">Keine ungelesenen Nachrichten in %1$s.</string>
+    <string name="mail_overview_unreadSome" formatted="true">%1$s ungelesene Nachrichten in %2$s</string>
     <string name="mail_pick_all">Alle auswählen</string>
     <string name="mail_rawText">Diese Mail ist zu groß gegliedert, um sie aufzubereiten (zum Beispiel eine Sammelmail mit sehr vielen Beiträgen). Mail zeigt den Anfang ihres Inhalts so, wie er ankam – ohne Formatierung und ohne Anhänge.</string>
+    <string name="mail_resize_folders">Breite der Ordnerspalte</string>
+    <string name="mail_resize_list">Breite der Nachrichtenliste</string>
     <string name="mail_role_archive">Archiv</string>
     <string name="mail_role_drafts">Entwürfe</string>
     <string name="mail_role_inbox">Posteingang</string>
@@ -288,8 +313,11 @@
     <string name="mailx_after">Nach Löschen, Verschieben oder Archivieren</string>
     <string name="mailx_after_list">Zurück zur Liste</string>
     <string name="mailx_after_next">Nächste Nachricht öffnen</string>
+    <string name="mailx_all_recipients">Alle Empfänger gleich zeigen</string>
+    <string name="mailx_all_recipients_desc">Sonst stehen im Kopf zwei Namen und „und … weitere“.</string>
     <string name="mailx_android_notify">Ob und wie das Handy klingelt, stellst du unter Mitteilungen › Was soll klingeln? ein (Art „Mail“).</string>
     <string name="mailx_any_day">beliebig</string>
+    <string name="mailx_ask_subject">Vor dem Senden ohne Betreff fragen</string>
     <string name="mailx_autosave">Entwurf automatisch sichern</string>
     <string name="mailx_autosave_minutes" formatted="true">alle %1$s Minuten</string>
     <string name="mailx_autosave_off">Nie (nur beim Verlassen)</string>
@@ -300,6 +328,8 @@
     <string name="mailx_cert_changed">Das NAS zeigt ein anderes Zertifikat als beim Koppeln. Die App fragt auf der Startseite, wie es weitergeht.</string>
     <string name="mailx_clear_day" formatted="true">%1$s leeren</string>
     <string name="mailx_collapsed">eingeklappt</string>
+    <string name="mailx_compact">Dichtere Liste</string>
+    <string name="mailx_compact_desc">Weniger Abstand zwischen den Mails; Text bleibt ganz.</string>
     <string name="mailx_confirm_delete">Vor dem Löschen fragen</string>
     <string name="mailx_confirm_delete_desc">Ab Werk fragt Mail nur im Papierkorb, wo Löschen endgültig ist.</string>
     <string name="mailx_delete_ask">Nachricht löschen?</string>
@@ -307,11 +337,16 @@
     <string name="mailx_delete_to_trash">Sie kommen in den Papierkorb des Postfachs.</string>
     <string name="mailx_device_only">Gilt für dieses Handy.</string>
     <string name="mailx_draft_auto" formatted="true">Der Entwurf wird alle %1$s Sekunden gespeichert, solange du schreibst; „Zurück“ behält ihn.</string>
+    <string name="mailx_drag">Ziehen und Ablegen</string>
+    <string name="mailx_drag_desc">Auf großen Bildschirmen: Mails auf einen Ordner desselben Postfachs, Anhänge in andere Apps. Dateien ins Verfassen geht immer.</string>
+    <string name="mailx_drag_hint">zum Ziehen bereit</string>
+    <string name="mailx_drop_files">Loslassen hängt die Dateien an.</string>
     <string name="mailx_edit_draft">Entwurf bearbeiten</string>
     <string name="mailx_error_detail" formatted="true">Fehler: %1$s</string>
     <string name="mailx_fav_off">Aus den Favoriten lösen</string>
     <string name="mailx_fav_on">Als Favorit anheften</string>
     <string name="mailx_file_exists">Eine Datei mit diesem Namen gibt es dort schon.</string>
+    <string name="mailx_folder_counts">Ungelesene neben den Ordnern zählen</string>
     <string name="mailx_folder_delete">Ordner löschen</string>
     <string name="mailx_folder_delete_text">Der Ordner und die E-Mails darin werden beim Anbieter gelöscht und lassen sich nicht zurückholen.</string>
     <string name="mailx_folder_delete_title" formatted="true">„%1$s“ löschen?</string>
@@ -323,22 +358,32 @@
     <string name="mailx_forget_text" formatted="true">Gelernte Adresse %1$s aus den Vorschlägen nehmen? Kontakte bleiben, wie sie sind.</string>
     <string name="mailx_from_nas">vom NAS</string>
     <string name="mailx_from_phone">Datei vom Handy</string>
+    <string name="mailx_group_input">Gesten, Tastatur und Maus</string>
+    <string name="mailx_group_input_desc">Wischen, Tastenkürzel, Ziehen und Spalten auf großen Bildschirmen. Gilt für dieses Handy.</string>
+    <string name="mailx_group_list">Liste und Lesen</string>
     <string name="mailx_home">Start</string>
     <string name="mailx_images">Externe Bilder</string>
     <string name="mailx_images_always">Immer laden</string>
     <string name="mailx_images_ask">Erst auf Tippen (empfohlen)</string>
     <string name="mailx_images_contacts">Bei Absendern aus den Kontakten laden</string>
     <string name="mailx_is_fav">Favorit</string>
+    <string name="mailx_keys_back">Zurück, Auswahl beenden</string>
+    <string name="mailx_keys_open">Nachricht öffnen</string>
     <string name="mailx_link_go">Öffnen</string>
     <string name="mailx_link_open">Link öffnen?</string>
     <string name="mailx_main_account">Hauptpostfach – neue E-Mails gehen von hier aus</string>
     <string name="mailx_move_down" formatted="true">„%1$s“ nach unten</string>
     <string name="mailx_move_up" formatted="true">„%1$s“ nach oben</string>
+    <string name="mailx_narrower">Schmaler</string>
     <string name="mailx_nas_attach" formatted="true">%1$s anhängen</string>
     <string name="mailx_nas_attach_none">Dateien antippen</string>
     <string name="mailx_nas_here">Hier speichern</string>
     <string name="mailx_nas_readonly">In diese Freigabe darf dein Konto nicht schreiben.</string>
     <string name="mailx_nas_up">Eine Ebene hinauf</string>
+    <string name="mailx_new_window">In neuem Fenster öffnen</string>
+    <string name="mailx_no_subject_text">Die E-Mail hat keinen Betreff. Empfänger sehen dann nur „(kein Betreff)“.</string>
+    <string name="mailx_no_subject_title">Ohne Betreff senden?</string>
+    <string name="mailx_not_paired">Mail braucht ein gekoppeltes NAS. Öffne zuerst die App TitanOS und kopple sie.</string>
     <string name="mailx_notify_this">Meldung bei neuer E-Mail</string>
     <string name="mailx_open">Öffnen</string>
     <string name="mailx_order_failed" formatted="true">Reihenfolge nicht gespeichert: %1$s</string>
@@ -346,14 +391,23 @@
     <string name="mailx_preview_desc">Der Anfang jeder Mail unter dem Betreff, ganz, nie abgeschnitten.</string>
     <string name="mailx_quote">Beim Antworten zitieren</string>
     <string name="mailx_quote_desc">Die Nachricht steht mit „&gt; “ unter deiner Antwort.</string>
+    <string name="mailx_reply_window">In neuem Fenster antworten</string>
+    <string name="mailx_reset_columns">Spaltenbreiten zurücksetzen</string>
+    <string name="mailx_reset_columns_desc" formatted="true">Jetzt: Postfächer %1$s dp, Liste %2$s dp. Die Trenner lassen sich ziehen.</string>
     <string name="mailx_saved_downloads" formatted="true">„%1$s“ liegt in Downloads.</string>
     <string name="mailx_share">Teilen</string>
     <string name="mailx_share_text">Text teilen</string>
+    <string name="mailx_shortcuts">Tastenkürzel</string>
+    <string name="mailx_shortcuts_desc">Mit Tastatur: J/K, Enter, E, R, A, F, S, U, M, Entf, N, /, ?, Esc. Nie, während du in ein Feld schreibst.</string>
     <string name="mailx_shown">aufgeklappt</string>
+    <string name="mailx_start_at">Beim Öffnen von Mail</string>
+    <string name="mailx_start_boxes">Postfächer (groß: dazu der Posteingang)</string>
+    <string name="mailx_start_main">Posteingang des Hauptpostfachs</string>
     <string name="mailx_swipe_left">Ganz nach links wischen</string>
     <string name="mailx_swipe_none">Nichts</string>
     <string name="mailx_swipe_right">Nach rechts wischen</string>
     <string name="mailx_swipe_seen">Gelesen/Ungelesen</string>
     <string name="mailx_take_typed" formatted="true">„%1$s“ übernehmen</string>
     <string name="mailx_unreachable">Das NAS ist nicht erreichbar.</string>
+    <string name="mailx_wider">Breiter</string>
 </resources>

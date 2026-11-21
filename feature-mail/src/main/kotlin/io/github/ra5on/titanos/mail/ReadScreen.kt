@@ -4,6 +4,17 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.core.net.toUri
 import android.provider.MediaStore
 import android.webkit.WebResourceRequest
@@ -91,14 +102,22 @@ fun ReadScreen(
     onMailto: (String) -> Unit,
     onRemoved: () -> Unit,
     preset: Message? = null,
+    showBack: Boolean = true,
+    newWindow: (() -> Unit)? = null,
+    newWindowCompose: ((ComposeMode) -> Unit)? = null,
 ) {
     val c = Titan.colors
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
-    var msg by remember(account, folder, uid) { mutableStateOf(preset) }
+    var msg by remember(account, folder, uid) { mutableStateOf(preset ?: model.previews[uid].takeIf { !model.autoload }) }
     var error by remember(account, folder, uid) { mutableStateOf<Throwable?>(null) }
     var images by remember(account, folder, uid) { mutableStateOf(false) }
-    var showAll by remember(account, folder, uid) { mutableStateOf(false) }
+    var showAll by remember(account, folder, uid) { mutableStateOf(model.prefs.showAllRecipients) }
+    val width = io.github.ra5on.titanos.ui.currentWidth()
+    val activity = ctx as? android.app.Activity
+    // Anhänge, die schon im Cache liegen: auf großen Bildschirmen lassen sie sich in andere Apps ziehen.
+    val cached = remember(account, folder, uid) { androidx.compose.runtime.mutableStateMapOf<String, Uri>() }
+    val rootFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     var busy by remember { mutableStateOf(false) }
     var actionError by remember { mutableStateOf<Throwable?>(null) }
     var notice by remember { mutableStateOf("") }
@@ -130,10 +149,15 @@ fun ReadScreen(
         }
     }
     LaunchedEffect(account, folder, uid, images) {
-        if (preset != null && !images) return@LaunchedEffect
+        if ((preset != null || !model.autoload) && !images) return@LaunchedEffect
         // Bilder automatisch nach der Einstellung dieses Handys (ab Werk: nur auf Tippen).
         load()
         val m = msg ?: return@LaunchedEffect
+        if (width.twoPanes && model.prefs.dragDrop) {
+            for (a in m.attachments.filter { !it.inline && it.size in 1..10_000_000 }) {
+                runCatching { cached[a.part] = fetchPart(ctx, model, account, folder, uid, a) }
+            }
+        }
         if (!images && m.externalImages) {
             val auto = when (prefs.images) {
                 ImagesMode.Always -> true
@@ -168,8 +192,26 @@ fun ReadScreen(
     val attachmentSaved = stringResource(R.string.mail_attachment_saved, "%1\$s", "%2\$s")
     val savedDownloads = stringResource(R.string.mailx_saved_downloads, "%1\$s")
 
+    LaunchedEffect(Unit) { runCatching { rootFocus.requestFocus() } }
     Page(
-        topBar = { LevelHead(msg?.subject?.trim()?.ifEmpty { null } ?: stringResource(R.string.mail_noSubject), back = backLabel, onBack = onBack) },
+        modifier = Modifier.focusRequester(rootFocus).focusable().onPreviewKeyEvent { e ->
+            val m = msg
+            if (!model.prefs.shortcuts || m == null || e.type != KeyEventType.KeyDown || e.isCtrlPressed || e.isAltPressed || e.isMetaPressed) return@onPreviewKeyEvent false
+            when (e.key) {
+                Key.R -> onCompose(ComposeMode.Reply, m)
+                Key.A -> onCompose(ComposeMode.ReplyAll, m)
+                Key.F -> onCompose(ComposeMode.Forward, m)
+                Key.E -> if (f?.role != "archive") act { model.archive(listOf(row), null); onRemoved() }
+                Key.Delete, Key.Backspace -> if (inTrash || prefs.confirmDelete) confirmDelete = true else delete()
+                Key.S -> setFlag("flagged", !m.flags.flagged)
+                Key.U -> setFlag("seen", !m.flags.seen)
+                Key.M -> moving = true
+                Key.Escape -> if (showBack) onBack() else return@onPreviewKeyEvent false
+                else -> return@onPreviewKeyEvent false
+            }
+            true
+        },
+        topBar = { LevelHead(msg?.subject?.trim()?.ifEmpty { null } ?: stringResource(R.string.mail_noSubject), back = backLabel, onBack = if (showBack) onBack else null) },
         bottomBar = {
             if (!(replyMenu || more || moving || saving != null)) Column(Modifier.fillMaxWidth().background(c.header)) {
                 Divider()
@@ -221,6 +263,8 @@ fun ReadScreen(
                         }
                         ListRow(stringResource(R.string.mail_action_replyAll), icon = { RowIcon(MailIcons.replyAll) }, divider = true, onClick = { more = false; onCompose(ComposeMode.ReplyAll, m) })
                         ListRow(stringResource(R.string.mail_action_forward), icon = { RowIcon(MailIcons.forward) }, divider = true, onClick = { more = false; onCompose(ComposeMode.Forward, m) })
+                        if (newWindow != null) ListRow(stringResource(R.string.mailx_new_window), icon = { RowIcon(MailIcons.open) }, divider = true, onClick = { more = false; newWindow() })
+                        if (newWindowCompose != null) ListRow(stringResource(R.string.mailx_reply_window), icon = { RowIcon(MailIcons.open) }, divider = true, onClick = { more = false; newWindowCompose(ComposeMode.Reply) })
                         ListRow(stringResource(R.string.mailx_share_text), icon = { RowIcon(TitanIcons.share) }, divider = true, onClick = {
                             more = false
                             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_SUBJECT, m.subject).putExtra(Intent.EXTRA_TEXT, m.text)
@@ -328,7 +372,9 @@ fun ReadScreen(
             Card(Modifier.padding(bottom = 12.dp)) {
                 files.forEachIndexed { i, a ->
                     val name = a.name.ifBlank { stringResource(R.string.mail_attachment_noName) }
-                    ListRow(name, sub = sizeText(a.size), icon = { RowIcon(MailIcons.clip) }, divider = i > 0, bottom = {
+                    val dragHint = stringResource(R.string.mailx_drag_hint)
+                    ListRow(name, sub = sizeText(a.size) + if (cached[a.part] != null) " · $dragHint" else "", icon = { RowIcon(MailIcons.clip) }, divider = i > 0,
+                        modifier = Modifier.attachmentDragSource(width.twoPanes && model.prefs.dragDrop, a.type) { cached[a.part] }, bottom = {
                         FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             TitanButton(stringResource(R.string.mailx_open), { act { openPart(ctx, model, account, folder, uid, a, share = false) } }, icon = MailIcons.open, enabled = !busy)
                             TitanButton(stringResource(R.string.mailx_share), { act { openPart(ctx, model, account, folder, uid, a, share = true) } }, icon = TitanIcons.share, enabled = !busy)
@@ -470,11 +516,16 @@ private fun cacheFile(ctx: Context, a: Attachment): File {
     return File(dir, name)
 }
 
-/** Holt einen Anhang in den Cache und öffnet bzw. teilt ihn über den MailFileProvider. */
-private suspend fun openPart(ctx: Context, model: MailModel, account: String, folder: String, uid: Long, a: Attachment, share: Boolean) {
+/** Holt einen Anhang in den Cache; die Adresse gibt der MailFileProvider (content://). */
+private suspend fun fetchPart(ctx: Context, model: MailModel, account: String, folder: String, uid: Long, a: Attachment): Uri {
     val file = cacheFile(ctx, a)
     withContext(Dispatchers.IO) { file.outputStream().use { model.api.part(account, folder, uid, a.part, it) } }
-    val uri = androidx.core.content.FileProvider.getUriForFile(ctx, ctx.packageName + ".mail", file)
+    return androidx.core.content.FileProvider.getUriForFile(ctx, ctx.packageName + ".mail", file)
+}
+
+/** Holt einen Anhang in den Cache und öffnet bzw. teilt ihn über den MailFileProvider. */
+private suspend fun openPart(ctx: Context, model: MailModel, account: String, folder: String, uid: Long, a: Attachment, share: Boolean) {
+    val uri = fetchPart(ctx, model, account, folder, uid, a)
     val type = a.type.ifBlank { "application/octet-stream" }
     val intent = if (share) {
         Intent(Intent.ACTION_SEND).setType(type).putExtra(Intent.EXTRA_STREAM, uri)

@@ -1,6 +1,14 @@
 package io.github.ra5on.titanos.mail
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.semantics.selected
+import io.github.ra5on.titanos.ui.onSecondaryClick
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -116,6 +124,8 @@ fun BoxesScreen(
     onSetup: () -> Unit,
     onSettings: () -> Unit,
     startEditing: Boolean = false,
+    selected: Pair<String, String>? = null,
+    dropTargets: Boolean = false,
 ) {
     var editing by remember { mutableStateOf(startEditing) }
     var sheetFor by remember { mutableStateOf<Pair<String, MailFolder>?>(null) }
@@ -247,6 +257,7 @@ fun BoxesScreen(
         },
     ) {
         model.accountsError?.let { Problem(errorText(it), Modifier.padding(bottom = 10.dp)) }
+        if (ask == null) error?.let { Problem(errorText(it), Modifier.padding(bottom = 10.dp)) }
         model.orderError?.let { Problem(stringResource(R.string.mailx_order_failed, errorText(it)), Modifier.padding(bottom = 10.dp)) }
         if (model.live == Live.Down) Note(stringResource(R.string.mail_live_down), Modifier.padding(bottom = 10.dp), icon = TitanIcons.warn)
         when {
@@ -263,6 +274,7 @@ fun BoxesScreen(
                         icon = { RowIcon(TitanIcons.mail, tint = c.accent) },
                         right = { if (unread > 0) Count(unread) },
                         chevron = true,
+                        modifier = Modifier.selectedRow(selected == ALL to "inbox"),
                         onClick = { onOpen(ALL, "inbox") },
                     )
                     ListRow(
@@ -270,6 +282,7 @@ fun BoxesScreen(
                         icon = { RowIcon(MailIcons.flag, tint = c.accent) },
                         chevron = true,
                         divider = true,
+                        modifier = Modifier.selectedRow(selected == ALL to "flagged"),
                         onClick = { onOpen(ALL, "flagged") },
                     )
                 }
@@ -282,12 +295,16 @@ fun BoxesScreen(
                     io.github.ra5on.titanos.ui.components.SectionHeader(stringResource(R.string.mail_fav_title))
                     Card {
                         favs.forEachIndexed { i, (acc, f) ->
-                            FolderRow(f, 0, i > 0, sub = model.account(acc)?.label, onClick = { onOpen(acc, f.path) }, onLong = { sheetFor = acc to f })
+                            FolderRow(f, 0, i > 0, sub = model.account(acc)?.label, selected = selected == acc to f.path, counts = prefs.folderCounts,
+                                drop = DropInfo(dropTargets, acc) { d -> moveDropped(model, scope, d, f) { error = it } },
+                                onClick = { onOpen(acc, f.path) }, onLong = { sheetFor = acc to f })
                         }
                     }
                 }
                 for (a in accounts) {
-                    AccountSection(model, a, onOpen = { onOpen(a.id, it) }, onLong = { f -> sheetFor = a.id to f }, onNewFolder = { name = ""; ask = FolderAsk.Create(a.id, null) })
+                    AccountSection(model, a, selected = selected?.takeIf { it.first == a.id }?.second, drop = DropInfo(dropTargets, a.id) { _ -> },
+                        onDropTo = { d, f -> moveDropped(model, scope, d, f) { error = it } },
+                        onOpen = { onOpen(a.id, it) }, onLong = { f -> sheetFor = a.id to f }, onNewFolder = { name = ""; ask = FolderAsk.Create(a.id, null) })
                 }
                 Gap(14.dp)
                 Card {
@@ -304,13 +321,48 @@ internal fun Count(n: Int) {
     Text(n.toString(), style = TitanType.rowSub, color = Titan.colors.muted)
 }
 
+/** Ob ein Ordner gezogene Mails annimmt, und aus welchem Postfach. */
+class DropInfo(val enabled: Boolean, val account: String, val onDrop: (MailDrag) -> Unit)
+
+/** Hervorhebung des offenen Ordners bzw. der offenen Mail (auch mit Zeiger darüber). */
 @Composable
-private fun FolderRow(f: MailFolder, depth: Int, divider: Boolean, sub: String? = null, toggle: (@Composable () -> Unit)? = null, onClick: () -> Unit, onLong: () -> Unit) {
+fun Modifier.selectedRow(selected: Boolean, hovered: Boolean = false): Modifier {
     val c = Titan.colors
+    return when {
+        selected -> this.background(c.accent.copy(alpha = .16f))
+        hovered -> this.background(c.text.copy(alpha = .06f))
+        else -> this
+    }.semantics { if (selected) this.selected = true }
+}
+
+@Composable
+private fun FolderRow(
+    f: MailFolder,
+    depth: Int,
+    divider: Boolean,
+    sub: String? = null,
+    toggle: (@Composable () -> Unit)? = null,
+    selected: Boolean = false,
+    counts: Boolean = true,
+    drop: DropInfo? = null,
+    onDropHere: ((MailDrag) -> Unit)? = null,
+    onClick: () -> Unit,
+    onLong: () -> Unit,
+) {
+    val c = Titan.colors
+    val source = remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+    var dropHover by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth()) {
         if (divider) Divider()
         Row(
-            Modifier.fillMaxWidth().combinedClickable(onClick = onClick, onLongClick = onLong).heightIn(min = 52.dp)
+            Modifier.fillMaxWidth()
+                .mailDropTarget(drop?.enabled == true, drop?.account.orEmpty(), f.path, { dropHover = it }) { d -> (onDropHere ?: drop?.onDrop)?.invoke(d) }
+                .then(if (dropHover) Modifier.border(2.dp, c.accent, RoundedCornerShape(10.dp)) else Modifier)
+                .selectedRow(selected || dropHover, hovered)
+                .hoverable(source)
+                .onSecondaryClick(onLong)
+                .combinedClickable(onClick = onClick, onLongClick = onLong).heightIn(min = 52.dp)
                 .padding(start = (14 + depth * 22).dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -320,7 +372,7 @@ private fun FolderRow(f: MailFolder, depth: Int, divider: Boolean, sub: String? 
                 Text(folderName(f), style = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize), color = c.text)
                 if (sub != null) Text(sub, style = TitanType.rowSub, color = c.muted)
             }
-            if (f.unread > 0) Count(f.unread)
+            if (counts && f.unread > 0) Count(f.unread)
             Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(18.dp))
             toggle?.invoke()
         }
@@ -328,7 +380,16 @@ private fun FolderRow(f: MailFolder, depth: Int, divider: Boolean, sub: String? 
 }
 
 @Composable
-private fun AccountSection(model: MailModel, a: MailAccount, onOpen: (String) -> Unit, onLong: (MailFolder) -> Unit, onNewFolder: () -> Unit) {
+private fun AccountSection(
+    model: MailModel,
+    a: MailAccount,
+    selected: String?,
+    drop: DropInfo,
+    onDropTo: (MailDrag, MailFolder) -> Unit,
+    onOpen: (String) -> Unit,
+    onLong: (MailFolder) -> Unit,
+    onNewFolder: () -> Unit,
+) {
     val c = Titan.colors
     val prefs = model.prefs
     val collapsed = a.id in prefs.collapsed
@@ -374,6 +435,10 @@ private fun AccountSection(model: MailModel, a: MailAccount, onOpen: (String) ->
             val isFolded = af.folder.path in folded
             FolderRow(
                 af.folder, af.depth, i > 0,
+                selected = selected == af.folder.path,
+                counts = prefs.folderCounts,
+                drop = drop,
+                onDropHere = { d -> onDropTo(d, af.folder) },
                 toggle = if (!hasChildren) null else ({
                     val label = stringResource(if (isFolded) R.string.mail_tree_expand else R.string.mail_tree_collapse, folderName(af.folder))
                     IconButton(if (isFolded) TitanIcons.chev else TitanIcons.down, label, {
@@ -461,6 +526,17 @@ private fun EditBoxes(model: MailModel) {
         }
     }
     Spacer(Modifier.width(1.dp))
+}
+
+/** Gezogene Mails in einen Ordner verschieben (nur innerhalb des Postfachs). */
+private fun moveDropped(model: MailModel, scope: kotlinx.coroutines.CoroutineScope, d: MailDrag, to: MailFolder, onError: (Throwable) -> Unit) {
+    scope.launch {
+        try {
+            model.move(d.uids.map { MessageRow(uid = it, account = d.account, folder = d.folder) }, null, to.path)
+        } catch (e: Exception) {
+            onError(e)
+        }
+    }
 }
 
 /** Die gespeicherte Reihenfolge einer Gruppe nach dem Verschieben (mergeGroup). */

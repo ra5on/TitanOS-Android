@@ -139,6 +139,15 @@
     <string name="mail_hit_folder" formatted="true">in %1$s</string>
     <string name="mail_images_blocked">External images blocked – they would tell the sender that and when you open the message.</string>
     <string name="mail_images_load">Load images</string>
+    <string name="mail_keys_archive">Archive</string>
+    <string name="mail_keys_delete">Delete</string>
+    <string name="mail_keys_help">This overview</string>
+    <string name="mail_keys_next">Next message</string>
+    <string name="mail_keys_note">The keys do nothing while you type in a field.</string>
+    <string name="mail_keys_prev">Previous message</string>
+    <string name="mail_keys_reply">Reply</string>
+    <string name="mail_keys_search">Search field</string>
+    <string name="mail_keys_title">Keyboard shortcuts</string>
     <string name="mail_link_someWarn">Careful: a link leads somewhere other than its text says</string>
     <string name="mail_link_title" formatted="true">Link targets in this message (%1$s)</string>
     <string name="mail_link_warn" formatted="true">The text names another address – the link leads to %1$s</string>
@@ -156,8 +165,24 @@
     <string name="mail_move_title">Move to …</string>
     <string name="mail_noSender">(no sender)</string>
     <string name="mail_noSubject">(no subject)</string>
+    <string name="mail_overview_flagged" formatted="true">Flagged in %1$s</string>
+    <string name="mail_overview_flaggedMore">Show all flagged</string>
+    <string name="mail_overview_flaggedNone">No flagged messages.</string>
+    <string name="mail_overview_hint">Choose a message in the list to read it here.</string>
+    <string name="mail_overview_links">Quick links</string>
+    <string name="mail_overview_live">New mail in the inbox arrives by itself.</string>
+    <string name="mail_overview_notYet">Not loaded yet.</string>
+    <string name="mail_overview_poll">The list reloads every 2 minutes while Mail is open.</string>
+    <string name="mail_overview_refreshed" formatted="true">Last refreshed: %1$s</string>
+    <string name="mail_overview_settings">Mail settings</string>
+    <string name="mail_overview_showUnread">Show unread</string>
+    <string name="mail_overview_title">Overview</string>
+    <string name="mail_overview_unreadNone" formatted="true">No unread messages in %1$s.</string>
+    <string name="mail_overview_unreadSome" formatted="true">%1$s unread messages in %2$s</string>
     <string name="mail_pick_all">Select all</string>
     <string name="mail_rawText">This mail is too large in structure to be prepared (for example a digest with a great many posts). Mail shows the beginning of its content as it came – without formatting and without attachments.</string>
+    <string name="mail_resize_folders">Width of the folder column</string>
+    <string name="mail_resize_list">Width of the message list</string>
     <string name="mail_role_archive">Archive</string>
     <string name="mail_role_drafts">Drafts</string>
     <string name="mail_role_inbox">Inbox</string>
@@ -288,8 +313,11 @@
     <string name="mailx_after">After deleting, moving or archiving</string>
     <string name="mailx_after_list">Back to the list</string>
     <string name="mailx_after_next">Open the next message</string>
+    <string name="mailx_all_recipients">Show all recipients at once</string>
+    <string name="mailx_all_recipients_desc">Otherwise the head shows two names and “and … more”.</string>
     <string name="mailx_android_notify">Whether and how the phone rings is set under Notifications › What should ring? (kind “Mail”).</string>
     <string name="mailx_any_day">any</string>
+    <string name="mailx_ask_subject">Ask before sending without subject</string>
     <string name="mailx_autosave">Save the draft automatically</string>
     <string name="mailx_autosave_minutes" formatted="true">every %1$s minutes</string>
     <string name="mailx_autosave_off">Never (only when leaving)</string>
@@ -300,6 +328,8 @@
     <string name="mailx_cert_changed">The NAS shows another certificate than when paired. The app asks on the start page how to go on.</string>
     <string name="mailx_clear_day" formatted="true">Clear %1$s</string>
     <string name="mailx_collapsed">collapsed</string>
+    <string name="mailx_compact">Denser list</string>
+    <string name="mailx_compact_desc">Less space between mails; text stays whole.</string>
     <string name="mailx_confirm_delete">Ask before deleting</string>
     <string name="mailx_confirm_delete_desc">By default Mail asks only in the trash, where deleting is for good.</string>
     <string name="mailx_delete_ask">Delete the message?</string>
@@ -307,11 +337,16 @@
     <string name="mailx_delete_to_trash">They go to the mailbox’s trash.</string>
     <string name="mailx_device_only">Applies to this phone.</string>
     <string name="mailx_draft_auto" formatted="true">The draft is saved every %1$s seconds while you write; “Back” keeps it.</string>
+    <string name="mailx_drag">Drag and drop</string>
+    <string name="mailx_drag_desc">On large screens: mails onto a folder of the same mailbox, attachments into other apps. Files into writing always work.</string>
+    <string name="mailx_drag_hint">ready to drag</string>
+    <string name="mailx_drop_files">Release to attach the files.</string>
     <string name="mailx_edit_draft">Edit draft</string>
     <string name="mailx_error_detail" formatted="true">Error: %1$s</string>
     <string name="mailx_fav_off">Remove from favourites</string>
     <string name="mailx_fav_on">Pin as favourite</string>
     <string name="mailx_file_exists">A file of this name exists there already.</string>
+    <string name="mailx_folder_counts">Count unread next to folders</string>
     <string name="mailx_folder_delete">Delete folder</string>
     <string name="mailx_folder_delete_text">The folder and the e-mails in it are deleted at the provider and cannot be brought back.</string>
     <string name="mailx_folder_delete_title" formatted="true">Delete “%1$s”?</string>
@@ -323,22 +358,32 @@
     <string name="mailx_forget_text" formatted="true">Take the learned address %1$s out of the suggestions? Contacts stay as they are.</string>
     <string name="mailx_from_nas">from the NAS</string>
     <string name="mailx_from_phone">File from the phone</string>
+    <string name="mailx_group_input">Gestures, keyboard and mouse</string>
+    <string name="mailx_group_input_desc">Swiping, shortcuts, dragging and columns on large screens. Applies to this phone.</string>
+    <string name="mailx_group_list">List and reading</string>
     <string name="mailx_home">Home</string>
     <string name="mailx_images">External pictures</string>
     <string name="mailx_images_always">Always load</string>
     <string name="mailx_images_ask">Only on tapping (recommended)</string>
     <string name="mailx_images_contacts">Load for senders in the contacts</string>
     <string name="mailx_is_fav">Favourite</string>
+    <string name="mailx_keys_back">Back, end selection</string>
+    <string name="mailx_keys_open">Open message</string>
     <string name="mailx_link_go">Open</string>
     <string name="mailx_link_open">Open the link?</string>
     <string name="mailx_main_account">Main mailbox – new e-mails go from here</string>
     <string name="mailx_move_down" formatted="true">Move “%1$s” down</string>
     <string name="mailx_move_up" formatted="true">Move “%1$s” up</string>
+    <string name="mailx_narrower">Narrower</string>
     <string name="mailx_nas_attach" formatted="true">Attach %1$s</string>
     <string name="mailx_nas_attach_none">Tap files</string>
     <string name="mailx_nas_here">Save here</string>
     <string name="mailx_nas_readonly">Your account may not write to this share.</string>
     <string name="mailx_nas_up">One level up</string>
+    <string name="mailx_new_window">Open in new window</string>
+    <string name="mailx_no_subject_text">The e-mail has no subject. Recipients then only see “(no subject)”.</string>
+    <string name="mailx_no_subject_title">Send without subject?</string>
+    <string name="mailx_not_paired">Mail needs a paired NAS. Open the TitanOS app first and pair it.</string>
     <string name="mailx_notify_this">Notice on new e-mail</string>
     <string name="mailx_open">Open</string>
     <string name="mailx_order_failed" formatted="true">Order not saved: %1$s</string>
@@ -346,14 +391,23 @@
     <string name="mailx_preview_desc">The beginning of each mail below the subject, whole, never cut.</string>
     <string name="mailx_quote">Quote when replying</string>
     <string name="mailx_quote_desc">The message stands with “&gt; ” below your answer.</string>
+    <string name="mailx_reply_window">Reply in new window</string>
+    <string name="mailx_reset_columns">Reset column widths</string>
+    <string name="mailx_reset_columns_desc" formatted="true">Now: mailboxes %1$s dp, list %2$s dp. The separators can be dragged.</string>
     <string name="mailx_saved_downloads" formatted="true">“%1$s” is in Downloads.</string>
     <string name="mailx_share">Share</string>
     <string name="mailx_share_text">Share text</string>
+    <string name="mailx_shortcuts">Keyboard shortcuts</string>
+    <string name="mailx_shortcuts_desc">With a keyboard: J/K, Enter, E, R, A, F, S, U, M, Del, N, /, ?, Esc. Never while you type in a field.</string>
     <string name="mailx_shown">expanded</string>
+    <string name="mailx_start_at">When Mail opens</string>
+    <string name="mailx_start_boxes">Mailboxes (large: with the inbox)</string>
+    <string name="mailx_start_main">Inbox of the main mailbox</string>
     <string name="mailx_swipe_left">Swipe all the way left</string>
     <string name="mailx_swipe_none">Nothing</string>
     <string name="mailx_swipe_right">Swipe right</string>
     <string name="mailx_swipe_seen">Read/unread</string>
     <string name="mailx_take_typed" formatted="true">Use “%1$s”</string>
     <string name="mailx_unreachable">The NAS is not reachable.</string>
+    <string name="mailx_wider">Wider</string>
 </resources>

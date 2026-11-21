@@ -79,7 +79,13 @@ data class ComposeStart(
     val account: String = "",
     val folder: String = "",
     val source: Message? = null,
-    val to: String = "",
+    val to: List<String> = emptyList(),
+    val cc: List<String> = emptyList(),
+    val bcc: List<String> = emptyList(),
+    val subject: String = "",
+    val body: String = "",
+    /** Ohne [source]: die Mail, aus der geantwortet usw. wird (lädt sie selbst). */
+    val uid: Long = 0,
 )
 
 /** Anhänge einer vorhandenen Mail, die mitgehen (Weiterleiten, ein wieder geöffneter Entwurf). */
@@ -102,15 +108,15 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
     val scope = rememberCoroutineScope()
     val locale = currentLocale()
     val prefs = model.prefs
-    val src = start.source
+    var src by remember { mutableStateOf(start.source) }
     var accountId by remember { mutableStateOf(start.account.takeIf { it.isNotEmpty() && it != ALL } ?: model.mainAccount()?.id.orEmpty()) }
     val account = model.account(accountId)
-    var to by remember { mutableStateOf(if (start.to.isNotBlank()) listOf(start.to) else emptyList()) }
-    var cc by remember { mutableStateOf(listOf<String>()) }
-    var bcc by remember { mutableStateOf(listOf<String>()) }
-    var showCopies by remember { mutableStateOf(false) }
-    var subject by remember { mutableStateOf("") }
-    var text by remember { mutableStateOf("") }
+    var to by remember { mutableStateOf(start.to.filter { it.isNotBlank() }) }
+    var cc by remember { mutableStateOf(start.cc) }
+    var bcc by remember { mutableStateOf(start.bcc) }
+    var showCopies by remember { mutableStateOf(start.cc.isNotEmpty() || start.bcc.isNotEmpty()) }
+    var subject by remember { mutableStateOf(start.subject) }
+    var text by remember { mutableStateOf(start.body) }
     var signature by remember { mutableStateOf<String?>(null) }
     var signatures by remember { mutableStateOf<List<Signature>>(emptyList()) }
     var files by remember { mutableStateOf(listOf<Upload>()) }
@@ -132,6 +138,8 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
     var pickNas by remember { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(false) }
+    var askSubject by remember { mutableStateOf(false) }
+    var dropHover by remember { mutableStateOf(false) }
     val wrote = stringResource(R.string.mail_compose_wrote, "%1\$s", "%2\$s")
     val forwardHead = stringResource(R.string.mail_compose_forwardHead)
     val headFrom = stringResource(R.string.mail_head_from)
@@ -148,6 +156,11 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
     LaunchedEffect(Unit) {
         if (started) return@LaunchedEffect
         started = true
+        // Antworten aus einem Tastenkürzel oder einem anderen Fenster: die Mail erst laden.
+        if (src == null && start.uid > 0 && start.mode != ComposeMode.New) {
+            src = runCatching { model.api.message(start.account, start.folder, start.uid) }.onFailure { sendError = it }.getOrNull()
+        }
+        val src = src
         if (src != null) {
             val me = account?.email.orEmpty()
             when (start.mode) {
@@ -198,8 +211,8 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
         attachFrom = carried?.takeIf { it.parts.isNotEmpty() }?.let {
             if (it.draft) AttachFrom(parts = it.parts.map { p -> p.part }) else AttachFrom(it.folder, it.uid, it.parts.map { p -> p.part })
         },
-        answers = if (src != null && (start.mode == ComposeMode.Reply || start.mode == ComposeMode.ReplyAll)) MailRef(start.folder, src.uid) else null,
-        forwards = if (src != null && start.mode == ComposeMode.Forward) MailRef(start.folder, src.uid) else null,
+        answers = src?.takeIf { start.mode == ComposeMode.Reply || start.mode == ComposeMode.ReplyAll }?.let { MailRef(start.folder, it.uid) },
+        forwards = src?.takeIf { start.mode == ComposeMode.Forward }?.let { MailRef(start.folder, it.uid) },
     )
 
     val draftSaved = stringResource(R.string.mail_compose_draftSaved, "%1\$s")
@@ -250,17 +263,21 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
         if (bytes > MAX_BYTES) return tooLarge
         return ""
     }
-    fun send() {
+    fun send(confirmed: Boolean = false) {
         problem = problemText()
         if (problem.isNotEmpty()) return
+        if (!confirmed && subject.isBlank() && prefs.askEmptySubject) {
+            askSubject = true
+            return
+        }
         sending = true
         sendError = null
         scope.launch {
             try {
                 model.api.send(accountId, meta(), files, nasFiles)
                 done = true
-                if (src != null) {
-                    model.applyFlags(accountId, start.folder, listOf(src.uid)) {
+                src?.let { source ->
+                    model.applyFlags(accountId, start.folder, listOf(source.uid)) {
                         if (start.mode == ComposeMode.Forward) it.copy(forwarded = true) else if (start.mode != ComposeMode.Draft) it.copy(answered = true) else it
                     }
                 }
@@ -295,7 +312,16 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
         }
     }
 
+    val activity = ctx as? android.app.Activity
     Page(
+        // Dateien aus anderen Apps hierher ziehen hängt sie an.
+        modifier = Modifier.fileDropTarget(true, activity, { dropHover = it }) { uris ->
+            scope.launch {
+                val read = withContext(Dispatchers.IO) { uris.mapNotNull { readUpload(ctx, it) } }
+                files = files + read.filter { r -> files.none { it.name == r.name && it.bytes.size == r.bytes.size } }
+                if (read.isNotEmpty()) touch()
+            }
+        },
         topBar = {
             Column(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 8.dp, end = 12.dp, top = 6.dp)) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -307,7 +333,7 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
                         modifier = Modifier.weight(1f).padding(horizontal = 6.dp),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
-                    TitanButton(stringResource(R.string.mail_compose_send), ::send, kind = ButtonKind.Primary, icon = TitanIcons.send, enabled = !sending)
+                    TitanButton(stringResource(R.string.mail_compose_send), { send() }, kind = ButtonKind.Primary, icon = TitanIcons.send, enabled = !sending)
                 }
             }
         },
@@ -338,6 +364,17 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
                     touch()
                 }, onDismiss = { pickNas = false })
             }
+            if (askSubject) {
+                ConfirmDialog(
+                    title = stringResource(R.string.mailx_no_subject_title),
+                    text = stringResource(R.string.mailx_no_subject_text),
+                    actions = listOf(
+                        DialogAction(stringResource(R.string.mail_compose_send)) { askSubject = false; send(confirmed = true) },
+                        DialogAction(stringResource(UiR.string.ui_cancel)) { askSubject = false },
+                    ),
+                    onDismiss = { askSubject = false },
+                )
+            }
             if (confirmDiscard) {
                 ConfirmDialog(
                     title = stringResource(R.string.mail_compose_discardTitle),
@@ -361,6 +398,7 @@ fun ComposeScreen(model: MailModel, titan: TitanApi?, start: ComposeStart, onDon
             }
         },
     ) {
+        if (dropHover) Note(stringResource(R.string.mailx_drop_files), Modifier.padding(bottom = 8.dp), icon = MailIcons.clip)
         if (problem.isNotEmpty()) Problem(problem, Modifier.padding(bottom = 8.dp))
         sendError?.let { Problem(errorText(it), Modifier.padding(bottom = 8.dp)) }
         // Von
