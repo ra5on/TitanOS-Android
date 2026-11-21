@@ -283,7 +283,7 @@ private fun MediaPage(api: FilesApi, location: Location, e: FileEntry, active: B
 private fun PdfPage(api: FilesApi?, location: Location, e: FileEntry, top: androidx.compose.ui.unit.Dp, onZoom: (Boolean) -> Unit, onTap: () -> Unit, actions: ViewerActions) {
     val context = LocalContext.current
     val path = location.full(e.name)
-    var progress by remember { mutableStateOf(0f) }
+    var progress by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     val doc by produceState<PdfDoc?>(null, api, path) {
         if (api == null) return@produceState
         value = try {

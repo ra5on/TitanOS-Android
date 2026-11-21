@@ -133,7 +133,7 @@ private val ALLOWED_API = listOf("/api/v1/files/", "/api/v1/webapps", "/api/v1/p
  * Die Rahmenseite (assets/titanos-office.html) liegt unter dem Ursprung des
  * NAS, damit das Programm wie im Web eingebettet läuft.
  */
-@SuppressLint("SetJavaScriptEnabled")
+@SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
 @Composable
 fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: String?, onClose: () -> Unit) {
     val access = model.access ?: return
@@ -156,6 +156,7 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
         keptOnPhone = stringResource(R.string.office_kept_phone),
         copyWord = stringResource(R.string.office_copy_word),
     )
+    val errorText = stringResource(R.string.office_error)
     fun answer(id: Int, value: String?) {
         val js = "window.titanAnswer($id, ${if (value == null) "null" else JsonPrimitive(value)})"
         web?.evaluateJavascript(js, null)
@@ -204,12 +205,12 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
                         renew = { runBlocking { runCatching { model.files?.webapps() } }; setCookie(access, h) },
                         onAsk = { a -> main.post { askName = a.name; ask = a } },
                         onDirty = { d -> main.post { dirty = d } },
-                        onError = { kind, code -> main.post { notice = context.getString(R.string.office_error, kind, code) } },
+                        onError = { kind, code -> main.post { notice = String.format(errorText, kind, code) } },
                         onSaved = { path -> main.post { notice = texts.saved; current = path.substringAfterLast('/'); dirty = false; scope.launch { model.reload() } } },
                         onPick = { accept, _ -> main.post { pick.launch(acceptTypes(accept)) } },
                         onKeep = { n, b64 ->
                             val ok = runCatching { keepOnPhone(context, n, Base64.decode(b64, Base64.DEFAULT)) }.isSuccess
-                            main.post { notice = if (ok) texts.keptOnPhone else context.getString(R.string.office_error, "phone", "") }
+                            main.post { notice = if (ok) texts.keptOnPhone else String.format(errorText, "phone", "") }
                         },
                     )
                 }

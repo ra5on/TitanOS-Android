@@ -27,6 +27,8 @@ iframe { border: 0; width: 100%; height: 100%; display: block; }
   document.body.appendChild(frame);
 
   let doc = cfg.path ? { path: cfg.path, mtime: null } : null;
+  // Wie das Programm das offene Dokument selbst nennt, wenn es nach „Speichern unter“ anders heißt (appName im Web).
+  let appName = '';
   let ready = false;
   let queue = Promise.resolve();
   let seq = 0;
@@ -109,7 +111,7 @@ iframe { border: 0; width: 100%; height: 100%; display: block; }
   // Wie saveTarget in protocol.ts.
   function target(name, saveAs) {
     if (!doc) return 'dialog';
-    const own = same(base(name), base(doc.path));
+    const own = same(base(name), base(doc.path)) || (appName !== '' && same(base(name), appName));
     if (cfg.bridge === 'adapter') return own ? 'original' : 'dialog';
     if (saveAs) return 'dialog';
     const ext = extOf(name);
@@ -190,6 +192,7 @@ iframe { border: 0; width: 100%; height: 100%; display: block; }
     const answer = await ask('saveas', { name });
     if (!answer) { post({ type: 'webapp-saved', ok: false }); return; }
     const ok = await writeNew(answer, bytes, true);
+    if (ok) appName = base(name);
     post({ type: 'webapp-saved', ok });
   }
 

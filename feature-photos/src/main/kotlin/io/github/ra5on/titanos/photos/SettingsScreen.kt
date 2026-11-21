@@ -241,7 +241,7 @@ fun PhotosSettingsScreen(
                 Divider()
                 Text(stringResource(R.string.ps_month), style = TitanType.section, color = Titan.colors.muted, modifier = Modifier.padding(start = 14.dp, top = 12.dp, bottom = 4.dp))
                 MonthFormat.entries.forEachIndexed { i, m ->
-                    val ex = fill("{Monat}", sample(Kind.Photo, device), m, ZoneId.systemDefault(), java.util.Locale.getDefault())
+                    val ex = fill("{Monat}", sample(Kind.Photo, device), m, ZoneId.systemDefault(), androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
                     Choice(monthLabel(m), ex, layout.month == m, i > 0) { withLayout(layout.copy(month = m)) }
                 }
             }

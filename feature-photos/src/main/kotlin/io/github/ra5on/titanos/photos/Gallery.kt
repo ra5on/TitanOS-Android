@@ -130,7 +130,7 @@ fun GalleryScreen(
     onOpen: (NasPhoto) -> Unit,
     onReload: () -> Unit,
     onBack: () -> Unit,
-    locale: Locale = Locale.getDefault(),
+    locale: Locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0],
 ) {
     val c = Titan.colors
     Page(

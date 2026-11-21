@@ -281,6 +281,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
     var propsError by remember { mutableStateOf<FilesError?>(null) }
     var hashing by remember { mutableStateOf(false) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> uris.forEach { model.upload(location, it) } }
+    val defaultFile = stringResource(R.string.add_file_default)
     val entries = model.sorted(location, state.entries.orEmpty())
     val (view, sort, desc) = model.prefs.forFolder(location.root.id, location.path)
     val uploads = model.transfers.items.filter {
@@ -371,7 +372,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
                 onUpload = { pick.launch(arrayOf("*/*")) },
                 onCamera = null,
                 onFolder = { text = ""; model.actionError = null; overlay = FolderOverlay.NewFolder },
-                onFile = { text = context.getString(R.string.add_file_default); model.actionError = null; overlay = FolderOverlay.NewFile },
+                onFile = { text = defaultFile; model.actionError = null; overlay = FolderOverlay.NewFile },
                 onUrl = { url = ""; probe = null; model.actionError = null; overlay = FolderOverlay.Url },
                 onPaste = callbacks.paste,
                 onDismiss = dismiss,
