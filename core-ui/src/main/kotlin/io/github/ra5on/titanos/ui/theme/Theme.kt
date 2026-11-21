@@ -50,7 +50,7 @@ fun TitanTheme(dark: Boolean? = null, content: @Composable () -> Unit) {
     val c = if (dark != null) {
         if (dark) TitanColors.Graphit else TitanColors.Hell
     } else {
-        androidx.compose.runtime.remember { TitanAppearance.ensureLoaded(context) }
+        androidx.compose.runtime.remember { TitanAppearance.ensureLoaded(context); true }
         TitanAppearance.colors(system)
     }
     val scale = if (dark == null) TitanAppearance.fontScale else 1f
