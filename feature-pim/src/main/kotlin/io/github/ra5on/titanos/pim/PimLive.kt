@@ -83,6 +83,44 @@ fun PimLiveSync(stream: NasConnection) {
                 }
             }
         }
-        onPauseOrDispose { scope.cancel() }
+        // Änderungen in Kontakte/Kalender des Handys (andere Apps) gleich hochladen, solange TitanOS offen ist;
+        // im Hintergrund stößt Android den Abgleich an bzw. der Zeitplan.
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        val observers = mutableListOf<android.database.ContentObserver>()
+        if (p.uploadOnChange && io.github.ra5on.titanos.pim.sync.PimAccount.current(context) != null) {
+            for ((uri, authority) in listOf(
+                android.provider.ContactsContract.RawContacts.CONTENT_URI to android.provider.ContactsContract.AUTHORITY,
+                android.provider.CalendarContract.Events.CONTENT_URI to android.provider.CalendarContract.AUTHORITY,
+            )) {
+                val o = object : android.database.ContentObserver(handler) {
+                    private var pending = false
+                    override fun onChange(selfChange: Boolean, changed: android.net.Uri?) {
+                        // Eigene Schreibvorgänge des Abgleichs tragen caller_is_syncadapter.
+                        if (changed?.getQueryParameter(android.provider.ContactsContract.CALLER_IS_SYNCADAPTER) == "true" || pending) return
+                        pending = true
+                        handler.postDelayed({
+                            pending = false
+                            if (hasDirty(context, authority)) io.github.ra5on.titanos.pim.sync.PimSync.requestNow(context, manual = false, only = authority)
+                        }, 3000)
+                    }
+                }
+                runCatching { context.contentResolver.registerContentObserver(uri, true, o) }.onSuccess { observers += o }
+            }
+        }
+        onPauseOrDispose {
+            scope.cancel()
+            observers.forEach { runCatching { context.contentResolver.unregisterContentObserver(it) } }
+        }
     }
 }
+
+/** Gibt es im Konto Zeilen, die am Handy geändert und noch nicht hochgeladen sind? */
+private fun hasDirty(context: android.content.Context, authority: String): Boolean = runCatching {
+    val a = io.github.ra5on.titanos.pim.sync.PimAccount.current(context) ?: return false
+    val (uri, sel) = if (authority == android.provider.ContactsContract.AUTHORITY) {
+        android.provider.ContactsContract.RawContacts.CONTENT_URI to "${android.provider.ContactsContract.RawContacts.ACCOUNT_TYPE}=? AND ${android.provider.ContactsContract.RawContacts.ACCOUNT_NAME}=? AND (${android.provider.ContactsContract.RawContacts.DIRTY}=1 OR ${android.provider.ContactsContract.RawContacts.DELETED}=1)"
+    } else {
+        android.provider.CalendarContract.Events.CONTENT_URI to "${android.provider.CalendarContract.Events.ACCOUNT_TYPE}=? AND ${android.provider.CalendarContract.Events.ACCOUNT_NAME}=? AND (${android.provider.CalendarContract.Events.DIRTY}=1 OR ${android.provider.CalendarContract.Events.DELETED}=1)"
+    }
+    context.contentResolver.query(uri, arrayOf("_id"), sel, arrayOf(a.type, a.name), null)?.use { it.count > 0 } ?: false
+}.getOrDefault(false)
