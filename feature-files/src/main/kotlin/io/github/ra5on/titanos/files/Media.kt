@@ -129,16 +129,27 @@ object NasMedia {
 @Composable
 fun NasPlayer(api: FilesApi, root: String, path: String, active: Boolean, onError: (String) -> Unit, modifier: Modifier = Modifier, controls: Boolean = true) {
     val context = LocalContext.current
-    val player = remember(root, path) {
+    // Scheitert der Hardware-Decoder (manche Geräte, der Emulator), noch einmal mit den Software-Decodern.
+    var software by remember(root, path) { androidx.compose.runtime.mutableStateOf(false) }
+    val player = remember(root, path, software) {
         val factory = DataSource.Factory { NasDataSource(api, root, path) }
-        ExoPlayer.Builder(context).build().apply {
+        val renderers = androidx.media3.exoplayer.DefaultRenderersFactory(context).setEnableDecoderFallback(true).apply {
+            if (software) {
+                setMediaCodecSelector { mime, secure, tunneling ->
+                    androidx.media3.exoplayer.mediacodec.MediaCodecUtil.getDecoderInfos(mime, secure, tunneling).sortedBy { if (it.softwareOnly) 0 else 1 }
+                }
+            }
+        }
+        ExoPlayer.Builder(context, renderers).build().apply {
             setMediaSource(ProgressiveMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(NasMedia.uri(root, path))))
             prepare()
         }
     }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
-            override fun onPlayerError(error: PlaybackException) = onError(error.errorCodeName)
+            override fun onPlayerError(error: PlaybackException) {
+                if (!software && error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED) software = true else onError(error.errorCodeName)
+            }
         }
         player.addListener(listener)
         onDispose {
@@ -157,7 +168,10 @@ fun NasPlayer(api: FilesApi, root: String, path: String, active: Boolean, onErro
                 setShowPreviousButton(false)
             }
         },
-        update = { it.useController = controls },
+        update = {
+            it.useController = controls
+            if (it.player !== player) it.player = player
+        },
         modifier = modifier,
     )
 }

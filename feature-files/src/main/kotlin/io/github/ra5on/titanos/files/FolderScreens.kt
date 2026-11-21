@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.draganddrop.dragAndDropSource
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -311,11 +310,19 @@ private fun Modifier.entryDrag(e: FileEntry, on: FolderCallbacks, selected: Bool
             val scope = this
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
-                android.util.Log.d("TitanOS", "Ziehen: down ${down.type} markiert=$now")
                 if (down.type == androidx.compose.ui.input.pointer.PointerType.Mouse || now) {
-                    val slop = awaitTouchSlopOrCancellation(down.id) { change: androidx.compose.ui.input.pointer.PointerInputChange, _: androidx.compose.ui.geometry.Offset -> change.consume() }
-                    android.util.Log.d("TitanOS", "Ziehen: slop=${slop != null}")
-                    if (slop != null) d(e)?.let { scope.startTransfer(it) }
+                    // Eigene Schwelle im ersten Durchgang: Klick und Liste darunter sehen die Bewegung sonst zuerst.
+                    val slop = viewConfiguration.touchSlop
+                    while (true) {
+                        val ev = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                        val ch = ev.changes.firstOrNull { it.id == down.id } ?: break
+                        if (!ch.pressed) break
+                        if ((ch.position - down.position).getDistance() > slop) {
+                            ch.consume()
+                            d(e)?.let { scope.startTransfer(it) }
+                            break
+                        }
+                    }
                 }
             }
         }
