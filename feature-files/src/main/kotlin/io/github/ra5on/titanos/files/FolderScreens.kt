@@ -603,10 +603,12 @@ fun BoxScope.AddSheet(
     onUrl: () -> Unit,
     onPaste: () -> Unit,
     onDismiss: () -> Unit,
+    onFolderUpload: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     Sheet(onDismiss) {
         Card(background = c.bg) {
+            onFolderUpload?.let { f -> ListRow(stringResource(R.string.add_folder_upload), sub = stringResource(R.string.add_folder_upload_text), icon = { RowIcon(TitanIcons.folder) }, onClick = { onDismiss(); f() }) }
             ListRow(stringResource(R.string.add_upload), sub = stringResource(R.string.add_upload_text), icon = { RowIcon(TitanIcons.upload) }, onClick = { onDismiss(); onUpload() })
             onCamera?.let { cam -> ListRow(stringResource(R.string.add_camera), icon = { RowIcon(TitanIcons.photo) }, divider = true, onClick = { onDismiss(); cam() }) }
             ListRow(stringResource(R.string.add_folder), icon = { RowIcon(TitanIcons.folder) }, divider = true, onClick = { onDismiss(); onFolder() })
@@ -635,6 +637,7 @@ fun BoxScope.FolderMenu(
     onReload: () -> Unit,
     onDismiss: () -> Unit,
     onWindow: (() -> Unit)? = null,
+    onCompare: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     val on = stringResource(UiR.string.ui_on)
@@ -658,6 +661,7 @@ fun BoxScope.FolderMenu(
         Card(background = c.bg, modifier = Modifier.padding(top = 10.dp)) {
             ListRow(stringResource(R.string.usage_title), sub = stringResource(R.string.usage_text), icon = { RowIcon(TitanIcons.hdd) }, chevron = true, onClick = { onDismiss(); onUsage() })
             ListRow(stringResource(R.string.dupes_title), sub = stringResource(R.string.dupes_text), icon = { RowIcon(TitanIcons.file) }, chevron = true, divider = true, onClick = { onDismiss(); onDuplicates() })
+            onCompare?.let { cmp -> ListRow(stringResource(R.string.compare_title), sub = stringResource(R.string.compare_text), icon = { RowIcon(TitanIcons.nodes) }, chevron = true, divider = true, onClick = { onDismiss(); cmp() }) }
         }
     }
 }
@@ -686,6 +690,7 @@ fun BoxScope.EntrySheet(
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
     onWindow: (() -> Unit)? = null,
+    onDocker: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     val single = entries.singleOrNull()
@@ -724,6 +729,7 @@ fun BoxScope.EntrySheet(
             officeName?.let { row(stringResource(R.string.view_open_in, it), TitanIcons.edit, action = onOffice) }
             onEdit?.let { row(stringResource(R.string.view_edit), TitanIcons.edit, action = it) }
             onOpenWith?.let { row(stringResource(R.string.view_open_with), TitanIcons.box, stringResource(R.string.view_open_with_text), action = it) }
+            onDocker?.let { row(stringResource(R.string.docker_title), TitanIcons.docker, action = it) }
             if (files.isNotEmpty()) row(stringResource(R.string.files_share), TitanIcons.share, stringResource(R.string.files_share_text), action = onShare)
             row(
                 stringResource(R.string.files_download), TitanIcons.download,

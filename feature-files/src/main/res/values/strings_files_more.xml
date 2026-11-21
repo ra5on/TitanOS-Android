@@ -8,6 +8,8 @@
     <string name="add_file_note">Möglich sind .txt, .md und .json; danach öffnet der Editor.</string>
     <string name="add_file_text">.txt, .md oder .json</string>
     <string name="add_folder">Neuer Ordner</string>
+    <string name="add_folder_upload">Ordner hochladen</string>
+    <string name="add_folder_upload_text">Mit allen Unterordnern</string>
     <string name="add_upload">Hochladen</string>
     <string name="add_upload_text">Dateien vom Handy</string>
     <string name="add_url">Aus dem Netz laden</string>
@@ -38,6 +40,31 @@
     <string name="clip_drop">Zwischenablage leeren</string>
     <string name="clip_from">aus %1$s</string>
     <string name="clip_paste">Hier einfügen</string>
+    <string name="compare_checksum">Inhalt vergleichen (SHA-256)</string>
+    <string name="compare_checksum_text">Langsamer; sonst nach Größe und Zeit</string>
+    <string name="compare_different">Verschieden</string>
+    <string name="compare_do">Vergleichen</string>
+    <string name="compare_folder">Ordner</string>
+    <string name="compare_folder_hint">leer = oberste Ebene</string>
+    <string name="compare_left">Links: %1$s</string>
+    <string name="compare_only_left">Nur links</string>
+    <string name="compare_only_right">Nur rechts</string>
+    <string name="compare_running">Vergleicht …</string>
+    <string name="compare_side_left">links %1$s · %2$s</string>
+    <string name="compare_side_right">rechts %1$s · %2$s</string>
+    <string name="compare_text">Was hier und in einem anderen Ordner anders ist</string>
+    <string name="compare_title">Ordner vergleichen</string>
+    <string name="compare_with">Vergleichen mit</string>
+    <string name="docker_mount_do">Einbinden und öffnen</string>
+    <string name="docker_mount_text">Die App sieht die ganze Freigabe unter %1$s; ihr Container wird dafür neu angelegt.</string>
+    <string name="docker_mount_title">„%1$s“ in %2$s einbinden?</string>
+    <string name="docker_none">Keine Docker-App öffnet diese Datei.</string>
+    <string name="docker_not_mounted">Freigabe %1$s nicht eingebunden</string>
+    <string name="docker_opened">In %1$s geöffnet. Die App zeigt sie in ihrer Oberfläche.</string>
+    <string name="docker_read_only">Nur lesen</string>
+    <string name="docker_running">läuft</string>
+    <string name="docker_stopped">gestoppt</string>
+    <string name="docker_title">Mit Docker-App öffnen</string>
     <string name="download_zip_text">Als ZIP-Datei</string>
     <string name="dupes_group">%1$d Dateien · je %2$s</string>
     <string name="dupes_running">Das NAS vergleicht die Dateien …</string>
@@ -192,6 +219,23 @@
     <string name="office_save_copy">Als Kopie</string>
     <string name="office_saved">Gespeichert</string>
     <string name="office_unreachable">Das NAS ist gerade nicht erreichbar.</string>
+    <string name="part_create">Partition anlegen</string>
+    <string name="part_create_text">Neue Partition mit %1$s.</string>
+    <string name="part_delete_text">Die Daten darauf sind danach weg.</string>
+    <string name="part_delete_title">Partition %1$d löschen?</string>
+    <string name="part_format_text">Alles auf dieser Partition wird gelöscht.</string>
+    <string name="part_format_title">Partition %1$d formatieren?</string>
+    <string name="part_free">Freier Bereich</string>
+    <string name="part_grow">Um %1$s vergrößern</string>
+    <string name="part_label">Bezeichnung ändern</string>
+    <string name="part_mounted">eingebunden</string>
+    <string name="part_new_table">Neue Partitionstabelle</string>
+    <string name="part_new_table_do">Neu anlegen</string>
+    <string name="part_new_table_text">Alle Partitionen und Daten auf dem Laufwerk werden gelöscht.</string>
+    <string name="part_no_table">ohne Partitionstabelle</string>
+    <string name="part_none">Keine Partitionen.</string>
+    <string name="part_partitions">Aufteilung</string>
+    <string name="part_title">Partitionen %1$s</string>
     <string name="paste_conflicts">%1$d gibt es im Ziel schon (%2$d davon gleich). Was soll mit ihnen geschehen?</string>
     <string name="paste_missing">Nur Fehlende und Geänderte</string>
     <string name="paste_rename">Beide behalten (neuer Name)</string>
@@ -239,6 +283,7 @@
     <string name="search_week">Letzte Woche</string>
     <string name="search_where">Wo</string>
     <string name="search_year">Letztes Jahr</string>
+    <string name="sibling_href_unsupported">Seiten der Weboberfläche öffnet die TitanOS-App nicht eingebettet; nur Dateien.</string>
     <string name="sort_ascending">Aufsteigend</string>
     <string name="sort_descending">Absteigend</string>
     <string name="sort_modified">Geändert</string>
@@ -276,6 +321,27 @@
     <string name="usage_text">Was hier wie viel Platz belegt</string>
     <string name="usage_title">Speicher-Analyse</string>
     <string name="usage_total">%1$s in %2$d Dateien und %3$d Ordnern</string>
+    <string name="usb_devices">Datenträger</string>
+    <string name="usb_drives">Laufwerke</string>
+    <string name="usb_eject">Auswerfen</string>
+    <string name="usb_format">Formatieren</string>
+    <string name="usb_format_do">Formatieren</string>
+    <string name="usb_format_text">Alles auf dem Laufwerk (%1$s) wird gelöscht.</string>
+    <string name="usb_format_title">„%1$s“ formatieren?</string>
+    <string name="usb_job_done">Fertig.</string>
+    <string name="usb_job_failed">Fehlgeschlagen: %1$s</string>
+    <string name="usb_job_running">%1$s: %2$s …</string>
+    <string name="usb_label">Bezeichnung</string>
+    <string name="usb_mount">Einbinden</string>
+    <string name="usb_mount_after">Danach einbinden</string>
+    <string name="usb_mounted">eingebunden, %1$s frei</string>
+    <string name="usb_none">Kein USB-Gerät angeschlossen.</string>
+    <string name="usb_not_mounted">nicht eingebunden</string>
+    <string name="usb_note">Formatieren und Partitionen ändern löscht Daten. Das NAS prüft jede Änderung und arbeitet nur mit USB-Laufwerken, nie mit Platten eines Volumes.</string>
+    <string name="usb_partitions_open">Partitionen</string>
+    <string name="usb_row_text">Einbinden, auswerfen, formatieren, Partitionen (Administratoren)</string>
+    <string name="usb_title">USB-Geräte</string>
+    <string name="usb_unsupported">Dateisystem nicht unterstützt</string>
     <string name="view_counter">%1$d / %2$d</string>
     <string name="view_edit">Bearbeiten</string>
     <string name="view_formatted">Formatiert</string>
@@ -308,6 +374,10 @@
     <plurals name="clip_cut">
         <item quantity="one">%d Element zum Verschieben</item>
         <item quantity="other">%d Elemente zum Verschieben</item>
+    </plurals>
+    <plurals name="compare_summary">
+        <item quantity="one">%1$d Unterschied, %2$d gleich</item>
+        <item quantity="other">%1$d Unterschiede, %2$d gleich</item>
     </plurals>
     <plurals name="dupes_delete">
         <item quantity="one">%d markierte Datei löschen</item>
@@ -376,5 +446,9 @@
     <plurals name="usage_files">
         <item quantity="one">%d Datei</item>
         <item quantity="other">%d Dateien</item>
+    </plurals>
+    <plurals name="usb_partitions">
+        <item quantity="one">%d Partition</item>
+        <item quantity="other">%d Partitionen</item>
     </plurals>
 </resources>

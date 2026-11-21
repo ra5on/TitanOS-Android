@@ -103,6 +103,18 @@ class FilesModel(
     val files: FilesApi? get() = access?.api
     private val prefsApi: PrefsApi? get() = access?.let { PrefsApi(it.connection) }
 
+    /** Werkzeuge für Besitzer und Administratoren (USB, Partitionen, Docker) und „Vergleichen“. */
+    val admin: AdminApi? get() = access?.let { AdminApi(it.connection) }
+
+    /** Ob das Konto die Werkzeuge für Administratoren sieht (wie im Web; das NAS prüft selbst). */
+    val isAdmin: Boolean get() = access?.sessions?.user?.role.let { it == "owner" || it == "admin" }
+
+    /** Docker-Apps, die Dateien öffnen, mit ihren Endungen. */
+    var dockerTypes by mutableStateOf<List<OpenerTypes>>(emptyList())
+        private set
+
+    fun dockerFor(name: String): Boolean = Kinds.ext(name).let { e -> e.isNotEmpty() && dockerTypes.any { e in it.types } }
+
     /** Einstellungen des Dateimanagers im Konto (mit dem Web geteilt). */
     var prefs by mutableStateOf(FilePrefs())
         private set
@@ -172,6 +184,7 @@ class FilesModel(
         scope.launch {
             runCatching { api.webapps() }.onSuccess { webapps = it }
             runCatching { api.fileApps() }.onSuccess { fileApps = it }
+            admin?.let { a -> runCatching { a.openerTypes() }.onSuccess { dockerTypes = it } }
         }
     }
 
@@ -295,6 +308,58 @@ class FilesModel(
                 TransferQueue.enqueueUpload(context, location.root.id, location.path, location.place, name, copy.length(), Uri.fromFile(copy), ownCopy = true, conflict = FilesSettings.get(context).uploadConflict)
             } catch (e: IOException) {
                 actionError = FilesError.Other("read")
+            }
+        }
+    }
+
+    /**
+     * Ordner hochladen (SAF-Ordnerauswahl): Unterordner bleiben erhalten, jede
+     * Datei ist ein eigener, fortsetzbarer Auftrag wie die übrigen Uploads.
+     */
+    fun uploadTree(location: Location, tree: Uri) {
+        val resolver = context.contentResolver
+        runCatching { resolver.takePersistableUriPermission(tree, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+        val conflict = FilesSettings.get(context).uploadConflict
+        scope.launch(Dispatchers.IO) {
+            act {
+                val top = android.provider.DocumentsContract.getTreeDocumentId(tree)
+                val name = resolver.query(android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, top), arrayOf(android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null)
+                    ?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: "Ordner"
+                walkTree(location, tree, top, location.full(name.replace('/', '_')), conflict, 0)
+                reload()
+            }
+        }
+    }
+
+    private suspend fun walkTree(location: Location, tree: Uri, docId: String, nasDir: String, conflict: String, depth: Int) {
+        if (depth > 32) return
+        try {
+            files!!.mkdir(location.root.id, nasDir)
+        } catch (e: ApiException) {
+            if (!(e.status == 409 && e.code == "file_exists")) throw e
+        }
+        val children = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(tree, docId)
+        val cols = arrayOf(
+            android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+            android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+            android.provider.DocumentsContract.Document.COLUMN_SIZE,
+        )
+        val list = ArrayList<Array<String?>>()
+        context.contentResolver.query(children, cols, null, null, null)?.use { c ->
+            while (c.moveToNext()) list += arrayOf(c.getString(0), c.getString(1), c.getString(2), if (c.isNull(3)) null else c.getLong(3).toString())
+        }
+        val place = location.copy(path = nasDir).place
+        for ((id, name, mime, size) in list) {
+            if (id == null || name.isNullOrBlank()) continue
+            val clean = name.replace('/', '_')
+            if (mime == android.provider.DocumentsContract.Document.MIME_TYPE_DIR) {
+                walkTree(location, tree, id, "$nasDir/$clean", conflict, depth + 1)
+            } else {
+                TransferQueue.enqueueUpload(
+                    context, location.root.id, nasDir, place, clean, size?.toLongOrNull() ?: -1L,
+                    android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, id), conflict = conflict,
+                )
             }
         }
     }

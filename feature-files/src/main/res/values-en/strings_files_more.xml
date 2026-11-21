@@ -8,6 +8,8 @@
     <string name="add_file_note">Allowed are .txt, .md and .json; the editor opens afterwards.</string>
     <string name="add_file_text">.txt, .md or .json</string>
     <string name="add_folder">New folder</string>
+    <string name="add_folder_upload">Upload folder</string>
+    <string name="add_folder_upload_text">With all subfolders</string>
     <string name="add_upload">Upload</string>
     <string name="add_upload_text">Files from the phone</string>
     <string name="add_url">Download from a link</string>
@@ -38,6 +40,31 @@
     <string name="clip_drop">Clear clipboard</string>
     <string name="clip_from">from %1$s</string>
     <string name="clip_paste">Paste here</string>
+    <string name="compare_checksum">Compare contents (SHA-256)</string>
+    <string name="compare_checksum_text">Slower; otherwise by size and time</string>
+    <string name="compare_different">Different</string>
+    <string name="compare_do">Compare</string>
+    <string name="compare_folder">Folder</string>
+    <string name="compare_folder_hint">empty = top level</string>
+    <string name="compare_left">Left: %1$s</string>
+    <string name="compare_only_left">Only left</string>
+    <string name="compare_only_right">Only right</string>
+    <string name="compare_running">Comparing …</string>
+    <string name="compare_side_left">left %1$s · %2$s</string>
+    <string name="compare_side_right">right %1$s · %2$s</string>
+    <string name="compare_text">What differs here and in another folder</string>
+    <string name="compare_title">Compare folders</string>
+    <string name="compare_with">Compare with</string>
+    <string name="docker_mount_do">Mount and open</string>
+    <string name="docker_mount_text">The app sees the whole share at %1$s; its container is created anew for this.</string>
+    <string name="docker_mount_title">Mount “%1$s” into %2$s?</string>
+    <string name="docker_none">No Docker app opens this file.</string>
+    <string name="docker_not_mounted">share %1$s not mounted</string>
+    <string name="docker_opened">Opened in %1$s. The app shows it in its interface.</string>
+    <string name="docker_read_only">Read only</string>
+    <string name="docker_running">running</string>
+    <string name="docker_stopped">stopped</string>
+    <string name="docker_title">Open with Docker app</string>
     <string name="download_zip_text">As a ZIP file</string>
     <string name="dupes_group">%1$d files · %2$s each</string>
     <string name="dupes_running">The NAS is comparing the files …</string>
@@ -192,6 +219,23 @@
     <string name="office_save_copy">As a copy</string>
     <string name="office_saved">Saved</string>
     <string name="office_unreachable">The NAS cannot be reached right now.</string>
+    <string name="part_create">Create partition</string>
+    <string name="part_create_text">New partition with %1$s.</string>
+    <string name="part_delete_text">The data on it will be gone.</string>
+    <string name="part_delete_title">Delete partition %1$d?</string>
+    <string name="part_format_text">Everything on this partition will be deleted.</string>
+    <string name="part_format_title">Format partition %1$d?</string>
+    <string name="part_free">Free space</string>
+    <string name="part_grow">Grow by %1$s</string>
+    <string name="part_label">Change label</string>
+    <string name="part_mounted">mounted</string>
+    <string name="part_new_table">New partition table</string>
+    <string name="part_new_table_do">Create anew</string>
+    <string name="part_new_table_text">All partitions and data on the drive will be deleted.</string>
+    <string name="part_no_table">no partition table</string>
+    <string name="part_none">No partitions.</string>
+    <string name="part_partitions">Layout</string>
+    <string name="part_title">Partitions %1$s</string>
     <string name="paste_conflicts">%1$d already exist in the target (%2$d of them identical). What should happen to them?</string>
     <string name="paste_missing">Only missing and changed ones</string>
     <string name="paste_rename">Keep both (new name)</string>
@@ -239,6 +283,7 @@
     <string name="search_week">Last week</string>
     <string name="search_where">Where</string>
     <string name="search_year">Last year</string>
+    <string name="sibling_href_unsupported">The TitanOS app does not embed pages of the web interface; only files.</string>
     <string name="sort_ascending">Ascending</string>
     <string name="sort_descending">Descending</string>
     <string name="sort_modified">Modified</string>
@@ -276,6 +321,27 @@
     <string name="usage_text">What takes how much space here</string>
     <string name="usage_title">Storage analysis</string>
     <string name="usage_total">%1$s in %2$d files and %3$d folders</string>
+    <string name="usb_devices">Volumes</string>
+    <string name="usb_drives">Drives</string>
+    <string name="usb_eject">Eject</string>
+    <string name="usb_format">Format</string>
+    <string name="usb_format_do">Format</string>
+    <string name="usb_format_text">Everything on the drive (%1$s) will be deleted.</string>
+    <string name="usb_format_title">Format “%1$s”?</string>
+    <string name="usb_job_done">Done.</string>
+    <string name="usb_job_failed">Failed: %1$s</string>
+    <string name="usb_job_running">%1$s: %2$s …</string>
+    <string name="usb_label">Label</string>
+    <string name="usb_mount">Mount</string>
+    <string name="usb_mount_after">Mount afterwards</string>
+    <string name="usb_mounted">mounted, %1$s free</string>
+    <string name="usb_none">No USB device connected.</string>
+    <string name="usb_not_mounted">not mounted</string>
+    <string name="usb_note">Formatting and changing partitions deletes data. The NAS checks every change and only works on USB drives, never on disks of a volume.</string>
+    <string name="usb_partitions_open">Partitions</string>
+    <string name="usb_row_text">Mount, eject, format, partitions (administrators)</string>
+    <string name="usb_title">USB devices</string>
+    <string name="usb_unsupported">file system not supported</string>
     <string name="view_counter">%1$d / %2$d</string>
     <string name="view_edit">Edit</string>
     <string name="view_formatted">Formatted</string>
@@ -308,6 +374,10 @@
     <plurals name="clip_cut">
         <item quantity="one">%d item to move</item>
         <item quantity="other">%d items to move</item>
+    </plurals>
+    <plurals name="compare_summary">
+        <item quantity="one">%1$d difference, %2$d identical</item>
+        <item quantity="other">%1$d differences, %2$d identical</item>
     </plurals>
     <plurals name="dupes_delete">
         <item quantity="one">Delete %d marked file</item>
@@ -376,5 +446,9 @@
     <plurals name="usage_files">
         <item quantity="one">%d file</item>
         <item quantity="other">%d files</item>
+    </plurals>
+    <plurals name="usb_partitions">
+        <item quantity="one">%d partition</item>
+        <item quantity="other">%d partitions</item>
     </plurals>
 </resources>

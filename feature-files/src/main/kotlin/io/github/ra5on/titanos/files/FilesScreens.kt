@@ -100,6 +100,7 @@ fun FilesHomeScreen(
     onFavorite: (Favorite) -> Unit = {},
     jobsRunning: Int = 0,
     onSettings: () -> Unit = {},
+    onUsb: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     Page(
@@ -192,6 +193,9 @@ fun FilesHomeScreen(
                 divider = true,
                 onClick = onJobs,
             )
+            onUsb?.let { u ->
+                ListRow(stringResource(R.string.usb_title), sub = stringResource(R.string.usb_row_text), icon = { RowIcon(TitanIcons.hdd, size = 24.dp) }, chevron = true, divider = true, onClick = u)
+            }
         }
         SectionHeader(stringResource(R.string.files_on_phone))
         Card {

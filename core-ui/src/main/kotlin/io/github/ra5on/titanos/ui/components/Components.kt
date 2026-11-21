@@ -367,30 +367,44 @@ data class NavItem(val key: String, val label: String, val icon: ImageVector)
 @Composable
 fun BottomNav(items: List<NavItem>, selected: String, onSelect: (String) -> Unit) {
     val c = Titan.colors
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     Column(Modifier.fillMaxWidth().background(c.header)) {
         Divider()
-        Row(Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 4.dp)) {
+        Row(Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.Top) {
             for (item in items) {
                 val on = item.key == selected
-                Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Tab) { onSelect(item.key) }
-                        .semantics { if (on) stateDescription = "✓" }.padding(bottom = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Box(
-                        Modifier.size(60.dp, 32.dp).clip(RoundedCornerShape(16.dp))
-                            .background(if (on) c.accent.copy(alpha = .22f) else Color.Transparent),
-                        contentAlignment = Alignment.Center,
+                val style = if (on) TitanType.nav.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) else TitanType.nav
+                androidx.compose.foundation.layout.BoxWithConstraints(Modifier.weight(1f)) {
+                    // Nie mitten im Wort trennen: passt das längste Wort nicht in die Breite
+                    // (große Schrift, schmales Fenster), steht nur das Symbol da; der Name
+                    // bleibt für Bildschirmleser. Sonst bricht der Name an Wortgrenzen um.
+                    val width = constraints.maxWidth
+                    val fits = item.label.split(' ').all { w -> measurer.measure(w, style).size.width <= width }
+                    Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(role = Role.Tab) { onSelect(item.key) }
+                            .semantics(mergeDescendants = true) {
+                                if (on) stateDescription = "✓"
+                                if (!fits) contentDescription = item.label
+                            }.padding(bottom = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        Icon(item.icon, null, tint = if (on) c.accent else c.muted, modifier = Modifier.size(22.dp))
+                        Box(
+                            Modifier.size(60.dp, 32.dp).clip(RoundedCornerShape(16.dp))
+                                .background(if (on) c.accent.copy(alpha = .22f) else Color.Transparent),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(item.icon, null, tint = if (on) c.accent else c.muted, modifier = Modifier.size(22.dp))
+                        }
+                        if (fits) {
+                            Text(
+                                item.label,
+                                style = style.copy(hyphens = androidx.compose.ui.text.style.Hyphens.None, lineBreak = androidx.compose.ui.text.style.LineBreak.Heading),
+                                color = if (on) c.text else c.muted,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
-                    Text(
-                        item.label,
-                        style = if (on) TitanType.nav.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) else TitanType.nav,
-                        color = if (on) c.text else c.muted,
-                        textAlign = TextAlign.Center,
-                    )
                 }
             }
         }

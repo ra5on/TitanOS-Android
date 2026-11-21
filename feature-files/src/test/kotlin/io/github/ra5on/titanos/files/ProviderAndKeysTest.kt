@@ -35,3 +35,15 @@ class ProviderAndKeysTest {
         assertEquals("a.b (2).txt", otherName("a.b.txt"))
     }
 }
+
+class SiblingPathTest {
+    @Test
+    fun nasPaths() {
+        assertEquals(Triple("share/Documents", "", "Brief.docx"), splitNasPath("share/Documents/Brief.docx"))
+        assertEquals(Triple("share/Documents", "A/B", "Brief.docx"), splitNasPath("/share/Documents/A/B/Brief.docx"))
+        assertEquals(Triple("stick", "x", "y.txt"), splitNasPath("stick/x/y.txt"))
+        assertEquals(null, splitNasPath("share/Documents"))
+        assertEquals(null, splitNasPath("share/Documents/../x"))
+        assertEquals(null, splitNasPath("Documents/Brief.docx"))
+    }
+}

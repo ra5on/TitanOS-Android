@@ -51,6 +51,9 @@ sealed interface FilesRoute {
     data class BatchRename(val location: Location, val names: List<String>) : FilesRoute
     data class Extract(val location: Location, val entry: FileEntry) : FilesRoute
     data object Settings : FilesRoute
+    data object Usb : FilesRoute
+    data class Partitions(val disk: Disk) : FilesRoute
+    data class Compare(val location: Location) : FilesRoute
 }
 
 /** Ein Blatt oder Dialog über der Ordneransicht. */
@@ -66,6 +69,7 @@ private sealed interface FolderOverlay {
     data object Url : FolderOverlay
     data class Paste(val inspection: Inspection) : FolderOverlay
     data class Props(val name: String, val path: String) : FolderOverlay
+    data class Docker(val name: String) : FolderOverlay
 }
 
 /**
@@ -111,6 +115,7 @@ fun FilesTab(model: FilesModel, nav: @Composable () -> Unit) {
                 onFavorite = { f -> model.roots.roots?.firstOrNull { it.id == f.root }?.let { model.openFolder(Location(it, f.path)) } },
                 jobsRunning = model.nasJobs.count { it.running },
                 onSettings = { model.push(FilesRoute.Settings) },
+                onUsb = if (model.isAdmin) { { model.push(FilesRoute.Usb) } } else null,
             )
         }
         FilesRoute.Transfers -> {
@@ -217,6 +222,18 @@ fun FilesTab(model: FilesModel, nav: @Composable () -> Unit) {
             BackHandler { model.pop() }
             BatchRenameScreen(model, route.location, route.names, onDone = { model.pop() }, onBack = { model.pop() })
         }
+        FilesRoute.Usb -> {
+            BackHandler { model.pop() }
+            UsbScreen(model, onOpen = { r -> model.openFolder(Location(r)) }, onPartitions = { model.push(FilesRoute.Partitions(it)) }, onBack = { model.pop() })
+        }
+        is FilesRoute.Partitions -> {
+            BackHandler { model.pop() }
+            PartitionsScreen(model, route.disk, onBack = { model.pop() })
+        }
+        is FilesRoute.Compare -> {
+            BackHandler { model.pop() }
+            CompareScreen(model, route.location, onOpen = { model.openFolder(it) }, onBack = { model.pop() })
+        }
         FilesRoute.Settings -> {
             BackHandler { model.pop() }
             val ctx = LocalContext.current
@@ -305,6 +322,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
     var hashing by remember { mutableStateOf(false) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> uris.forEach { model.upload(location, it) } }
     val defaultFile = stringResource(R.string.add_file_default)
+    val pickTree = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri -> uri?.let { model.uploadTree(location, it) } }
     val entries = model.sorted(location, state.entries.orEmpty())
     val width = currentWidth()
     val fsNow = FilesSettings.get(context)
@@ -493,6 +511,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
                 onFolder = { text = ""; model.actionError = null; overlay = FolderOverlay.NewFolder },
                 onFile = { text = defaultFile; model.actionError = null; overlay = FolderOverlay.NewFile },
                 onUrl = { url = ""; probe = null; model.actionError = null; overlay = FolderOverlay.Url },
+                onFolderUpload = { pickTree.launch(null) },
                 onPaste = callbacks.paste,
                 onDismiss = dismiss,
             )
@@ -515,6 +534,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
                 onReload = { scope.launch { model.reload() } },
                 onDismiss = dismiss,
                 onWindow = { FilesWindow.open(context, location) },
+                onCompare = { model.push(FilesRoute.Compare(location)) },
             )
             FolderOverlay.Sort -> SortSheet(
                 view, model.localSort ?: sort, desc, model.prefs.showHidden,
@@ -557,6 +577,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
                     },
                     onDismiss = { if (overlay == o) overlay = null },
                     onWindow = single?.let { s -> { if (s.dir) FilesWindow.open(context, location.child(s.name)) else FilesWindow.open(context, location, s.name) } },
+                    onDocker = single?.takeIf { !it.dir && model.dockerFor(it.name) }?.let { s -> { overlay = FolderOverlay.Docker(s.name) } },
                 )
             }
             is FolderOverlay.Rename -> RenameDialog(o.entry.name, text, { text = it }, model.actionError, onDo = {
@@ -603,6 +624,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
                 onDo = { overlay = null; scope.launch { model.paste(location, pasteMode) } },
                 onDismiss = dismiss,
             )
+            is FolderOverlay.Docker -> DockerOpenSheet(model, location, o.name, onDismiss = dismiss)
             is FolderOverlay.Props -> PropertiesSheet(
                 o.name, (listOf(location.root.name) + o.path.split('/').filter { it.isNotEmpty() }).joinToString(" › "),
                 props, propsError, hashing,
