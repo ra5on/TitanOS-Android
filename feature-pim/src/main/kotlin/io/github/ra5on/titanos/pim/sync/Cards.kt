@@ -58,7 +58,7 @@ data class CardGroup(val uid: String, val name: String, val members: Set<String>
 
 /** Liest und schreibt vCards (3.0 und 4.0) für den Abgleich mit den Kontakten des Handys. */
 object Cards {
-    private val CUSTOM = Regex("""^_\$!<(.+)>!\$_$""")
+    private val CUSTOM = Regex("^" + Regex.escape("_\$!<") + "(.+)" + Regex.escape(">!\$_") + "$")
 
     private fun card(vcf: String): Component? = ContentLines.parse(vcf).firstOrNull { it.name == "VCARD" }
 
@@ -104,7 +104,7 @@ object Cards {
     }
 
     private fun labelOf(c: Component, p: Prop): String? =
-        p.group.takeIf { it.isNotEmpty() }?.let { g -> c.props.firstOrNull { it.group.equals(g, true) && it.name == "X-ABLABEL" } }
+        p.group.takeIf { it.isNotEmpty() }?.let { g -> c.props.firstOrNull { it.group.equals(g, true) && it.name.equals("X-ABLABEL", true) } }
             ?.value?.let(ContentLines::unescape)?.let { CUSTOM.find(it)?.groupValues?.get(1) ?: it }
 
     private fun types(p: Prop): Set<String> = p.paramValues("TYPE").map { it.uppercase() }.toSet()
@@ -302,7 +302,7 @@ object Cards {
         fun dropWithLabels(name: String) {
             val groups = c.all(name).map { it.group }.filter { it.isNotEmpty() }.toSet()
             c.remove(name)
-            c.props.removeAll { it.group in groups && it.name in setOf("X-ABLABEL", "X-ABADR") }
+            c.props.removeAll { it.group in groups && it.name.uppercase() in setOf("X-ABLABEL", "X-ABADR") }
         }
         var item = (c.props.mapNotNull { it.group.removePrefix("item").toIntOrNull() }.maxOrNull() ?: 0)
         fun add(p: Prop, label: String?) {
@@ -348,7 +348,7 @@ object Cards {
                     Email.TYPE_MOBILE -> p.params += "TYPE" to "X-MOBILE"
                 }
                 if (e.primary) p.params += "TYPE" to "PREF"
-                add(p, when (e.type) { Email.TYPE_CUSTOM -> e.label ?: "other"; Email.TYPE_OTHER -> "_$!<Other>!$_"; else -> null })
+                add(p, when (e.type) { Email.TYPE_CUSTOM -> e.label ?: "other"; Email.TYPE_OTHER -> "_$!<Other>!\$_"; else -> null })
             }
         }
         if (raw == null || differs(was?.phones, cur.phones)) {
@@ -374,7 +374,7 @@ object Cards {
                 if (t.primary) p.params += "TYPE" to "PREF"
                 add(p, when (t.type) {
                     Phone.TYPE_CUSTOM -> t.label ?: "other"
-                    Phone.TYPE_ASSISTANT -> "_$!<Assistant>!$_"
+                    Phone.TYPE_ASSISTANT -> "_$!<Assistant>!\$_"
                     Phone.TYPE_CALLBACK, Phone.TYPE_RADIO, Phone.TYPE_TELEX, Phone.TYPE_TTY_TDD, Phone.TYPE_MMS -> phoneTypeName(t.type)
                     else -> null
                 })
@@ -390,7 +390,7 @@ object Cards {
                     StructuredPostal.TYPE_HOME -> p.params += "TYPE" to "HOME"
                     StructuredPostal.TYPE_WORK -> p.params += "TYPE" to "WORK"
                 }
-                add(p, when (a.type) { StructuredPostal.TYPE_CUSTOM -> a.label ?: "other"; StructuredPostal.TYPE_OTHER -> "_$!<Other>!$_"; else -> null })
+                add(p, when (a.type) { StructuredPostal.TYPE_CUSTOM -> a.label ?: "other"; StructuredPostal.TYPE_OTHER -> "_$!<Other>!\$_"; else -> null })
             }
         }
         if (raw == null || differs(was?.urls, cur.urls)) {
@@ -403,7 +403,7 @@ object Cards {
                     Website.TYPE_BLOG -> p.params += "TYPE" to "BLOG"
                 }
                 add(p, when (u.type) {
-                    Website.TYPE_HOMEPAGE -> "_$!<HomePage>!$_"
+                    Website.TYPE_HOMEPAGE -> "_$!<HomePage>!\$_"
                     Website.TYPE_CUSTOM -> u.label ?: "other"
                     Website.TYPE_PROFILE -> "profile"
                     Website.TYPE_FTP -> "ftp"
@@ -419,14 +419,14 @@ object Cards {
                 when (e.type) {
                     Event.TYPE_BIRTHDAY -> c.props += Prop("BDAY", if (noYear && !v4) mutableListOf("X-APPLE-OMIT-YEAR" to "1604") else mutableListOf(),
                         if (noYear && v4) e.value.replace("-", "").let { "--$it".replace("----", "--") } else v)
-                    Event.TYPE_ANNIVERSARY -> if (v4) c.props += Prop("ANNIVERSARY", value = v) else add(Prop("X-ABDATE", value = v), "_$!<Anniversary>!$_")
-                    else -> add(Prop("X-ABDATE", value = v), e.label ?: "_$!<Other>!$_")
+                    Event.TYPE_ANNIVERSARY -> if (v4) c.props += Prop("ANNIVERSARY", value = v) else add(Prop("X-ABDATE", value = v), "_$!<Anniversary>!\$_")
+                    else -> add(Prop("X-ABDATE", value = v), e.label ?: "_$!<Other>!\$_")
                 }
             }
         }
         if (raw == null || differs(was?.relations, cur.relations)) {
             dropWithLabels("X-ABRELATEDNAMES"); c.remove("RELATED")
-            for (r in cur.relations) add(Prop("X-ABRELATEDNAMES", value = ContentLines.escape(r.value)), relationLabel(r.type)?.let { "_$!<${it.replaceFirstChar(Char::uppercase)}>!$_" } ?: r.label ?: "other")
+            for (r in cur.relations) add(Prop("X-ABRELATEDNAMES", value = ContentLines.escape(r.value)), relationLabel(r.type)?.let { "_$!<${it.replaceFirstChar(Char::uppercase)}>!\$_" } ?: r.label ?: "other")
         }
         if (raw == null || differs(was?.ims, cur.ims)) {
             c.remove("IMPP")

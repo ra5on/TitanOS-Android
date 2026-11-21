@@ -149,12 +149,12 @@ object ContentLines {
                 // vCard 2.1: TYPE ohne Namen (TEL;CELL:…).
                 params += "TYPE" to p
             } else {
-                params += p.substring(0, eq).uppercase() to p.substring(eq + 1).let { v ->
+                params += p.substring(0, eq) to p.substring(eq + 1).let { v ->
                     if (v.length >= 2 && v.startsWith('"') && v.endsWith('"') && !v.substring(1, v.length - 1).contains('"')) v.substring(1, v.length - 1) else v
                 }
             }
         }
-        return Prop(name.uppercase(), params, value, group)
+        return Prop(name, params, value, group)
     }
 
     private fun splitOutsideQuotes(s: String, sep: Char): List<String> {
