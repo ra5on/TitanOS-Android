@@ -92,9 +92,9 @@ class CalendarScreenshotTest {
         rule.onRoot().captureRoboImage("build/outputs/roborazzi/$name-${if (dark) "dunkel" else "hell"}.png")
     }
 
-    private fun cal(name: String, view: CalView, dark: Boolean, route: CalRoute = CalRoute.Home) = shot(name, dark) {
+    private fun cal(name: String, view: CalView, dark: Boolean, route: CalRoute = CalRoute.Home) {
         val c = nas.connection()
-        CalendarScreen(c, c, onClose = {}, onSyncSettings = {}, startRoute = route, startView = view, startAnchor = day)
+        shot(name, dark) { CalendarScreen(c, c, onClose = {}, onSyncSettings = {}, startRoute = route, startView = view, startAnchor = day) }
     }
 
     @Test fun monthDark() = cal("40-kalender-monat", CalView.Month, true)
@@ -102,6 +102,14 @@ class CalendarScreenshotTest {
     @Test fun dayDark() = cal("41-kalender-tag", CalView.Day, true)
     @Test fun dayLight() = cal("41-kalender-tag", CalView.Day, false)
     @Test fun yearDark() = cal("42-kalender-jahr", CalView.Year, true)
+    @Test fun yearLight() = cal("42-kalender-jahr", CalView.Year, false)
+    @Test fun searchDark() = cal("53-kalender-suche", CalView.Month, true, CalRoute.Search)
+    @Test fun searchLight() = cal("53-kalender-suche", CalView.Month, false, CalRoute.Search)
+    private val task = io.github.ra5on.titanos.pim.cal.Task(id = "t2.ics", list = "erinnerungen", title = "Reifen wechseln", due = "2026-11-24T17:00:00+01:00", priority = 5, etag = "t2")
+    @Test fun taskEditDark() = cal("54-erinnerung-bearbeiten", CalView.Month, true, CalRoute.TaskEdit(task, "erinnerungen"))
+    @Test fun taskEditLight() = cal("54-erinnerung-bearbeiten", CalView.Month, false, CalRoute.TaskEdit(task, "erinnerungen"))
+    @Test fun newEventDark() = cal("55-termin-neu", CalView.Month, true, CalRoute.Edit(null, day, java.time.LocalTime.of(10, 0)))
+    @Test fun newEventLight() = cal("55-termin-neu", CalView.Month, false, CalRoute.Edit(null, day, java.time.LocalTime.of(10, 0)))
     @Test fun listLight() = cal("43-kalender-liste", CalView.List, false)
     @Test fun listDark() = cal("43-kalender-liste", CalView.List, true)
 
@@ -120,10 +128,14 @@ class CalendarScreenshotTest {
     @Test fun settingsLight() = cal("48-kalender-einstellungen", CalView.Month, false, CalRoute.Settings)
 
     @Test @Config(qualifiers = "de-w840dp-h900dp-mdpi") fun weekSplitDark() = cal("49-kalender-woche-split", CalView.Week, true)
+    @Test @Config(qualifiers = "de-w840dp-h900dp-mdpi") fun weekSplitLight() = cal("49-kalender-woche-split", CalView.Week, false)
     @Test @Config(qualifiers = "de-w1280dp-h800dp-mdpi") fun weekWideLight() = cal("50-kalender-woche-pc", CalView.Week, false)
+    @Test @Config(qualifiers = "de-w1280dp-h800dp-mdpi") fun weekWideDark() = cal("50-kalender-woche-pc", CalView.Week, true)
     @Test @Config(qualifiers = "de-w1280dp-h800dp-mdpi") fun monthWideDark() = cal("51-kalender-monat-pc", CalView.Month, true)
+    @Test @Config(qualifiers = "de-w1280dp-h800dp-mdpi") fun monthWideLight() = cal("51-kalender-monat-pc", CalView.Month, false)
+    @Test @Config(qualifiers = "de-w412dp-h915dp-xhdpi", fontScale = 2.0f) fun monthLargeFontDark() = cal("52-kalender-schrift-200", CalView.Month, true)
     @Test @Config(qualifiers = "de-w412dp-h915dp-xhdpi", fontScale = 2.0f) fun monthLargeFont() = cal("52-kalender-schrift-200", CalView.Month, false)
 
-    @Test fun syncDark() = shot("30-abgleich", true) { SyncScreen(nas.connection()) {} }
-    @Test fun syncLight() = shot("30-abgleich", false) { SyncScreen(nas.connection()) {} }
+    @Test fun syncDark() { val c = nas.connection(); shot("30-abgleich", true) { SyncScreen(c) {} } }
+    @Test fun syncLight() { val c = nas.connection(); shot("30-abgleich", false) { SyncScreen(c) {} } }
 }

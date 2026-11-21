@@ -69,10 +69,12 @@ class CalendarSync(
 
     /** Gleicht alle eingeschalteten Kalender ab; gibt den Stand je Sammlung zurück. */
     fun run(counts: SyncCounts): List<CollectionState> {
-        val remote = if (prefs.calendars) api.collections(kind) else emptyList()
-        val wanted = remote.filter { it.id !in prefs.offCalendars }
+        val remote = api.collections(kind)
+        val wanted = if (prefs.calendars) remote.filter { it.id !in prefs.offCalendars } else emptyList()
         val local = localCalendars()
         for (l in local) if (wanted.none { it.id == l.collection }) {
+            // Erst hochladen, was am Handy noch nicht oben ist; scheitert das, bleibt der Kalender.
+            remote.firstOrNull { it.id == l.collection && !it.readOnly }?.let { upload(l, it, counts) }
             provider.delete(ContentUris(calendars, l.id), null, null)
         }
         val states = mutableListOf<CollectionState>()

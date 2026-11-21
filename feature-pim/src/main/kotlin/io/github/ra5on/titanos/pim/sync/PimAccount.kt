@@ -18,20 +18,22 @@ object PimAccount {
 
     fun current(context: Context): Account? = all(context).firstOrNull()
 
-    /** Legt das Konto der Kopplung an, falls es fehlt; Konten früherer Kopplungen gehen. */
-    fun ensure(context: Context, name: String) {
+    /**
+     * Legt das Konto der Kopplung an, falls es fehlt. Konten, deren Kopplung es
+     * nicht mehr gibt ([paired] = Namen aller Kopplungen), gehen.
+     */
+    fun ensure(context: Context, name: String, paired: Set<String> = setOf(name)) {
         val am = AccountManager.get(context)
-        for (a in all(context)) if (a.name != name) am.removeAccountExplicitly(a)
+        for (a in all(context)) if (a.name !in paired) { am.removeAccountExplicitly(a); SyncStore(context, a.name).clear() }
         if (all(context).none { it.name == name }) {
             am.addAccountExplicitly(Account(name, TYPE), null, null)
         }
         PimSync.configure(context)
     }
 
-    /** Nimmt das Konto weg; Android löscht dabei seine Kontakte und Termine auf dem Handy (am NAS bleiben sie). */
-    fun remove(context: Context) {
+    /** Nimmt das Konto weg ([name] null = alle); Android löscht dabei seine Kontakte und Termine auf dem Handy (am NAS bleiben sie). */
+    fun remove(context: Context, name: String? = null) {
         val am = AccountManager.get(context)
-        for (a in all(context)) am.removeAccountExplicitly(a)
-        SyncStore(context).clear()
+        for (a in all(context)) if (name == null || a.name == name) { SyncStore(context, a.name).clear(); am.removeAccountExplicitly(a) }
     }
 }

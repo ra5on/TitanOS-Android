@@ -127,7 +127,7 @@ private fun place(events: List<CalEvent>, day: LocalDate, model: CalendarModel):
         val s = CalDates.start(e, z)
         val en = CalDates.end(e, z)
         val sm = if (s.toLocalDate().isBefore(day)) 0 else s.hour * 60 + s.minute
-        val em = if (en.toLocalDate().isAfter(day)) 24 * 60 else maxOf(sm + 15, en.hour * 60 + en.minute)
+        val em = if (en.toLocalDate().isAfter(day)) 24 * 60 else maxOf(sm + 45, en.hour * 60 + en.minute)
         Triple(e, sm, em)
     }.sortedWith(compareBy({ it.second }, { -it.third }))
     val out = mutableListOf<Placed>()
@@ -308,7 +308,8 @@ private fun EventBlock(
     val color = hexColor(model.calendar(e.calendar)?.color)
     val w = colW / columns
     val top = hour * (startMin / 60f)
-    val h = (hour * ((endMin - startMin) / 60f)).coerceAtLeast(22.dp)
+    // Wie WeekView.svelte: mindestens 45 Minuten hoch; ein längerer Titel scrollt im Block (nie abgeschnitten, nie über anderen).
+    val h = (hour * ((endMin - startMin) / 60f)).coerceAtLeast(hour * 0.75f)
     val canMove = !e.readOnly && !e.isBirthday && model.calendar(e.calendar)?.readOnly != true
     val origStart = remember(e.key) { CalDates.start(e, z) }
     val origEnd = remember(e.key) { CalDates.end(e, z) }
@@ -320,8 +321,8 @@ private fun EventBlock(
     val longerLabel = stringResource(R.string.cal_a11y_longer)
     val time = if (e.allDay) "" else "${CalDates.time(origStart)} – ${CalDates.time(origEnd)}"
     Box(
-        Modifier.offset(x = w * column, y = top).width(w).height(h).padding(1.dp)
-            .background(color.copy(alpha = .22f), RoundedCornerShape(5.dp)).clickable(onClick = onOpen)
+        Modifier.offset(x = w * column, y = top).width(w).height(h).padding(1.dp).clip(RoundedCornerShape(5.dp))
+            .background(color.copy(alpha = .22f)).clickable(onClick = onOpen)
             .semantics(mergeDescendants = true) {
                 contentDescription = "${e.title}, $time"
                 if (canMove) customActions = listOf(
@@ -344,11 +345,10 @@ private fun EventBlock(
             } else Modifier),
     ) {
         Box(Modifier.width(3.dp).fillMaxSize().background(color))
-        Column(Modifier.padding(start = 6.dp, end = 3.dp, top = 2.dp)) {
-            // Nur, was Platz hat; der ganze Text steht in der Ansicht des Termins und für Bildschirmleser.
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 6.dp, end = 3.dp, top = 2.dp)) {
             Text(eventTitle(e), style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = c.text)
-            if (endMin - startMin >= 60 && time.isNotBlank()) Text(time, style = TitanType.small, color = c.muted)
-            if (endMin - startMin >= 90 && e.location.isNotBlank()) Text(e.location, style = TitanType.small, color = c.muted)
+            if (time.isNotBlank()) Text(time, style = TitanType.small, color = c.muted)
+            if (e.location.isNotBlank()) Text(e.location, style = TitanType.small, color = c.muted)
         }
         if (canMove) {
             // Griff unten: ziehen ändert die Länge.

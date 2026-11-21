@@ -74,9 +74,13 @@ class ContactsModel(val api: ContactsApi, private val scope: CoroutineScope, pri
     fun load() {
         scope.launch {
             try {
-                items = api.list()
-                overview = runCatching { api.overview() }.getOrDefault(overview)
+                // Erst alles holen, dann zeigen: kommt „Meine Karte“ nach der Liste, hielte die Liste
+                // ihre Lage und die Karte stünde unsichtbar über dem oberen Rand.
+                val list = api.list()
+                val ov = runCatching { api.overview() }.getOrDefault(overview)
                 me = api.prefs().me
+                overview = ov
+                items = list
                 problem = null
             } catch (e: Exception) {
                 problem = conProblemOf(e)

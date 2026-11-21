@@ -28,6 +28,7 @@ fun pimChanges(stream: NasConnection): Flow<String> = flow {
         try {
             stream.execute { Request.Builder().url(it.newBuilder().encodedPath("/api/v1/calendar/stream").build()).header("Accept", "text/event-stream").build() }.use { r ->
                 r.throwIfError()
+                android.util.Log.d("TitanSync", "live stream connected")
                 pause = 2_000L
                 val reader = r.body.source()
                 var event = ""
@@ -37,7 +38,10 @@ fun pimChanges(stream: NasConnection): Flow<String> = flow {
                     when {
                         line.isEmpty() -> {
                             when (event) {
-                                "pim" -> runCatching { TitanJson.parseToJsonElement(data.toString()).jsonObject["kind"]?.jsonPrimitive?.content }.getOrNull()?.let { emit(it) }
+                                "pim" -> {
+                                    android.util.Log.d("TitanSync", "live: $data")
+                                    runCatching { TitanJson.parseToJsonElement(data.toString()).jsonObject["kind"]?.jsonPrimitive?.content }.getOrNull()?.let { emit(it) }
+                                }
                                 "resync" -> emit("resync")
                             }
                             event = ""; data.clear()

@@ -95,11 +95,15 @@ object PimSync {
 
     /** true: vom Nutzer angestoßen („Jetzt abgleichen“), dann gilt die Netzregel nicht. */
     private const val EXTRA_USER = "titanos_user"
+    const val TAG = "TitanSync"
 
     /** Richtet Abgleich und Zeitplan nach den Einstellungen ein (nach dem Koppeln und bei jeder Änderung). */
     fun configure(context: Context) {
-        val account = PimAccount.current(context) ?: return
-        val p = SyncStore(context).load()
+        for (account in PimAccount.all(context)) configure(context, account)
+    }
+
+    private fun configure(context: Context, account: Account) {
+        val p = SyncStore(context, account.name).load()
         for (authority in AUTHORITIES) {
             val on = if (authority == ContactsContract.AUTHORITY) p.contacts else p.calendars
             ContentResolver.setIsSyncable(account, authority, 1)
@@ -113,7 +117,12 @@ object PimSync {
 
     /** „Jetzt abgleichen“ bzw. eine Änderung am NAS: sofort, auch außerhalb des Zeitplans. */
     fun requestNow(context: Context, manual: Boolean = true, only: String? = null) {
-        val account = PimAccount.current(context) ?: return
+        for (account in PimAccount.all(context)) requestNow(context, account, manual, only)
+    }
+
+    fun requestNow(context: Context, account: Account, manual: Boolean, only: String?) {
+        // Ein Anstoß vom NAS achtet auf die Schalter in den Android-Einstellungen (Konto und „Automatisch synchronisieren“).
+        if (!manual && !ContentResolver.getMasterSyncAutomatically()) { android.util.Log.d(TAG, "live: master sync off"); return }
         // Für Android immer „von Hand“ (sofort, auch wenn der automatische Abgleich gerade ruht);
         // ob die Netzregel gilt, sagt das eigene Extra.
         val extras = Bundle().apply {
@@ -121,13 +130,15 @@ object PimSync {
             putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
             putBoolean(EXTRA_USER, manual)
         }
-        for (a in AUTHORITIES) if (only == null || only == a) ContentResolver.requestSync(account, a, extras)
+        for (a in AUTHORITIES) {
+            if (only != null && only != a) continue
+            if (!manual && !ContentResolver.getSyncAutomatically(account, a)) continue
+            android.util.Log.d(TAG, "request sync $a manual=$manual")
+            ContentResolver.requestSync(account, a, extras)
+        }
     }
 
-    fun running(context: Context): Boolean {
-        val account = PimAccount.current(context) ?: return false
-        return AUTHORITIES.any { ContentResolver.isSyncActive(account, it) }
-    }
+    fun running(context: Context): Boolean = PimAccount.all(context).any { a -> AUTHORITIES.any { ContentResolver.isSyncActive(a, it) } }
 
     /** Warum jetzt nicht abgeglichen werden darf; null = darf. */
     fun blocked(context: Context, p: SyncPrefs): String? {
@@ -144,17 +155,21 @@ object PimSync {
     }
 
     internal fun perform(context: Context, account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, result: SyncResult) {
-        val store = SyncStore(context)
+        val store = SyncStore(context, account.name)
         val p = store.load()
         val manual = if (extras.containsKey(EXTRA_USER)) extras.getBoolean(EXTRA_USER) else extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL)
         val kind = if (authority == ContactsContract.AUTHORITY) "contacts" else "calendar"
         val now = System.currentTimeMillis()
-        fun problem(code: String?) = store.updateStatus { it.copy(lastRun = now, problem = code) }
+        android.util.Log.d(TAG, "perform $kind manual=$manual")
+        fun problem(code: String?) {
+            android.util.Log.d(TAG, "perform $kind: $code")
+            store.updateStatus { it.copy(lastRun = now, problem = code) }
+        }
         // „Jetzt abgleichen“ gilt auch außerhalb der Netzregel, nur nicht ohne Netz.
         blocked(context, p)?.let { code ->
             if (!manual || code == Problems.NETWORK) { problem(code); return }
         }
-        val nas = PimRuntime.nas() ?: run { problem(Problems.NOT_PAIRED); return }
+        val nas = PimRuntime.nas(account) ?: run { problem(Problems.NOT_PAIRED); return }
         val api = PimSyncApi(nas)
         val counts = SyncCounts()
         try {

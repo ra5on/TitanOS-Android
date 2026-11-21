@@ -66,8 +66,12 @@ data class SyncStatus(
     val uploaded: Int get() = up.values.sum()
 }
 
-class SyncStore(context: Context) {
-    private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences("pim_sync", Context.MODE_PRIVATE)
+/** Einstellungen und Stand je Konto ([account] = Name des Android-Kontos; leer = das erste). */
+class SyncStore(context: Context, account: String? = null) {
+    private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences(
+        "pim_sync" + (account ?: PimAccount.current(context)?.name)?.let { "-" + it.replace(Regex("[^A-Za-z0-9@._-]"), "_") }.orEmpty(),
+        Context.MODE_PRIVATE,
+    )
 
     fun load(): SyncPrefs = prefs.getString("prefs", null)?.let { runCatching { TitanJson.decodeFromString(SyncPrefs.serializer(), it) }.getOrNull() } ?: SyncPrefs()
 

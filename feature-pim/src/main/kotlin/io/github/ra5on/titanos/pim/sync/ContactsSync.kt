@@ -52,8 +52,12 @@ class ContactsSync(
     /** Die Kennung der Sammlung steht in SYNC4 jedes RawContacts/Groups, damit mehrere Adressbücher gehen. */
     fun run(counts: SyncCounts): List<CollectionState> {
         ensureSettings()
-        val remote = if (prefs.contacts) api.collections(kind) else emptyList()
-        val wanted = remote.filter { it.id !in prefs.offContacts }
+        val remote = api.collections(kind)
+        val wanted = if (prefs.contacts) remote.filter { it.id !in prefs.offContacts } else emptyList()
+        // Vor dem Ausschalten: was am Handy geändert und noch nicht oben ist, erst hochladen.
+        // Scheitert das, bricht der Lauf ab und die Zeilen bleiben (nichts geht verloren).
+        val firstWritable = (wanted + remote).firstOrNull { !it.readOnly }?.id
+        for (col in remote.filter { it !in wanted && !it.readOnly }) upload(col, counts, isDefault = col.id == firstWritable && wanted.none { !it.readOnly })
         // Kontakte ausgeschalteter oder entfernter Adressbücher gehen vom Handy.
         val keep = wanted.map { it.id }
         val sel = if (keep.isEmpty()) null else "${RawContacts.SYNC4} NOT IN (${keep.joinToString(",") { "?" }}) OR ${RawContacts.SYNC4} IS NULL AND ${RawContacts.SOURCE_ID} IS NOT NULL"

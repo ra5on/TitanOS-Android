@@ -66,8 +66,9 @@ class ContactsScreenshotTest {
     fun tearDown() = nas.close()
 
     private fun shot(name: String, dark: Boolean, route: ConRoute = ConRoute.Home) {
+        val c = nas.connection()
         rule.setContent {
-            TitanTheme(dark = dark) { Box(Modifier.fillMaxSize()) { val c = nas.connection(); ContactsScreen(c, null, onClose = {}, onSyncSettings = {}, startRoute = route) } }
+            TitanTheme(dark = dark) { Box(Modifier.fillMaxSize()) { ContactsScreen(c, null, onClose = {}, onSyncSettings = {}, startRoute = route) } }
         }
         val until = System.currentTimeMillis() + 3000
         while (System.currentTimeMillis() < until) { rule.mainClock.advanceTimeBy(100); Thread.sleep(50) }
@@ -84,11 +85,19 @@ class ContactsScreenshotTest {
     @Test fun listsDark() = shot("63-listen", true, ConRoute.Lists)
     @Test fun listsLight() = shot("63-listen", false, ConRoute.Lists)
     @Test fun duplicatesLight() = shot("64-dubletten", false, ConRoute.Duplicates)
+    @Test fun duplicatesDark() = shot("64-dubletten", true, ConRoute.Duplicates)
     @Test fun mergeDark() = shot("65-zusammenfuehren", true, ConRoute.Merge(DuplicateSet(ids = listOf("c16.vcf", "c2.vcf"))))
+    @Test fun mergeLight() = shot("65-zusammenfuehren", false, ConRoute.Merge(DuplicateSet(ids = listOf("c16.vcf", "c2.vcf"))))
     @Test fun suggestionsLight() = shot("66-vorschlaege", false, ConRoute.Suggestions)
+    @Test fun suggestionsDark() = shot("66-vorschlaege", true, ConRoute.Suggestions)
+    @Test fun newDark() = shot("71-kontakt-neu", true, ConRoute.Edit(null))
+    @Test fun newLight() = shot("71-kontakt-neu", false, ConRoute.Edit(null))
     @Test fun settingsDark() = shot("67-kontakte-einstellungen", true, ConRoute.Settings)
     @Test fun settingsLight() = shot("67-kontakte-einstellungen", false, ConRoute.Settings)
     @Test @Config(qualifiers = "de-w840dp-h900dp-mdpi") fun splitLight() = shot("68-kontakte-split", false, ConRoute.Detail("c16.vcf"))
+    @Test @Config(qualifiers = "de-w840dp-h900dp-mdpi") fun splitDark() = shot("68-kontakte-split", true, ConRoute.Detail("c16.vcf"))
     @Test @Config(qualifiers = "de-w1280dp-h800dp-mdpi") fun wideDark() = shot("69-kontakte-pc", true, ConRoute.Detail("c16.vcf"))
+    @Test @Config(qualifiers = "de-w1280dp-h800dp-mdpi") fun wideLight() = shot("69-kontakte-pc", false, ConRoute.Detail("c16.vcf"))
+    @Test @Config(qualifiers = "de-w412dp-h915dp-xhdpi", fontScale = 2.0f) fun largeFontDark() = shot("70-kontakt-schrift-200", true, ConRoute.Detail("c16.vcf"))
     @Test @Config(qualifiers = "de-w412dp-h915dp-xhdpi", fontScale = 2.0f) fun largeFont() = shot("70-kontakt-schrift-200", false, ConRoute.Detail("c16.vcf"))
 }

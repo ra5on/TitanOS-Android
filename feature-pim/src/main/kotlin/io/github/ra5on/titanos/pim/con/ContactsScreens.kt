@@ -57,6 +57,7 @@ import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -211,9 +212,11 @@ private fun ContactsHome(model: ContactsModel, width: Width, group: String?, sel
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     var query by rememberSaveable { mutableStateOf("") }
     var searching by remember { mutableStateOf(false) }
+    // Solange im Suchfeld getippt wird, gelten keine Tastenkürzel.
+    var typing by remember { mutableStateOf(false) }
     Row(
         Modifier.fillMaxSize().background(c.bg).focusRequester(focus).focusable().onPreviewKeyEvent { e ->
-            if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+            if (e.type != KeyEventType.KeyDown || typing) return@onPreviewKeyEvent false
             when {
                 e.key == Key.N && !searching -> { go(ConRoute.Edit(null)); true }
                 e.key == Key.E && selected != null && !searching -> { go(ConRoute.Edit(selected)); true }
@@ -239,7 +242,7 @@ private fun ContactsHome(model: ContactsModel, width: Width, group: String?, sel
             Box(Modifier.width(1.dp).fillMaxHeight().background(c.border))
         }
         Column(Modifier.then(if (width.twoPanes) Modifier.width(if (width.sidebar) 340.dp else 320.dp) else Modifier.weight(1f)).fillMaxHeight()) {
-            ContactList(model, width, group, selected, query, { query = it }, searching, { searching = it }, go, onClose)
+            ContactList(model, width, group, selected, query, { query = it }, searching, { searching = it }, go, onClose, onTyping = { typing = it }, focusSearch = searching)
         }
         if (width.twoPanes) {
             Box(Modifier.width(1.dp).fillMaxHeight().background(c.border))
@@ -257,7 +260,10 @@ private fun ContactsHome(model: ContactsModel, width: Width, group: String?, sel
 private fun ContactList(
     model: ContactsModel, width: Width, group: String?, selected: String?, query: String, onQuery: (String) -> Unit,
     searching: Boolean, onSearching: (Boolean) -> Unit, go: (ConRoute) -> Unit, onClose: () -> Unit,
+    onTyping: (Boolean) -> Unit = {}, focusSearch: Boolean = false,
 ) {
+    val searchFocus = remember { FocusRequester() }
+    LaunchedEffect(focusSearch) { if (focusSearch) runCatching { searchFocus.requestFocus() } }
     val c = Titan.colors
     val scope = rememberCoroutineScope()
     var results by remember { mutableStateOf<Pair<List<ContactItem>, List<Suggestion>>?>(null) }
@@ -285,7 +291,9 @@ private fun ContactList(
             IconButton(TitanIcons.plus, stringResource(R.string.con_new), { go(ConRoute.Edit(null)) }, tint = c.accent)
         }
         Text(g?.name ?: stringResource(R.string.con_title_all), style = TitanType.big, color = c.text, modifier = Modifier.padding(horizontal = 16.dp).semantics { heading() })
-        TextInput(query, onQuery, stringResource(UiR.string.ui_search), Modifier.padding(horizontal = 16.dp, vertical = 8.dp), leading = TitanIcons.search, placeholder = stringResource(UiR.string.ui_search))
+        TextInput(query, onQuery, stringResource(UiR.string.ui_search),
+            Modifier.padding(horizontal = 16.dp, vertical = 8.dp).focusRequester(searchFocus).onFocusChanged { f -> onTyping(f.isFocused); if (!f.isFocused) onSearching(false) },
+            leading = TitanIcons.search, placeholder = stringResource(UiR.string.ui_search))
         model.problem?.let { Problem(conProblemText(it), Modifier.padding(horizontal = 16.dp)) }
         Box(Modifier.weight(1f)) {
             LazyColumn(state = state, modifier = Modifier.fillMaxSize().padding(end = if (model.prefs.index) 22.dp else 0.dp)) {
