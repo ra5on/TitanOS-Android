@@ -6,7 +6,6 @@ import io.github.ra5on.titanos.agent.chat.Project
 
 // Vorläufig: die Seiten entstehen in eigenen Dateien und ersetzen diese hier.
 
-@Composable fun KnowledgePage(model: AgentModel, onEditProject: (Project) -> Unit, onOpenProject: (Project) -> Unit) {}
 @Composable fun NotesPanel(model: AgentModel, onClose: () -> Unit) {}
 @Composable fun ProjectList(model: AgentModel, onOpen: (Project) -> Unit, onNew: () -> Unit) {}
 @Composable fun ProjectSheet(model: AgentModel, project: Project, onClose: () -> Unit, onOpen: (String) -> Unit, onEdit: () -> Unit, onNew: () -> Unit) {}
