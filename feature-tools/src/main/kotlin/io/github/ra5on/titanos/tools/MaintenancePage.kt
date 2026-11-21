@@ -354,7 +354,7 @@ internal fun MaintenancePage(ctx: ToolsCtx) {
             }
         },
         listWidth = 460.dp,
-        empty = { PageBody { Muted(t("ops.schedules")) } },
+        empty = { PageBody { Muted(androidx.compose.ui.res.stringResource(R.string.tools_pick)) } },
     )
 
     draft?.let { d ->
@@ -445,7 +445,7 @@ private fun JobEditor(
         Card {
             ChoiceRow(t("ops.volume"), listOf("" to t("ops.choose")) + storage?.volumes.orEmpty().map { it.name to it.name }, volume, onVolume, icon = "disk")
         }
-        Field(t("ops.name"), d.name, { onChange(d.copy(name = it.take(100))) })
+        Field(t("ops.name"), d.name, { onChange(d.copy(name = it.take(100).replace("\n", ""))) }, singleLine = false)
         Card {
             ChoiceRow(t("ops.kind"), KINDS.map { it to t("ops.kind.$it") }, d.kind, { onChange(d.copy(kind = it, target = "")) }, icon = "tool")
             ChoiceRow(

@@ -178,6 +178,8 @@ object Fixtures {
         on("GET", "monitoring/history*") { history() }
         on("GET", "activity*", activity)
         on("GET", "logs?*", logs)
+        // Mitlaufen: seit dem letzten Stand nichts Neues.
+        on("GET", "logs?source=&priority=6&lines=500&after*", """{"entries":[],"cursor":"s=abc;i=42"}""")
         on("GET", "storage/tests", tests)
         on("GET", "system", system)
         on("GET", "system/processes", processes)

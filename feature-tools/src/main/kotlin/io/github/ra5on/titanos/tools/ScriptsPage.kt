@@ -269,7 +269,7 @@ internal fun ScriptsPage(ctx: ToolsCtx) {
             }
         },
         listWidth = 460.dp,
-        empty = { PageBody { Muted(t("scripts.list")) } },
+        empty = { PageBody { Muted(androidx.compose.ui.res.stringResource(R.string.tools_pick)) } },
     )
 
     editing?.let { id ->
@@ -453,8 +453,8 @@ private fun ScriptEditor(ctx: ToolsCtx, id: String, timezone: String?, onClose: 
                 if (error.isNotEmpty()) Notice(error, tone = Tone.Error) else Loading(text = t("scripts.loading"))
                 return@Column
             }
-            Field(t("scripts.name"), d.name, { draft = d.copy(name = it.take(64)) })
-            Field(t("scripts.description"), d.description, { draft = d.copy(description = it.take(200)) })
+            Field(t("scripts.name"), d.name, { draft = d.copy(name = it.take(64).replace("\n", "")) }, singleLine = false)
+            Field(t("scripts.description"), d.description, { draft = d.copy(description = it.take(200).replace("\n", " ")) }, singleLine = false)
             Card {
                 ChoiceRow(t("scripts.trigger"), TRIGGERS.map { it to t("scripts.trigger.$it") }, d.trigger, { draft = d.copy(trigger = it) }, icon = "play")
             }

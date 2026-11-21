@@ -117,7 +117,7 @@ internal fun LogsPage(ctx: ToolsCtx) {
             entries = res.entries
             cursor = res.cursor
             selected = null
-            if (entries.isNotEmpty()) list.scrollToItem(entries.lastIndex + HEADER_ITEMS)
+            if (entries.isNotEmpty()) list.requestScrollToItem(entries.lastIndex + HEADER_ITEMS)
         } catch (e: Exception) {
             if (request == generation) error = fail(e)
         }
@@ -136,7 +136,7 @@ internal fun LogsPage(ctx: ToolsCtx) {
                 val dropped = maxOf(0, entries.size + res.entries.size - LOG_KEEP)
                 entries = (entries + res.entries).takeLast(LOG_KEEP)
                 selected = selected?.let { it - dropped }?.takeIf { it >= 0 }
-                if (wasAtEnd) list.scrollToItem(entries.lastIndex + HEADER_ITEMS)
+                if (wasAtEnd) list.requestScrollToItem(entries.lastIndex + HEADER_ITEMS)
             }
         } catch (e: Exception) {
             if (request == generation) error = fail(e)
@@ -246,7 +246,7 @@ internal fun LogsPage(ctx: ToolsCtx) {
         },
         detail = chosen?.let { e -> { LogDetail(e) } },
         listWidth = 520.dp,
-        empty = { PageBody { Muted(t("tools.logs")) } },
+        empty = { PageBody { Muted(androidx.compose.ui.res.stringResource(R.string.tools_pick)) } },
     )
 }
 

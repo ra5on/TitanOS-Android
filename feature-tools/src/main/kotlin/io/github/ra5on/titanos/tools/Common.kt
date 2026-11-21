@@ -142,13 +142,10 @@ fun KeyEvent.refresh() = down() && (key == Key.F5 || (ctrl() && key == Key.R))
 /** Lange Maschinenwerte (Befehlszeilen, Protokollzeilen, Kennungen): ganz, waagrecht scrollbar statt gekürzt. */
 @Composable
 fun MonoLine(text: String, modifier: Modifier = Modifier, color: androidx.compose.ui.graphics.Color = Titan.colors.muted, small: Boolean = true) {
-    Text(
-        text,
-        style = (if (small) TitanType.small else TitanType.body).copy(fontFamily = TitanFonts.mono),
-        color = color,
-        softWrap = false,
-        modifier = modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-    )
+    // Die Zeile behält ihre ganze Breite; der Rahmen darum scrollt waagrecht.
+    androidx.compose.foundation.layout.Box(modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+        Text(text, style = (if (small) TitanType.small else TitanType.body).copy(fontFamily = TitanFonts.mono), color = color, softWrap = false)
+    }
 }
 
 /** Mehrzeilige Ausgabe (Skriptausgabe, Fehlertext): Zeilen bleiben ganz, waagrecht scrollbar. */
@@ -156,13 +153,9 @@ fun MonoLine(text: String, modifier: Modifier = Modifier, color: androidx.compos
 fun MonoBlock(text: String, modifier: Modifier = Modifier) {
     val c = Titan.colors
     val shape = RoundedCornerShape(10.dp)
-    Text(
-        text,
-        style = TitanType.small.copy(fontFamily = TitanFonts.mono),
-        color = c.text,
-        softWrap = false,
-        modifier = modifier.fillMaxWidth().clip(shape).background(c.chip).horizontalScroll(rememberScrollState()).padding(10.dp),
-    )
+    androidx.compose.foundation.layout.Box(modifier.fillMaxWidth().clip(shape).background(c.chip).horizontalScroll(rememberScrollState()).padding(10.dp)) {
+        Text(text, style = TitanType.small.copy(fontFamily = TitanFonts.mono), color = c.text, softWrap = false)
+    }
 }
 
 /** Aufklappbarer Bereich (details/summary im Web). */
