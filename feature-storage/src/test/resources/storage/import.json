@@ -1,0 +1,45 @@
+[
+ {
+  "id": "md:fixture",
+  "filesystem": "ext4",
+  "filesystemUUID": "fs-fixture",
+  "arrayUUID": "md-fixture",
+  "level": "raid1",
+  "disks": [
+   "vde",
+   "vdf"
+  ],
+  "size": 8000000000000,
+  "fingerprint": "fingerprint",
+  "reason": ""
+ },
+ {
+  "id": "luks:archiv",
+  "filesystem": "btrfs",
+  "filesystemUUID": "fs-crypt",
+  "arrayUUID": "",
+  "level": "raid1",
+  "disks": [
+   "vdg",
+   "vdh"
+  ],
+  "size": 4000000000000,
+  "fingerprint": "fp2",
+  "reason": "",
+  "encrypted": true,
+  "encryptionUUID": "c1"
+ },
+ {
+  "id": "md:foreign",
+  "filesystem": "",
+  "filesystemUUID": "",
+  "arrayUUID": "md-foreign",
+  "level": "raid5",
+  "disks": [
+   "vdi"
+  ],
+  "size": 12000000000000,
+  "fingerprint": "fp3",
+  "reason": "array incomplete: 1 of 3 members"
+ }
+]

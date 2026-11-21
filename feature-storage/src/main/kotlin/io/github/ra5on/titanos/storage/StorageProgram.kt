@@ -77,10 +77,15 @@ internal class StorageNav(start: String?) {
  * Arbeitsspeicher. [pollMs] ist die Abfrage des Speicher-Zustands (Tests: 0).
  */
 @Composable
-internal fun StorageProgram(env: AdminEnv, start: String?, onBack: () -> Unit, pollMs: Long = 4000) {
+internal fun StorageProgram(
+    env: AdminEnv,
+    start: String?,
+    onBack: () -> Unit,
+    pollMs: Long = 4000,
+    nav: StorageNav = remember(start) { StorageNav(start) },
+    overview: OverviewState = remember { OverviewState() },
+) {
     val model = remember(env) { StorageModel(StorageApi(env.http)) }
-    val nav = remember(start) { StorageNav(start) }
-    val overview = remember { OverviewState() }
     val smart = remember { SmartSelection() }
     val scope = rememberCoroutineScope()
     val width = currentWidth()
@@ -141,7 +146,7 @@ internal fun StorageProgram(env: AdminEnv, start: String?, onBack: () -> Unit, p
                 "smart" -> SmartPage(env, model, nav, smart)
                 "import" -> ImportPage(env, model, nav)
                 "replace" -> ReplacePage(env, model, nav)
-                "memory" -> MemoryPage(env)
+                "memory" -> MemoryPage(env, if (pollMs <= 0) 0 else 5000)
                 else -> OverviewPage(env, model, nav, overview)
             }
         }

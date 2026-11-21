@@ -215,7 +215,7 @@ private fun QuotaGroup(model: StorageModel, volume: Volume, busy: Boolean) {
     var error by remember { mutableStateOf<Throwable?>(null) }
     val q = volume.shareQuotas.orEmpty()
     SettingGroup(t("storage.shareQuotas")) {
-        SettingRow(
+        ActionRow(
             t("storage.shareQuotas.$q"),
             icon = "shield",
             below = {
@@ -334,4 +334,21 @@ internal fun LinkText(text: String, onClick: () -> Unit) {
         color = Titan.colors.accent,
         modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(role = Role.Button, onClick = onClick).padding(vertical = 6.dp),
     )
+}
+
+/** Zeile mit Knöpfen darunter (nicht daneben): Titel und Beschreibung behalten am Handy die ganze Breite. */
+@Composable
+internal fun ActionRow(
+    title: String,
+    modifier: Modifier = Modifier,
+    desc: String? = null,
+    icon: String? = null,
+    divider: Boolean = false,
+    below: (@Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit)? = null,
+    buttons: @Composable () -> Unit,
+) {
+    SettingRow(title, modifier, desc = desc, icon = icon, divider = divider, below = {
+        below?.invoke(this)
+        ButtonRow(Modifier.padding(top = 8.dp)) { buttons() }
+    })
 }

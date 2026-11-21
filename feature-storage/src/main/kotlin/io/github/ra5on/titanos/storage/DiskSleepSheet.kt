@@ -42,9 +42,9 @@ internal fun DiskSleepSheet(model: StorageModel, status: DiskSleepStatus?, focus
     val scope = rememberCoroutineScope()
     val c = Titan.colors
     // Der Entwurf beginnt mit den Einstellungen beim Öffnen; neue Zustände frischen nur die Listen auf.
-    var draftDefault by remember { mutableStateOf(status?.idleMinutes ?: 0) }
-    var draftVolumes by remember { mutableStateOf(status?.volumes.orEmpty()) }
-    var draftDisks by remember { mutableStateOf(status?.disks.orEmpty()) }
+    var draftDefault by remember(status == null) { mutableStateOf(status?.idleMinutes ?: 0) }
+    var draftVolumes by remember(status == null) { mutableStateOf(status?.volumes.orEmpty()) }
+    var draftDisks by remember(status == null) { mutableStateOf(status?.disks.orEmpty()) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<Throwable?>(null) }
     var saved by remember { mutableStateOf(false) }

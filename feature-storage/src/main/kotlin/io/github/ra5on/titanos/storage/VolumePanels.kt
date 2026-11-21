@@ -327,7 +327,7 @@ internal fun CacheGroup(model: StorageModel, volume: Volume) {
     var dialog by remember { mutableStateOf<String?>(null) }
     SettingGroup(t("cache.title"), expandable = true) {
         if (cache == null) {
-            SettingRow(t("cache.off"), icon = "zap") {
+            ActionRow(t("cache.off"), icon = "zap") {
                 ActionButton(t("cache.enable"), { dialog = "enable" })
             }
         } else {

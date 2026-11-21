@@ -1,0 +1,1 @@
+{"pending": true, "active": false, "operation": {"id": "g1", "volume": "Data", "recoveryVolume": "Safe", "diskSerial": "WD-J1", "originalDisks": 3, "targetDisks": 4, "phase": "adding", "error": "", "started": "2026-11-19T10:00:00Z"}, "error": ""}
