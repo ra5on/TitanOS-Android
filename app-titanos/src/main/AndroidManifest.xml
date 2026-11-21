@@ -15,6 +15,7 @@
         android:theme="@style/Theme.TitanOS">
         <activity
             android:name=".MainActivity"
+            android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density|keyboard|keyboardHidden|navigation|uiMode|colorMode"
             android:exported="true"

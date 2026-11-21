@@ -131,9 +131,27 @@ fun ViewerScreen(
         onPage(pager.currentPage)
     }
     if (!embedded) FullScreen(!chrome) else LaunchedEffect(Unit) { chrome = true }
+    // Bild im Bild (Video): nur noch das Bild, ohne Leisten.
+    var pip by remember { mutableStateOf(false) }
+    val pipView = LocalView.current
+    DisposableEffect(Unit) {
+        val act = pipView.context.findActivity() as? androidx.activity.ComponentActivity
+        val l = androidx.core.util.Consumer<androidx.core.app.PictureInPictureModeChangedInfo> { pip = it.isInPictureInPictureMode }
+        act?.addOnPictureInPictureModeChangedListener(l)
+        onDispose { act?.removeOnPictureInPictureModeChangedListener(l) }
+    }
     val current = files.getOrNull(pager.currentPage)
     val kind = current?.let { Kinds.of(it.name) } ?: FileKind.Other
     val c = Titan.colors
+    // Auf schwarzem Grund helle Symbole in der Statusleiste.
+    val view = LocalView.current
+    val black = darkKind(kind) && !embedded
+    DisposableEffect(black) {
+        val ctl = view.context.findActivity()?.window?.let { WindowCompat.getInsetsController(it, view) }
+        val before = ctl?.isAppearanceLightStatusBars
+        if (black) ctl?.isAppearanceLightStatusBars = false
+        onDispose { if (before != null) ctl.isAppearanceLightStatusBars = before }
+    }
     Box(Modifier.fillMaxSize().background(if (darkKind(kind)) Color.Black else c.bg)) {
         HorizontalPager(pager, Modifier.fillMaxSize(), userScrollEnabled = !zoomed, beyondViewportPageCount = 1, key = { files[it].name }) { page ->
             val e = files[page]
@@ -142,15 +160,15 @@ fun ViewerScreen(
             Box(Modifier.fillMaxSize()) {
                 when (Kinds.of(e.name)) {
                     FileKind.Image -> ImagePage(api, location, e, active, onZoom = { if (active) zoomed = it }, onTap = { if (!embedded) chrome = !chrome })
-                    FileKind.Video -> if (api != null) MediaPage(api, location, e, active, audio = false)
-                    FileKind.Audio -> if (api != null) MediaPage(api, location, e, active, audio = true)
+                    FileKind.Video -> if (api != null) MediaPage(api, location, e, active, audio = false, files, pip)
+                    FileKind.Audio -> if (api != null) MediaPage(api, location, e, active, audio = true, files, pip)
                     FileKind.Pdf -> PdfPage(api, location, e, top, onZoom = { if (active) zoomed = it }, onTap = { if (!embedded) chrome = !chrome }, actions)
                     FileKind.Text -> TextPage(api, location, e, top, actions)
                     else -> OtherPage(api, location, e, top, actions)
                 }
             }
         }
-        if (chrome && current != null) {
+        if (chrome && !pip && current != null) {
             Box(Modifier.statusBarsPadding()) {
                 val counter = stringResource(R.string.view_counter, pager.currentPage + 1, files.size)
                 TopBar(
@@ -267,21 +285,42 @@ private fun ImagePage(api: FilesApi?, location: Location, e: FileEntry, active: 
 
 @OptIn(UnstableApi::class)
 @Composable
-private fun MediaPage(api: FilesApi, location: Location, e: FileEntry, active: Boolean, audio: Boolean) {
+private fun MediaPage(api: FilesApi, location: Location, e: FileEntry, active: Boolean, audio: Boolean, files: List<FileEntry>, pip: Boolean) {
     var error by remember { mutableStateOf<String?>(null) }
+    var cast by remember { mutableStateOf(false) }
     val c = Titan.colors
-    Column(Modifier.fillMaxSize().statusBarsPadding().padding(top = 64.dp).navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
-        if (audio) {
-            Spacer(Modifier.height(24.dp))
-            NasThumb(api, location.root.id, location.full(e.name), e.modified, Modifier.size(180.dp), size = 640) {
-                FileTypeIcon(TitanIcons.mic, size = 96.dp)
+    val context = LocalContext.current
+    if (pip) {
+        // Bild im Bild: nur das Video.
+        if (!audio) NasPlayer(api, location.root.id, location.full(e.name), active = true, onError = { error = it }, modifier = Modifier.fillMaxSize(), controls = false)
+        return
+    }
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().statusBarsPadding().padding(top = 64.dp).navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
+            if (audio) {
+                Spacer(Modifier.height(24.dp))
+                NasThumb(api, location.root.id, location.full(e.name), e.modified, Modifier.size(180.dp), size = 640) {
+                    FileTypeIcon(TitanIcons.mic, size = 96.dp)
+                }
+                Text(e.name, style = TitanType.title, color = c.text, modifier = Modifier.padding(16.dp))
             }
-            Text(e.name, style = TitanType.title, color = c.text, modifier = Modifier.padding(16.dp))
+            error?.let { Problem(stringResource(R.string.view_play_failed, it), Modifier.padding(16.dp)) }
+            FlowRow(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!audio) {
+                    Chip(stringResource(R.string.media_pip), onClick = {
+                        (context.findActivity())?.enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational(16, 9)).build())
+                    })
+                }
+                Chip(stringResource(if (audio) R.string.media_cast_speaker else R.string.media_cast_tv), onClick = { cast = true })
+            }
+            if (audio) {
+                // Ton läuft im Hintergrunddienst mit Wiedergabeliste aus dem Ordner weiter.
+                if (active) NasControllerPlayer(location, files.filter { Kinds.of(it.name) == FileKind.Audio }, e, onError = { error = it }, modifier = Modifier.fillMaxWidth().weight(1f))
+            } else {
+                NasPlayer(api, location.root.id, location.full(e.name), active, onError = { error = it }, modifier = Modifier.fillMaxWidth().weight(1f))
+            }
         }
-        error?.let { Problem(stringResource(R.string.view_play_failed, it), Modifier.padding(16.dp)) }
-        if (active || !audio) {
-            NasPlayer(api, location.root.id, location.full(e.name), active, onError = { error = it }, modifier = Modifier.fillMaxWidth().weight(1f))
-        }
+        if (cast) CastSheet(location, e) { cast = false }
     }
 }
 

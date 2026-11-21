@@ -27,6 +27,14 @@
     <string name="batch_suffix">Hinten anfügen</string>
     <string name="batch_text">Suchen und ersetzen, Nummern</string>
     <string name="batch_title">Mehrere umbenennen</string>
+    <string name="cast_failed">Das Gerät hat die Wiedergabe abgelehnt.</string>
+    <string name="cast_none">Nichts gefunden. Das Gerät muss im selben WLAN sein und DLNA/UPnP können.</string>
+    <string name="cast_note">Das Gerät holt die Datei über dieses Handy vom NAS; das Handy muss dafür im WLAN bleiben. Kein Chromecast, keine Google-Dienste.</string>
+    <string name="cast_playing">spielt</string>
+    <string name="cast_search_again">Neu suchen</string>
+    <string name="cast_searching">Sucht Fernseher und Lautsprecher …</string>
+    <string name="cast_stop">Beenden</string>
+    <string name="cast_title">Im Heimnetz abspielen (DLNA)</string>
     <string name="clip_drop">Zwischenablage leeren</string>
     <string name="clip_from">aus %1$s</string>
     <string name="clip_paste">Hier einfügen</string>
@@ -112,6 +120,9 @@
     <string name="jobs_state_failed">Fehlgeschlagen: %1$s</string>
     <string name="jobs_text">Kopieren, Verschieben, Laden am NAS</string>
     <string name="jobs_title">Aufträge</string>
+    <string name="media_cast_speaker">Auf Lautsprecher abspielen</string>
+    <string name="media_cast_tv">Auf Fernseher abspielen</string>
+    <string name="media_pip">Bild im Bild</string>
     <string name="menu_favorite">Favorit</string>
     <string name="menu_favorite_text">Oben unter Dateien, auch im Web</string>
     <string name="menu_reload">Neu laden</string>

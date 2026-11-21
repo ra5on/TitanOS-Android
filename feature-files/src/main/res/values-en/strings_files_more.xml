@@ -27,6 +27,14 @@
     <string name="batch_suffix">Add at the end</string>
     <string name="batch_text">Find and replace, numbers</string>
     <string name="batch_title">Rename several</string>
+    <string name="cast_failed">The device refused playback.</string>
+    <string name="cast_none">Nothing found. The device must be on the same Wi-Fi and support DLNA/UPnP.</string>
+    <string name="cast_note">The device fetches the file from the NAS through this phone, which has to stay on the Wi-Fi. No Chromecast, no Google services.</string>
+    <string name="cast_playing">playing</string>
+    <string name="cast_search_again">Search again</string>
+    <string name="cast_searching">Looking for TVs and speakers …</string>
+    <string name="cast_stop">Stop</string>
+    <string name="cast_title">Play in the home network (DLNA)</string>
     <string name="clip_drop">Clear clipboard</string>
     <string name="clip_from">from %1$s</string>
     <string name="clip_paste">Paste here</string>
@@ -112,6 +120,9 @@
     <string name="jobs_state_failed">Failed: %1$s</string>
     <string name="jobs_text">Copying, moving, downloads on the NAS</string>
     <string name="jobs_title">Jobs</string>
+    <string name="media_cast_speaker">Play on speaker</string>
+    <string name="media_cast_tv">Play on TV</string>
+    <string name="media_pip">Picture in picture</string>
     <string name="menu_favorite">Favourite</string>
     <string name="menu_favorite_text">At the top of Files, also on the web</string>
     <string name="menu_reload">Reload</string>

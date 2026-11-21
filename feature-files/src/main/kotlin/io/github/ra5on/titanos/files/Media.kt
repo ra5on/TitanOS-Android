@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -31,7 +33,11 @@ import java.io.InputStream
  * vorher zu laden, und auch für mkv/mov (ohne `media=1`).
  */
 @OptIn(UnstableApi::class)
-class NasDataSource(private val api: FilesApi, private val root: String, private val path: String) : BaseDataSource(true) {
+class NasDataSource(private val api: () -> FilesApi?, private val fixedRoot: String? = null, private val fixedPath: String? = null) : BaseDataSource(true) {
+    constructor(api: FilesApi, root: String, path: String) : this({ api }, root, path)
+
+    private var root = ""
+    private var path = ""
     private var response: Response? = null
     private var stream: InputStream? = null
     private var left: Long = C.LENGTH_UNSET.toLong()
@@ -40,9 +46,13 @@ class NasDataSource(private val api: FilesApi, private val root: String, private
 
     override fun open(dataSpec: DataSpec): Long {
         uri = dataSpec.uri
+        val target = if (fixedRoot != null && fixedPath != null) fixedRoot to fixedPath else NasMedia.parse(dataSpec.uri) ?: throw IOException("not a NAS address")
+        root = target.first
+        path = target.second
+        val nas = api() ?: throw IOException("not paired")
         transferInitializing(dataSpec)
         val r = try {
-            api.openRange(root, path, dataSpec.position, dataSpec.length)
+            nas.openRange(root, path, dataSpec.position, dataSpec.length)
         } catch (e: ApiException) {
             if (e.status == 416) {
                 // Am Ende der Datei: nichts mehr zu lesen.
@@ -102,15 +112,27 @@ class NasDataSource(private val api: FilesApi, private val root: String, private
     }
 }
 
+/** Adressen der Medien am NAS für Media3: `titanos://nas/<Freigabe>?p=<Pfad>`. */
+object NasMedia {
+    fun uri(root: String, path: String): Uri = Uri.Builder().scheme("titanos").authority("nas").appendPath(root).appendQueryParameter("p", path).build()
+
+    fun parse(uri: Uri): Pair<String, String>? {
+        if (uri.scheme != "titanos" || uri.authority != "nas") return null
+        val root = uri.pathSegments.firstOrNull() ?: return null
+        val path = uri.getQueryParameter("p") ?: return null
+        return root to path
+    }
+}
+
 /** Abspieler mit den Bedienelementen von Media3 (Spulen, Pause, Vollbild-Zeit). */
 @OptIn(UnstableApi::class)
 @Composable
-fun NasPlayer(api: FilesApi, root: String, path: String, active: Boolean, onError: (String) -> Unit, modifier: Modifier = Modifier) {
+fun NasPlayer(api: FilesApi, root: String, path: String, active: Boolean, onError: (String) -> Unit, modifier: Modifier = Modifier, controls: Boolean = true) {
     val context = LocalContext.current
     val player = remember(root, path) {
         val factory = DataSource.Factory { NasDataSource(api, root, path) }
         ExoPlayer.Builder(context).build().apply {
-            setMediaSource(ProgressiveMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(Uri.parse("titanos://nas/${Uri.encode(root)}/${Uri.encode(path, "/")}"))))
+            setMediaSource(ProgressiveMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(NasMedia.uri(root, path))))
             prepare()
         }
     }
@@ -134,6 +156,27 @@ fun NasPlayer(api: FilesApi, root: String, path: String, active: Boolean, onErro
                 setShowPreviousButton(false)
             }
         },
+        update = { it.useController = controls },
+        modifier = modifier,
+    )
+}
+
+/** Ton über den Hintergrunddienst: dieselbe Bedienung, Wiedergabe läuft weiter, wenn man die Seite verlässt. */
+@OptIn(UnstableApi::class)
+@Composable
+fun NasControllerPlayer(location: Location, playlist: List<io.github.ra5on.titanos.model.FileEntry>, start: io.github.ra5on.titanos.model.FileEntry, onError: (String) -> Unit, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    var controller by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<androidx.media3.session.MediaController?>(null) }
+    LaunchedEffect(location, start.name) {
+        controller = runCatching {
+            val list = playlist.ifEmpty { listOf(start) }
+            Playback.play(context, location, list, list.indexOfFirst { it.name == start.name }.coerceAtLeast(0))
+        }.onFailure { onError(it.javaClass.simpleName) }.getOrNull()
+    }
+    DisposableEffect(Unit) { onDispose { controller?.release() } }
+    val c = controller ?: return
+    AndroidView(
+        factory = { ctx -> PlayerView(ctx).apply { player = c; controllerShowTimeoutMs = 0; controllerHideOnTouch = false; showController() } },
         modifier = modifier,
     )
 }

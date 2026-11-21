@@ -279,7 +279,7 @@ fun ExtractScreen(model: FilesModel, location: Location, entry: FileEntry, onSta
                     scope.launch {
                         try {
                             val job = api.extract(ExtractRequest(location.root.id, location.full(entry.name), l.version, chosen.toList(), location.root.id, location.path, folder.trim()))
-                            model.watchJobs()
+                            model.watchJobs(started = true)
                             if (job.id.isNotEmpty()) onStarted()
                         } catch (e: CancellationException) {
                             throw e

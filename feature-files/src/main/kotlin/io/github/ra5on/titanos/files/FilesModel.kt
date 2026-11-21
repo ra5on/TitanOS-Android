@@ -432,7 +432,7 @@ class FilesModel(
             val job = files!!.copy(CopyRequest(clip.from.root.id, clip.names.map { clip.from.full(it) }, target.root.id, target.path, clip.move, conflict))
             if (clip.move) clipboard = null
             nasJobs = listOf(job) + nasJobs.filter { it.id != job.id }
-            watchJobs()
+            watchJobs(started = true)
         }
     }
 
@@ -446,20 +446,22 @@ class FilesModel(
         return act {
             val job = files!!.copy(CopyRequest(p.root, p.paths, target.root.id, target.path, move = !copy && p.root == target.root.id, conflict = "rename"))
             nasJobs = listOf(job) + nasJobs.filter { it.id != job.id }
-            watchJobs()
+            watchJobs(started = true)
         }
     }
 
     /** Fragt die Aufträge ab, solange einer läuft; danach lädt der Ordner neu. */
-    fun watchJobs(force: Boolean = false) {
+    fun watchJobs(force: Boolean = false, started: Boolean = false) {
         val api = files ?: return
         if (force) {
             polling?.cancel()
             polling = null
         }
-        if (polling?.isActive == true) return
+        if (polling?.isActive == true && !started) return
+        if (started) polling?.cancel()
         polling = scope.launch {
-            var wasRunning = false
+            // Gerade gestartet: auch ein sofort fertiger Auftrag lädt den Ordner neu.
+            var wasRunning = started
             while (true) {
                 val list = runCatching { api.jobs() }.getOrNull() ?: break
                 nasJobs = list
@@ -507,7 +509,7 @@ class FilesModel(
     suspend fun downloadUrl(location: Location, url: String, name: String, rename: Boolean): Boolean = act {
         val job = files!!.downloadUrl(UrlDownloadRequest(location.root.id, location.path, url.trim(), name.trim(), if (rename) "rename" else ""))
         nasJobs = listOf(job) + nasJobs
-        watchJobs()
+        watchJobs(started = true)
     }
 
     /** Mehrere Dateien in Downloads speichern. */
