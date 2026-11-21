@@ -51,7 +51,7 @@ import io.github.ra5on.titanos.ui.theme.okInk
 import io.github.ra5on.titanos.ui.theme.warnInk
 
 // Kleine Bausteine der Seiten VMs und LXC im Stil der übrigen App-Seiten.
-// Texte brechen immer um (kein maxLines, keine Auslassung).
+// Texte brechen immer um, nichts wird gekürzt.
 
 @Composable
 @ReadOnlyComposable

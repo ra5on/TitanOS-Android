@@ -440,7 +440,7 @@ internal fun CatalogPage(state: DockerState, onInstalled: () -> Unit) {
     var search by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("all") }
     var source by rememberSaveable { mutableStateOf("") }
-    val lang = Locale.getDefault().language
+    val lang = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language
     ScrollPage {
         error?.let { ErrorBox(errorText(it), { reload++ }) }
         val s = store ?: run { if (error == null) Loading(); return@ScrollPage }

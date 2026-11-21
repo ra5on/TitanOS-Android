@@ -354,8 +354,8 @@ fun VmScreen(env: ComputeEnv, api: VmApi, vm: Vm, full: Boolean, onFull: () -> U
             onPaste = { pasting = true },
             onType = { typing = true },
             guestClipboard = session.guestClipboard,
-            onCopyGuest = { clipboard.setText(AnnotatedString(session.guestClipboard)); ui.toast(context.getString(R.string.vms_copied)) },
-            onScreenshot = { saveScreenshot(context, session.bitmap, vm.name)?.let { ui.toast(context.getString(R.string.vms_screenshot_saved, it)) } ?: ui.toast(context.getString(R.string.vms_screenshot_failed)) },
+            onCopyGuest = { clipboard.setText(AnnotatedString(session.guestClipboard)); ui.toast(ui.string(R.string.vms_copied)) },
+            onScreenshot = { saveScreenshot(context, session.bitmap, vm.name)?.let { ui.toast(ui.string(R.string.vms_screenshot_saved, it)) } ?: ui.toast(ui.string(R.string.vms_screenshot_failed)) },
             onSerial = { env.openConsole(ConsoleRequest.vm(vm.name, vm.label)) },
             onFull = onFull,
             onSettings = {
