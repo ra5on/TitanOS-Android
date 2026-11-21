@@ -453,7 +453,8 @@ fun ListScreen(
                             swipeOf(if (prefs.swipeLeft == SwipeAction.Flag) SwipeAction.Delete else SwipeAction.Flag),
                             Swipe(stringResource(R.string.mail_action_more), TitanIcons.more, IconSquareColors.slate) { actionsFor = items },
                         ).distinctBy { it.label }
-                        SwipeRow(swipeOf(prefs.swipeRight), trailing, enabled = !editing) {
+                        // Mit Ziehen und Ablegen (große Bildschirme) gehört die Bewegung dem Ziehen; die Wischaktionen bleiben im Menü und für Bildschirmleser.
+                        SwipeRow(swipeOf(prefs.swipeRight), trailing, enabled = !editing && !dragRows) {
                             Entry(
                                 model, s, list, prefs, now, locale, zone,
                                 current = rowKey(s.row) == selected || rowKey(s.row) == cursor,
@@ -559,8 +560,10 @@ private fun Entry(
                 .selectedRow(current, hovered)
                 .hoverable(source)
                 .onSecondaryClick(onMore)
+                // Mit Ziehen (große Bildschirme) gehört langes Drücken dem Ziehen; Auswahl über „Bearbeiten“ oder Rechtsklick.
+                .combinedClickable(onClick = onClick, onLongClick = if (drag != null) null else onLong)
+                // Innen, damit das Ziehen das lange Drücken vor dem Klick sieht.
                 .mailDragSource(drag != null) { drag?.invoke() }
-                .combinedClickable(onClick = onClick, onLongClick = onLong)
                 .padding(start = if (s.child) 30.dp else 0.dp, top = pad, bottom = pad, end = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {

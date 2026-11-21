@@ -138,10 +138,7 @@ fun ReadScreen(
         try {
             val got = model.api.message(account, folder, uid, images)
             // Öffnen markiert als gelesen; nur eine Änderung wird weitergegeben.
-            if (!got.flags.seen) {
-                model.applyFlags(account, folder, listOf(uid)) { it.copy(seen = true) }
-                model.adjust(account, folder, unread = -1)
-            }
+            if (msg == null) model.opened(account, folder, uid, got.flags.seen)
             msg = got.copy(flags = got.flags.copy(seen = true))
             error = null
         } catch (e: Exception) {

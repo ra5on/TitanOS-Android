@@ -224,6 +224,21 @@ class MailModel(
         for (l in lists.values) l.patch(account, folder, uids, change)
     }
 
+    /**
+     * Eine Mail wurde geöffnet (titand markiert sie dabei gelesen): in den
+     * gehaltenen Listen und den Zählern sofort nachtragen. Die Antwort des
+     * NAS nennt den Stand vor oder nach dem Markieren, daher zählt auch,
+     * was die Liste zeigte.
+     */
+    fun opened(account: String, folder: String, uid: Long, seenBefore: Boolean) {
+        val listUnread = lists.values.any { l ->
+            l.rows.any { (it.account.ifEmpty { l.account }) == account && it.folder.ifEmpty { l.folder } == folder && it.uid == uid && !it.flags.seen }
+        }
+        if (!listUnread && seenBefore) return
+        applyFlags(account, folder, listOf(uid)) { it.copy(seen = true) }
+        adjust(account, folder, unread = -1)
+    }
+
     fun forgetRows(account: String, folder: String, uids: Collection<Long>) {
         for (l in lists.values) l.drop(account, folder, uids)
     }

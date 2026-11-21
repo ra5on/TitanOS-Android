@@ -8,6 +8,8 @@ import android.view.View
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.draganddrop.dragAndDropSource
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -41,12 +43,28 @@ data class MailDrag(val account: String, val folder: String, val uids: List<Long
     }
 }
 
-/** Zeilen ziehen: lange drücken bzw. mit der Maus ziehen (nur auf großen Bildschirmen). */
-fun Modifier.mailDragSource(enabled: Boolean, drag: () -> MailDrag?): Modifier =
-    if (!enabled) this else dragAndDropSource { _ ->
-        val d = drag() ?: return@dragAndDropSource null
-        DragAndDropTransferData(ClipData(ClipDescription(MAIL_DRAG_LABEL, arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN)), ClipData.Item(d.encode())), flags = 0)
-    }
+/**
+ * Ziehen beginnt nach langem Drücken (Finger) bzw. sofort mit gedrückter
+ * Maustaste; ein kurzes Tippen bleibt ein Klick (der eingebaute Erkenner
+ * von Compose würde den Klick verschlucken).
+ */
+@Suppress("DEPRECATION")
+@OptIn(ExperimentalFoundationApi::class)
+private fun Modifier.dragOnLongPress(enabled: Boolean, data: () -> DragAndDropTransferData?): Modifier =
+    if (!enabled) this else dragAndDropSource(
+        drawDragDecoration = {
+            drawRoundRect(androidx.compose.ui.graphics.Color(0x552563EB), cornerRadius = androidx.compose.ui.geometry.CornerRadius(24f, 24f))
+        },
+        block = {
+            detectDragGesturesAfterLongPress(onDragStart = { data()?.let { startTransfer(it) } }, onDrag = { _, _ -> })
+        },
+    )
+
+/** Zeilen ziehen (nur auf großen Bildschirmen). */
+fun Modifier.mailDragSource(enabled: Boolean, drag: () -> MailDrag?): Modifier = dragOnLongPress(enabled) {
+    val d = drag() ?: return@dragOnLongPress null
+    DragAndDropTransferData(ClipData(ClipDescription(MAIL_DRAG_LABEL, arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN)), ClipData.Item(d.encode())), flags = 0)
+}
 
 private fun mailDragOf(event: DragAndDropEvent): MailDrag? {
     val e = event.toAndroidDragEvent()
@@ -86,15 +104,13 @@ fun Modifier.mailDropTarget(enabled: Boolean, account: String, folder: String, o
 }
 
 /** Ein Anhang als Datei in andere Apps ziehen; [uri] ist null, solange er noch nicht geladen ist. */
-@OptIn(ExperimentalFoundationApi::class)
-fun Modifier.attachmentDragSource(enabled: Boolean, type: String, uri: () -> Uri?): Modifier =
-    if (!enabled) this else dragAndDropSource { _ ->
-        val u = uri() ?: return@dragAndDropSource null
-        DragAndDropTransferData(
-            ClipData(ClipDescription("attachment", arrayOf(type.ifBlank { "application/octet-stream" })), ClipData.Item(u)),
-            flags = View.DRAG_FLAG_GLOBAL or View.DRAG_FLAG_GLOBAL_URI_READ,
-        )
-    }
+fun Modifier.attachmentDragSource(enabled: Boolean, type: String, uri: () -> Uri?): Modifier = dragOnLongPress(enabled) {
+    val u = uri() ?: return@dragOnLongPress null
+    DragAndDropTransferData(
+        ClipData(ClipDescription("attachment", arrayOf(type.ifBlank { "application/octet-stream" })), ClipData.Item(u)),
+        flags = View.DRAG_FLAG_GLOBAL or View.DRAG_FLAG_GLOBAL_URI_READ,
+    )
+}
 
 /** Dateien aus anderen Apps ablegen (Verfassen): content://-Adressen mit der Erlaubnis des Ziehens. */
 @Composable
