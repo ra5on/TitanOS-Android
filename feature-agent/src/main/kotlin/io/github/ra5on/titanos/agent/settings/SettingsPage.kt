@@ -536,7 +536,21 @@ private fun LookPart(model: AgentModel, clock: FigureClock) {
     val c = Titan.colors
     val look = model.look
     fun set(l: Look) = model.changeLook(l)
+    val context = LocalContext.current
+    val ap = io.github.ra5on.titanos.agent.core.Appearance
+    val de = tr.de
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Grp(if (de) "Thema und Farben" else "Theme and colours") {
+            Row2(if (de) "Thema" else "Theme", if (de) "Ab Werk hell oder dunkel wie das Handy; „Wie mein Konto“ nimmt das Thema aus TitanOS › Darstellung." else "By default light or dark like the phone; “Like my account” takes the theme from TitanOS › Appearance.") {
+                Select(listOf("system" to (if (de) "Wie das Handy" else "Like the phone"), "account" to (if (de) "Wie mein Konto" else "Like my account"), "graphit" to "Graphit", "schwarz" to (if (de) "Schwarz" else "Black"), "mitternacht" to (if (de) "Mitternacht" else "Midnight"), "hell" to (if (de) "Hell" else "Light")), ap.theme, { ap.theme = it; ap.save(context) }, if (de) "Thema" else "Theme")
+            }
+            Row2(if (de) "Akzent" else "Accent") {
+                Select(listOf("account" to (if (de) "Wie mein Konto" else "Like my account"), "blau" to (if (de) "Blau" else "Blue"), "gruen" to (if (de) "Grün" else "Green"), "tuerkis" to (if (de) "Türkis" else "Turquoise"), "violett" to (if (de) "Violett" else "Violet"), "kupfer" to (if (de) "Kupfer" else "Copper"), "rose" to "Rosé"), ap.accent, { ap.accent = it; ap.save(context) }, if (de) "Akzent" else "Accent")
+            }
+            Row2(if (de) "Schriftgröße der App" else "Text size of the app", "${(ap.fontScale * 100).toInt()} % · " + tr.t("agent.set.device")) {
+                Range(ap.fontScale, 0.9f..2f, { ap.fontScale = Math.round(it * 20) / 20f }, "${(ap.fontScale * 100).toInt()} %", steps = 21, onDone = { ap.save(context) })
+            }
+        }
         Grp {
             Row2(tr.t("agent.set.motionLabel")) { Segments(listOf("full", "reduced", "off").map { it to tr.t("agent.set.motion.$it") }, look.motion, { set(look.copy(motion = it)) }, fill = true) }
             Row2(tr.t("agent.set.fontSize"), tr.t("agent.set.device")) { Segments(listOf("s", "m", "l").map { it to tr.t("agent.set.font.$it") }, look.fontSize, { set(look.copy(fontSize = it)) }, fill = true) }

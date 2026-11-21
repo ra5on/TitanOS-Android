@@ -55,6 +55,7 @@ fun AgentRoot(
     LaunchedEffect(Unit) {
         model.look = Look.load(context)
         model.onLook = { Look.save(context, it) }
+        io.github.ra5on.titanos.agent.core.Appearance.load(context)
         speech.tr = tr
         speech.model = model
     }
@@ -142,5 +143,11 @@ fun AgentRoot(
         }
     }
 
-    AgentShell(model, nav, AppHooks(versionName, hostname, onUnpair, user), speech, tr)
+    // Thema und Akzent des Kontos (wie im Web), je Gerät überschreibbar.
+    LaunchedEffect(model.listsReady) {
+        if (model.listsReady) runCatching { io.github.ra5on.titanos.agent.core.Appearance.fromAccount(model.api.getJson("preferences") as kotlinx.serialization.json.JsonObject) }
+    }
+    io.github.ra5on.titanos.agent.core.AgentTheme(model.look) {
+        AgentShell(model, nav, AppHooks(versionName, hostname, onUnpair, user), speech, tr)
+    }
 }
