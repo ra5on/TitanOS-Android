@@ -115,6 +115,7 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
                 cfg.getOrElseNullable(SemanticsProperties.EditableText) { null } != null
             if (!named && node.boundsInRoot.width > 0f && node.boundsInRoot.height > 0f) problems += "$prefix$name: Bedienelement ohne Namen bei ${node.boundsInRoot}"
         }
+        val rootWidth = compose.onRoot().fetchSemanticsNode().size.width
         for (node in compose.onAllNodes(hasAnyAncestor(isRoot()), useUnmergedTree = true).fetchSemanticsNodes()) {
             val get = node.config.getOrElseNullable(SemanticsActions.GetTextLayoutResult) { null } ?: continue
             val out = mutableListOf<TextLayoutResult>()
@@ -130,12 +131,28 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
             // Nur zwischen ganzen Wörtern umbrechen (Inhaber 21.11.2026): nie mitten im Wort, keine Silbentrennung.
             for (line in 0 until r.lineCount - 1) {
                 val end = r.getLineEnd(line, visibleEnd = false)
-                if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit())
+                if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit() && !unavoidable(r, text, end, node.size.width, rootWidth))
                     problems += "$prefix$name: mitten im Wort umbrochen „${text.substring(maxOf(0, end - 12), minOf(text.length, end + 12))}“"
             }
             if (widest > node.size.width + 2 || bottom > node.size.height + 2 || dots)
                 problems += "$prefix$name: „${text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
         }
+    }
+
+    /**
+     * Ein einzelnes Wort, das schon allein breiter ist als sein Textfeld, obwohl
+     * das Feld fast die ganze Breite hat (z. B. „Anwendungswiederherstellung“
+     * bei 200 % Schrift auf 390 dp): ohne kleinere Schrift geht es nicht anders.
+     * Steht das Feld schmal neben anderem, bleibt es ein Befund (weniger Spalten).
+     */
+    private fun unavoidable(r: TextLayoutResult, text: String, end: Int, width: Int, rootWidth: Int): Boolean {
+        if (width < rootWidth * 0.6f) return false
+        var a = end
+        while (a > 0 && text[a - 1].isLetterOrDigit()) a--
+        var b = end
+        while (b < text.length && text[b].isLetterOrDigit()) b++
+        val wordWidth = (a until b).sumOf { r.getBoundingBox(it).width.toDouble() }
+        return wordWidth > width
     }
 
     fun assertClean() {
