@@ -255,8 +255,9 @@ private fun RecoveryPanel(ctx: ToolsCtx) {
                     "${t("ops.appRecover")} · ${current.job}",
                     icon = "archive",
                     divider = true,
-                    below = { MonoLine(current.id) },
-                    control = {
+                    below = {
+                        MonoLine(current.id)
+                        Column(Modifier.padding(top = 8.dp)) {
                         ActionButton(t("ops.review"), {
                             scope.launch {
                                 load(true)
@@ -268,6 +269,7 @@ private fun RecoveryPanel(ctx: ToolsCtx) {
                                 }
                             }
                         }, enabled = !busy && !active)
+                        }
                     },
                 )
             }

@@ -1,6 +1,7 @@
 package io.github.ra5on.titanos.tools
 
 import android.content.Context
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +65,27 @@ class ScreensTest {
         shots.settle(600)
     }
 
+    /** Bild aufnehmen und prüfen, dass Texte nur zwischen ganzen Wörtern umbrechen (nie mitten im Wort, keine Silbentrennung). */
+    private fun cap(name: String, dark: Boolean, screen: Boolean = false) {
+        if (screen) shots.captureScreen(name, dark) else shots.capture(name, dark)
+        for (node in compose.onAllNodes(androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.isRoot()), useUnmergedTree = true).fetchSemanticsNodes()) {
+            val get = node.config.getOrNull(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) ?: continue
+            val out = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            get.action?.invoke(out)
+            val r = out.firstOrNull() ?: continue
+            val text = r.layoutInput.text.text
+            for (line in 0 until r.lineCount - 1) {
+                val end = r.getLineEnd(line)
+                // Kennungen und Maschinenwerte (mit Ziffern, Punkt, Unterstrich, Schrägstrich …) dürfen überall brechen.
+                val word = text.substring(text.lastIndexOf(' ', end - 1) + 1, text.indexOf(' ', end).let { if (it < 0) text.length else it })
+                val machine = word.any { it.isDigit() || it in "._/:+@=" }
+                if (!machine && end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit()) {
+                    shots.audit.found += "${shots.prefix}$name: Wort getrennt in „${text.take(60)}“ bei „${text.substring(maxOf(0, end - 8), minOf(text.length, end + 8))}“"
+                }
+            }
+        }
+    }
+
     private fun open(p: String?) {
         page = p
         shots.settle(900)
@@ -72,85 +94,85 @@ class ScreensTest {
     private fun screens(dark: Boolean) {
         shots.show(dark) { key(page, role) { ToolsRoot(nas.env(role), page) {} } }
         shots.settle(1500)
-        shots.capture("00-uebersicht", dark)
+        cap("00-uebersicht", dark)
 
         open("tasks")
         shots.untilText("Medien/Filme")
-        shots.capture("01-auftraege", dark)
+        cap("01-auftraege", dark)
         click(tx("ops.review"))
         shots.untilText("op-20261120-0001")
-        shots.captureScreen("01b-auftraege-pruefen", dark)
+        cap("01b-auftraege-pruefen", dark, screen = true)
         click(tx("common.cancel"))
 
         open("taskmanager")
         shots.untilText("Intel Core i5-12500")
-        shots.capture("02-taskmanager", dark)
+        cap("02-taskmanager", dark)
         click(tx("taskmanager.tab.processes"))
         shots.untilText("qemu-system-x86")
-        shots.capture("02b-prozesse", dark)
+        cap("02b-prozesse", dark)
         click(tx("taskmanager.proc.term"))
-        shots.captureScreen("02c-prozess-beenden", dark)
+        cap("02c-prozess-beenden", dark, screen = true)
         click(tx("common.cancel"))
         click(tx("taskmanager.tab.containers"))
         shots.untilText("immich_server")
-        shots.capture("02d-container", dark)
+        cap("02d-container", dark)
         click(tx("taskmanager.tab.disks"))
         shots.untilText("Seagate IronWolf 12TB")
-        shots.capture("02e-platten", dark)
+        cap("02e-platten", dark)
 
         open("monitoring")
         shots.untilText(tx("tasks.trends"))
-        shots.capture("03-monitoring", dark)
+        cap("03-monitoring", dark)
 
         open("activity")
         shots.untilText(tx("activity.dropped", "count" to 2))
-        shots.capture("04-aktivitaet", dark)
+        cap("04-aktivitaet", dark)
 
         open("logs")
         shots.untilText("Fotos sichern finished", substring = true)
-        shots.capture("05-protokoll", dark)
+        cap("05-protokoll", dark)
         click("smartd", substring = true)
-        shots.capture("05b-protokoll-zeile", dark)
+        cap("05b-protokoll-zeile", dark)
 
         open("maintenance")
         shots.untilText("RAID-Prüfung Daten")
-        shots.capture("06-wartung", dark)
+        cap("06-wartung", dark)
         click("SMART lang WD-AAA1")
-        shots.capture("06b-wartung-auftrag", dark)
+        cap("06b-wartung-auftrag", dark)
         click(tx("ops.edit"))
         shots.untilText(tx("tasks.dependsOn"))
-        shots.captureScreen("06c-wartung-bearbeiten", dark)
+        cap("06c-wartung-bearbeiten", dark, screen = true)
         click(tx("common.cancel"))
 
         open("scripts")
         shots.untilText("Fotos sichern")
-        shots.capture("07-skripte", dark)
+        cap("07-skripte", dark)
         click("Fotos sichern")
         shots.untilText("rsync der Handyfotos", substring = true)
         click(tx("scripts.output"))
         shots.untilText("sending incremental", substring = true)
-        shots.capture("07b-skript", dark)
+        cap("07b-skript", dark)
         click(tx("ops.edit"))
         shots.untilText("#!/bin/bash", substring = true)
-        shots.captureScreen("07c-skript-bearbeiten", dark)
+        cap("07c-skript-bearbeiten", dark, screen = true)
         click(tx("common.cancel"))
 
         open("hardware")
         click(tx("hwcheck.run"), last = true)
         shots.untilText("ASMedia ASM1166")
-        shots.capture("08-hardware", dark)
+        cap("08-hardware", dark)
 
         open("disks")
         shots.untilText("Toshiba MG10 20TB", substring = true)
-        shots.capture("09-platten", dark)
+        cap("09-platten", dark)
         click(tx("disktest.start"))
         click(tx("disktest.mode.write"))
-        shots.captureScreen("09b-platte-ueberschreiben", dark)
+        cap("09b-platte-ueberschreiben", dark, screen = true)
         click(tx("common.cancel"))
 
         open("bundle")
         shots.untilText(tx("tools.bundleMake"))
-        shots.capture("10-diagnose", dark)
+        cap("10-diagnose", dark)
     }
 
     @Test fun hell() = screens(false)
@@ -188,10 +210,10 @@ class ScreensTest {
         shots.show(false) { key(page, role) { ToolsRoot(nas.env(role), page) {} } }
         shots.untilText(tx("taskmanager.readOnly"))
         assertTrue(compose.onAllNodes(hasText(tx("taskmanager.tab.processes"))).fetchSemanticsNodes().isEmpty())
-        shots.capture("11-konto-taskmanager", false)
+        cap("11-konto-taskmanager", false)
         open("logs")
         shots.untilText(tx("error.forbidden"))
-        shots.capture("11b-konto-verboten", false)
+        cap("11b-konto-verboten", false)
         assertTrue(nas.seen.isEmpty())
     }
 

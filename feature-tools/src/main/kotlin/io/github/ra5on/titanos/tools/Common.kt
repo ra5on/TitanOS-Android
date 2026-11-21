@@ -296,3 +296,6 @@ fun numberFormat(unit: String, digits: Int = 2): (Double) -> String {
     val locale = io.github.ra5on.titanos.admin.uiLocale()
     return { "${io.github.ra5on.titanos.admin.AdminFormat.number(it, digits, locale)} $unit".trimEnd() }
 }
+
+/** Lange Wortverbindungen mit Bindestrich („Benachrichtigungs-Einstellungen“) dürfen nach dem Bindestrich umbrechen, nie mitten im Wort. */
+fun breakAfterHyphens(text: String): String = text.replace(Regex("(?<=\\p{L})-(?=\\p{L})"), "-\u200B")

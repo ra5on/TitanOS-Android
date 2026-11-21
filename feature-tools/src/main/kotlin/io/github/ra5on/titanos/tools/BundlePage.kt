@@ -30,10 +30,10 @@ internal fun BundlePage(ctx: ToolsCtx) {
     PageBody {
         Muted(t("tools.bundleText"))
         SettingGroup(null) {
-            SettingRow(t("tools.bundleIn"), icon = "archive", desc = t("tools.bundleInText"))
-            SettingRow(t("tools.bundleOut"), icon = "shield", desc = t("tools.bundleOutText"), divider = true)
+            SettingRow(t("tools.bundleIn"), icon = "archive", desc = breakAfterHyphens(t("tools.bundleInText")))
+            SettingRow(t("tools.bundleOut"), icon = "shield", desc = breakAfterHyphens(t("tools.bundleOutText")), divider = true)
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Notice(t("tools.bundleCheck"), tone = Tone.Warn)
+                Notice(breakAfterHyphens(t("tools.bundleCheck")), tone = Tone.Warn)
                 if (saver.state.busy) Notice(t("tools.bundleStarted"), tone = Tone.Ok)
                 SaveStatus(saver.state)
                 ActionButton(t("tools.bundleMake"), ::pack, primary = true, enabled = !saver.state.busy, icon = "download")
