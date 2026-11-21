@@ -84,6 +84,7 @@ androidx.lifecycle:lifecycle-viewmodel-compose-android     2.11.1      Apache-2.
 androidx.lifecycle:lifecycle-viewmodel-ktx                 2.11.1      Apache-2.0
 androidx.lifecycle:lifecycle-viewmodel-savedstate          2.11.1      Apache-2.0
 androidx.lifecycle:lifecycle-viewmodel-savedstate-android  2.11.1      Apache-2.0
+androidx.media3:media3-exoplayer-hls                       1.11.1      Apache-2.0
 androidx.navigationevent:navigationevent                   1.0.0       Apache-2.0
 androidx.navigationevent:navigationevent-android           1.0.0       Apache-2.0
 androidx.navigationevent:navigationevent-compose           1.0.0       Apache-2.0
