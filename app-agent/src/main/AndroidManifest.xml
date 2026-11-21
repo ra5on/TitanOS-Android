@@ -34,6 +34,8 @@
         android:theme="@style/Theme.Agent">
         <activity
             android:name=".MainActivity"
+            android:resizeableActivity="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density|keyboard|keyboardHidden|navigation|uiMode|colorMode"
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">
