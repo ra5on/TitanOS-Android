@@ -137,18 +137,7 @@ internal class AccountCalls(val api: SettingsApi) {
 }
 
 /**
- * PUT mit rohem Inhalt (ein Bild). [SettingsApi] kann das noch nicht – es
- * schickt Dateien nur als Formular –, darum hier über ihre Verbindung.
- * Wunsch für `common/`: `SettingsApi.putBytes(path, bytes, mime)`.
+ * PUT mit rohem Inhalt (ein Bild) wie `fetch(…, {body: file})` im Web.
  */
-internal suspend fun rawPut(api: SettingsApi, path: String, bytes: ByteArray, mime: String): JsonObject = withContext(Dispatchers.IO) {
-    val field = SettingsApi::class.java.getDeclaredField("nas").apply { isAccessible = true }
-    val nas = field.get(api) as NasConnection
-    nas.execute { base ->
-        Request.Builder().url(base.resolve("/api/v1/$path") ?: error("bad path")).put(bytes.toRequestBody(mime.toMediaType())).build()
-    }.use { r ->
-        r.throwIfError()
-        val text = r.body.string()
-        if (text.isBlank()) JsonObject(emptyMap()) else (SettingsApi.JSON.parseToJsonElement(text).takeIf { it !is JsonNull }).o()
-    }
-}
+internal suspend fun rawPut(api: SettingsApi, path: String, bytes: ByteArray, mime: String): JsonObject =
+    api.putBytes(path, bytes, mime).let { if (it is JsonNull) JsonObject(emptyMap()) else it.o() }

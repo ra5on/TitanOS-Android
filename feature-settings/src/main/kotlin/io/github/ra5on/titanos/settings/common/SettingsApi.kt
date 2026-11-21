@@ -71,6 +71,13 @@ class SettingsApi(private val nas: NasConnection) {
         return call(method, path, body)
     }
 
+    /** Schickt rohe Bytes (z. B. ein Foto als `PUT account/picture` wie `fetch(…, {body: file})` im Web). */
+    suspend fun putBytes(path: String, bytes: ByteArray, mime: String, method: String = "PUT"): JsonElement =
+        call(method, path, bytes.toRequestBody(mime.toMediaType()))
+
+    /** Die Adresse des NAS (`https://host:port`), bevorzugt im Heimnetz – für Adressen, die die Seite nennt (WebDAV, `origin`). */
+    val origin: String get() = nas.endpoints.firstOrNull()?.base?.toString()?.removeSuffix("/").orEmpty()
+
     /** Lädt rohe Bytes (z. B. eine WireGuard-Datei, eine Sicherung). */
     suspend fun bytes(path: String, method: String = "GET", body: JsonElement? = null): ByteArray = withContext(Dispatchers.IO) {
         nas.execute { base -> Request.Builder().url(url(base, path)).method(method, body?.let(::json)).build() }.use { r ->

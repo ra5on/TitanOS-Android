@@ -19,6 +19,7 @@ internal const val PIM_SYNC = "pimsync"
  */
 @Composable
 internal fun ProgramHost(graph: AppGraph, id: String, onClose: () -> Unit) {
+    if (id in SETTINGS_PROGRAMS) return SettingsProgram(graph, id, onClose)
     val pairing = graph.pairing ?: return
     val nas = remember(pairing) { graph.connection() } ?: return
     val stream = remember(pairing) { graph.connection(NotifyApi.streamClient(graph.shared)) } ?: return
