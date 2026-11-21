@@ -129,6 +129,7 @@ import io.github.ra5on.titanos.agent.ui.rememberLast
 import io.github.ra5on.titanos.agent.voice.Speech
 import io.github.ra5on.titanos.agent.voice.VoiceMode
 import io.github.ra5on.titanos.ui.Format
+import io.github.ra5on.titanos.ui.currentWidth
 import io.github.ra5on.titanos.ui.theme.Titan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -324,8 +325,25 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
     val ready = model.ready
     val onPage = nav.view != AgentView.Chat
 
-    Box(Modifier.fillMaxSize().background(c.bg).imePadding()) {
-        Column(Modifier.fillMaxSize()) {
+    val width = currentWidth()
+    val menuActs = MenuActions(
+        onShow = { v -> if (v == AgentView.Chat) { model.newChat(null); nav.show(AgentView.Chat) } else nav.show(v) },
+        onNew = { nav.menuOpen = false; model.newChat(null, asFresh = true); nav.show(AgentView.Chat) },
+        onOpen = { nav.menuOpen = false; model.open(it); nav.show(AgentView.Chat) },
+        onNewProject = { nav.layer = Layer.ProjectEdit(null) },
+        onEditProject = { nav.layer = Layer.ProjectEdit(it) },
+        onNotes = { nav.menuOpen = false; nav.layer = Layer.Notes },
+        onArchive = { nav.menuOpen = false; nav.layer = Layer.Archive },
+        onFeature = { nav.menuOpen = false; nav.layer = Layer.Feature(it) },
+        onSearchMemory = { q -> nav.memoryQuery = q; nav.show(AgentView.Memory) },
+        onChatAction = { chat, a -> model.buzz(12); chatAction(model, chat, a) { kind -> nav.layer = if (kind == "delete") Layer.Delete(chat) else Layer.Actions(chat) } },
+        onTitanOS = if (titanOSInstalled(context)) ({ openTitanOS(context, null) }) else null,
+    )
+
+    Box(Modifier.fillMaxSize().background(c.bg).imePadding().agentKeys(model, nav).dropFiles(context, model, scope)) {
+      Row(Modifier.fillMaxSize()) {
+        if (ready && width.twoPanes) Sidebar(model, nav, menuActs)
+        Column(Modifier.weight(1f).fillMaxHeight()) {
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 val status = model.status
                 if (!ready) {
@@ -388,7 +406,7 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
                     }
                     // Der schwebende Kopf über Chat und Startseite.
                     if (!onPage) {
-                        ChatHead(model, nav, Modifier.onSizeChanged { headHeight = with(density) { it.height.toDp() } }, onMore = { nav.layer = Layer.More })
+                        ChatHead(model, nav, Modifier.onSizeChanged { headHeight = with(density) { it.height.toDp() } }, onMore = { nav.layer = Layer.More }, wide = width.twoPanes)
                     }
                 }
             }
@@ -409,13 +427,14 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
                     micHold = model.look.mic == "hold",
                 )
             }
-            if (ready && !keyboard && (nav.view == AgentView.Chat || nav.view == AgentView.Planned)) {
+            if (ready && !keyboard && !width.sidebar && (nav.view == AgentView.Chat || nav.view == AgentView.Planned)) {
                 Tabs(nav, model)
             } else if (!keyboard) Box(Modifier.navigationBarsPadding())
         }
+      }
 
         // Wischen vom linken Rand öffnet das Menü (Einstellungen › Gesten).
-        if (ready && model.look.gestures && model.look.edge && nav.layer == null && !nav.menuOpen) {
+        if (ready && !width.twoPanes && model.look.gestures && model.look.edge && nav.layer == null && !nav.menuOpen) {
             Box(Modifier.fillMaxHeight().width(20.dp).pointerInput(Unit) {
                 detectHorizontalDragGestures { _, dx -> if (dx > 12) nav.menuOpen = true }
             })
@@ -430,30 +449,15 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
         }
 
         // ---------- das Menü von links ----------
-        Scrim(nav.menuOpen) { nav.menuOpen = false }
+        Scrim(nav.menuOpen && !width.twoPanes) { nav.menuOpen = false }
         AnimatedVisibility(
-            nav.menuOpen,
+            nav.menuOpen && !width.twoPanes,
             enter = slideInHorizontally(Motion.spec(calm, Motion.SLIDE)) { -it },
             exit = slideOutHorizontally(Motion.spec(calm, 320)) { -it },
         ) {
             BackHandler { nav.menuOpen = false }
             Box(Modifier.fillMaxHeight().pointerInput(Unit) { detectHorizontalDragGestures { _, dx -> if (dx < -14) nav.menuOpen = false } }) {
-                AgentMenu(
-                    model, nav.view, start = model.current == null && !model.fresh,
-                    MenuActions(
-                        onShow = { v -> if (v == AgentView.Chat) { model.newChat(null); nav.show(AgentView.Chat) } else nav.show(v) },
-                        onNew = { nav.menuOpen = false; model.newChat(null, asFresh = true); nav.show(AgentView.Chat) },
-                        onOpen = { nav.menuOpen = false; model.open(it); nav.show(AgentView.Chat) },
-                        onNewProject = { nav.layer = Layer.ProjectEdit(null) },
-                        onEditProject = { nav.layer = Layer.ProjectEdit(it) },
-                        onNotes = { nav.menuOpen = false; nav.layer = Layer.Notes },
-                        onArchive = { nav.menuOpen = false; nav.layer = Layer.Archive },
-                        onFeature = { nav.menuOpen = false; nav.layer = Layer.Feature(it) },
-                        onSearchMemory = { q -> nav.memoryQuery = q; nav.show(AgentView.Memory) },
-                        onChatAction = { chat, a -> model.buzz(12); chatAction(model, chat, a) { kind -> nav.layer = if (kind == "delete") Layer.Delete(chat) else Layer.Actions(chat) } },
-                        onTitanOS = if (titanOSInstalled(context)) ({ openTitanOS(context, null) }) else null,
-                    ),
-                )
+                AgentMenu(model, nav.view, start = model.current == null && !model.fresh, menuActs)
             }
         }
 
@@ -500,7 +504,7 @@ private fun Unavailable(model: AgentModel) {
 
 /** Der Kopf am Handy: Menü (mit Punkt), Titel in der Kapsel (Projekt · Modell), Neuer Chat, ⋯. */
 @Composable
-private fun ChatHead(model: AgentModel, nav: AgentNav, modifier: Modifier, onMore: () -> Unit) {
+private fun ChatHead(model: AgentModel, nav: AgentNav, modifier: Modifier, onMore: () -> Unit, wide: Boolean = false) {
     val c = Titan.colors
     val tr = tr()
     val chat = model.current
@@ -510,7 +514,7 @@ private fun ChatHead(model: AgentModel, nav: AgentNav, modifier: Modifier, onMor
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            FloatButton("menu", tr.t("agent.menuOpen"), { nav.menuOpen = true }, dot = model.chats.any { it.unread || it.state == "waiting" })
+            if (!wide) FloatButton("menu", tr.t("agent.menuOpen"), { nav.menuOpen = true }, dot = model.chats.any { it.unread || it.state == "waiting" })
             if (nav.projectsTab) Box(Modifier.weight(1f)) else {
                 val shape = RoundedCornerShape(999.dp)
                 val title = chat?.title?.ifEmpty { null } ?: tr.t("nav.agent")
@@ -534,6 +538,8 @@ private fun ChatHead(model: AgentModel, nav: AgentNav, modifier: Modifier, onMor
                 }
             }
             FloatButton("newChat", tr.t("agent.newChat"), { model.newChat(null, asFresh = true); nav.show(AgentView.Chat) })
+            if (wide && model.current != null) FloatButton("search", tr.t("agent.findInChat"), { model.find = if (model.find == null) "" else null })
+            if (wide) model.currentInfo?.let { info -> FloatButton("pin", if (info.pinned) tr.t("agent.unpin") else tr.t("agent.pin"), { model.patch(info, PatchChat(pinned = !info.pinned)) }) }
             if (model.currentInfo != null) FloatButton("more", tr.t("ui.more"), onMore)
         }
     }

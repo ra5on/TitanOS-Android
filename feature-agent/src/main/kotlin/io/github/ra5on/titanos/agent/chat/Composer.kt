@@ -48,6 +48,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -207,7 +213,10 @@ fun Composer(
                         textStyle = AgentText.lg.copy(fontSize = 16.sp, lineHeight = 23.sp, color = c.text),
                         cursorBrush = SolidColor(c.accent),
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                        modifier = m.focusRequester(requester).onFocusChanged { focused = it.isFocused }.heightIn(min = 24.dp, max = 220.dp)
+                        modifier = m.focusRequester(requester).onFocusChanged { focused = it.isFocused }.onPreviewKeyEvent { e ->
+                            // Enter sendet, Umschalt+Enter macht eine neue Zeile (wie im Web).
+                            if (e.type == KeyEventType.KeyDown && (e.key == Key.Enter || e.key == Key.NumPadEnter) && !e.isShiftPressed) { send(); true } else false
+                        }.heightIn(min = 24.dp, max = 220.dp)
                             .semantics { contentDescription = tr.t("agent.input") },
                         decorationBox = { inner ->
                             Box(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), contentAlignment = Alignment.CenterStart) {

@@ -64,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.ra5on.titanos.ui.onSecondaryClick
 import io.github.ra5on.titanos.agent.core.LocalCalm
 import io.github.ra5on.titanos.agent.core.Motion
 import io.github.ra5on.titanos.agent.core.Tr
@@ -408,7 +409,7 @@ private fun UserMessage(entry: Entry, editing: MutableEditing, canChange: Boolea
             style = AgentText.chat.copy(lineHeight = 24.sp),
             color = c.text,
             modifier = Modifier.graphicsLayer { alpha = appear.value; translationY = (1 - appear.value) * 18f }
-                .clip(shape).background(textMixUser()).combinedClickable(onClick = {}, onLongClick = {
+                .clip(shape).background(textMixUser()).onSecondaryClick { onHold(entry) }.combinedClickable(onClick = {}, onLongClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onHold(entry)
                 }, onLongClickLabel = t("agent.messageActions")).padding(horizontal = 16.dp, vertical = 10.dp),

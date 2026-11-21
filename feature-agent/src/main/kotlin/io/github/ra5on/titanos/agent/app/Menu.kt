@@ -146,7 +146,7 @@ class MenuActions(
  * lange drücken öffnet ihre Aktionen.
  */
 @Composable
-fun AgentMenu(model: AgentModel, view: AgentView, start: Boolean, act: MenuActions) {
+fun AgentMenu(model: AgentModel, view: AgentView, start: Boolean, act: MenuActions, width: androidx.compose.ui.unit.Dp = 320.dp, sidebar: Boolean = false) {
     val c = Titan.colors
     val tr = tr()
     var query by rememberSaveable { mutableStateOf("") }
@@ -158,7 +158,7 @@ fun AgentMenu(model: AgentModel, view: AgentView, start: Boolean, act: MenuActio
     val loose = chats.filter { ch -> ch.project == null || projects.none { it.id == ch.project } }
     val look = model.look
     Column(
-        Modifier.fillMaxHeight().width(320.dp).background(c.surface).statusBarsPadding().navigationBarsPadding(),
+        Modifier.fillMaxHeight().width(width).background(if (sidebar) textMix(0.03f, c.surface) else c.surface).statusBarsPadding().navigationBarsPadding(),
     ) {
         Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             AppIcon("agent", "ember", 28.dp)
