@@ -440,12 +440,14 @@ private fun NodeRow(
         badge = role,
         id = "node-$id",
         control = {
-            if (self) Badge(t("cluster.thisNode"))
-            StatusChip(t(if (node.bool("online")) "cluster.online" else "cluster.offline"), if (node.bool("online")) Tone.Ok else Tone.Error)
-            if (hasStatus && otherVersion(node, version)) StatusChip(t(if (older(node, version)) "cluster.olderVersion" else "cluster.newerVersion"), Tone.Warn)
-            if (route.str("manage").isNotEmpty()) Badge(t("cluster.ownWay", "way" to tr.wayLabel(route.str("manage"))))
-            if (status.int("errors") > 0) StatusChip(t("cluster.errors", "count" to status.int("errors")), Tone.Error)
-            if (status.int("warnings") > 0) StatusChip(t("cluster.warnings", "count" to status.int("warnings")), Tone.Warn)
+            Chips {
+                if (self) Badge(t("cluster.thisNode"))
+                StatusChip(t(if (node.bool("online")) "cluster.online" else "cluster.offline"), if (node.bool("online")) Tone.Ok else Tone.Error)
+                if (hasStatus && otherVersion(node, version)) StatusChip(t(if (older(node, version)) "cluster.olderVersion" else "cluster.newerVersion"), Tone.Warn)
+                if (route.str("manage").isNotEmpty()) Badge(t("cluster.ownWay", "way" to tr.wayLabel(route.str("manage"))))
+                if (status.int("errors") > 0) StatusChip(t("cluster.errors", "count" to status.int("errors")), Tone.Error)
+                if (status.int("warnings") > 0) StatusChip(t("cluster.warnings", "count" to status.int("warnings")), Tone.Warn)
+            }
         },
     ) {
         ValueLine(t("cluster.detail.addresses"), node.strings("addresses").joinToString("\n").ifEmpty { "–" }, mono = true)

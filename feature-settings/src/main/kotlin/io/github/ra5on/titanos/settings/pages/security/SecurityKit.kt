@@ -9,6 +9,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
@@ -109,14 +111,15 @@ internal fun BoxScope.FormDialog(
     BackHandler(onBack = dismiss)
     val c = Titan.colors
     androidx.compose.foundation.layout.Box(
+        // Tippen daneben schließt; kein eigenes Bedienelement (Zurück schließt auch).
         Modifier.matchParentSize().background(Color.Black.copy(alpha = .5f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = dismiss),
+            .pointerInput(locked) { detectTapGestures { dismiss() } },
     )
     val shape = RoundedCornerShape(22.dp)
     Column(
         Modifier.align(Alignment.Center).padding(horizontal = 20.dp, vertical = 24.dp).widthIn(max = 620.dp).fillMaxWidth().clip(shape).background(c.surface)
             .border(1.dp, c.border, shape)
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+            .pointerInput(Unit) { detectTapGestures { } }
             .verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, top = 22.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -214,3 +217,10 @@ internal fun LinkText(text: String, onClick: () -> Unit, modifier: Modifier = Mo
 
 /** Eine Liste ganzer Zahlen (z. B. `choices`). */
 internal fun JsonObject?.ints(key: String): List<Int> = a(key).mapNotNull { (it as? kotlinx.serialization.json.JsonPrimitive)?.content?.toDoubleOrNull()?.toInt() }
+
+/** Zustände nebeneinander, die umbrechen statt sich zu quetschen (z. B. rechts in einer Zeile). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun Chips(content: @Composable () -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically) { content() }
+}

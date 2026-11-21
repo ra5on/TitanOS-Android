@@ -29,7 +29,7 @@ import io.github.ra5on.titanos.ui.components.SettingRow
 import io.github.ra5on.titanos.ui.components.SettingSub
 import io.github.ra5on.titanos.ui.components.SmallButton
 import io.github.ra5on.titanos.ui.components.StatusChip
-import io.github.ra5on.titanos.ui.components.Tabs
+import io.github.ra5on.titanos.ui.components.Segments
 import io.github.ra5on.titanos.ui.components.Toggle
 import io.github.ra5on.titanos.ui.components.Tone
 import io.github.ra5on.titanos.ui.guard.GuardAction
@@ -161,7 +161,7 @@ fun McpPage(a: PageArgs) {
     }
 
     SettingGroup(t("mcp.connect")) {
-        Tabs(tab, listOf("code" to t("mcp.claudeCode"), "remote" to t("mcp.desktopRemote"), "bridge" to t("mcp.desktopBridge")), { tab = it })
+        Segments(tab, listOf("code" to t("mcp.claudeCode"), "remote" to t("mcp.desktopRemote"), "bridge" to t("mcp.desktopBridge")), { tab = it })
         val snippet = when (tab) {
             "code" -> claudeCodeCommand(endpoint)
             "remote" -> desktopRemoteConfig(endpoint)
