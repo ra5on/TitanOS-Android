@@ -109,4 +109,26 @@ class AgentApiTest {
         val body = server.takeRequest().body?.utf8().orEmpty()
         assertTrue(body, body.contains("\"future\":{\"x\":1}") && body.contains("\"enabled\":false"))
     }
+
+    /** „?…“ im Pfad wird zur Abfrage, nicht zu %3F im Pfad (Handbuch, Papierkram nach Monat). */
+    @Test
+    fun queryInPathIsAQuery() = runBlocking {
+        server.enqueue(json(200, "{}"))
+        api.getJson("agent/protect/handbook?lang=de", listOf("x" to "a b"))
+        val req = server.takeRequest()
+        assertEquals("/api/v1/agent/protect/handbook", req.url.encodedPath)
+        assertEquals("de", req.url.queryParameter("lang"))
+        assertEquals("a b", req.url.queryParameter("x"))
+    }
+
+    /** Die Seite eines Entwurfs wie draftHref im Web. */
+    @Test
+    fun draftPages() {
+        val o = { s: String -> kotlinx.serialization.json.Json.parseToJsonElement(s) as kotlinx.serialization.json.JsonObject }
+        assertEquals("/mail/compose?agentDraft=c1%3Ae2", draftHref(o("""{"app":"mail","kind":"send"}"""), "c1", "e2"))
+        assertEquals("/mail?a=acc&f=INBOX&m=42", draftHref(o("""{"app":"mail","kind":"move","fields":{"a":"acc","f":"INBOX","uids":[42]}}"""), "c1", "e2"))
+        assertEquals("/calendar/event?agentDraft=c1%3Ae2", draftHref(o("""{"app":"calendar"}"""), "c1", "e2"))
+        assertEquals("/contacts?agentDraft=c1%3Ae2", draftHref(o("""{"app":"contacts"}"""), "c1", "e2"))
+        assertEquals("/calendar?agentDraft=c1%3Ae2", draftHref(o("""{"app":"tasks"}"""), "c1", "e2"))
+    }
 }
