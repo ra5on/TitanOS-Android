@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nvr_chosen">gewählt</string>
+    <string name="nvr_not_chosen">nicht gewählt</string>
+    <string name="nvr_saved">Gespeichert.</string>
+</resources>
