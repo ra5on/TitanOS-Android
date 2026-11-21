@@ -13,6 +13,7 @@ import io.github.ra5on.titanos.agent.core.os
 import io.github.ra5on.titanos.agent.core.o
 import io.github.ra5on.titanos.agent.core.objs
 import io.github.ra5on.titanos.agent.core.str
+import io.github.ra5on.titanos.agent.core.strOrNull
 import io.github.ra5on.titanos.agent.core.strs
 import io.github.ra5on.titanos.net.ApiException
 import io.github.ra5on.titanos.net.DeviceUnknownException
@@ -823,6 +824,35 @@ class AgentModel(
         }
     }
 
+    /**
+     * „Öffnen und bearbeiten“ (1.13): der wartende Schritt geht als Entwurf in
+     * den Editor des Programms; das NAS antwortet mit Eintrag und Entwurf.
+     * [then] bekommt die Adresse der Seite im Web (draftHref).
+     */
+    fun decideEdit(then: (String) -> Unit) {
+        val chat = current ?: return
+        val p = chat.pending ?: return
+        if (deciding || author != null) return
+        deciding = true
+        error = null
+        scope.launch {
+            try {
+                val ans = api.sendJson("POST", "agent/chats/${chat.id}/decide", io.github.ra5on.titanos.agent.core.jsonOf("id" to p.id, "approve" to false, "edit" to true)).obj()
+                then(draftHref(ans.o("draft"), chat.id, ans.str("entry")))
+                if (current?.id == chat.id) {
+                    current = current?.copy(pending = null, state = ChatState.RUNNING)
+                    watch(chat.id)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                error = problemOf(e, status?.maxRuns ?: 0)
+            } finally {
+                deciding = false
+            }
+        }
+    }
+
     // ---------- Projekt, Modell, Chat ändern ----------
 
     fun chooseProject(id: String?) {
@@ -911,5 +941,28 @@ class AgentModel(
             val ran = last.length >= 4 && (last.take(4).toIntOrNull() ?: 0) >= 2000
             return !(s.str("every") == "once" && ran)
         }
+    }
+}
+
+/** Werkzeuge, deren wartender Schritt als Entwurf geöffnet werden kann (DRAFT_TOOLS). */
+val DRAFT_TOOLS = setOf("mail_send", "mail_draft", "mail_move", "calendar_create", "calendar_update", "contacts_create", "contacts_update", "tasks_create", "tasks_update", "tasks_complete")
+
+/** Die Seite eines Entwurfs in der Weboberfläche (draftHref im Web). */
+fun draftHref(draft: JsonObject, chat: String, entry: String): String {
+    val ref = java.net.URLEncoder.encode("$chat:$entry", "UTF-8")
+    return when (draft.str("app")) {
+        "mail" -> if (draft.str("kind") == "move") {
+            val f = draft.o("fields")
+            val q = buildList {
+                f.strOrNull("a")?.let { add("a=" + java.net.URLEncoder.encode(it, "UTF-8")) }
+                f.strOrNull("f")?.let { add("f=" + java.net.URLEncoder.encode(it, "UTF-8")) }
+                (f["uids"] as? kotlinx.serialization.json.JsonArray)?.firstOrNull()?.let { add("m=" + (it as kotlinx.serialization.json.JsonPrimitive).content) }
+            }
+            "/mail?" + q.joinToString("&")
+        } else "/mail/compose?agentDraft=$ref"
+        "calendar" -> "/calendar/event?agentDraft=$ref"
+        "contacts" -> "/contacts?agentDraft=$ref"
+        "tasks" -> "/calendar?agentDraft=$ref"
+        else -> "/agent"
     }
 }

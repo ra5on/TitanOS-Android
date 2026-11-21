@@ -128,6 +128,7 @@ import io.github.ra5on.titanos.agent.ui.WIcon
 import io.github.ra5on.titanos.agent.ui.rememberLast
 import io.github.ra5on.titanos.agent.voice.Speech
 import io.github.ra5on.titanos.agent.voice.VoiceMode
+import io.github.ra5on.titanos.agent.system.agentHost
 import io.github.ra5on.titanos.ui.Format
 import io.github.ra5on.titanos.ui.currentWidth
 import io.github.ra5on.titanos.ui.theme.Titan
@@ -161,6 +162,8 @@ sealed interface Layer {
     data class ProjectOpen(val project: Project) : Layer
     data class ProjectEdit(val project: Project?) : Layer
     data class Feature(val id: String) : Layer
+    /** Eine Seite der Weboberfläche in der App (Office-Editor, Entwurf), wenn die TitanOS-App fehlt. */
+    data class Web(val path: String, val title: String) : Layer
 }
 
 /** Was nur die App weiß: Version, Name des NAS, Entkoppeln, die TitanOS-App. */
@@ -302,6 +305,13 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
         onPhoto = { list, i -> nav.layer = Layer.Photo(list, i) },
         onPlanned = { nav.show(AgentView.Planned) },
         onOpenFile = { f -> openTitanOS(context, "/files?root=${android.net.Uri.encode(f.root)}&path=${android.net.Uri.encode(f.path.substringBeforeLast('/', ""))}") },
+        onOffice = { f ->
+            // Im Office-Editor der TitanOS-App; ohne sie die Dateien des Webs in der App (mit der Sitzung der App).
+            if (!io.github.ra5on.titanos.agent.ui.openInTitanOS(context, path = f.root + "/" + f.path))
+                nav.layer = Layer.Web("/files?root=${android.net.Uri.encode(f.root)}&path=${android.net.Uri.encode(f.path.substringBeforeLast('/', ""))}", f.path.substringAfterLast('/'))
+        },
+        onDraft = { href -> if (!io.github.ra5on.titanos.agent.ui.openInTitanOS(context, href = href)) nav.layer = Layer.Web(href, tr.t("agentpim.draft.open")) },
+        onEdit = { model.decideEdit { href -> if (!io.github.ra5on.titanos.agent.ui.openInTitanOS(context, href = href)) nav.layer = Layer.Web(href, tr.t("agentpim.draft.open")) } },
         speak = { e -> speech.speak(e.id, e.content.orEmpty()) },
         speaking = { speech.speakingId },
         canSpeak = speech.canSpeak(model),
@@ -756,6 +766,13 @@ private fun BoxScope.Layers(
     val feature = rememberLast((layer as? Layer.Feature)?.id)
     SlidePage(layer is Layer.Feature, close) { feature?.let { FeatureView(model, it, onClose = close) } }
     SlidePage(layer == Layer.Nas, close) { NasPicker(model, onClose = close, onPick = { refs -> close(); refs.forEach { model.addAttachment(Attachment(it.substringAfter(':').substringAfterLast('/'), null, null, ref = it)) } }) }
+    val web = rememberLast(layer as? Layer.Web)
+    val hostCtx = LocalContext.current
+    val session = remember(web) { hostCtx.agentHost()?.webSession() }
+    SlidePage(layer is Layer.Web, close) {
+        if (web != null && session != null) io.github.ra5on.titanos.agent.ui.WebPage(session, web.path, web.title, close)
+        else if (web != null) Column(Modifier.fillMaxSize().statusBarsPadding()) { io.github.ra5on.titanos.agent.ui.PageHead(web.title, close); Notice(tr.t("error.internal"), tone = "warn", modifier = Modifier.padding(12.dp)) }
+    }
     if (layer == Layer.Talk) VoiceMode(model, speech, onClose = close)
 }
 

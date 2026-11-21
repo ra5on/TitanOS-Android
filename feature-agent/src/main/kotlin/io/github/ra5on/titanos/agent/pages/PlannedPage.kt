@@ -246,7 +246,7 @@ fun PlannedPage(model: AgentModel, onOpenChat: (String) -> Unit) {
                             }
                         }
                         if (morning != null && mOpen) {
-                            Field(mAt, { mAt = it.take(5) }, label = tr.t("agent.time"), placeholder = "07:00", keyboard = KeyboardType.Number)
+                            io.github.ra5on.titanos.agent.ui.TimeField(mAt, { mAt = it }, tr.t("agent.time"))
                             Text(tr.t("agent.days"), style = AgentText.sm, color = c.muted)
                             dayChips(mDays) { mDays = dayToggle(mDays, it) }
                             Text(tr.t("agent.morningWhat"), style = AgentText.sm, color = c.muted)
@@ -313,10 +313,10 @@ fun PlannedPage(model: AgentModel, onOpenChat: (String) -> Unit) {
                         Field(d("interval"), { setD("interval", it.filter(Char::isDigit).take(4)) }, Modifier.width(110.dp), label = tr.t("agent.interval"), keyboard = KeyboardType.Number)
                         Text(tr.t(if (every == "minutes") "agent.unitMinutes" else if (every == "hours") "agent.unitHours" else "agent.unitDays"), style = AgentText.md, color = c.muted)
                     }
-                    if (every == "once") Field(d("date"), { setD("date", it.take(10)) }, label = tr.t("agent.date"), placeholder = "2026-11-21")
+                    if (every == "once") io.github.ra5on.titanos.agent.ui.DateField(d("date"), { setD("date", it) }, tr.t("agent.date"))
                     if (every == "weekly") Select(ORDER.map { it.toString() to (weekdays.getOrNull(it) ?: "$it") }, d("weekday"), { setD("weekday", it) }, tr.t("agent.weekday"))
                     if (every == "monthly") Field(d("day"), { setD("day", it.filter(Char::isDigit).take(2)) }, label = tr.t("agent.day"), keyboard = KeyboardType.Number)
-                    if (every in setOf("once", "daily", "days", "weekdays", "weekly", "monthly")) Field(d("at"), { setD("at", it.take(5)) }, label = tr.t("agent.time"), placeholder = "07:00", keyboard = KeyboardType.Number)
+                    if (every in setOf("once", "daily", "days", "weekdays", "weekly", "monthly")) io.github.ra5on.titanos.agent.ui.TimeField(d("at"), { setD("at", it) }, tr.t("agent.time"))
                     if (every == "weekdays") { Text(tr.t("agent.days"), style = AgentText.sm, color = c.muted); dayChips(days) { days = dayToggle(days, it) } }
                     if (every == "cron") {
                         Field(d("cron"), { setD("cron", it) }, label = tr.t("agent.cron"), placeholder = "0 7 * * 1-5")

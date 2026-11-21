@@ -158,6 +158,9 @@ class ChatActions(
     val onPhoto: (List<PhotoHit>, Int) -> Unit = { _, _ -> },
     val onPlanned: () -> Unit = {},
     val onOpenFile: (FileRef) -> Unit = {},
+    val onOffice: (FileRef) -> Unit = {},
+    val onDraft: (String) -> Unit = {},
+    val onEdit: () -> Unit = {},
     val speak: (Entry) -> Unit = {},
     val speaking: () -> String = { "" },
     val canSpeak: Boolean = false,
@@ -231,7 +234,7 @@ fun ChatView(model: AgentModel, act: ChatActions, top: Dp, editing: MutableEditi
                             is Block.User -> UserMessage(b.entry, editing, canChange, onHold = act.onHold, onResend = { e, text -> model.resend(e, text) })
                             is Block.Steps -> if (b.steps.isNotEmpty() || b.thinking.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 StepsLine(b, look.steps, model.busy, undone, onOpen = { act.onSteps(b) }, onUndo = if (model.author == null) model::undo else null)
-                                for (s in b.steps.filter { it.draft != null }) DraftCard(s)
+                                for (s in b.steps.filter { it.draft != null }) DraftCard(s) { act.onDraft(draftHref(s.draft.obj(), chat.id, s.id)) }
                             }
                             is Block.Answer -> {
                                 val last = b.entry.id == lastAnswer
@@ -256,7 +259,7 @@ fun ChatView(model: AgentModel, act: ChatActions, top: Dp, editing: MutableEditi
                     }
                 }
             }
-            item("files") { ChatFiles(chat.entries, act.onOpenFile) }
+            item("files") { ChatFiles(chat.entries, act.onOpenFile, act.onOffice) }
             if (chat.plan.isNotEmpty()) item("plan") { PlanBox(chat.plan) }
             item("live") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -280,7 +283,7 @@ fun ChatView(model: AgentModel, act: ChatActions, top: Dp, editing: MutableEditi
                 }
             }
             chat.pending?.let { p ->
-                if (!model.busy && model.author == null) item("pending-${p.id}") { ApprovalCard(p, model.deciding) { ok -> model.decide(ok) } }
+                if (!model.busy && model.author == null) item("pending-${p.id}") { ApprovalCard(p, model.deciding, onEdit = if (p.tool in DRAFT_TOOLS) act.onEdit else null) { ok -> model.decide(ok) } }
             }
             if (chat.state == ChatState.ERROR && !model.busy && !chat.error.isNullOrBlank()) {
                 item("chat-error") { Notice(chat.error, tone = "error") }
@@ -623,7 +626,7 @@ private fun PlanBox(plan: List<PlanStep>) {
 
 /** Ein Entwurf aus „Nur Vorschläge“ (DraftCard): was das Werkzeug vorschlug. */
 @Composable
-private fun DraftCard(step: Entry) {
+private fun DraftCard(step: Entry, onOpen: () -> Unit) {
     val c = Titan.colors
     val d = step.draft.obj()
     val fields = d.o("fields")
@@ -634,13 +637,13 @@ private fun DraftCard(step: Entry) {
             val text = (v as? JsonPrimitive)?.content ?: v.toString()
             if (text.isNotBlank()) Text("$k: $text", style = AgentText.sm, color = c.text)
         }
-        Text(t("agentpim.draft.web"), style = AgentText.sm, color = c.muted)
+        PillButton(t("agentpim.draft.open"), onOpen, small = true)
     }
 }
 
 /** Dateien, die der Agent im Chat schrieb (ChatFiles.svelte). */
 @Composable
-private fun ChatFiles(entries: List<Entry>, onOpen: (FileRef) -> Unit) {
+private fun ChatFiles(entries: List<Entry>, onOpen: (FileRef) -> Unit, onOffice: (FileRef) -> Unit) {
     val c = Titan.colors
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         for (step in entries.filter { it.role == "tool" && it.files.isNotEmpty() }) for (f in step.files) {
@@ -653,15 +656,21 @@ private fun ChatFiles(entries: List<Entry>, onOpen: (FileRef) -> Unit) {
                     Text(name, style = AgentText.md.copy(fontWeight = FontWeight.SemiBold), color = c.text)
                     Text(f.root.removePrefix("share/") + " › " + f.path, style = AgentText.sm, color = c.muted)
                 }
-                PillButton(t("agent.openInFiles"), { onOpen(f) }, small = true)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (f.path.substringAfterLast('.', "").lowercase() in OFFICE) PillButton(t("agent.openInApp", "app" to "Office"), { onOffice(f) }, kind = Btn.Primary, small = true)
+                    PillButton(t("agent.openInFiles"), { onOpen(f) }, small = true)
+                }
             }
         }
     }
 }
 
+/** Dateien, die der Office-Editor öffnet. */
+private val OFFICE = setOf("docx", "doc", "xlsx", "xls", "pptx", "odt", "ods", "odp", "csv", "rtf")
+
 /** Eine Freigabe (ApprovalCard.svelte): Ring „Wartet auf deine Freigabe“, Karte mit Titel, Stufe, Zeit, Knöpfen und Details. */
 @Composable
-private fun ApprovalCard(p: Pending, deciding: Boolean, onDecide: (Boolean) -> Unit) {
+private fun ApprovalCard(p: Pending, deciding: Boolean, onEdit: (() -> Unit)? = null, onDecide: (Boolean) -> Unit) {
     val c = Titan.colors
     val tr = tr()
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -683,6 +692,7 @@ private fun ApprovalCard(p: Pending, deciding: Boolean, onDecide: (Boolean) -> U
             }
             Buttons {
                 PillButton(tr.t("agent.decline"), { onDecide(false) }, enabled = !deciding)
+                if (onEdit != null) PillButton(tr.t("agentpim.draft.open"), onEdit, enabled = !deciding)
                 PillButton(tr.t(if (p.tool == "mail_delete") "agent.ask.delete" else "agent.approve"), { onDecide(true) }, kind = if (p.level == "destroy") Btn.Danger else Btn.Primary, enabled = !deciding)
             }
             val lines = argLines(p.args)

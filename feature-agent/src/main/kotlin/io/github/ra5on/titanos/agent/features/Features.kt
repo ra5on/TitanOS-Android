@@ -301,6 +301,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
             // ---------- Vorausschau ----------
             SGroup(tr.t("agent.f.group.foresight")) {
                 SRow(tr.t("agent.f.foresight.whatIf"), desc = tr.t("agent.f.foresight.whatIfSub"), icon = "activity", control = { nasSwitch("whatIf") }) {
+                    if (p.bool("whatIf") && admin) PillButton("🧪 " + tr.t("agent.f.foresight.play"), { onFeature("whatif") }, small = true)
                     Text(tr.t("agent.f.foresight.whatIfIntro"), style = AgentText.sm, color = c.muted)
                     Text(tr.t("agent.f.foresight.whatIfWhere"), style = AgentText.sm, color = c.muted)
                     Text(tr.t("agent.f.foresight.whatIfData"), style = AgentText.sm, color = c.muted)
@@ -312,8 +313,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                         Switch(a.bool(k, true), { nas(n.sub("advisor", k, it)) })
                     }
                     if (admin && a.bool("monthly", true)) {
-                        var at by remember(a) { mutableStateOf(a.str("at", "09:00")) }
-                        Field(at, { at = it.take(5); if (Regex("^\\d\\d:\\d\\d$").matches(it)) nas(n.sub("advisor", "at", it)) }, Modifier.width(120.dp), label = tr.t("agent.f.foresight.set.at"), keyboard = KeyboardType.Number)
+                        io.github.ra5on.titanos.agent.ui.TimeField(a.str("at", "09:00"), { nas(n.sub("advisor", "at", it)) }, tr.t("agent.f.foresight.set.at"), width = 140.dp)
                         Text(tr.t("agent.f.foresight.set.atHint"), style = AgentText.sm, color = c.muted)
                     }
                     PillButton(tr.t("agent.f.foresight.openReport"), { onFeature("advisor") }, small = true)
@@ -334,8 +334,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                         Text(tr.t("agent.f.family.buddy.every"), style = AgentText.sm, color = c.muted)
                         Segments(listOf("daily", "weekly", "monthly").map { it to tr.t("agent.f.family.buddy.every.$it") }, b.str("every", "weekly").ifEmpty { "weekly" }, { nas(n.sub("buddy", "every", it)) }, fill = true)
                         if (b.str("every", "weekly") == "weekly") Select((0..6).map { it.toString() to (tr.t("agent.weekdays").split(",").getOrNull(it) ?: "$it") }, b.int("weekday", 0).toString(), { nas(n.sub("buddy", "weekday", it.toInt())) }, tr.t("agent.f.family.buddy.weekday"))
-                        var time by remember(b) { mutableStateOf(b.str("time", "02:00")) }
-                        Field(time, { time = it.take(5); if (Regex("^\\d\\d:\\d\\d$").matches(it)) nas(n.sub("buddy", "time", it)) }, Modifier.width(120.dp), label = tr.t("agent.f.family.buddy.time"), keyboard = KeyboardType.Number)
+                        io.github.ra5on.titanos.agent.ui.TimeField(b.str("time", "02:00"), { nas(n.sub("buddy", "time", it)) }, tr.t("agent.f.family.buddy.time"), width = 140.dp)
                         Text(tr.t("agent.f.family.buddy.probe"), style = AgentText.sm, color = c.muted)
                         Segments(listOf("monthly", "off").map { it to tr.t("agent.f.family.buddy.probe.$it") }, b.str("probe", "monthly").ifEmpty { "monthly" }, { nas(n.sub("buddy", "probe", it)) }, fill = true)
                         var files by remember(b) { mutableStateOf(b.int("probeFiles", 20).toString()) }
@@ -436,7 +435,7 @@ fun FolderPicker(model: AgentModel, onClose: () -> Unit, onPick: (String, String
     }
 }
 
-private fun euro(cents: Long, de: Boolean): String = NumberFormat.getCurrencyInstance(if (de) Locale.GERMANY else Locale.UK).apply { currency = Currency.getInstance("EUR") }.format(cents / 100.0)
+internal fun euro(cents: Long, de: Boolean): String = NumberFormat.getCurrencyInstance(if (de) Locale.GERMANY else Locale.UK).apply { currency = Currency.getInstance("EUR") }.format(cents / 100.0)
 
 /**
  * Die Ansicht einer Funktion aus dem Menü (FeatureView): Papierkram, Fristen,
@@ -445,16 +444,19 @@ private fun euro(cents: Long, de: Boolean): String = NumberFormat.getCurrencyIns
 @Composable
 fun FeatureView(model: AgentModel, id: String, onClose: () -> Unit) {
     val tr = tr()
-    val title = tr.t("agent.f.menu.$id")
+    var play by remember { mutableStateOf<String?>(null) }
+    val title = if (id == "whatif" || play != null) tr.t("agent.f.foresight.whatIf") else tr.t("agent.f.menu.$id")
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        PageHead(title, onClose)
+        PageHead(title, { if (play != null) play = null else onClose() })
+        if (play != null) { WhatIfView(model, play!!.ifEmpty { null }); return@Column }
         when (id) {
+            "whatif" -> WhatIfView(model, null)
             "paper" -> PaperView(model)
             "deadlines" -> DeadlinesView(model)
             "guard" -> GuardView(model)
             "handbook" -> HandbookView(model)
             "emergency" -> EmergencyView(model)
-            "advisor" -> AdvisorView(model)
+            "advisor" -> AdvisorView(model, onPlay = { disk -> play = disk })
             "buddy" -> BuddyView(model)
             "catalog" -> CatalogView(model)
         }
@@ -463,7 +465,7 @@ fun FeatureView(model: AgentModel, id: String, onClose: () -> Unit) {
 
 /** Lädt eine Ansicht und zeigt Fehler; [body] baut die Liste. */
 @Composable
-private fun Loaded(model: AgentModel, path: String, reload: Int = 0, body: LazyListScope.(JsonObject, () -> Unit) -> Unit) {
+internal fun Loaded(model: AgentModel, path: String, reload: Int = 0, body: LazyListScope.(JsonObject, () -> Unit) -> Unit) {
     val tr = tr()
     val c = Titan.colors
     var data by remember { mutableStateOf<JsonObject?>(null) }
@@ -480,56 +482,8 @@ private fun Loaded(model: AgentModel, path: String, reload: Int = 0, body: LazyL
     }
 }
 
-private fun act(model: AgentModel, scope: kotlinx.coroutines.CoroutineScope, tr: Tr, onError: (String) -> Unit, then: () -> Unit, block: suspend () -> Unit) {
+internal fun act(model: AgentModel, scope: kotlinx.coroutines.CoroutineScope, tr: Tr, onError: (String) -> Unit, then: () -> Unit, block: suspend () -> Unit) {
     scope.launch { try { block(); then() } catch (e: CancellationException) { throw e } catch (e: Exception) { onError(problemText(tr, problemOf(e))) } }
-}
-
-@Composable
-private fun PaperView(model: AgentModel) {
-    val tr = tr()
-    val c = Titan.colors
-    val scope = rememberCoroutineScope()
-    var month by remember { mutableStateOf("") }
-    var err by remember { mutableStateOf<String?>(null) }
-    Loaded(model, "agent/paper" + if (month.isNotEmpty()) "?month=$month" else "") { s, reload ->
-        err?.let { item { Notice(it, tone = "error") } }
-        item {
-            val months = s.strs("months")
-            if (months.isNotEmpty()) Select(months.map { it to it }, s.str("month"), { month = it }, tr.t("agent.f.docs.month"))
-        }
-        item {
-            SGroup(tr.t("agent.f.docs.spentIn", "month" to s.str("month"))) {
-                Text(euro(s.long("total"), tr.de), style = AgentText.pageTitle, color = c.text)
-                Text(tr.t("agent.f.docs.bills", "count" to s.int("count")), style = AgentText.sm, color = c.muted)
-            }
-        }
-        item {
-            SGroup(tr.t("agent.f.docs.byType")) {
-                val types = s.os("types")
-                if (types.isEmpty()) Text(tr.t("agent.f.docs.noneMonth"), style = AgentText.md, color = c.muted)
-                for (t in types) SRow(tr.t("agent.f.docs.type.${t.str("type")}"), desc = tr.t("agent.f.docs.bills", "count" to t.int("count")) + " · " + t.strs("senders").joinToString(", "), summary = euro(t.long("cents"), tr.de))
-            }
-        }
-        item {
-            SGroup(tr.t("agent.f.docs.open")) {
-                val open = s.os("open")
-                if (open.isEmpty()) Text(tr.t("agent.f.docs.noneOpen"), style = AgentText.md, color = c.muted)
-                for (e in open) SRow(e.str("sender").ifEmpty { e.str("name") }, desc = listOfNotNull(euro(e.long("cents"), tr.de), e.str("due").takeIf { it.isNotEmpty() }?.let { tr.t("agent.f.docs.dueOn", "date" to dateOnly(it + "T00:00:00Z")) }).joinToString(" · "), icon = "fileText", control = {
-                    PillButton(tr.t("agent.f.docs.paid"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/paper/${e.str("id")}/paid", jsonOf("paid" to true)) } }, small = true)
-                })
-            }
-        }
-        item {
-            SGroup(tr.t("agent.f.docs.recent")) {
-                val recent = s.os("recent")
-                if (recent.isEmpty()) Text(tr.t("agent.f.docs.noneRecent"), style = AgentText.md, color = c.muted)
-                for (e in recent) SRow(e.str("name"), desc = listOf(e.str("sender"), tr.t("agent.f.docs.type.${e.str("type")}"), dateTime(e.str("at"))).filter { it.isNotEmpty() }.joinToString(" · "), icon = "fileText", control = {
-                    Buttons { PillButton(tr.t("agent.f.docs.undo"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/paper/${e.str("id")}/undo", JsonObject(emptyMap())) } }, small = true) }
-                })
-            }
-        }
-        item { PillButton(tr.t("agent.f.docs.lookNow"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/paper/run") } }, small = true) }
-    }
 }
 
 @Composable
@@ -590,157 +544,6 @@ private fun GuardView(model: AgentModel) {
             PillButton(cf?.let { tr.t("agent.f.protect.g.confirmBtn.${it.second}") } ?: "", { val x = confirm; confirm = null; if (x != null) act(model, scope, tr, { err = it }, { reload++ }) { model.api.sendJson("POST", "agent/protect/guard/${x.first}/${x.second}") } }, kind = Btn.Danger)
             PillButton(tr.t("common.cancel"), { confirm = null })
         })
-    }
-}
-
-@Composable
-private fun HandbookView(model: AgentModel) {
-    val tr = tr()
-    val c = Titan.colors
-    val scope = rememberCoroutineScope()
-    var err by remember { mutableStateOf<String?>(null) }
-    Loaded(model, "agent/protect/handbook?lang=" + tr.lang) { h, reload ->
-        err?.let { item { Notice(it, tone = "error") } }
-        item {
-            Text(tr.t("agent.f.protect.h.made", "when" to dateTime(h.str("made"))), style = AgentText.sm, color = c.muted)
-            if (model.status?.admin == true) PillButton(tr.t("agent.f.protect.h.refresh"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/protect/handbook/refresh") } }, small = true, modifier = Modifier.padding(top = 6.dp))
-        }
-        for (s in h.os("sections")) item {
-            SRow(s.str("title"), desc = s.str("sub"), icon = "fileText") {
-                s.strs("steps").forEachIndexed { i, step -> Text("${i + 1}. $step", style = AgentText.md, color = c.text) }
-            }
-        }
-        val facts = h.o("facts")
-        for ((k, label) in listOf("shares" to "agent.f.protect.h.shares", "apps" to "agent.f.protect.h.apps", "network" to "agent.f.protect.h.network", "remote" to "agent.f.protect.h.remote", "backups" to "agent.f.protect.h.backups", "probes" to "agent.f.protect.h.probes")) {
-            val list = facts[k].objs()
-            if (list.isNotEmpty()) item {
-                SGroup(tr.t(label)) { for (f in list) SRow(f.str("name"), desc = f.str("detail").ifEmpty { null }) }
-            }
-        }
-        val contacts = facts["contacts"].objs()
-        if (contacts.isNotEmpty()) item { SGroup(tr.t("agent.f.protect.h.contacts")) { for (ct in contacts) SRow(ct.str("name"), desc = listOf(ct.str("phone"), ct.str("note")).filter { it.isNotEmpty() }.joinToString(" · ")) } }
-    }
-}
-
-@Composable
-private fun EmergencyView(model: AgentModel) {
-    val tr = tr()
-    val c = Titan.colors
-    val scope = rememberCoroutineScope()
-    var err by remember { mutableStateOf<String?>(null) }
-    var reason by remember { mutableStateOf("") }
-    var codeShown by remember { mutableStateOf<String?>(null) }
-    val admin = model.status?.admin == true
-    Loaded(model, if (admin) "agent/protect/emergency" else "agent/protect/me") { v, reload ->
-        err?.let { item { Notice(it, tone = "error") } }
-        codeShown?.let { item { Notice(tr.t("agent.f.protect.e.codeText") + "\n" + it, tone = "ok") } }
-        if (admin) {
-            item { Text(tr.t("agent.f.protect.e.explain"), style = AgentText.sm, color = c.muted) }
-            item {
-                SGroup(tr.t("agent.f.protect.e.persons")) {
-                    val persons = v.os("persons")
-                    if (persons.isEmpty()) Text(tr.t("agent.f.protect.e.noPersons"), style = AgentText.md, color = c.muted)
-                    for (p in persons) SRow(p.str("account"), desc = tr.t("agent.f.protect.e.personSub", "days" to p.int("waitDays"), "shares" to p.strs("shares").joinToString(", ")), icon = "user", control = {
-                        if (v.bool("code")) PillButton(tr.t("agent.f.protect.e.newCode"), { act(model, scope, tr, { err = it }, {}) { codeShown = model.api.sendJson("POST", "agent/protect/emergency/code/${p.str("account")}").obj().str("code") } }, small = true)
-                    })
-                }
-            }
-            item {
-                SGroup(tr.t("agent.f.protect.e.openRequests")) {
-                    for (r in v.os("requests")) SRow(r.str("account"), desc = listOf(tr.t("agent.f.protect.e.state.${r.str("state")}"), r.str("reason"), dateTime(r.str("created"))).filter { it.isNotEmpty() }.joinToString(" · "), icon = "key", control = {
-                        Buttons {
-                            if (r.str("state") == "waiting") {
-                                PillButton(tr.t("agent.f.protect.e.grantNow"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/protect/emergency/${r.str("id")}/grant") } }, kind = Btn.Primary, small = true)
-                                PillButton(tr.t("agent.f.protect.e.decline"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/protect/emergency/${r.str("id")}/decline") } }, small = true)
-                            }
-                            if (r.str("state") == "granted") PillButton(tr.t("agent.f.protect.e.endNow"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/protect/emergency/${r.str("id")}/end") } }, kind = Btn.Danger, small = true)
-                        }
-                    })
-                }
-            }
-        } else {
-            val req = v.o("request")
-            item {
-                if (req.isNotEmpty()) SRow(tr.t("agent.f.protect.e.state.${req.str("state")}"), desc = req.str("reason") + " · " + dateTime(req.str("due")), icon = "key", control = {
-                    if (req.str("state") == "waiting") PillButton(tr.t("agent.f.protect.e.withdraw"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/protect/emergency/${req.str("id")}/cancel") } }, small = true)
-                }) else if (v.o("person").isEmpty()) Text(tr.t("agent.f.protect.e.notRegistered"), style = AgentText.md, color = c.muted)
-                else Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Field(reason, { reason = it }, multiline = true, label = tr.t("agent.f.protect.e.reasonLabel"), placeholder = tr.t("agent.f.protect.e.reason"))
-                    PillButton(tr.t("agent.f.protect.e.ask"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/protect/emergency/request", jsonOf("reason" to reason, "code" to "")) } }, kind = Btn.Primary, enabled = reason.isNotBlank())
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AdvisorView(model: AgentModel) {
-    val tr = tr()
-    val c = Titan.colors
-    val scope = rememberCoroutineScope()
-    var err by remember { mutableStateOf<String?>(null) }
-    fun tk(k: String, vararg p: Pair<String, Any?>) = tr.t("agent.f.foresight.$k", *p)
-    Loaded(model, "agent/advisor") { v, reload ->
-        err?.let { item { Notice(it, tone = "error") } }
-        val saved = v.o("saved")
-        item {
-            Text(if (saved.isNotEmpty()) tk("lastRun", "when" to dateTime(saved.str("lastRun"))) else tk("empty"), style = AgentText.sm, color = c.muted)
-            PillButton(if (v.bool("running")) tk("running") else tk("run"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/advisor/run", JsonObject(emptyMap())) } }, enabled = !v.bool("running"), small = true, modifier = Modifier.padding(top = 6.dp))
-        }
-        val findings = saved.o("report").os("findings").filter { !(it.str("area") == "disk" && it.str("level") == "ok") }
-        val icon = mapOf("disk" to "💽", "memory" to "🧠", "volume" to "📦", "cpu" to "⚙️", "gpu" to "🎮", "temperature" to "🌡️")
-        for (f in findings) item {
-            fun n(k: String) = String.format(Locale.getDefault(), "%.1f", f.num(k))
-            val p = arrayOf("from" to n("from"), "to" to n("to"), "weeks" to n("weeks"), "percent" to n("percent"), "days" to n("days"), "hours" to n("hours"), "label" to f.str("label"), "celsius" to n("celsius"))
-            val text = when (f.str("code")) {
-                "wornOut" -> tk(if (f.containsKey("days")) "c.wornOutDays" else "c.wornOut", *p)
-                "gpuOK", "gpuFull" -> if (!f.containsKey("bytes")) tk("c.gpuUnknown", "total" to Format.bytes(f.long("totalBytes"))) else tk(if (f.str("code") == "gpuFull") "c.gpuFull" else if (f.bool("ollama")) "c.gpuOllama" else "c.gpuOK", "used" to Format.bytes(f.long("bytes")), "total" to Format.bytes(f.long("totalBytes")))
-                else -> tk("c." + f.str("code"), *p)
-            }
-            val tone = when (f.str("level")) { "ok" -> "ok"; "fail" -> "error"; else -> "warn" }
-            SRow((icon[f.str("area")] ?: "") + " " + tk("area." + f.str("area"), "name" to f.str("subject")), desc = text, control = { Tag(tk("lv." + f.str("level")), tone = tone) })
-        }
-        item { Text(if (v.bool("web")) tk("footer") else tk("footerNoPrices"), style = AgentText.sm, color = c.muted) }
-    }
-}
-
-@Composable
-private fun BuddyView(model: AgentModel) {
-    val tr = tr()
-    val c = Titan.colors
-    val scope = rememberCoroutineScope()
-    var err by remember { mutableStateOf<String?>(null) }
-    var address by remember { mutableStateOf("") }
-    var code by remember { mutableStateOf("") }
-    var quota by remember { mutableStateOf("100") }
-    fun tk(k: String, vararg p: Pair<String, Any?>) = tr.t("agent.f.family.buddy.$k", *p)
-    Loaded(model, "agent/buddy") { v, reload ->
-        err?.let { item { Notice(it, tone = "error") } }
-        if (v.str("problem").isNotEmpty()) item { Notice(tr.or("agent.f.family.buddy.problem.${v.str("problem")}", v.str("problem")), tone = "warn") }
-        item {
-            SGroup(tk("partners").let { if (it.startsWith("agent.")) tk("title") else it }) {
-                for (p in v.os("partners")) {
-                    val job = p.o("job")
-                    SRow(p.str("name"), desc = listOfNotNull(p.str("address"), Format.bytes(p.long("used")) + " / " + Format.bytes(p.long("quota")), job.str("lastOK").takeIf { it.isNotEmpty() }?.let { dateTime(it) }, job.str("lastError").ifEmpty { null }).joinToString(" · "), icon = "users", control = {
-                        PillButton(tr.t("common.delete"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("DELETE", "agent/buddy/partners/${p.str("id")}") } }, kind = Btn.Danger, small = true)
-                    })
-                }
-            }
-        }
-        item {
-            SGroup(tk("code").let { if (it.startsWith("agent.")) "Code" else it }) {
-                val cd = v.o("code")
-                if (cd.isNotEmpty()) Notice(cd.str("code").replace(Regex("(.{3})(?=.)"), "$1-") + " · " + dateTime(cd.str("expires")), tone = "ok")
-                Field(quota, { quota = it.filter(Char::isDigit) }, label = "GB", keyboard = KeyboardType.Number)
-                Buttons {
-                    PillButton(tr.or("agent.f.family.buddy.makeCode", "Code"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/buddy/code", jsonOf("quota" to (quota.toLongOrNull() ?: 100) * 1_000_000_000L, "shares" to v.strs("shares"))) } }, small = true)
-                    if (cd.isNotEmpty()) PillButton(tr.t("common.cancel"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("DELETE", "agent/buddy/code") } }, small = true)
-                }
-                Field(address, { address = it }, label = tk("address"), placeholder = tk("address"))
-                Field(code, { code = it }, label = "Code", placeholder = "ABC-DEF-GHI")
-                PillButton(tr.or("agent.f.family.buddy.pair", "Koppeln"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/buddy/pair", jsonOf("address" to address, "code" to code.replace("-", ""), "quota" to (quota.toLongOrNull() ?: 100) * 1_000_000_000L, "shares" to v.strs("shares"))) } }, kind = Btn.Primary, enabled = address.isNotBlank() && code.isNotBlank(), small = true)
-            }
-        }
     }
 }
 

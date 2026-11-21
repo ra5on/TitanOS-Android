@@ -32,6 +32,12 @@ class AgentApp : Application(), SiblingHost, io.github.ra5on.titanos.agent.syste
         graph.pendingOpen = chatId ?: ""
         context.startActivity(android.content.Intent(context, MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
     }
+    override fun webSession(): io.github.ra5on.titanos.agent.ui.WebSession? {
+        val p = graph.pairing ?: return null
+        val cookie = graph.sessions.current() ?: return null
+        val base = p.addresses.firstNotNullOfOrNull { it.address }?.baseUrl()?.toString() ?: return null
+        return io.github.ra5on.titanos.agent.ui.WebSession(base, cookie.name, cookie.token, p.addresses.map { it.spki }.filter { it.isNotEmpty() })
+    }
 
     // Eine Kopplung für beide Apps (feature-pairing Sibling.kt).
     override val siblingApp get() = "agent"

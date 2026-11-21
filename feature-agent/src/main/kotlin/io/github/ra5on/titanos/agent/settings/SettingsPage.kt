@@ -300,7 +300,7 @@ private fun Initiative(model: AgentModel, mind: Boolean, onKnow: () -> Unit) {
             }
             Grp(tr.t("agent.init.night")) {
                 SwitchRow(tr.t("agent.init.reflect"), tr.t("agent.init.reflectHint"), v.bool("reflect", true)) { ini.set("reflect" to it) }
-                Row2(tr.t("agent.init.at")) { Field(v.str("reflectAt", "03:30"), { ini.set("reflectAt" to it.take(5)) }, Modifier.width(120.dp), enabled = v.bool("reflect", true), label = tr.t("agent.init.at"), keyboard = KeyboardType.Number) }
+                Row2(tr.t("agent.init.at")) { io.github.ra5on.titanos.agent.ui.TimeField(v.str("reflectAt", "03:30"), { ini.set("reflectAt" to it) }, tr.t("agent.init.at"), enabled = v.bool("reflect", true), width = 140.dp) }
                 Row2(tr.t("agent.init.take"), tr.t("agent.init.takeHint")) {
                     Segments(listOf(true to tr.t("agent.init.confirm"), false to tr.t("agent.init.direct")), v.bool("confirm", true), { ini.set("confirm" to it) }, fill = true)
                 }
@@ -321,9 +321,9 @@ private fun Initiative(model: AgentModel, mind: Boolean, onKnow: () -> Unit) {
             Grp(tr.t("agent.init.limits")) {
                 Row2(tr.t("agent.init.quiet"), tr.t("agent.init.quietHint")) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Field(v.str("quietFrom", "22:00"), { ini.set("quietFrom" to it.take(5)) }, Modifier.width(110.dp), label = tr.t("agent.init.quietFrom"), keyboard = KeyboardType.Number)
+                        io.github.ra5on.titanos.agent.ui.TimeField(v.str("quietFrom", "22:00"), { ini.set("quietFrom" to it) }, tr.t("agent.init.quietFrom"), width = 130.dp)
                         Text("–", style = AgentText.md, color = c.muted)
-                        Field(v.str("quietTo", "07:00"), { ini.set("quietTo" to it.take(5)) }, Modifier.width(110.dp), label = tr.t("agent.init.quietTo"), keyboard = KeyboardType.Number)
+                        io.github.ra5on.titanos.agent.ui.TimeField(v.str("quietTo", "07:00"), { ini.set("quietTo" to it) }, tr.t("agent.init.quietTo"), width = 130.dp)
                     }
                 }
                 val gpu = v.int("gpuMinutes", 30)
