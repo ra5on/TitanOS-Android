@@ -27,6 +27,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -223,7 +224,7 @@ fun PlannedPage(model: AgentModel, onOpenChat: (String) -> Unit) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PagePadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(Modifier.fillMaxSize().testTag("planned-list"), contentPadding = PagePadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item { Lead(tr.t("agent.schedulesIntro")) }
             error?.let { item { Notice(it, tone = "error") } }
             item("morning") {
@@ -242,7 +243,7 @@ fun PlannedPage(model: AgentModel, onOpenChat: (String) -> Unit) {
                             }
                             if (morning != null) {
                                 io.github.ra5on.titanos.agent.chat.SmallIcon(if (mOpen) "chevronUp".takeIf { io.github.ra5on.titanos.agent.core.WebIcons.has(it) } ?: "chevronDown" else "chevronDown", tr.t("agent.morningEdit")) { mOpen = !mOpen }
-                                Switch(mOn, { mOn = it; saveMorning(it) })
+                                Switch(mOn, { mOn = it; saveMorning(it) }, label = tr.t("agent.morning"))
                             }
                         }
                         if (morning != null && mOpen) {
@@ -289,7 +290,7 @@ fun PlannedPage(model: AgentModel, onOpenChat: (String) -> Unit) {
                                 }
                             }
                             Row(Modifier.padding(start = 33.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Switch(s.bool("enabled"), { on -> run(false) { put(JsonObject(s + ("enabled" to json(on)))) } }, enabled = !busy)
+                                Switch(s.bool("enabled"), { on -> run(false) { put(JsonObject(s + ("enabled" to json(on)))) } }, enabled = !busy, label = s.str("name"))
                                 if (s.str("chat").isNotEmpty()) IconTile("chat", tr.t("agent.lastResult"), { onOpenChat(s.str("chat")) })
                                 IconTile("play", tr.t("agent.runNow"), { run(false) { model.api.sendJson("POST", "agent/schedules/${s.str("id")}/run") } }, enabled = !busy)
                                 IconTile("edit", tr.t("agent.edit"), { edit(s) })

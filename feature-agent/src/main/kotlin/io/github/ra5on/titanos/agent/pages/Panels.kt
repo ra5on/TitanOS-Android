@@ -257,7 +257,7 @@ fun ProjectDialog(model: AgentModel, project: Project?, onClose: () -> Unit) {
                         acc.isEmpty() -> Text(tr.t("agent.membersNone"), style = AgentText.md, color = c.muted)
                         else -> for (a in acc) Row(Modifier.srowSurface().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(a, style = AgentText.md, color = c.text, modifier = Modifier.weight(1f))
-                            Switch(a in members, { on -> members = if (on) members + a else members - a })
+                            Switch(a in members, { on -> members = if (on) members + a else members - a }, label = a)
                         }
                     }
                     Text(tr.t("agent.membersHint"), style = AgentText.sm, color = c.muted)

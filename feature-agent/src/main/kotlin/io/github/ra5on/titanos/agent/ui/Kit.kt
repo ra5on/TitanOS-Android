@@ -238,7 +238,7 @@ fun SRow(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (summary != null) Text(summary, style = AgentText.baseSize, color = c.muted)
-                    control?.invoke()
+                    if (control != null) androidx.compose.runtime.CompositionLocalProvider(LocalControlLabel provides title) { control() }
                 }
             }
         }
@@ -426,8 +426,11 @@ fun Field(
 /** Ein Schalter mit Wort (Status nie nur über Farbe). */
 @Composable
 fun Switch(checked: Boolean, onChange: ((Boolean) -> Unit)?, enabled: Boolean = true, label: String? = null) {
-    io.github.ra5on.titanos.ui.components.Toggle(checked, onChange, stateOn = t("agent.on"), stateOff = t("agent.off"), enabled = enabled)
+    io.github.ra5on.titanos.ui.components.Toggle(checked, onChange, stateOn = t("agent.on"), stateOff = t("agent.off"), enabled = enabled, label = label ?: LocalControlLabel.current)
 }
+
+/** Name der Zeile für ihr Bedienelement (Schalter): TalkBack sagt „Vibration, Ein, Schalter“. */
+val LocalControlLabel = androidx.compose.runtime.compositionLocalOf<String?> { null }
 
 /** Ein kleines Schild (.chip/.tag) mit Wort; [tone]: ok, warn, info, error. */
 @Composable

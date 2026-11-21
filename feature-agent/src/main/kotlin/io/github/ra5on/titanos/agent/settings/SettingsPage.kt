@@ -216,7 +216,7 @@ private fun Row2(title: String, desc: String? = null, control: @Composable () ->
     Column(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(title, style = AgentText.md.copy(fontWeight = FontWeight.SemiBold), color = c.text)
         if (!desc.isNullOrEmpty()) Text(desc, style = AgentText.sm, color = c.muted)
-        control()
+        androidx.compose.runtime.CompositionLocalProvider(io.github.ra5on.titanos.agent.ui.LocalControlLabel provides title) { control() }
     }
 }
 
@@ -228,7 +228,7 @@ private fun SwitchRow(title: String, desc: String? = null, checked: Boolean, ena
             Text(title, style = AgentText.md.copy(fontWeight = FontWeight.SemiBold), color = if (enabled) c.text else c.muted)
             if (!desc.isNullOrEmpty()) Text(desc, style = AgentText.sm, color = c.muted)
         }
-        Switch(checked, onChange, enabled = enabled)
+        Switch(checked, onChange, enabled = enabled, label = title)
     }
 }
 

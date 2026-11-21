@@ -270,7 +270,7 @@ fun VoiceMode(model: AgentModel, speech: Speech, onClose: () -> Unit) {
                 if (heard.isEmpty() && problem.isEmpty()) Text(if (wake.isNotEmpty()) tr.t("agent.talk.hintWake", "word" to wake) else tr.t("agent.talk.hint"), style = AgentText.md, color = c.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             }
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Switch(wake.isNotEmpty(), { setWake(it) })
+                Switch(wake.isNotEmpty(), { setWake(it) }, label = tr.t("agent.talk.wake"))
                 Text(tr.t("agent.talk.wake"), style = AgentText.md, color = c.text, modifier = Modifier.weight(1f))
                 Field(wakeDraft, { wakeDraft = it.take(24); if (wake.isNotEmpty()) setWake(true) }, Modifier.width(130.dp), label = tr.t("agent.talk.wakeWord"))
             }

@@ -198,9 +198,12 @@ fun RowIcon(icon: ImageVector, tint: Color = Titan.colors.muted, size: Dp = 22.d
     Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size))
 }
 
-/** Schalter (.a-tg). Der Zustand steht auch für Bildschirmleser in Worten da. */
+/**
+ * Schalter (.a-tg). Der Zustand steht auch für Bildschirmleser in Worten da;
+ * [label] sagt TalkBack, was geschaltet wird (sonst nur „Ein, Schalter“).
+ */
 @Composable
-fun Toggle(checked: Boolean, onChange: ((Boolean) -> Unit)?, stateOn: String, stateOff: String, enabled: Boolean = true) {
+fun Toggle(checked: Boolean, onChange: ((Boolean) -> Unit)?, stateOn: String, stateOff: String, enabled: Boolean = true, label: String? = null) {
     val c = Titan.colors
     val shape = RoundedCornerShape(14.dp)
     Box(
@@ -208,7 +211,10 @@ fun Toggle(checked: Boolean, onChange: ((Boolean) -> Unit)?, stateOn: String, st
             .background(if (checked) c.accent else c.track)
             .border(1.dp, if (checked) c.accent else c.border, shape)
             .then(if (onChange != null && enabled) Modifier.clickable(role = Role.Switch) { onChange(!checked) } else Modifier)
-            .semantics { stateDescription = if (checked) stateOn else stateOff },
+            .semantics {
+                stateDescription = if (checked) stateOn else stateOff
+                if (label != null) contentDescription = label
+            },
     ) {
         Box(
             Modifier.offset(x = if (checked) 21.dp else 3.dp, y = 3.dp).size(20.dp).clip(CircleShape)

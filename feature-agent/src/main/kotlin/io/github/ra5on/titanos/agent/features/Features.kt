@@ -163,7 +163,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                     if (!p.bool("docs")) Text(tr.t("agent.f.notThere"), style = AgentText.sm, color = c.muted) else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(tr.t("agent.f.docs.memory"), style = AgentText.md, color = c.text, modifier = Modifier.weight(1f))
-                            Switch(docs.bool("on"), { mine(m.sub("docs", "on", it)) })
+                            Switch(docs.bool("on"), { mine(m.sub("docs", "on", it)) }, label = tr.t("agent.f.docs.memory"))
                         }
                         Text(tr.t("agent.f.docs.nightly", "at" to n.o("docs").str("at", "03:00")), style = AgentText.sm, color = c.muted)
                         Text(tr.t("agent.f.docs.folders"), style = AgentText.sm, color = c.muted)
@@ -175,7 +175,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                         Text(tr.t("agent.f.docs.addHint"), style = AgentText.sm, color = c.muted)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) { Text(tr.t("agent.f.docs.scans"), style = AgentText.md, color = c.text); Text(tr.t("agent.f.docs.scansSub"), style = AgentText.sm, color = c.muted) }
-                            Switch(!docs.bool("noScans"), { mine(m.sub("docs", "noScans", !it)) })
+                            Switch(!docs.bool("noScans"), { mine(m.sub("docs", "noScans", !it)) }, label = tr.t("agent.f.docs.scans"))
                         }
                         PillButton(tr.t("agent.f.docs.runNow"), { scope.launch { runCatching { model.api.sendJson("POST", "agent/docs/run") }; st.notice = tr.t("agent.f.docs.state.running") } }, small = true)
                     }
@@ -184,7 +184,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                     if (!p.bool("deadlines")) Text(tr.t("agent.f.notThere"), style = AgentText.sm, color = c.muted) else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) { Text(tr.t("agent.f.docs.findDeadlines"), style = AgentText.md, color = c.text); Text(tr.t("agent.f.docs.findHint"), style = AgentText.sm, color = c.muted) }
-                            Switch(docs.bool("deadlines"), { mine(m.sub("docs", "deadlines", it)) })
+                            Switch(docs.bool("deadlines"), { mine(m.sub("docs", "deadlines", it)) }, label = tr.t("agent.f.docs.findDeadlines"))
                         }
                         Segments(listOf("suggest" to tr.t("agent.f.docs.modeSuggest"), "remind" to tr.t("agent.f.docs.modeRemind")), docs.str("mode").ifEmpty { "suggest" }, { mine(m.sub("docs", "mode", it)) }, fill = true)
                         var lead by remember(docs) { mutableStateOf(docs["lead"].let { (it as? JsonArray)?.joinToString(", ") { x -> x.toString() } ?: "7, 1" }) }
@@ -198,7 +198,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                     if (!p.bool("paper")) Text(tr.t("agent.f.notThere"), style = AgentText.sm, color = c.muted) else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(tr.t("agent.f.docs.paperOwn"), style = AgentText.md, color = c.text, modifier = Modifier.weight(1f))
-                            Switch(paper.bool("on"), { mine(m.sub("paper", "on", it)) })
+                            Switch(paper.bool("on"), { mine(m.sub("paper", "on", it)) }, label = tr.t("agent.f.docs.paperOwn"))
                         }
                         Text(tr.t("agent.f.docs.inboxSub"), style = AgentText.sm, color = c.muted)
                         Text(tr.t("agent.f.docs.filing"), style = AgentText.sm, color = c.muted)
@@ -231,7 +231,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) { Text(tr.t("agent.f.protect.s.pre"), style = AgentText.md, color = c.text); Text(tr.t("agent.f.protect.s.preHint"), style = AgentText.sm, color = c.muted) }
-                            Switch(!g.bool("noPreSnapshots"), { nas(n.sub("guard", "noPreSnapshots", !it)) })
+                            Switch(!g.bool("noPreSnapshots"), { nas(n.sub("guard", "noPreSnapshots", !it)) }, label = tr.t("agent.f.protect.s.pre"))
                         }
                         var ex by remember(g) { mutableStateOf(g.strs("exclude").joinToString("\n")) }
                         Field(ex, { ex = it }, multiline = true, label = tr.t("agent.f.protect.s.exclude"), placeholder = tr.t("agent.f.protect.s.exclude"))
@@ -245,11 +245,11 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                     if (admin) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) { Text(tr.t("agent.f.protect.s.probes"), style = AgentText.md, color = c.text); Text(tr.t("agent.f.protect.s.probesHint"), style = AgentText.sm, color = c.muted) }
-                            Switch(h.bool("probes"), { nas(n.sub("handbook", "probes", it)) })
+                            Switch(h.bool("probes"), { nas(n.sub("handbook", "probes", it)) }, label = tr.t("agent.f.protect.s.probes"))
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) { Text(tr.t("agent.f.protect.s.contacts"), style = AgentText.md, color = c.text); Text(tr.t("agent.f.protect.s.contactsHint"), style = AgentText.sm, color = c.muted) }
-                            Switch(h.bool("withContacts"), { nas(n.sub("handbook", "withContacts", it)) })
+                            Switch(h.bool("withContacts"), { nas(n.sub("handbook", "withContacts", it)) }, label = tr.t("agent.f.protect.s.contacts"))
                         }
                         if (h.bool("withContacts")) {
                             val contacts = h["contacts"].objs()
@@ -291,7 +291,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                         PillButton(tr.t("agent.f.protect.s.addPerson"), { nas(n.sub("emergency", "persons", persons + jsonOf("account" to "", "waitDays" to 3, "shares" to emptyList<String>()))) }, icon = "plus", small = true)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) { Text(tr.t("agent.f.protect.s.code"), style = AgentText.md, color = c.text); Text(tr.t("agent.f.protect.s.codeHint"), style = AgentText.sm, color = c.muted) }
-                            Switch(em.bool("code"), { nas(n.sub("emergency", "code", it)) })
+                            Switch(em.bool("code"), { nas(n.sub("emergency", "code", it)) }, label = tr.t("agent.f.protect.s.code"))
                         }
                     }
                     PillButton(tr.t("agent.f.menu.emergency"), { onFeature("emergency") }, small = true)
@@ -310,7 +310,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                 SRow(tr.t("agent.f.foresight.advisor"), desc = tr.t("agent.f.foresight.advisorSub"), icon = "chip", control = { nasSwitch("advisor") }) {
                     if (admin) for (k in listOf("predict", "bottlenecks", "prices", "monthly")) Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) { Text(tr.t("agent.f.foresight.set.$k"), style = AgentText.md, color = c.text); Text(tr.t("agent.f.foresight.set.${k}Sub"), style = AgentText.sm, color = c.muted) }
-                        Switch(a.bool(k, true), { nas(n.sub("advisor", k, it)) })
+                        Switch(a.bool(k, true), { nas(n.sub("advisor", k, it)) }, label = tr.t("agent.f.foresight.set.$k"))
                     }
                     if (admin && a.bool("monthly", true)) {
                         io.github.ra5on.titanos.agent.ui.TimeField(a.str("at", "09:00"), { nas(n.sub("advisor", "at", it)) }, tr.t("agent.f.foresight.set.at"), width = 140.dp)
@@ -377,7 +377,7 @@ private fun PaperMail(model: AgentModel, mine: JsonObject, save: (JsonObject) ->
         Text(tr.t("agent.f.docs.mailbox"), style = AgentText.md.copy(fontWeight = FontWeight.SemiBold), color = c.text)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) { Text(tr.t("agent.f.docs.mailOn"), style = AgentText.md, color = c.text); Text(tr.t("agent.f.docs.mailSub"), style = AgentText.sm, color = c.muted) }
-            Switch(mail.bool("enabled"), { mail = mail.put("enabled", it) })
+            Switch(mail.bool("enabled"), { mail = mail.put("enabled", it) }, label = tr.t("agent.f.docs.mailOn"))
         }
         if (mail.bool("enabled")) {
             Field(mail.str("host"), { mail = mail.put("host", it.trim()) }, label = tr.t("agent.f.docs.host"), placeholder = tr.t("agent.f.docs.host"))

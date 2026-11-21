@@ -210,7 +210,7 @@ fun KnowledgePage(model: AgentModel, onEditProject: (Project) -> Unit, onOpenPro
                                 val id = r.str("id")
                                 val next = search.filter { it.str("root") != id } + if (on) listOf(jsonOf("root" to id, "path" to "")) else emptyList()
                                 ini.set("search" to JsonArray(next), now = true)
-                            }, enabled = ini.loaded)
+                            }, enabled = ini.loaded, label = r.str("name"))
                         }
                     }
                     if (admin && hit(tr.t("agent.log"))) SRow(tr.t("agent.log"), desc = tr.t("agent.logIntro"), icon = "list", summary = tr.t("agent.know.logCount", "count" to log.size)) {

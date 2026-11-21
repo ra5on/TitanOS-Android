@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -221,6 +222,14 @@ class AgentScreenshotTest {
     }
 
     private fun overflow(name: String) {
+        // Was TalkBack ansagt: jedes Bedienelement hat einen Namen (Text oder Beschreibung).
+        for (node in compose.onAllNodes(androidx.compose.ui.test.hasClickAction()).fetchSemanticsNodes()) {
+            val cfg = node.config
+            val named = cfg.getOrElseNullable(androidx.compose.ui.semantics.SemanticsProperties.Text) { null }?.any { it.text.isNotBlank() } == true ||
+                cfg.getOrElseNullable(androidx.compose.ui.semantics.SemanticsProperties.ContentDescription) { null }?.any { it.isNotBlank() } == true ||
+                cfg.getOrElseNullable(androidx.compose.ui.semantics.SemanticsProperties.EditableText) { null } != null
+            if (!named && node.boundsInRoot.width > 0f && node.boundsInRoot.height > 0f) cut += "$prefix$name: Bedienelement ohne Namen bei ${node.boundsInRoot}"
+        }
         for (node in compose.onAllNodes(androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.isRoot()), useUnmergedTree = true).fetchSemanticsNodes()) {
             val get = node.config.getOrElseNullable(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { null } ?: continue
             val out = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
@@ -273,10 +282,10 @@ class AgentScreenshotTest {
         nav.layer = null
         nav.show(AgentView.Planned); settle()
         // Die Liste von Geplant (nicht die Seitenleiste in Split und Breit).
-        val list = compose.onAllNodes(androidx.compose.ui.test.hasScrollAction() and androidx.compose.ui.test.hasAnyDescendant(androidx.compose.ui.test.hasText("Morgenbericht"))).onFirst()
-        list.performScrollToNode(androidx.compose.ui.test.hasText("Auftrag oder Erinnerung", substring = true)); settle(300)
+        fun list() = compose.onNodeWithTag("planned-list")
+        list().performScrollToNode(androidx.compose.ui.test.hasText("Auftrag oder Erinnerung", substring = true)); settle(300)
         compose.onAllNodesWithText("Auftrag oder Erinnerung", substring = true).onFirst().performClick(); settle(300)
-        list.performScrollToNode(androidx.compose.ui.test.hasContentDescription("Uhrzeit"))
+        list().performScrollToNode(androidx.compose.ui.test.hasContentDescription("Uhrzeit"))
         capture("42-geplant-formular", dark)
         compose.onAllNodesWithContentDescription("Uhrzeit").onFirst().performClick()
         captureScreen("43-zeitwaehler", dark)
