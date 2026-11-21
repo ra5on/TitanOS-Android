@@ -152,7 +152,7 @@ internal fun proxyBody(f: ProxyForm, target: Boolean): JsonObject {
         "short" to f.short,
     )
     if (target) pairs += "host" to normalDomain(f.host)
-    pairs += listOf(
+    pairs += listOf<Pair<String, Any?>>(
         "port" to (f.port.trim().toLongOrNull() ?: 0L),
         "scheme" to f.scheme,
         "verifyTLS" to (f.scheme == "https" && f.verifyTLS),

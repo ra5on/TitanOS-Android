@@ -117,6 +117,9 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
     /** „Über die App“ offen (Menü oder Mitteilung „Version … ist da“). */
     var openAbout by mutableStateOf(false)
 
+    /** Ein Reiter der Leiste unten, z. B. aus der Systemsteuerung (`files`, `notifications`). */
+    var openTab by mutableStateOf<String?>(null)
+
     /** Mail, Kalender oder Kontakte in voller Größe (`mail`, `calendar`, `contacts`), sonst null. */
     var openProgram by mutableStateOf<String?>(null)
 
@@ -198,6 +201,8 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         // Das Konto „TitanOS“ weg: Android löscht seine Kontakte und Termine vom Handy (am NAS bleiben sie).
         io.github.ra5on.titanos.pim.sync.PimAccount.remove(app)
         openProgram = null
+        // Die Darstellung des Kontos gehört zur Kopplung.
+        io.github.ra5on.titanos.ui.theme.TitanAppearance.clear(app)
         unpairedByNas = byNas
     }
 }
