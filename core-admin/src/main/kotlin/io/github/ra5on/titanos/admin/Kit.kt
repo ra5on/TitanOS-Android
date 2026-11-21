@@ -74,6 +74,14 @@ import kotlinx.coroutines.delay
 // ---------------------------------------------------------------- Gruppen und Zeilen
 
 /**
+ * Ob Bedienelemente einer Zeile unter den Text rücken: bei großer Schrift
+ * (ab 150 %), damit Titel und Beschreibung nur zwischen ganzen Wörtern umbrechen.
+ */
+@Composable
+@androidx.compose.runtime.ReadOnlyComposable
+fun stacked(): Boolean = androidx.compose.ui.platform.LocalDensity.current.fontScale >= 1.5f
+
+/**
  * Gruppe von Einstellungen (SettingGroup im Web, Windows-11-Stil): Überschrift
  * und Karte mit Zeilen. [expandable]: Kopf klappt die Karte auf und zu.
  */
@@ -150,8 +158,10 @@ fun SettingRow(
                 if (desc != null) Text(desc, style = TitanType.rowSub, color = c.muted, modifier = Modifier.padding(top = 2.dp))
                 if (value != null && control == null) Text(value, style = TitanType.rowSub, color = c.text, modifier = Modifier.padding(top = 2.dp))
                 below?.invoke(this)
+                // Große Schrift: das Bedienelement unter den Text, damit Wörter ganz bleiben.
+                if (control != null && stacked()) Box(Modifier.padding(top = 8.dp)) { control() }
             }
-            if (control != null) control()
+            if (control != null && !stacked()) control()
             if (chevron) Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(18.dp))
         }
     }
@@ -182,13 +192,16 @@ fun ToggleRow(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             val c = Titan.colors
-            if (icon != null) WebIcon(icon, size = 22.dp)
+            val stack = stacked()
+            if (icon != null && !stack) WebIcon(icon, size = 22.dp)
             Column(Modifier.weight(1f)) {
                 Text(title, style = TitanType.rowTitle, color = if (enabled) c.text else c.muted)
                 if (desc != null) Text(desc, style = TitanType.rowSub, color = c.muted, modifier = Modifier.padding(top = 2.dp))
+                // Große Schrift: der Schalter unter den Text (ganze Wörter statt Umbruch im Wort).
+                if (stack) Box(Modifier.padding(top = 8.dp)) { Toggle(checked, null, on, off, enabled = enabled, label = title) }
             }
             // Der Schalter selbst ist nur Anzeige; die Zeile trägt die Bedienung.
-            Toggle(checked, null, on, off, enabled = enabled, label = title)
+            if (!stack) Toggle(checked, null, on, off, enabled = enabled, label = title)
         }
     }
 }

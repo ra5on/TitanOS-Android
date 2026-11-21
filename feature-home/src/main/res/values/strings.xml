@@ -48,6 +48,6 @@
     <string name="app_plugins">Plugins</string>
     <string name="app_monitor">Monitor</string>
     <string name="app_logs">Protokolle</string>
-    <string name="app_planner">Aufgaben&#173;planer</string>
+    <string name="app_planner">Aufgabenplaner</string>
     <string name="app_settings">System­steuerung</string>
 </resources>

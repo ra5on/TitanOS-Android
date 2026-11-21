@@ -15,7 +15,8 @@ import androidx.compose.ui.text.TextLayoutResult
  * - Text, der nicht in seinen Platz passt oder mit „…“ gekürzt ist,
  * - Platzhalter `{name}`, die nicht gefüllt sind, und rohe Schlüssel des Webs
  *   (`storage.create` statt eines Textes),
- * - Bedienelemente ohne Namen für TalkBack (weder Text noch Beschreibung).
+ * - Bedienelemente ohne Namen für TalkBack (weder Text noch Beschreibung),
+ * - Umbrüche mitten im Wort (Prüfung aus feature-storage übernommen).
  *
  * Funde sammeln sich in [found]; der Test schlägt am Ende mit allen fehl.
  */
@@ -37,6 +38,16 @@ class ScreenAudit {
             val r = out.firstOrNull() ?: continue
             val text = r.layoutInput.text.text
             if (PLACEHOLDER.containsMatchIn(text) || RAW_KEY.matches(text.trim())) found += "$name: Platzhalter „${text.take(80)}“"
+            // Nur zwischen ganzen Wörtern umbrechen (Vorgabe des Inhabers 21.11.2026); Maschinenwerte in
+            // Monoschrift und Kennungen (Ziffern, / _ :) dürfen überall brechen.
+            if (r.layoutInput.style.fontFamily != io.github.ra5on.titanos.ui.generated.TitanFonts.mono) {
+                for (i in 0 until r.lineCount - 1) {
+                    val end = r.getLineEnd(i)
+                    if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit() && !identifier(text, end)) {
+                        found += "$name: Umbruch im Wort „${text.substring(maxOf(0, end - 12), minOf(text.length, end + 12))}“"
+                    }
+                }
+            }
             val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
             val bottom = if (r.lineCount > 0) r.getLineBottom(r.lineCount - 1) else 0f
             val dots = (0 until r.lineCount).any { r.isLineEllipsized(it) }
@@ -49,6 +60,15 @@ class ScreenAudit {
     /** Am Ende eines Tests: alle Funde auf einmal. */
     fun assertClean() {
         check(found.isEmpty()) { "Funde in den Bildtests:\n" + found.distinct().joinToString("\n") }
+    }
+
+    /** Ob die Zeichenfolge ohne Leerzeichen um [at] eine Kennung ist (Ziffern oder / _ :), kein Wort. */
+    private fun identifier(text: String, at: Int): Boolean {
+        var a = at
+        var b = at
+        while (a > 0 && !text[a - 1].isWhitespace()) a--
+        while (b < text.length && !text[b].isWhitespace()) b++
+        return text.substring(a, b).any { it.isDigit() || it == '/' || it == '_' || it == ':' }
     }
 
     companion object {
