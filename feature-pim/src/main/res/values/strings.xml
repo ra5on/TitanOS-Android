@@ -3,4 +3,101 @@
     <string name="cal_title">Kalender</string>
     <string name="con_title">Kontakte</string>
     <string name="pim_account_label">TitanOS</string>
+    <string name="pim_group_open">aufgeklappt</string>
+    <string name="pim_group_closed">zugeklappt</string>
+    <string name="sync_title">Kontakte und Kalender</string>
+    <string name="sync_intro">Konto „%1$s“ in Kontakte und Kalender des Handys, Abgleich in beide Richtungen. Was du dort änderst, landet auf dem NAS, und umgekehrt.</string>
+    <string name="sync_permission_text">Für den Abgleich braucht die App Zugriff auf Kontakte und Kalender des Handys.</string>
+    <string name="sync_permission_do">Zugriff erlauben</string>
+    <string name="sync_state">Stand</string>
+    <string name="sync_running">Wird abgeglichen …</string>
+    <string name="sync_last">Zuletzt abgeglichen: %1$s</string>
+    <string name="sync_never">Noch nicht abgeglichen</string>
+    <string name="sync_counts">%1$d geholt, %2$d hochgeladen</string>
+    <plurals name="sync_conflicts">
+        <item quantity="one">%d Konflikt (der Stand des NAS galt)</item>
+        <item quantity="other">%d Konflikte (der Stand des NAS galt)</item>
+    </plurals>
+    <string name="sync_now">Jetzt abgleichen</string>
+    <string name="sync_books">Adressbücher</string>
+    <string name="sync_contacts_on">Kontakte abgleichen</string>
+    <string name="sync_contacts_on_sub">In der Kontakte-App unter „TitanOS“</string>
+    <string name="sync_contacts_off_sub">Aus: keine Kontakte von TitanOS auf dem Handy</string>
+    <string name="sync_calendars">Kalender</string>
+    <string name="sync_calendars_on">Kalender abgleichen</string>
+    <string name="sync_calendars_on_sub">In der Kalender-App unter „TitanOS“</string>
+    <string name="sync_calendars_off_sub">Aus: keine Termine von TitanOS auf dem Handy</string>
+    <string name="sync_tasks">Erinnerungen</string>
+    <string name="sync_tasks_sub">Bleiben im Kalender dieser App: Android hat keine allgemeine Schnittstelle für Aufgaben.</string>
+    <string name="sync_read_only">nur lesen</string>
+    <plurals name="sync_n_contacts">
+        <item quantity="one">%d Kontakt</item>
+        <item quantity="other">%d Kontakte</item>
+    </plurals>
+    <plurals name="sync_n_events">
+        <item quantity="one">%d Termin</item>
+        <item quantity="other">%d Termine</item>
+    </plurals>
+    <string name="sync_synced_at">abgeglichen %1$s</string>
+    <string name="sync_how">Abgleich</string>
+    <string name="sync_interval">Wie oft</string>
+    <string name="sync_interval_manual">Nur von Hand und bei Änderungen</string>
+    <plurals name="sync_every_minutes">
+        <item quantity="one">Alle %d Minute</item>
+        <item quantity="other">Alle %d Minuten</item>
+    </plurals>
+    <plurals name="sync_every_hours">
+        <item quantity="one">Jede Stunde</item>
+        <item quantity="other">Alle %d Stunden</item>
+    </plurals>
+    <string name="sync_interval_daily">Einmal am Tag</string>
+    <string name="sync_live">Sofort bei Änderungen</string>
+    <string name="sync_live_open">Änderungen am NAS sofort holen</string>
+    <string name="sync_live_open_sub">Solange TitanOS offen ist, über den Live-Strom des NAS</string>
+    <string name="sync_upload_change">Änderungen am Handy sofort hochladen</string>
+    <string name="sync_upload_change_sub">Android stößt den Abgleich an, wenn sich in Kontakte oder Kalender etwas ändert</string>
+    <string name="sync_network">Netz</string>
+    <string name="sync_net_any">Jedes Netz</string>
+    <string name="sync_net_no_roaming">Nicht im Ausland (Roaming)</string>
+    <string name="sync_net_unmetered">Nur ohne Volumenbegrenzung (WLAN)</string>
+    <string name="sync_net_unmetered_sub">„Jetzt abgleichen“ geht trotzdem</string>
+    <string name="sync_charging">Nur beim Laden</string>
+    <string name="sync_conflict">Bei Konflikten</string>
+    <string name="sync_conflict_nas">Das NAS gewinnt</string>
+    <string name="sync_conflict_nas_sub">Am Handy und am NAS geändert: der Stand des NAS gilt, die Änderung am Handy geht verloren</string>
+    <string name="sync_conflict_phone">Das Handy gewinnt</string>
+    <string name="sync_conflict_phone_sub">Die Änderung am Handy überschreibt die am NAS</string>
+    <string name="sync_default_reminder">Erinnerung für neue Termine vom Handy</string>
+    <string name="sync_reminder_none">Keine (wie angelegt)</string>
+    <string name="sync_reminder_at_start">Zum Beginn</string>
+    <plurals name="sync_reminder_minutes">
+        <item quantity="one">%d Minute vorher</item>
+        <item quantity="other">%d Minuten vorher</item>
+    </plurals>
+    <plurals name="sync_reminder_hours">
+        <item quantity="one">%d Stunde vorher</item>
+        <item quantity="other">%d Stunden vorher</item>
+    </plurals>
+    <plurals name="sync_reminder_days">
+        <item quantity="one">%d Tag vorher</item>
+        <item quantity="other">%d Tage vorher</item>
+    </plurals>
+    <string name="sync_more">Weitere</string>
+    <string name="sync_photos">Kontaktbilder abgleichen</string>
+    <string name="sync_photos_sub">Aus: weniger Daten, die Bilder bleiben am NAS</string>
+    <string name="sync_android_settings">Konten in Android</string>
+    <string name="sync_android_settings_sub">Abgleich des Kontos in den Einstellungen des Handys</string>
+    <string name="sync_remove_note">„Kopplung aufheben“ nimmt das Konto vom Handy; Kontakte und Termine bleiben am NAS.</string>
+    <string name="sync_problem_not_paired">Die App ist nicht gekoppelt.</string>
+    <string name="sync_problem_network">Kein Netz: der Abgleich wartet.</string>
+    <string name="sync_problem_roaming">Im Ausland (Roaming): der Abgleich wartet nach deiner Einstellung.</string>
+    <string name="sync_problem_metered">Kein WLAN: der Abgleich wartet nach deiner Einstellung.</string>
+    <string name="sync_problem_charging">Das Handy lädt nicht: der Abgleich wartet nach deiner Einstellung.</string>
+    <string name="sync_problem_unreachable">Das NAS ist nicht erreichbar.</string>
+    <string name="sync_problem_certificate">Das Zertifikat des NAS hat sich geändert. Öffne die App und bestätige es.</string>
+    <string name="sync_problem_needs_119">Der Abgleich braucht TitanOS 1.19 oder neuer auf dem NAS.</string>
+    <string name="sync_problem_unavailable">Das Volume mit Kalendern und Kontakten ist am NAS gerade nicht da.</string>
+    <string name="sync_problem_permission">Die App darf nicht auf Kontakte bzw. Kalender zugreifen.</string>
+    <string name="sync_problem_error">Der Abgleich ist fehlgeschlagen; er versucht es später wieder.</string>
+    <string name="sync_menu_sub">Abgleich mit den Apps des Handys</string>
 </resources>

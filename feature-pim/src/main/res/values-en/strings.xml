@@ -3,4 +3,101 @@
     <string name="cal_title">Calendar</string>
     <string name="con_title">Contacts</string>
     <string name="pim_account_label">TitanOS</string>
+    <string name="pim_group_open">expanded</string>
+    <string name="pim_group_closed">collapsed</string>
+    <string name="sync_title">Contacts and calendars</string>
+    <string name="sync_intro">Account “%1$s” in the phone\'s Contacts and Calendar, synced both ways. What you change there ends up on the NAS, and vice versa.</string>
+    <string name="sync_permission_text">To sync, the app needs access to the phone\'s contacts and calendars.</string>
+    <string name="sync_permission_do">Allow access</string>
+    <string name="sync_state">Status</string>
+    <string name="sync_running">Syncing …</string>
+    <string name="sync_last">Last synced: %1$s</string>
+    <string name="sync_never">Not synced yet</string>
+    <string name="sync_counts">%1$d fetched, %2$d uploaded</string>
+    <plurals name="sync_conflicts">
+        <item quantity="one">%d conflict (the NAS version won)</item>
+        <item quantity="other">%d conflicts (the NAS version won)</item>
+    </plurals>
+    <string name="sync_now">Sync now</string>
+    <string name="sync_books">Address books</string>
+    <string name="sync_contacts_on">Sync contacts</string>
+    <string name="sync_contacts_on_sub">In the Contacts app under “TitanOS”</string>
+    <string name="sync_contacts_off_sub">Off: no TitanOS contacts on the phone</string>
+    <string name="sync_calendars">Calendars</string>
+    <string name="sync_calendars_on">Sync calendars</string>
+    <string name="sync_calendars_on_sub">In the Calendar app under “TitanOS”</string>
+    <string name="sync_calendars_off_sub">Off: no TitanOS events on the phone</string>
+    <string name="sync_tasks">Reminders</string>
+    <string name="sync_tasks_sub">Stay in this app\'s calendar: Android has no general interface for tasks.</string>
+    <string name="sync_read_only">read only</string>
+    <plurals name="sync_n_contacts">
+        <item quantity="one">%d contact</item>
+        <item quantity="other">%d contacts</item>
+    </plurals>
+    <plurals name="sync_n_events">
+        <item quantity="one">%d event</item>
+        <item quantity="other">%d events</item>
+    </plurals>
+    <string name="sync_synced_at">synced %1$s</string>
+    <string name="sync_how">Sync</string>
+    <string name="sync_interval">How often</string>
+    <string name="sync_interval_manual">Only manually and on changes</string>
+    <plurals name="sync_every_minutes">
+        <item quantity="one">Every %d minute</item>
+        <item quantity="other">Every %d minutes</item>
+    </plurals>
+    <plurals name="sync_every_hours">
+        <item quantity="one">Every hour</item>
+        <item quantity="other">Every %d hours</item>
+    </plurals>
+    <string name="sync_interval_daily">Once a day</string>
+    <string name="sync_live">Right away on changes</string>
+    <string name="sync_live_open">Fetch changes on the NAS right away</string>
+    <string name="sync_live_open_sub">While TitanOS is open, through the NAS\'s live stream</string>
+    <string name="sync_upload_change">Upload changes on the phone right away</string>
+    <string name="sync_upload_change_sub">Android starts a sync when something changes in Contacts or Calendar</string>
+    <string name="sync_network">Network</string>
+    <string name="sync_net_any">Any network</string>
+    <string name="sync_net_no_roaming">Not while roaming</string>
+    <string name="sync_net_unmetered">Unmetered only (Wi-Fi)</string>
+    <string name="sync_net_unmetered_sub">“Sync now” works anyway</string>
+    <string name="sync_charging">Only while charging</string>
+    <string name="sync_conflict">On conflicts</string>
+    <string name="sync_conflict_nas">The NAS wins</string>
+    <string name="sync_conflict_nas_sub">Changed on the phone and on the NAS: the NAS version applies, the phone\'s change is lost</string>
+    <string name="sync_conflict_phone">The phone wins</string>
+    <string name="sync_conflict_phone_sub">The phone\'s change overwrites the one on the NAS</string>
+    <string name="sync_default_reminder">Reminder for new events from the phone</string>
+    <string name="sync_reminder_none">None (as created)</string>
+    <string name="sync_reminder_at_start">At start</string>
+    <plurals name="sync_reminder_minutes">
+        <item quantity="one">%d minute before</item>
+        <item quantity="other">%d minutes before</item>
+    </plurals>
+    <plurals name="sync_reminder_hours">
+        <item quantity="one">%d hour before</item>
+        <item quantity="other">%d hours before</item>
+    </plurals>
+    <plurals name="sync_reminder_days">
+        <item quantity="one">%d day before</item>
+        <item quantity="other">%d days before</item>
+    </plurals>
+    <string name="sync_more">More</string>
+    <string name="sync_photos">Sync contact pictures</string>
+    <string name="sync_photos_sub">Off: less data, the pictures stay on the NAS</string>
+    <string name="sync_android_settings">Accounts in Android</string>
+    <string name="sync_android_settings_sub">The account\'s sync in the phone\'s settings</string>
+    <string name="sync_remove_note">“Unpair” removes the account from the phone; contacts and events stay on the NAS.</string>
+    <string name="sync_problem_not_paired">The app is not paired.</string>
+    <string name="sync_problem_network">No network: the sync is waiting.</string>
+    <string name="sync_problem_roaming">Roaming: the sync waits, as you set.</string>
+    <string name="sync_problem_metered">No Wi-Fi: the sync waits, as you set.</string>
+    <string name="sync_problem_charging">The phone is not charging: the sync waits, as you set.</string>
+    <string name="sync_problem_unreachable">The NAS is not reachable.</string>
+    <string name="sync_problem_certificate">The NAS certificate changed. Open the app and confirm it.</string>
+    <string name="sync_problem_needs_119">Syncing needs TitanOS 1.19 or newer on the NAS.</string>
+    <string name="sync_problem_unavailable">The volume with calendars and contacts is not available on the NAS right now.</string>
+    <string name="sync_problem_permission">The app may not access contacts or calendars.</string>
+    <string name="sync_problem_error">The sync failed; it will try again later.</string>
+    <string name="sync_menu_sub">Sync with the phone\'s apps</string>
 </resources>

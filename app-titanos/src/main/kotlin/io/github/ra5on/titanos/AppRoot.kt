@@ -284,6 +284,7 @@ private fun MainShell(graph: AppGraph) {
         io.github.ra5on.titanos.update.AboutScreen(nasVersion, onBack = { graph.openAbout = false })
         return
     }
+    PimLive(graph)
     graph.openProgram?.let { id ->
         ProgramHost(graph, id) { graph.openProgram = null }
         return
@@ -320,6 +321,14 @@ private fun MainShell(graph: AppGraph) {
                             icon = { RowIcon(TitanIcons.info) },
                             chevron = true,
                             onClick = { menu = false; graph.openAbout = true },
+                        )
+                        ListRow(
+                            stringResource(io.github.ra5on.titanos.pim.R.string.sync_title),
+                            sub = stringResource(io.github.ra5on.titanos.pim.R.string.sync_menu_sub),
+                            icon = { RowIcon(TitanIcons.sync) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; graph.openProgram = PIM_SYNC },
                         )
                         ListRow(
                             stringResource(HomeR.string.home_menu_unpair),
