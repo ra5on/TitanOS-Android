@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -176,7 +177,7 @@ fun ProgramShell(
     val width = currentWidth()
     val back = stringResource(UiR.string.ui_back)
     CompositionLocalProvider(LocalComputeUi provides ui) {
-        Box(Modifier.fillMaxSize().background(Titan.colors.bg)) {
+        Box(Modifier.fillMaxSize().background(Titan.colors.bg).statusBarsPadding()) {
             if (width.sidebar && sections.size > 1) {
                 Row(Modifier.fillMaxSize()) {
                     SideBar(title, glyph, gradient, sections, selected, onSelect, onBack, back)
@@ -184,6 +185,7 @@ fun ProgramShell(
                     Column(Modifier.weight(1f).fillMaxHeight()) {
                         TopBar(pageTitle ?: sections.firstOrNull { it.key == selected }?.label ?: title, actions = actions)
                         Box(Modifier.weight(1f).fillMaxWidth()) { content() }
+                        Box(Modifier.fillMaxWidth().navigationBarsPadding())
                     }
                 }
             } else {
@@ -198,7 +200,9 @@ fun ProgramShell(
                     Box(Modifier.weight(1f).fillMaxWidth()) { content() }
                     if (sections.size > 1) {
                         BottomNav(sections.map { NavItem(it.key, it.label, it.icon) }, selected, onSelect)
-                        Box(Modifier.navigationBarsPadding())
+                        Box(Modifier.background(Titan.colors.header).fillMaxWidth().navigationBarsPadding())
+                    } else {
+                        Box(Modifier.fillMaxWidth().navigationBarsPadding())
                     }
                 }
             }

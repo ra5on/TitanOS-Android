@@ -294,11 +294,11 @@ fun VmRow(vm: Vm, selected: Boolean, onOpen: () -> Unit, onMenu: () -> Unit) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     VmStateMark(vm)
                     Muted(formatBytes(vm.memoryMiB * MIB))
-                    if (vm.autostart) Muted("⏻ " + t("vms.autostart"))
+                    if (vm.autostart) Muted(t("vms.autostart"))
                 }
                 if (vm.backupHeld == true) Muted(t("vms.backupHeldHint"))
                 nextScheduled(vm.schedule)?.let { (action, at) ->
-                    Muted("◷ " + t(if (action == "start") "vms.sched.nextStartAt" else "vms.sched.nextStopAt", "at" to formatDateTime(at)))
+                    Muted(t(if (action == "start") "vms.sched.nextStartAt" else "vms.sched.nextStopAt", "at" to formatDateTime(at)))
                 }
             }
             IconButton(TitanIcons.more, more, onMenu, tint = c.muted)
@@ -347,7 +347,7 @@ private fun VmHeader(state: VmsState, vm: Vm, actions: VmActions) {
         Text(vm.label, style = TitanType.title, color = Titan.colors.text)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             VmStateMark(vm)
-            if (vm.autostart) Muted("⏻ " + t("vms.autostart"))
+            if (vm.autostart) Muted(t("vms.autostart"))
             if (vm.displayName != null && vm.displayName != vm.name) Muted(vm.name)
         }
         if (vm.description.isNotBlank()) Muted(vm.description)

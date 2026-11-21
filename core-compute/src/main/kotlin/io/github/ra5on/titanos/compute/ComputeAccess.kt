@@ -67,7 +67,7 @@ class ComputeAccess(endpoints: List<Endpoint>, sessions: SessionManager?) {
         connection.execute { base -> Request.Builder().url(url(base, path)).method(method, body).build() }.use { r ->
             r.throwIfError()
             val text = r.body.string()
-            if (out == null || text.isBlank()) null else TitanJson.decodeFromString(out, text)
+            if (out == null || text.isBlank()) null else ComputeJson.decodeFromString(out, text)
         }
     }
 
@@ -140,6 +140,12 @@ class ComputeAccess(endpoints: List<Endpoint>, sessions: SessionManager?) {
         fun q(value: String): String = seg(value)
     }
 }
+
+/**
+ * JSON wie TitanJson, aber `null` für ein Feld mit Standardwert ergibt den
+ * Standardwert: Go schickt leere Listen oft als `null` (nil-Slices).
+ */
+val ComputeJson: kotlinx.serialization.json.Json = kotlinx.serialization.json.Json(TitanJson) { coerceInputValues = true }
 
 /** Was ein [NasSocket] meldet; alles auf einem Hintergrund-Thread von OkHttp. */
 interface SocketEvents {

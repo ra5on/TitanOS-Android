@@ -399,6 +399,8 @@ private fun Toolbar(
     val clear = stringResource(R.string.term_clear)
     val keyBarLabel = stringResource(if (keyBar) R.string.term_keybar_hide else R.string.term_keybar_show)
     val fnLabel = stringResource(if (fnRow) R.string.term_fn_hide else R.string.term_fn_show)
+    val smaller = t("terminal.fontSmaller")
+    val larger = t("terminal.fontLarger")
     Row(
         Modifier.fillMaxWidth().background(c.header).horizontalScroll(rememberScrollState()).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -408,10 +410,10 @@ private fun Toolbar(
         IconButton(TitanIcons.download, t("terminal.paste"), onPaste)
         IconButton(TitanIcons.search, t("terminal.search"), onSearch)
         Text("A−", style = TitanType.button, color = c.text, modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button) { onFont(fontSize - 1) }
-            .semantics { contentDescription = "" }.heightIn(min = 44.dp).padding(horizontal = 12.dp, vertical = 11.dp))
-        Text(fontSize.toInt().toString(), style = TitanType.body, color = c.muted, modifier = Modifier.semantics { contentDescription = "$fontSize" })
+            .semantics { contentDescription = smaller }.heightIn(min = 44.dp).padding(horizontal = 12.dp, vertical = 11.dp))
+        Text(fontSize.toInt().toString(), style = TitanType.body, color = c.muted, modifier = Modifier.semantics { contentDescription = fontSize.toInt().toString() })
         Text("A+", style = TitanType.button, color = c.text, modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable(role = Role.Button) { onFont(fontSize + 1) }
-            .heightIn(min = 44.dp).padding(horizontal = 12.dp, vertical = 11.dp))
+            .semantics { contentDescription = larger }.heightIn(min = 44.dp).padding(horizontal = 12.dp, vertical = 11.dp))
         IconButton(TitanIcons.more, more, {
             ui.menu(
                 more,

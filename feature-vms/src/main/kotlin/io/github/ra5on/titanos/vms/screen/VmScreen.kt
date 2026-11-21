@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -704,11 +705,7 @@ private fun Toolbar(
     val modeHints = ScaleMode.entries.associateWith { if (it == ScaleMode.Remote && !resizable) t("vms.mode.remote.unsupported") else t("vms.mode.${it.key}.hint") }
     val sendTitle = t("vms.send")
     val displayTitle = t("vms.display")
-    FlowRow(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
+    Lane(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
         Tool(t("vms.send"), TitanIcons.key, {
             ui.menu(sendTitle, COMBOS.map { (label, keys) -> MenuEntry(comboLabel(label)) { onCombo(keys) } } +
                 listOfNotNull(
@@ -727,6 +724,20 @@ private fun Toolbar(
         Tool(t("vms.fullscreen"), TitanIcons.grid, onFull, enabled = connected)
         Tool(s(R.string.vms_reconnect), TitanIcons.restart, onReconnect)
         Tool(s(R.string.vms_screen_settings), TitanIcons.gear, onSettings)
+    }
+}
+
+/**
+ * Eine Reihe von Knöpfen: am Handy eine Zeile zum seitlichen Wischen (das
+ * Bild behält die Höhe), breiter umbrechend.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Lane(modifier: Modifier = Modifier, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
+    if (io.github.ra5on.titanos.ui.currentWidth() == io.github.ra5on.titanos.ui.Width.Phone) {
+        Row(modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) { content() }
+    } else {
+        FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { content() }
     }
 }
 
@@ -756,7 +767,7 @@ private fun KeyBar(
             .padding(top = 6.dp).semantics { contentDescription = "" },
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Lane {
             KeyButton(t("vms.touch.keyboard"), onKeyboard, on = keyboardOpen, icon = TitanIcons.edit)
             KeyButton(t("vms.touch.esc"), { onKey(Keysyms.ESCAPE) })
             KeyButton(t("vms.touch.tab"), { onKey(Keysyms.TAB) })
@@ -766,11 +777,11 @@ private fun KeyBar(
             KeyButton(t("vms.touch.fkeys"), onFkeys, on = fkeys)
         }
         if (fkeys) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Lane {
                 for (n in 1..12) KeyButton("F$n", { onKey(Keysyms.f(n)) })
             }
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Lane {
             KeyButton("←", { onKey(Keysyms.LEFT) }, description = t("vms.touch.left"))
             KeyButton("↑", { onKey(Keysyms.UP) }, description = t("vms.touch.up"))
             KeyButton("↓", { onKey(Keysyms.DOWN) }, description = t("vms.touch.down"))
@@ -783,6 +794,14 @@ private fun KeyBar(
             KeyButton(t("vms.ctrlAltDel"), onCad)
             KeyButton(t(if (full) "vms.touch.fullClose" else "vms.touch.full"), onFull, on = full, icon = TitanIcons.grid)
             if (zoomed) KeyButton(s(R.string.vms_zoom_reset), onZoomReset, icon = TitanIcons.search)
+        }
+        val phone = io.github.ra5on.titanos.ui.currentWidth() == io.github.ra5on.titanos.ui.Width.Phone
+        if (phone) {
+            // Am Handy braucht das Bild die Höhe: die Art der Bedienung als zwei Knöpfe in der Leiste, die Erklärung in den Einstellungen.
+            Lane {
+                for (m in PointerMode.entries) KeyButton(t("vms.touch.${m.key}"), { onPointer(m) }, on = pointer == m, radio = true)
+            }
+            return@Column
         }
         Text(t("vms.touch.mode"), style = TitanType.small, color = Titan.colors.muted)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -880,6 +899,8 @@ private fun ScreenSettings(
     )
     io.github.ra5on.titanos.compute.SwitchRow(s(R.string.vms_keybar), k, { k = it; onKeyBar(it) })
     io.github.ra5on.titanos.compute.SwitchRow(s(R.string.vms_natural_scroll), n, { n = it; onNatural(it) }, sub = s(R.string.vms_natural_scroll_hint))
+    Text(t("vms.touch.trackpadHint"), style = TitanType.small, color = Titan.colors.muted, modifier = Modifier.padding(top = 8.dp))
+    Text(t("vms.touch.directHint") + " " + s(R.string.vms_touch_zoom_hint), style = TitanType.small, color = Titan.colors.muted, modifier = Modifier.padding(top = 6.dp))
 }
 
 private fun Context.findActivity(): Activity? {
