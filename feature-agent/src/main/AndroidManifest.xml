@@ -8,6 +8,8 @@
     </queries>
     <!-- Antworten des Agenten als Mitteilung (auch Android Auto). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Kurz vibrieren (Darstellung › Vibration). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application>
         <!-- Android Auto: diese App ist eine Nachrichten-App (Mitteilungen mit MessagingStyle). -->

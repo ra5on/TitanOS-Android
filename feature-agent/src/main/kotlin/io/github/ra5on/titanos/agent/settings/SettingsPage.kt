@@ -130,7 +130,6 @@ fun SettingsPage(
     val tr = tr()
     val p = if (part in PARTS) part else ""
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PagePadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (p.isNotEmpty() && p != "features") item { Text(partTitle(tr, p), style = AgentText.pageTitle, color = Titan.colors.text) }
         when (p) {
             "" -> overview(model, hooks, onPart, onDeleteAll)
             "models" -> item { Models(model) }
@@ -270,7 +269,7 @@ private fun SpeechPart(model: AgentModel, speech: Speech) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Grp {
             SwitchRow(tr.t("agent.set.readAutoLabel"), tr.t("agent.set.readAutoHint"), look.read) { model.changeLook(look.copy(read = it)) }
-            Row2(tr.t("agent.set.rate"), String.format(java.util.Locale.getDefault(), "%.1f×", look.rate)) {
+            Row2(tr.t("agent.set.rate"), String.format(if (tr.de) java.util.Locale.GERMAN else java.util.Locale.ENGLISH, "%.1f×", look.rate)) {
                 Range(look.rate.toFloat(), 0.5f..2f, { model.changeLook(look.copy(rate = Math.round(it * 10) / 10.0)) }, String.format("%.1f×", look.rate), steps = 14)
             }
             PillButton(tr.t("agent.readAloud"), { speech.speak("preview", tr.t("agent.busy.done") + ". " + tr.t("agent.set.readAutoHint")) }, icon = "volume", small = true)

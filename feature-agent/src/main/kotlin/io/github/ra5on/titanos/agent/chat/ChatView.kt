@@ -814,7 +814,7 @@ private fun ResultCards(steps: List<Entry>, active: Boolean, onAsk: (String) -> 
                             val parts = listOfNotNull(
                                 STATE_WORD[a.state]?.let { tr.t(it) } ?: a.state,
                                 if (on && a.memory > 0) io.github.ra5on.titanos.ui.Format.bytes(a.memory) else null,
-                                if (on && a.cpu >= 0.1) tr.t("agent.card.cpu", "percent" to String.format(Locale.getDefault(), "%.1f", a.cpu)) else null,
+                                if (on && a.cpu >= 0.1) tr.t("agent.card.cpu", "percent" to String.format(if (tr.de) Locale.GERMAN else Locale.ENGLISH, "%.1f", a.cpu)) else null,
                                 if (a.update) tr.t("agent.card.update") else null,
                             )
                             Text(parts.joinToString(" · "), style = AgentText.sm, color = c.muted)

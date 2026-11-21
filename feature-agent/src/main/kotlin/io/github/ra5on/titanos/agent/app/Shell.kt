@@ -385,7 +385,7 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
                                             AgentView.Planned -> tr.t("agent.planned")
                                             AgentView.Memory -> tr.t("agent.memory")
                                             AgentView.Knowledge -> tr.t("agent.knowledge")
-                                            else -> tr.t("agent.set.title")
+                                            else -> if (part.isNotEmpty() && part != "features") io.github.ra5on.titanos.agent.settings.partTitle(tr, part) else tr.t("agent.set.title")
                                         },
                                         onBack = { nav.back() },
                                         modifier = Modifier.statusBarsPadding(),
@@ -517,7 +517,8 @@ private fun ChatHead(model: AgentModel, nav: AgentNav, modifier: Modifier, onMor
         ) {
             if (!wide) FloatButton("menu", tr.t("agent.menuOpen"), { nav.menuOpen = true }, dot = model.chats.any { it.unread || it.state == "waiting" })
             if (nav.projectsTab) Box(Modifier.weight(1f)) else {
-                val shape = RoundedCornerShape(999.dp)
+                // Abgerundet statt Kapsel: ein Titel auf zwei, drei Zeilen (oder 200 % Schrift) wird nie an den Ecken abgeschnitten.
+                val shape = RoundedCornerShape(24.dp)
                 val title = chat?.title?.ifEmpty { null } ?: tr.t("nav.agent")
                 Row(
                     Modifier.weight(1f).heightIn(min = 44.dp).clip(shape).background(AgentColors.float).border(1.dp, c.border, shape)
@@ -662,10 +663,19 @@ private fun BoxScope.Layers(
     }
 
     // ⋯ des offenen Chats (chatMenu).
-    AgentSheet(layer == Layer.More, close, tr.t("ui.more")) {
-        val info = model.currentInfo ?: return@AgentSheet
-        Text(info.title.ifEmpty { tr.t("agent.newChat") }, style = AgentText.lg.copy(fontWeight = FontWeight.SemiBold), color = c.text, modifier = Modifier.padding(horizontal = 22.dp, vertical = 6.dp))
-        ChatActionItems(model, nav, info, export, close, find = true)
+    // Wie das Web am Handy: ein Menü oben rechts, das aus dem ⋯ aufgeht.
+    Scrim(layer == Layer.More, close)
+    androidx.compose.animation.AnimatedVisibility(
+        layer == Layer.More,
+        modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 56.dp, end = 12.dp),
+        enter = fadeIn(Motion.spec(LocalCalm.current, 180)) + androidx.compose.animation.scaleIn(Motion.spec(LocalCalm.current, 220), initialScale = 0.92f, transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)),
+        exit = fadeOut(Motion.spec(LocalCalm.current, 140)),
+    ) {
+        val info = model.currentInfo
+        val shape = RoundedCornerShape(14.dp)
+        Column(Modifier.width(240.dp).clip(shape).background(c.surface).border(1.dp, c.border, shape).padding(vertical = 6.dp)) {
+            if (info != null) ChatActionItems(model, nav, info, export, close, find = true)
+        }
     }
     // Aktionen eines Chats aus der Liste (ChatSheets: actions).
     val acts = rememberLast((layer as? Layer.Actions)?.chat)

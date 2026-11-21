@@ -169,7 +169,7 @@ class Speech(private val context: Context, private val scope: CoroutineScope) {
     fun micDown(m: AgentModel) {
         if (recording) { finishInput(m); return }
         if (!nasHear(m)) { launchRecognizer(); return }
-        askMic { ok -> if (ok) start() else m.say(tr.t("agent.voiceNoMic")) }
+        askMic { ok -> if (ok) start() else m.say(micText(tr)) }
     }
 
     fun micUp(m: AgentModel) {
@@ -264,3 +264,6 @@ class Speech(private val context: Context, private val scope: CoroutineScope) {
         tts = null
     }
 }
+
+/** Ohne Mikrofon: der Text des Webs nennt den Browser; die App sagt, wo es in Android erlaubt wird. */
+fun micText(tr: Tr): String = if (tr.de) "Kein Zugriff auf das Mikrofon. Erlaube es der Agent-App in den Android-Einstellungen › Apps › Agent › Berechtigungen." else "No access to the microphone. Allow it for the Agent app in Android settings › Apps › Agent › Permissions."

@@ -172,11 +172,11 @@ fun VoiceMode(model: AgentModel, speech: Speech, onClose: () -> Unit) {
 
     // Das Mikrofon und die Erkennung der Sprechpausen.
     LaunchedEffect(nas) {
-        if (!nas) { problem = tr.t("agent.talk.noNas").let { if (it == "agent.talk.noNas") tr.t("agent.voiceNoMic") else it }; phase = Phase.Paused; return@LaunchedEffect }
+        if (!nas) { problem = tr.t("agent.talk.noNas").let { if (it == "agent.talk.noNas") tr.t("agent.set.whisperOff") else it }; phase = Phase.Paused; return@LaunchedEffect }
         var granted: Boolean? = null
         speech.askMic { granted = it }
         while (granted == null) delay(50)
-        if (granted != true || !speech.start()) { problem = tr.t("agent.voiceNoMic"); phase = Phase.Paused; return@LaunchedEffect }
+        if (granted != true || !speech.start()) { problem = micText(tr); phase = Phase.Paused; return@LaunchedEffect }
         phase = Phase.Listening
         var noise = 0.01
         var began = 0L

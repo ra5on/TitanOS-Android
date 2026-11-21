@@ -17,8 +17,8 @@ android {
         applicationId = "io.github.ra5on.titanos.agent"
         minSdk = 33
         targetSdk = 37
-        versionCode = 3
-        versionName = "0.03"
+        versionCode = 4
+        versionName = "1.00"
     }
     signingConfigs {
         if (releaseKeystore != null && releasePassword != null) {

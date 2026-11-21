@@ -831,8 +831,9 @@ class AgentModel(
         project = id
     }
 
+    /** Das Modell der Einstellungen in einem neuen Chat bleibt „wie eingestellt“ (folgt späteren Änderungen). */
     fun chooseModel(name: String) {
-        model = name
+        model = if (name == status?.model && current == null) "" else name
         val levels = usable.firstOrNull { it.name == name }?.levels.orEmpty()
         if (think.isNotEmpty() && think !in levels) think = ""
     }
