@@ -36,6 +36,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import io.github.ra5on.titanos.ui.components.SmallButton
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -284,8 +287,20 @@ private fun Hits(index: SettingsIndex, env: SettingsEnv, nav: SettingsNav) {
     val tr = LocalTr.current
     val hits = remember(nav.query, env.admin, tr) { SettingsSearch.find(index, nav.query, env.admin, tr) }
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (hits.isEmpty()) {
-            Text(stringResource(R.string.set_no_hits), style = TitanType.body, color = Titan.colors.muted, modifier = Modifier.padding(8.dp))
+        // Wie im Web: Zahl der Treffer als Statusmeldung (TalkBack liest sie vor) und „Suche leeren“.
+        FlowRow(
+            Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (hits.isEmpty()) tr.t("ui.noSettings") else tr.t("ui.results", "count" to hits.size),
+                style = TitanType.body,
+                color = Titan.colors.muted,
+                modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+            )
+            SmallButton(tr.t("ui.clear"), { nav.query = "" })
         }
         for (h in hits) {
             SettingRow(h.label, desc = h.where, icon = WebIcons[h.icon], onClick = {

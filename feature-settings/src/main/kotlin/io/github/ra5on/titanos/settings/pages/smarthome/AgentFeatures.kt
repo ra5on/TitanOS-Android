@@ -72,8 +72,9 @@ import java.net.URLEncoder
 // admin=true, PLAN 54): die Funktionen in vier Gruppen, je Zeile der
 // NAS-weite Schalter; ein Tippen öffnet ihre Einstellungen. Dazu die eigenen
 // Teile des Kontos (Ordner, Postfach) wie im Web. Die Ansichten der
-// Funktionen (Fristenliste, Papierkram, Meldungen, Berater-Bericht,
-// Backup-Partner, Katalog) stehen in der KI-Agent-App.
+// Funktionen (Fristenliste, Papierkram, Wächter, Notfallhandbuch,
+// Notfallzugang, Berater-Bericht, Backup-Partner, Katalog) öffnen sich wie im
+// Web aus den Blättern (AgentViews.kt, ProtectViews.kt).
 
 private val TIME = Regex("^([01]\\d|2[0-3]):[0-5]\\d$")
 
@@ -495,6 +496,10 @@ private fun BoxScope.DocsMemorySheet(st: FeaturesState, close: () -> Unit) {
             Muted(if (lead.size == 2) tr.t("agent.f.docs.leadTwo", "a" to lead[0], "b" to lead[1]) else lead.joinToString(", ") { tr.t("agent.f.docs.leadOne", "n" to it) })
             Field(leadText, { leadText = it }, label = t("agent.f.docs.remind"), keyboard = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
             Muted(t("agent.f.docs.leadHint"))
+            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Plain(t("agent.f.docs.suggestions"), bold = true, modifier = Modifier.weight(1f))
+                SmallButton(t("agent.f.docs.show"), { ov.show { c -> DeadlinesViewSheet(c) } })
+            }
             // Wie onchange im Web: gespeichert, wenn eine Weile nicht getippt wird.
             LaunchedEffect(leadText) {
                 val list = leadText.split(Regex("[,;\\s]+")).mapNotNull { it.toIntOrNull() }.filter { it in 0..365 }.take(3)
@@ -648,6 +653,10 @@ private fun BoxScope.PaperSheet(st: FeaturesState, close: () -> Unit) {
                 }
             }, kind = ButtonKind.Primary)
         }
+        if (pub.bool("paper")) {
+            Divider()
+            SmallButton(t("agent.f.docs.openPaper"), { ov.show { c -> PaperViewSheet(c) } }, kind = ButtonKind.Primary)
+        }
     }
 }
 
@@ -760,6 +769,13 @@ private fun BoxScope.ProtectSheet(st: FeaturesState, id: String, title: String, 
             SheetButton(t("common.save"), primary = true, enabled = !busy && st.nas != null) { save() },
         ),
     ) {
+        // Wie im Web: oben die Ansicht der Funktion, darunter ihre Einstellungen.
+        when (id) {
+            "guard" -> GuardPanel()
+            "handbook" -> HandbookPanel()
+            else -> EmergencyPanel(env.user(), env.admin)
+        }
+        Divider()
         if (st.nas == null) {
             SheetError(st)
             return@DialogSheet
@@ -865,6 +881,7 @@ private fun BoxScope.WhatIfSheet(st: FeaturesState, close: () -> Unit) {
 
 @Composable
 private fun BoxScope.AdvisorSheet(st: FeaturesState, close: () -> Unit) {
+    val ov = LocalOverlays.current
     var local by remember { mutableStateOf("") }
     val nas = st.nas
     val adv = advisorOf(nas ?: JsonObject(emptyMap()))
@@ -884,6 +901,7 @@ private fun BoxScope.AdvisorSheet(st: FeaturesState, close: () -> Unit) {
         Plain(t("agent.f.foresight.set.at"), bold = true)
         Field(at, { at = it.filter { c -> c.isDigit() || c == ':' }.take(5) }, label = t("agent.f.foresight.set.at"), placeholder = "03:30", singleLine = true, keyboard = KeyboardOptions(keyboardType = KeyboardType.Number))
         Muted(t("agent.f.foresight.set.atHint"))
+        if (on) SmallButton(t("agent.f.foresight.openReport"), { ov.show { c -> AdvisorReportSheet(c) } })
         LaunchedEffect(at) {
             if (!TIME.matches(at) || at == adv.str("at")) return@LaunchedEffect
             delay(900)
@@ -896,6 +914,7 @@ private fun BoxScope.AdvisorSheet(st: FeaturesState, close: () -> Unit) {
 
 @Composable
 private fun BoxScope.BuddySheet(st: FeaturesState, close: () -> Unit) {
+    val ov = LocalOverlays.current
     val env = LocalEnv.current
     val tr = LocalTr.current
     var buddy by remember { mutableStateOf(st.nas?.o("buddy") ?: JsonObject(emptyMap())) }
@@ -954,14 +973,17 @@ private fun BoxScope.BuddySheet(st: FeaturesState, close: () -> Unit) {
         Muted(t("agent.f.family.buddy.protectHint"))
         if (local.isNotEmpty()) Banner(local, tone = Tone.Error)
         if (saved) StatusChip(t("agent.f.saved"), Tone.Ok)
+        if (st.nas?.o("buddy")?.bool("enabled") == true) SmallButton(t("agent.f.family.buddy.open"), { ov.show { c -> BuddyViewSheet(c) } })
     }
 }
 
 @Composable
 private fun BoxScope.CatalogSheet(st: FeaturesState, close: () -> Unit) {
+    val ov = LocalOverlays.current
     val on = st.nas?.o("catalog")?.bool("enabled") == true
     DialogSheet(t("agent.f.family.catalog.title"), onDismiss = close, buttons = listOf(SheetButton(t("common.close"), primary = true) { close() })) {
         Muted(t("agent.f.family.catalog.intro"))
-        if (!on) Muted(t("agent.f.family.catalog.offHint"))
+        if (on || st.pub?.bool("catalog") == true) SmallButton(t("agent.f.family.catalog.open"), { ov.show { c -> CatalogViewSheet(c) } }, kind = ButtonKind.Primary)
+        else Muted(t("agent.f.family.catalog.offHint"))
     }
 }

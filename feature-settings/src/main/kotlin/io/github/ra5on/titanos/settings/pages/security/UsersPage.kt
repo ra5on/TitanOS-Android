@@ -42,5 +42,14 @@ fun UsersPage(a: PageArgs) {
                 SettingRow(acc.str("name"), desc = sub, icon = WebIcons["users"], onClick = { env.open("/users") })
             }
         }
+        // Kamerarechte je Konto (im Web in der Kontoansicht unter Benutzer, nvr.rights.*).
+        // TODO(D1, feature-nvr): Die Seite baut Helfer D1 „Rechnen“ (feat/1.00-compute) in
+        // feature-nvr. Bis sie zusammengeführt ist, führt der Eintrag zur Adresse /nvr/rights,
+        // die die App noch mit „kommt später“ beantwortet; danach dort die Seite öffnen.
+        if (env.admin) {
+            SettingGroup(t("nvr.rights.title")) {
+                SettingRow(t("nvr.rights.title"), desc = t("nvr.rights.hint"), icon = WebIcons["camera"], onClick = { env.open("/nvr/rights") })
+            }
+        }
     }
 }

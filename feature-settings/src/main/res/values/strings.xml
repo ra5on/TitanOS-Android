@@ -5,7 +5,6 @@
     <string name="set_app_look">Darstellung auf diesem Gerät</string>
     <string name="set_app_look_desc">Hell/Dunkel, Variante, Akzent, Schriftgröße</string>
     <string name="set_app_guard_desc">Welche Aktionen den Fingerabdruck verlangen</string>
-    <string name="set_no_hits">Keine Einstellung gefunden.</string>
     <string name="set_back">Zurück</string>
     <string name="set_search_label">Einstellungen durchsuchen</string>
     <string name="set_account">Mein Konto</string>

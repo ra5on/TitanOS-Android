@@ -172,9 +172,19 @@ fun SettingRow(
             .background(if (marked) c.accent.copy(alpha = .16f).compositeOver(c.surface) else c.surface)
             .border(1.dp, if (marked) c.accent else c.border, shape),
     ) {
+        val titleStyle = TitanType.rowTitle.copy(fontSize = TitanType.body.fontSize)
+        val widestWord = io.github.ra5on.titanos.ui.rememberWidestWord(listOf(title), titleStyle)
+        val density = androidx.compose.ui.platform.LocalDensity.current
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val full = maxWidth
             val wide = full >= 600.dp
+            // Passt das längste Wort des Titels nicht neben Symbol und Pfeil (große
+            // Schrift, Bindestrich-Wörter wie „Zwei-Faktor-Anmeldung“), stehen
+            // Symbol und Pfeil in einer eigenen Zeile darüber: ganze Wörter.
+            val trailing = expandable || onClick != null
+            val beside = (if (icon != null) 36.dp else 0.dp) + (if (trailing) 34.dp else 0.dp) +
+                (if (wide && (summary != null || control != null)) full * 0.5f else 0.dp)
+            val tight = (icon != null || trailing) && with(density) { widestWord.toDp() } > full - 24.dp - beside
             Row(
                 Modifier.fillMaxWidth()
                     .then(if (action != null) Modifier.clickable(role = Role.Button, onClick = action) else Modifier)
@@ -185,10 +195,21 @@ fun SettingRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                if (icon != null) Icon(icon, null, tint = c.muted, modifier = Modifier.size(22.dp).align(if (wide) Alignment.CenterVertically else Alignment.Top))
+                if (icon != null && !tight) Icon(icon, null, tint = c.muted, modifier = Modifier.size(22.dp).align(if (wide) Alignment.CenterVertically else Alignment.Top))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    if (tight) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            if (icon != null) Icon(icon, null, tint = c.muted, modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.weight(1f))
+                            when {
+                                expandable -> Icon(TitanIcons.down, null, tint = c.muted, modifier = Modifier.size(20.dp).rotate(if (open) 180f else 0f))
+                                onClick != null -> Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(18.dp))
+                                else -> Unit
+                            }
+                        }
+                    }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-                        Text(title, style = TitanType.rowTitle.copy(fontSize = TitanType.body.fontSize), color = c.text)
+                        Text(title, style = titleStyle, color = c.text)
                         if (badge != null) Badge(badge)
                     }
                     if (desc != null) Text(desc, style = TitanType.rowSub, color = c.muted)
@@ -211,6 +232,7 @@ fun SettingRow(
                     }
                 }
                 when {
+                    tight -> Unit
                     expandable -> Icon(TitanIcons.down, null, tint = c.muted, modifier = Modifier.size(20.dp).rotate(if (open) 180f else 0f))
                     onClick != null -> Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(18.dp))
                     else -> Unit
