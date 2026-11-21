@@ -31,18 +31,6 @@ internal fun FakeNas.storageFixtures(): FakeNas {
 }
 
 /**
- * Die abgedunkelte Fläche hinter AdminDialog/AdminSheet (core-admin, Dialogs.kt) ist
- * anklickbar (schließt) und hat keinen Namen. Das ist ein Fund in core-admin, nicht in
- * diesem Modul (gemeldet). Nur genau diese Fläche wird übergangen: ein Bedienelement
- * ohne Namen, das das ganze Fenster ([width] × [height] Pixel) bedeckt.
- */
-internal fun isCoreBackdrop(finding: String, width: Float, height: Float): Boolean {
-    val m = Regex("""Bedienelement ohne Namen bei Rect\.fromLTRB\(([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+)\)""").find(finding) ?: return false
-    val (l, t, r, b) = m.destructured
-    return l.toFloat() == 0f && t.toFloat() == 0f && kotlin.math.abs(r.toFloat() - width) <= 2f && kotlin.math.abs(b.toFloat() - height) <= 2f
-}
-
-/**
  * Prüft, dass Texte nur zwischen ganzen Wörtern umbrechen (Vorgabe des Inhabers): meldet
  * jede Zeile, die mitten in einem Wort endet. Maschinenwerte in Monoschrift (Pfade,
  * Kennungen, Seriennummern) dürfen überall brechen und werden übergangen, ebenso
