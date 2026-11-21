@@ -147,7 +147,8 @@ fun NasPlayer(api: FilesApi, root: String, path: String, active: Boolean, onErro
         }
     }
     // Nur die sichtbare Seite spielt; beim Wegwischen hält sie an.
-    LaunchedEffect(active) { if (!active) player.pause() }
+    val autoplay = FilesSettings.get(context).autoplay
+    LaunchedEffect(active) { if (!active) player.pause() else if (autoplay) player.play() }
     AndroidView(
         factory = { ctx ->
             PlayerView(ctx).apply {

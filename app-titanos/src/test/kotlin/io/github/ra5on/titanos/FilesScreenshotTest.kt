@@ -282,4 +282,49 @@ class FilesScreenshotTest {
         }
         GalleryScreen(GalleryState(items, folders = 3), null, GalleryFilter.All, {}, {}, {}, {})
     }
+
+    /** Schrift 200 % (Barrierefreiheit): nichts darf abgeschnitten werden, alles bricht um. */
+    private fun big(name: String, content: @Composable () -> Unit) {
+        org.robolectric.RuntimeEnvironment.setFontScale(2f)
+        try {
+            shot(name, content)
+        } finally {
+            org.robolectric.RuntimeEnvironment.setFontScale(1f)
+        }
+    }
+
+    @Test
+    fun f50_list_big_font() = big("150-ordner-schrift-200") {
+        FolderScreen(FolderUi(FolderState(loc, entries), entries, jobs = listOf(job)), null, none, bottomBar = { NavBar() })
+    }
+
+    @Test
+    fun f51_sheet_big_font() = big("151-aktionen-schrift-200") {
+        FolderScreen(FolderUi(FolderState(loc, entries), entries), null, none, bottomBar = { NavBar() }) {
+            EntrySheet(
+                listOf(entries[2]), withTrash = true, writable = true, offline = false, officeName = "T-PDF",
+                onOffline = {}, onOpen = {}, onOffice = {}, onOpenWith = {}, onShare = {}, onDownload = {}, onCopy = {}, onCut = {},
+                onRename = {}, onBatchRename = null, onEdit = null, onExtract = null, onProperties = {}, onDelete = {}, onDismiss = {}, onWindow = {},
+            )
+        }
+    }
+
+    @Test
+    fun f52_settings() = shot("152-dateien-einstellungen") {
+        io.github.ra5on.titanos.files.FilesSettingsScreen(io.github.ra5on.titanos.files.FilesSettings(), 120_000_000, {}, {}, {})
+    }
+
+    @Test
+    fun f53_settings_big_font() = big("153-dateien-einstellungen-schrift-200") {
+        io.github.ra5on.titanos.files.FilesSettingsScreen(io.github.ra5on.titanos.files.FilesSettings(), 120_000_000, {}, {}, {})
+    }
+
+    @Test
+    @Config(qualifiers = "de-w1280dp-h800dp-mdpi")
+    fun f60_wide_sidebar() = shot("160-dateien-breit") {
+        androidx.compose.foundation.layout.Row {
+            io.github.ra5on.titanos.files.FilesSidebar(listOf(docs, FileRoot("share/Media", "Media", "share")), listOf(Favorite("share/Documents", "Steuer")), docs.id, {}, {}, {}, {}, {}, {}, {})
+            Box(Modifier.weight(1f)) { FolderScreen(FolderUi(FolderState(loc, entries), entries, view = FileView.Small, previewing = "Ausweis Scan.jpg"), null, none, bottomBar = {}) }
+        }
+    }
 }

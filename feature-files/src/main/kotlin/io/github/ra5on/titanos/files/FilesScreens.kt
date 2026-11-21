@@ -99,6 +99,7 @@ fun FilesHomeScreen(
     favorites: List<Favorite> = emptyList(),
     onFavorite: (Favorite) -> Unit = {},
     jobsRunning: Int = 0,
+    onSettings: () -> Unit = {},
 ) {
     val c = Titan.colors
     Page(
@@ -107,7 +108,10 @@ fun FilesHomeScreen(
                 TopBar(
                     stringResource(R.string.files_title),
                     icon = { AppIcon("files", "orange", 30.dp) },
-                    actions = { IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), onSearch) },
+                    actions = {
+                        IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), onSearch)
+                        IconButton(TitanIcons.gear, stringResource(R.string.fs_title), onSettings)
+                    },
                 )
             }
         },

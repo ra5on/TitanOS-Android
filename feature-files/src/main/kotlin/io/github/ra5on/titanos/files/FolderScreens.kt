@@ -122,6 +122,8 @@ class FolderCallbacks(
     val drag: ((FileEntry) -> DragAndDropTransferData?)? = null,
     /** Abgelegt auf einem Ordner (Eintrag) oder in den offenen Ordner (null). */
     val drop: ((DragAndDropEvent, FileEntry?) -> Boolean)? = null,
+    /** Rechtsklick öffnet das Menü. */
+    val secondary: Boolean = true,
 )
 
 @Composable
@@ -287,7 +289,7 @@ private fun UploadRow(u: Transfer) {
 
 @OptIn(ExperimentalFoundationApi::class)
 private fun Modifier.entryClicks(e: FileEntry, selecting: Boolean, on: FolderCallbacks): Modifier =
-    onSecondaryClick { on.entryMenu(e) }
+    (if (on.secondary) onSecondaryClick { on.entryMenu(e) } else this)
         .combinedClickable(
             onClick = { if (selecting) on.select(e) else on.open(e) },
             onLongClick = { on.select(e) },

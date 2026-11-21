@@ -286,13 +286,13 @@ class FilesModel(
         }
         val kept = runCatching { resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }.isSuccess
         if (kept) {
-            TransferQueue.enqueueUpload(context, location.root.id, location.path, location.place, name, size, uri)
+            TransferQueue.enqueueUpload(context, location.root.id, location.path, location.place, name, size, uri, conflict = FilesSettings.get(context).uploadConflict)
             return
         }
         scope.launch(Dispatchers.IO) {
             try {
                 val copy = Outbox.copy(context, uri, name)
-                TransferQueue.enqueueUpload(context, location.root.id, location.path, location.place, name, copy.length(), Uri.fromFile(copy), ownCopy = true)
+                TransferQueue.enqueueUpload(context, location.root.id, location.path, location.place, name, copy.length(), Uri.fromFile(copy), ownCopy = true, conflict = FilesSettings.get(context).uploadConflict)
             } catch (e: IOException) {
                 actionError = FilesError.Other("read")
             }

@@ -313,9 +313,11 @@ private fun MediaPage(api: FilesApi, location: Location, e: FileEntry, active: B
                 }
                 Chip(stringResource(if (audio) R.string.media_cast_speaker else R.string.media_cast_tv), onClick = { cast = true })
             }
-            if (audio) {
+            val fs = FilesSettings.get(context)
+            if (audio && fs.backgroundAudio) {
                 // Ton läuft im Hintergrunddienst mit Wiedergabeliste aus dem Ordner weiter.
-                if (active) NasControllerPlayer(location, files.filter { Kinds.of(it.name) == FileKind.Audio }, e, onError = { error = it }, modifier = Modifier.fillMaxWidth().weight(1f))
+                val list = if (fs.folderPlaylist) files.filter { Kinds.of(it.name) == FileKind.Audio } else listOf(e)
+                if (active) NasControllerPlayer(location, list, e, onError = { error = it }, modifier = Modifier.fillMaxWidth().weight(1f))
             } else {
                 NasPlayer(api, location.root.id, location.full(e.name), active, onError = { error = it }, modifier = Modifier.fillMaxWidth().weight(1f))
             }

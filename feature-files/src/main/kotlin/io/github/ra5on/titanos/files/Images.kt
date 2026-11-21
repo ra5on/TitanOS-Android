@@ -87,6 +87,7 @@ object NasImages {
         val k = key(root, path, modified, -maxPx)
         memory.get(k)?.let { return it }
         if (sizeBytes > ORIGINAL_LIMIT) return null
+        if (!FilesSettings.allowed(context, FilesSettings.get(context).originals)) return null
         return full.withPermit {
             memory.get(k) ?: try {
                 val file = cacheFile(context, root, path, modified)
@@ -144,8 +145,11 @@ fun NasThumb(
     contentScale: ContentScale = ContentScale.Crop,
     fallback: @Composable BoxScope.() -> Unit,
 ) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val bitmap by produceState(NasImages.cached(root, path, modified, size), api, root, path, modified, size) {
-        if (value == null && api != null && Kinds.hasThumb(path)) value = NasImages.thumb(api, root, path, modified, size)
+        if (value == null && api != null && Kinds.hasThumb(path) && FilesSettings.allowed(ctx, FilesSettings.get(ctx).thumbs)) {
+            value = NasImages.thumb(api, root, path, modified, size)
+        }
     }
     Box(modifier, contentAlignment = Alignment.Center) {
         val b = bitmap
