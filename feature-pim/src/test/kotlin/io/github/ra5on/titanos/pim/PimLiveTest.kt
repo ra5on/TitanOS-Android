@@ -11,7 +11,11 @@ import mockwebserver3.MockWebServer
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+/** Mit Robolectric, weil der Strom android.util.Log schreibt. */
+@RunWith(RobolectricTestRunner::class)
 class PimLiveTest {
     @Test
     fun streamGivesKinds() = runBlocking {
