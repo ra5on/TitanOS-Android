@@ -26,5 +26,6 @@ object NvrIcons {
     val clock by lazy { line("clock", "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7v5l3 2") }
     val copy by lazy { line("copy", "M9 9h11v11H9ZM5 15H4V4h11v1") }
     val camera by lazy { line("camera", "M4 7h11v10H4ZM15 10l5-3v10l-5-3") }
+    val pan by lazy { line("pan", "M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3") }
     val power by lazy { line("power", "M12 3v8M6.3 7a8 8 0 1 0 11.4 0") }
 }

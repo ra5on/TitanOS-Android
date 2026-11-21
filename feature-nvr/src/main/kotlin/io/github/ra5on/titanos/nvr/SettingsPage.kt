@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -96,7 +97,7 @@ fun SettingsPage(model: NvrModel, nav: NvrNav) {
     var accounts by remember { mutableStateOf<List<RecipientAccount>?>(null) }
     var busy by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
-    var reload by remember { mutableStateOf(0) }
+    var reload by remember { mutableIntStateOf(0) }
     LaunchedEffect(reload) {
         try {
             settings = model.api.settings()
@@ -227,7 +228,7 @@ fun SettingsScreen(data: SettingsData, busy: Boolean, error: Throwable?, saved: 
     val devices = hardware?.deviceList.orEmpty()
     val store = status?.storage
     val decoders = hardware?.decoderList.orEmpty()
-    var limit by remember(s.storage.limitGB) { mutableStateOf(s.storage.limitGB.toInt()) }
+    var limit by remember(s.storage.limitGB) { mutableIntStateOf(s.storage.limitGB.toInt()) }
     ScrollPage {
         ErrorLine(error)
         Group(t("nvr.settings.storage")) {

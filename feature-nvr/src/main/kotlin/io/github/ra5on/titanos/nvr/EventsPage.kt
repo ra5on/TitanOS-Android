@@ -27,6 +27,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.content.edit
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -82,7 +84,7 @@ fun EventsPage(model: NvrModel, admin: Boolean, nav: NvrNav) {
     var missing by remember { mutableStateOf(false) }
     var open by remember { mutableStateOf<NvrEvent?>(null) }
     var seenBusy by remember { mutableStateOf(false) }
-    var moreTick by remember { mutableStateOf(0) }
+    var moreTick by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(filter.camera, filter.kind, filter.span, moreTick) {
         val more = moreTick > 0 && next != null
@@ -159,7 +161,7 @@ fun EventsPage(model: NvrModel, admin: Boolean, nav: NvrNav) {
                 seenBusy = seenBusy,
                 nameOf = model::cameraName,
                 onFilter = {
-                    if (it.list != filter.list) store.edit().putString("events.view", if (it.list) "list" else "grid").apply()
+                    if (it.list != filter.list) store.edit { putString("events.view", if (it.list) "list" else "grid") }
                     if (it.copy(list = filter.list) != filter) moreTick = 0
                     filter = it
                 },

@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.edit
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -164,7 +165,7 @@ fun NvrApp(model: NvrModel, admin: Boolean, me: String, onBack: () -> Unit, open
                     PrivacyNotice(onDismiss = {
                         if (!admin) {
                             seenHere = true
-                            prefs.edit().putBoolean("privacy", true).apply()
+                            prefs.edit { putBoolean("privacy", true) }
                             null
                         } else {
                             suspend {
@@ -252,7 +253,7 @@ fun StateBannerView(
         val c = Titan.colors
         io.github.ra5on.titanos.ui.components.Card(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)) {
             Column(Modifier.padding(14.dp).semantics { liveRegion = LiveRegionMode.Polite }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                io.github.ra5on.titanos.compute.StateMark(title, when (kind) { 2 -> io.github.ra5on.titanos.compute.StateKind.Error; 1 -> io.github.ra5on.titanos.compute.StateKind.Warn; else -> io.github.ra5on.titanos.compute.StateKind.Busy })
+                io.github.ra5on.titanos.compute.StateMark(title, when (kind) { 2 -> io.github.ra5on.titanos.compute.StateKind.Error; 1 -> io.github.ra5on.titanos.compute.StateKind.Warn; else -> io.github.ra5on.titanos.compute.StateKind.Info })
                 if (text != null) Text(text, style = TitanType.rowSub, color = c.muted)
                 extra()
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { buttons() }

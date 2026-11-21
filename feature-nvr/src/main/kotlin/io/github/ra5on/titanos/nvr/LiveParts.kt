@@ -30,6 +30,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -188,7 +189,7 @@ fun LiveTile(
                         on = sound,
                         onWord = if (sound) onWord else offWord,
                     )
-                    if (camera.ptz) ToolButton(TitanIcons.move, t("nvr.ptz.of", "name" to camera.name), {
+                    if (camera.ptz) ToolButton(NvrIcons.pan, t("nvr.ptz.of", "name" to camera.name), {
                         if (!ptzOpen && !roomForPad && onPtz != null) onPtz() else ptzOpen = !ptzOpen
                     }, on = ptzOpen, onWord = if (ptzOpen) onWord else offWord)
                     if (onSolo != null) ToolButton(
@@ -219,7 +220,7 @@ fun PtzPad(api: NvrApi, camera: String, name: String) {
     }
     val scope = rememberCoroutineScope()
     val lock = remember { Mutex() }
-    var lastSent by remember { mutableStateOf(0L) }
+    var lastSent by remember { mutableLongStateOf(0L) }
     var moving by remember { mutableStateOf("") }
     var repeat by remember { mutableStateOf<Job?>(null) }
 

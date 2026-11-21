@@ -419,7 +419,7 @@ private fun ExportRow(item: NvrExport, admin: Boolean, nameOf: (String) -> Strin
     }) {
         StateMark(
             t("nvr.export.state.${item.state}"),
-            when (item.state) { "done" -> StateKind.Ok; "failed" -> StateKind.Error; else -> StateKind.Busy },
+            when (item.state) { "done" -> StateKind.Ok; "failed" -> StateKind.Error; else -> StateKind.Info },
         )
         if (item.state == "done") TitanButton(t("nvr.export.download"), { onDownload(item) }, icon = TitanIcons.download)
         if (item.event == null || admin) {
@@ -557,9 +557,12 @@ fun Timeline(from: Double, segments: List<Segment>, events: List<NvrEvent>, at: 
                 for (e in events) drawCircle(eventColor, 6f, Offset(x(e.start), 10f))
                 if (at != null) drawRect(head, Offset(x(at) - 1.5f, 0f), Size(3f, size.height))
             }
-            Box(Modifier.width(inner).height(18.dp)) {
+            // Große Schrift: weniger Stunden beschriftet, damit nichts übereinander liegt.
+            val scale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+            val every = if (zoom >= 24) (if (scale > 1.3f) 6 else 3) else if (zoom >= 6 && scale > 1.3f) 2 else 1
+            Box(Modifier.width(inner)) {
                 for (h in 0..24) {
-                    if (zoom >= 24 && h % 3 != 0) continue
+                    if (h % every != 0) continue
                     if (h == 24) continue
                     Text(
                         "%02d".format(h),

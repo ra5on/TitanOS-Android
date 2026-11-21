@@ -17,6 +17,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -70,8 +72,8 @@ data class VideoSource(val path: String, val hls: Boolean, val startAt: Double =
 @Stable
 class VideoState {
     var source by mutableStateOf<VideoSource?>(null)
-    var rate by mutableStateOf(1f)
-    var position by mutableStateOf(0.0)
+    var rate by mutableFloatStateOf(1f)
+    var position by mutableDoubleStateOf(0.0)
     var muted by mutableStateOf(false)
     internal var seekTo by mutableStateOf<Pair<Double, Int>?>(null)
     var onReady: () -> Unit = {}
@@ -162,7 +164,7 @@ class NasNvrMedia(private val access: ComputeAccess) : NvrMedia {
         var player by remember { mutableStateOf<ExoPlayer?>(null) }
         var still by remember(camera) { mutableStateOf<Bitmap?>(null) }
         var stillFailed by remember(camera) { mutableStateOf(false) }
-        var aspect by remember(camera) { mutableStateOf(16f / 9f) }
+        var aspect by remember(camera) { mutableFloatStateOf(16f / 9f) }
         val muted = !sound
 
         // ---- Live-Bild: neu verbinden nur nach „lost“, mit Pause; nicht nach bye ----

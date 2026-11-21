@@ -259,24 +259,24 @@ fun LiveScreen(
                     }
                 }
             }
-            val wall: @Composable (Modifier) -> Unit = { m ->
-                Wall(cameras, byId, ids, running, prefs, activity, api, live, stacked, m)
+            val wall: @Composable (Modifier, Boolean) -> Unit = { m, scroll ->
+                Wall(cameras, byId, ids, running, prefs, activity, api, live, stacked, m, scroll)
             }
             val aside: @Composable (Modifier) -> Unit = { m ->
                 EventsAside(events, eventsAvailable, nameOf, onOpenEvent, onAllEvents, m)
             }
             if (showEvents && wide) {
                 Row(Modifier.weight(1f).fillMaxWidth()) {
-                    wall(Modifier.weight(1f).fillMaxHeight())
+                    wall(Modifier.weight(1f).fillMaxHeight(), true)
                     aside(Modifier.width(320.dp).fillMaxHeight().padding(end = 16.dp))
                 }
             } else if (showEvents && live.solo.isEmpty()) {
                 Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
-                    wall(Modifier.fillMaxWidth())
+                    wall(Modifier.fillMaxWidth(), false)
                     aside(Modifier.fillMaxWidth().padding(horizontal = 16.dp))
                 }
             } else {
-                wall(Modifier.weight(1f).fillMaxWidth())
+                wall(Modifier.weight(1f).fillMaxWidth(), true)
             }
         }
     }
@@ -318,15 +318,17 @@ private fun Wall(
     live: LiveUi,
     stacked: Boolean,
     modifier: Modifier,
+    scroll: Boolean = true,
 ) {
     val solo = byId[live.solo]
+    val scrolling = if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier
     if (solo != null) {
         SoloView(solo, cameras, ids, prefs, running, activity, api, live, stacked, modifier)
         return
     }
     if (stacked) {
         val stack = live.order ?: phoneOrderFor(prefs, ids)
-        Column(modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier.then(scrolling).padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             stack.forEachIndexed { i, id ->
                 val camera = byId[id] ?: return@forEachIndexed
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -353,7 +355,7 @@ private fun Wall(
         }
         return
     }
-    BoxWithConstraints(modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp)) {
+    BoxWithConstraints(modifier.then(scrolling).padding(horizontal = 16.dp, vertical = 8.dp)) {
         val cell = maxWidth / LIVE_COLS
         val density = LocalDensity.current
         val cellPx = with(density) { cell.toPx() }
@@ -362,6 +364,7 @@ private fun Wall(
         Box(Modifier.fillMaxWidth().height(cell * layoutRows(tiles))) {
             for (tile in tiles) {
                 val camera = byId[tile.id] ?: continue
+                val tileLabel = t("nvr.arrange.tile", "name" to camera.name)
                 val tileMod = Modifier.offset(cell * tile.x, cell * tile.y).size(cell * tile.w - gap, cell * tile.h - gap)
                 val arrangeMod = if (!live.arranging) Modifier else Modifier
                     .border(2.dp, if (live.active?.id == tile.id) Titan.colors.accent else Titan.colors.border, RoundedCornerShape(12.dp))
@@ -381,6 +384,7 @@ private fun Wall(
                         true
                     }
                     .pointerInput(tile.id, cellPx) { dragArrange(tile.id, false, cellPx, live) }
+                    .semantics { stateDescription = tileLabel }
                 Box(tileMod.then(arrangeMod)) {
                     LiveTile(
                         camera, running, prefs, activity[tile.id], api, Modifier.fillMaxSize(),

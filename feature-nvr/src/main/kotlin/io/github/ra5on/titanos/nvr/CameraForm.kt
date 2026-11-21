@@ -387,7 +387,7 @@ fun CameraForm(
                 OnOff(d.twoWay, t("nvr.audio.twoWay"), enabled = d.audio) { d = d.copy(twoWay = it) }
             }
             val ptzBlocked = !onvif || (probe?.outcome == "ok" && probe?.ptz == false)
-            Row2(t("nvr.ptz.title"), TitanIcons.move, if (!onvif) t("nvr.ptz.needsOnvif") else if (probe?.outcome == "ok" && probe?.ptz == false) t("nvr.ptz.notFound") else t("nvr.ptz.hint"), divider = true) {
+            Row2(t("nvr.ptz.title"), NvrIcons.pan, if (!onvif) t("nvr.ptz.needsOnvif") else if (probe?.outcome == "ok" && probe?.ptz == false) t("nvr.ptz.notFound") else t("nvr.ptz.hint"), divider = true) {
                 OnOff(d.ptz, t("nvr.ptz.title"), enabled = !ptzBlocked) { d = d.copy(ptz = it) }
             }
         }
