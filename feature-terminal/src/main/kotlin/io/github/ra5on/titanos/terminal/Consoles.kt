@@ -172,6 +172,11 @@ class ConsoleSession(val id: Int, val request: ConsoleRequest, val started: Long
         }
     }
 
+    /** Für Bildtests: so tun, als sei die Verbindung offen. */
+    internal fun openForTest() {
+        phase = Phase.Open
+    }
+
     fun clear() {
         synchronized(emulator) { emulator.feed("\u001b[H\u001b[2J\u001b[3J") }
         version++

@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -158,6 +159,7 @@ fun TermView(
     Canvas(
         modifier
             .fillMaxSize()
+            .clipToBounds()
             .onSizeChanged { size ->
                 if (cellW > 0 && cellH > 0) {
                     val cols = (size.width / cellW).toInt().coerceAtLeast(10)
@@ -241,8 +243,9 @@ fun TermView(
         val cursorColor = colors.accent.toArgb()
         val selColor = colors.accent.copy(alpha = .35f).toArgb()
         val canvas = drawContext.canvas.nativeCanvas
-        canvas.drawColor(bgDefault)
         val fill = Paint()
+        fill.color = bgDefault
+        canvas.drawRect(0f, 0f, size.width, size.height, fill)
         synchronized(emu) {
             val reverse = emu.reverseVideo
             val first = emu.historySize - state.scroll.coerceAtMost(emu.historySize)

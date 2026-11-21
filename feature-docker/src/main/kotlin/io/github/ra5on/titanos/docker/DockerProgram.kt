@@ -231,7 +231,7 @@ private fun ContainersPage(env: ComputeEnv, state: DockerState) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ContainerList(env: ComputeEnv, state: DockerState, groups: List<DockerGroup>, onOpen: (DockerGroup) -> Unit) {
+internal fun ContainerList(env: ComputeEnv, state: DockerState, groups: List<DockerGroup>, onOpen: (DockerGroup) -> Unit) {
     val status = state.status
     val ui = LocalComputeUi.current
     var search by rememberSaveable { mutableStateOf("") }

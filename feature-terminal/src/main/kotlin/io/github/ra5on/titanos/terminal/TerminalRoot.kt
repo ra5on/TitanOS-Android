@@ -166,7 +166,7 @@ fun TerminalRoot(env: ComputeEnv, onBack: () -> Unit) {
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.ColumnScope.Sessions(env: ComputeEnv, info: TerminalInfo?) {
+internal fun androidx.compose.foundation.layout.ColumnScope.Sessions(env: ComputeEnv, info: TerminalInfo?) {
     val context = LocalContext.current
     val ui = LocalComputeUi.current
     val scope = rememberCoroutineScope()

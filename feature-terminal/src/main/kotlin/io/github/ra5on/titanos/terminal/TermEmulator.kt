@@ -19,8 +19,9 @@ class TermEmulator(cols: Int, rows: Int, private val scrollbackMax: Int = 5000, 
         /** Die Zeile lief am rechten Rand in die nächste weiter (für Kopieren ohne Umbruch). */
         var wrapped = false
 
+        /** Wächst nur; beim Verkleinern bleibt der Rest erhalten und kommt beim Vergrößern wieder (kein Text geht verloren). */
         fun resize(cols: Int, style: Long) {
-            if (cols == chars.size) return
+            if (cols <= chars.size) return
             val c = IntArray(cols) { ' '.code }
             val s = LongArray(cols) { style }
             val n = minOf(cols, chars.size)
