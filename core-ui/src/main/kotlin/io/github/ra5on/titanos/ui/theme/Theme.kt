@@ -10,6 +10,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import io.github.ra5on.titanos.ui.generated.TitanColors
@@ -32,7 +33,7 @@ object TitanType {
     val state = base.copy(fontSize = 21.sp, lineHeight = 27.sp, fontWeight = FontWeight.SemiBold)
     val button = base.copy(fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold)
     val nav = base.copy(fontSize = 12.5.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium)
-    val appLabel = base.copy(fontSize = 13.sp, lineHeight = 15.6.sp, fontWeight = FontWeight.Medium, hyphens = Hyphens.Auto)
+    val appLabel = base.copy(fontSize = 13.sp, lineHeight = 15.6.sp, fontWeight = FontWeight.Medium, hyphens = Hyphens.None, lineBreak = LineBreak.Heading)
     val mono = TextStyle(fontFamily = TitanFonts.mono, fontSize = 19.sp, lineHeight = 28.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.06.em)
     val code = TextStyle(fontFamily = TitanFonts.mono, fontSize = 18.sp, lineHeight = 24.sp, letterSpacing = 0.2.em)
 }

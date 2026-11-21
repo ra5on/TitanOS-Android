@@ -148,6 +148,22 @@ class ScreenshotTest {
         }
     }
 
+    /** Kachel-Namen bei 200 % Schrift: ganze Wörter, weniger Spalten statt Trennung. */
+    @Test
+    fun s10_home_big_font() {
+        org.robolectric.RuntimeEnvironment.setFontScale(2f)
+        try {
+            shot("10-start-schrift-200") {
+                Column(Modifier.fillMaxSize()) {
+                    HomeScreen(home, {}, {}, {}, {}, Modifier.weight(1f))
+                    NavBar("Home")
+                }
+            }
+        } finally {
+            org.robolectric.RuntimeEnvironment.setFontScale(1f)
+        }
+    }
+
     @Test
     fun s10_home_problem() = shot("10-start-befund") {
         Column(Modifier.fillMaxSize()) {
