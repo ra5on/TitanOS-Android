@@ -625,6 +625,8 @@ private fun Assistant() {
     val askRole = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { tick++ }
     val askNotify = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { tick++ }
     var screen by remember { mutableStateOf(io.github.ra5on.titanos.agent.system.AssistScreen.get(context)) }
+    // Zurück aus den Android-Einstellungen: Rolle und „Text auf dem Bildschirm verwenden“ neu lesen.
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) { tick++; onPauseOrDispose { } }
     var answers by remember { mutableStateOf(io.github.ra5on.titanos.agent.system.AnswerNotifier.enabled(context)) }
     val de = tr.de
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -635,6 +637,12 @@ private fun Assistant() {
             }
             Row2(if (de) "Bildschirminhalt" else "Screen content", if (de) "Ob der Assistent Text und Bild des Bildschirms mitnehmen darf. Er geht nur an dein NAS." else "Whether the assistant may take the screen's text and picture. It only goes to your NAS.") {
                 Segments(listOf(io.github.ra5on.titanos.agent.system.AssistScreen.NEVER to (if (de) "Nie" else "Never"), io.github.ra5on.titanos.agent.system.AssistScreen.ASK to (if (de) "Jedes Mal fragen" else "Ask every time"), io.github.ra5on.titanos.agent.system.AssistScreen.ALWAYS to (if (de) "Immer" else "Always")), screen, { screen = it; io.github.ra5on.titanos.agent.system.AssistScreen.set(context, it) }, fill = true)
+                // Android selbst muss den Text des Bildschirms herausgeben („Text auf dem Bildschirm verwenden“).
+                val systemText = remember(tick) { runCatching { Settings.Secure.getInt(context.contentResolver, "assist_structure_enabled", 1) }.getOrDefault(1) }
+                if (assistant && screen != io.github.ra5on.titanos.agent.system.AssistScreen.NEVER && systemText == 0) {
+                    Notice(if (de) "In Android ist „Text auf dem Bildschirm verwenden“ aus – so bekommt der Assistent nichts vom Bildschirm. Einschalten unter „Standard-Apps › Digitaler Assistent“." else "“Use text from screen” is off in Android, so the assistant gets nothing from the screen. Switch it on under “Default apps › Digital assistant”.", tone = "warn")
+                    PillButton(if (de) "Öffnen" else "Open", { runCatching { context.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }; tick++ }, small = true)
+                }
             }
         }
         Grp(if (de) "Notizen-App" else "Notes app") {

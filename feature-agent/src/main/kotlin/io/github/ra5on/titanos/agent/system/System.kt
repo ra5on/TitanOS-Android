@@ -9,6 +9,8 @@ import android.app.RemoteInput
 import android.app.Notification
 import android.app.Person
 import android.app.assist.AssistStructure
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -56,9 +58,10 @@ object AssistScreen {
 
 /** Was der Assistent zuletzt vom Bildschirm bekam (nur im Speicher, nur für das nächste Blatt). */
 object AssistContent {
-    @Volatile var text: String = ""
-    @Volatile var screenshot: Bitmap? = null
-    @Volatile var app: String = ""
+    // Zustand für Compose: kommt der Bildschirm erst nach dem Öffnen des Blatts, erscheint er dort noch.
+    var text by androidx.compose.runtime.mutableStateOf("")
+    var screenshot by androidx.compose.runtime.mutableStateOf<Bitmap?>(null)
+    var app by androidx.compose.runtime.mutableStateOf("")
     fun clear() { text = ""; screenshot = null; app = "" }
 
     /** Der sichtbare Text einer Seite, aus der AssistStructure (Texte und Beschreibungen der Ansichten). */
@@ -87,12 +90,18 @@ class AgentAssistSessionService : VoiceInteractionSessionService() {
  * Bildschirms entgegen und öffnet das Assistenten-Blatt mit Spracheingabe.
  */
 class AgentAssistSession(context: Context) : VoiceInteractionSession(context) {
+    // Jede Anfrage bekommt eine neue Sitzung. Android kann Text und Bild des Bildschirms schon
+    // vor onShow liefern: deshalb hier leeren, nicht in onShow (sonst wäre beides wieder weg).
+    override fun onCreate() {
+        super.onCreate()
+        AssistContent.clear()
+    }
+
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
-        AssistContent.clear()
-        launched = false
         // Ohne Bildschirminhalt sofort; sonst warten, bis Text und Bild da sind (höchstens 0,8 s).
-        if (AssistScreen.get(context) == AssistScreen.NEVER) launch()
+        val wants = showFlags and (SHOW_WITH_ASSIST or SHOW_WITH_SCREENSHOT) != 0
+        if (AssistScreen.get(context) == AssistScreen.NEVER || !wants) launch()
         else android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ launch() }, 800)
     }
 
