@@ -38,6 +38,7 @@
     <string name="app_storage">Speicher</string>
     <string name="app_docker">Docker</string>
     <string name="app_vms">Virtuelle Maschinen</string>
+    <string name="app_lxc">LXC</string>
     <string name="app_mail">Mail</string>
     <string name="app_calendar">Kalender</string>
     <string name="app_contacts">Kontakte</string>

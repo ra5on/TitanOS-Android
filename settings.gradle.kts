@@ -27,6 +27,12 @@ include(
     ":feature-widgets",
     ":feature-notify",
     ":feature-agent",
+    // Rechnen: Docker, VMs/LXC, NVR, Terminal (gemeinsame Verbindung und Texte in core-compute).
+    ":core-compute",
+    ":feature-terminal",
+    ":feature-docker",
+    ":feature-vms",
+    ":feature-nvr",
     ":app-titanos",
     ":app-agent",
     ":lint-rules",

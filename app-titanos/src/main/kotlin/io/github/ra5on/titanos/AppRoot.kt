@@ -266,12 +266,19 @@ private fun MainShell(graph: AppGraph) {
         return
     }
     var confirmUnpair by remember { mutableStateOf(false) }
+    // Rechnen (Docker, VMs, LXC, NVR, Terminal): eigene Seiten über der Leiste (Compute.kt).
+    var compute by rememberSaveable { mutableStateOf<String?>(null) }
+    compute?.let { id ->
+        BackHandler { compute = null }
+        ComputeProgram(id, graph) { compute = null }
+        return
+    }
     when (tab) {
         Tab.Home -> Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 HomeScreen(
                     home.state,
-                    onProgram = { p -> if (p.id == "shares") tab = Tab.Files else toastLater() },
+                    onProgram = { p -> if (p.id == "shares") tab = Tab.Files else if (p.id in COMPUTE_PROGRAMS) compute = p.id else toastLater() },
                     onSearch = toastLater,
                     onNotifications = { tab = Tab.Notifications },
                     onMenu = { menu = true },

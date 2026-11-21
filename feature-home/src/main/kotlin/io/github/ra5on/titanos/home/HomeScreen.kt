@@ -47,6 +47,7 @@ fun programLabel(id: String): String = stringResource(
         "storage" -> R.string.app_storage
         "docker" -> R.string.app_docker
         "vms" -> R.string.app_vms
+        "lxc" -> R.string.app_lxc
         "mail" -> R.string.app_mail
         "calendar" -> R.string.app_calendar
         "contacts" -> R.string.app_contacts

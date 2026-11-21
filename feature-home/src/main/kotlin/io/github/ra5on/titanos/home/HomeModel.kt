@@ -25,6 +25,7 @@ val ALL_PROGRAMS = listOf(
     Program("storage", "storage", "dark"),
     Program("docker", "docker", "blue"),
     Program("vms", "vm", "violet"),
+    Program("lxc", "lxc", "teal"),
     Program("mail", "mail", "blue"),
     Program("calendar", "calendar", "violet"),
     Program("contacts", "contacts", "green"),
@@ -42,9 +43,9 @@ val ALL_PROGRAMS = listOf(
  */
 fun visiblePrograms(role: String, services: Map<String, Boolean>): List<Program> {
     val admin = role == "owner" || role == "admin"
-    val adminOnly = setOf("shares", "storage", "docker", "vms", "backup", "terminal", "users")
+    val adminOnly = setOf("shares", "storage", "docker", "vms", "lxc", "backup", "terminal", "users")
     val optIn = setOf("mail", "calendar", "contacts")
-    val service = mapOf("docker" to "docker", "vms" to "vms")
+    val service = mapOf("docker" to "docker", "vms" to "vms", "lxc" to "lxc")
     return ALL_PROGRAMS.filter { p ->
         when {
             p.id in adminOnly && !admin -> false
