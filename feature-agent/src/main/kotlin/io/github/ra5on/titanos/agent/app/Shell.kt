@@ -259,7 +259,8 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
     }
     // Eine neue Antwort vorlesen, wenn gewünscht (Darstellung).
     LaunchedEffect(Unit) {
-        model.onAnswer = { e -> if (model.look.read && nav.layer != Layer.Talk) speech.speak(e.id, e.content.orEmpty()) }
+        val before = model.onAnswer
+        model.onAnswer = { e -> before(e); if (model.look.read && nav.layer != Layer.Talk) speech.speak(e.id, e.content.orEmpty()) }
     }
 
     // Anhänge: Foto, Datei vom Gerät.

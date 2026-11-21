@@ -39,6 +39,8 @@ fun AgentRoot(
     model: AgentModel,
     ask: AskRequest?,
     onAskTaken: () -> Unit,
+    open: String? = null,
+    onOpenTaken: () -> Unit = {},
     versionName: String,
     hostname: String,
     user: String,
@@ -98,6 +100,34 @@ fun AgentRoot(
         if (a.failed) model.say(tr.t("agent.attachFailed"))
         onAskTaken()
         if (a.voice) speech.micDown(model)
+    }
+
+    // Aus dem Assistenten oder einer Mitteilung: diesen Chat zeigen.
+    LaunchedEffect(open) {
+        val id = open ?: return@LaunchedEffect
+        nav.layer = null
+        nav.show(AgentView.Chat)
+        if (id.isEmpty()) model.newChat(null, asFresh = true) else model.open(id)
+        onOpenTaken()
+    }
+
+    // Eine Antwort, während die App nicht vorne ist: als Mitteilung (MessagingStyle, auch Android Auto).
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(Unit) {
+        val read = model.onAnswer
+        model.onAnswer = { e ->
+            read(e)
+            val chat = model.current
+            if (chat != null && !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+                val q = chat.entries.lastOrNull { it.role == "user" }?.content
+                val intent = android.app.PendingIntent.getActivity(
+                    context, chat.id.hashCode(),
+                    (context.packageManager.getLaunchIntentForPackage(context.packageName) ?: android.content.Intent()).putExtra("chat", chat.id),
+                    android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT,
+                )
+                io.github.ra5on.titanos.agent.system.AnswerNotifier.post(context, tr, chat.id, chat.title, q, e.content.orEmpty(), intent)
+            }
+        }
     }
 
     // Beim Öffnen: was die Einstellung „Beim Öffnen“ sagt (letzter Chat oder das Menü).

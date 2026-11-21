@@ -339,7 +339,7 @@ fun applyFormat(text: String, start: Int, end: Int, f: String): Triple<String, I
 
 /** Die Notizen (NotesPanel.svelte): Ordner, Angeheftet, Suche, Notiz mit Formatleiste, Speichern im Hintergrund, Umbenennen, Verschieben, Löschen. */
 @Composable
-fun NotesPanel(model: AgentModel, onClose: () -> Unit) {
+fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false) {
     val c = Titan.colors
     val tr = tr()
     val scope = rememberCoroutineScope()
@@ -355,6 +355,7 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit) {
     var dialog by remember { mutableStateOf<NoteDialog?>(null) }
     var input by remember { mutableStateOf("") }
     var dirty by remember { mutableStateOf(0) }
+    val newNoteRef = remember { arrayOfNulls<() -> Unit>(1) }
 
     suspend fun load() {
         try { val r = model.api.getJson("agent/notes").obj(); folders = r.strs("folders"); notes = r.os("notes"); error = null } catch (e: CancellationException) { throw e } catch (e: Exception) { error = problemText(tr, problemOf(e)) }
@@ -371,7 +372,7 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit) {
             if (saving != "conflict") error = problemText(tr, problemOf(e))
         }
     }
-    LaunchedEffect(Unit) { load() }
+    LaunchedEffect(Unit) { load(); if (startNew) newNoteRef[0]?.invoke() }
     LaunchedEffect(dirty) { if (dirty > 0) { delay(700); save() } }
     DisposableEffect(Unit) { onDispose { if (saving == "saving") scope.launch { save() } } }
     fun run(block: suspend () -> Unit) { scope.launch { try { block(); dialog = null; load() } catch (e: CancellationException) { throw e } catch (e: Exception) { error = problemText(tr, problemOf(e)) } } }
@@ -387,6 +388,7 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit) {
     }
     fun newNote() {
         scope.launch {
+            if (notes.isEmpty() && !loaded) load()
             val base = tr.t("agent.notes.untitled")
             val inFolder = if (folder.isNotEmpty() && folder != PINNED) folder else ""
             var path = notePath(inFolder, base)
@@ -401,6 +403,7 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit) {
         }
     }
 
+    newNoteRef[0] = ::newNote
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
         val o = open
         if (o != null) {

@@ -91,7 +91,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-private val PARTS = listOf("models", "speech", "personality", "initiative", "features", "photos", "pim", "push", "look", "gestures", "about")
+private val PARTS = listOf("assistant", "models", "speech", "personality", "initiative", "features", "photos", "pim", "push", "look", "gestures", "about")
 
 /** Der Titel eines Teils der Einstellungen (titles im Web). */
 fun partTitle(tr: io.github.ra5on.titanos.agent.core.Tr, part: String): String = when (part) {
@@ -105,6 +105,7 @@ fun partTitle(tr: io.github.ra5on.titanos.agent.core.Tr, part: String): String =
     "push" -> tr.t("agent.set.push")
     "look" -> tr.t("agent.set.lookTitle")
     "gestures" -> tr.t("agent.set.gestures")
+    "assistant" -> if (tr.de) "Assistent, Notizen und Auto" else "Assistant, notes and car"
     else -> tr.t("agent.set.title")
 }
 
@@ -143,6 +144,7 @@ fun SettingsPage(
             "look" -> item { LookPart(model, clock) }
             "gestures" -> item { Gestures(model) }
             "about" -> item { About(model, hooks) }
+            "assistant" -> item { Assistant() }
         }
     }
 }
@@ -173,6 +175,7 @@ private fun LazyListScope.overview(model: AgentModel, hooks: AppHooks, onPart: (
             SRow(tr.t("agent.set.push"), desc = tr.t("agent.set.pushSub"), icon = "bell", onClick = { onPart("push") })
             SRow(tr.t("agent.set.lookTitle"), desc = tr.t("agent.set.lookDesc"), icon = "eye", onClick = { onPart("look") })
             SRow(tr.t("agent.set.gestures"), desc = tr.t("agent.set.gesturesDesc"), icon = "move", onClick = { onPart("gestures") })
+            SRow(partTitle(tr, "assistant"), desc = if (tr.de) "Digitaler Assistent, Bildschirminhalt, Notizen-App, Android Auto" else "Digital assistant, screen content, notes app, Android Auto", icon = "mic", onClick = { onPart("assistant") })
             SRow(tr.t("agent.set.startLabel"), desc = tr.t("agent.set.startDesc"), icon = "home", control = {
                 Segments(listOf("new", "last", "overview").map { it to tr.t("agent.set.start.$it") }, look.start, { model.changeLook(look.copy(start = it)) }, fill = true)
             })
@@ -594,3 +597,46 @@ private fun About(model: AgentModel, hooks: AppHooks) {
     }
 }
 
+
+/** Die Rollen im System: digitaler Assistent, Notizen-App, Antworten als Mitteilung (auch Android Auto). */
+@Composable
+private fun Assistant() {
+    val tr = tr()
+    val c = Titan.colors
+    val context = LocalContext.current
+    val roles = context.getSystemService(android.app.role.RoleManager::class.java)
+    var tick by remember { mutableStateOf(0) }
+    val assistant = remember(tick) { roles?.isRoleHeld(android.app.role.RoleManager.ROLE_ASSISTANT) == true }
+    val notes = remember(tick) { android.os.Build.VERSION.SDK_INT >= 34 && roles?.isRoleAvailable(android.app.role.RoleManager.ROLE_NOTES) == true && roles.isRoleHeld(android.app.role.RoleManager.ROLE_NOTES) }
+    val notesAvailable = android.os.Build.VERSION.SDK_INT >= 34 && roles?.isRoleAvailable(android.app.role.RoleManager.ROLE_NOTES) == true
+    val askRole = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { tick++ }
+    val askNotify = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { tick++ }
+    var screen by remember { mutableStateOf(io.github.ra5on.titanos.agent.system.AssistScreen.get(context)) }
+    var answers by remember { mutableStateOf(io.github.ra5on.titanos.agent.system.AnswerNotifier.enabled(context)) }
+    val de = tr.de
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Grp(if (de) "Digitaler Assistent" else "Digital assistant") {
+            Row2(if (de) "Agent als Assistent" else "Agent as assistant", if (assistant) (if (de) "Gewählt: Ein-Taste lang drücken oder aus der Ecke wischen öffnet das Blatt des Agenten mit Spracheingabe." else "Chosen: long-press the power button or swipe from the corner to open the agent's sheet with voice input.") else (if (de) "In den Android-Einstellungen unter „Standard-Apps › Digitaler Assistent“ wählen." else "Choose it in Android settings under “Default apps › Digital assistant”.")) {
+                Tag(if (assistant) tr.t("agent.on") else tr.t("agent.off"), tone = if (assistant) "ok" else "")
+                PillButton(if (de) "Auswählen" else "Choose", { runCatching { context.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }; tick++ }, small = true)
+            }
+            Row2(if (de) "Bildschirminhalt" else "Screen content", if (de) "Ob der Assistent Text und Bild des Bildschirms mitnehmen darf. Er geht nur an dein NAS." else "Whether the assistant may take the screen's text and picture. It only goes to your NAS.") {
+                Segments(listOf(io.github.ra5on.titanos.agent.system.AssistScreen.NEVER to (if (de) "Nie" else "Never"), io.github.ra5on.titanos.agent.system.AssistScreen.ASK to (if (de) "Jedes Mal fragen" else "Ask every time"), io.github.ra5on.titanos.agent.system.AssistScreen.ALWAYS to (if (de) "Immer" else "Always")), screen, { screen = it; io.github.ra5on.titanos.agent.system.AssistScreen.set(context, it) }, fill = true)
+            }
+        }
+        Grp(if (de) "Notizen-App" else "Notes app") {
+            Row2(if (de) "Notizen des Agenten als Notizen-App" else "Agent notes as notes app", if (!notesAvailable) (if (de) "Dieses Gerät bietet die Notizen-Rolle nicht an (Android 14 und ein Stift oder Tablet nötig)." else "This device does not offer the notes role (needs Android 14 and a stylus or tablet).") else (if (de) "Stift-Taste und Sperrbildschirm öffnen eine neue Notiz." else "The stylus button and the lock screen open a new note.")) {
+                Tag(if (notes) tr.t("agent.on") else tr.t("agent.off"), tone = if (notes) "ok" else "")
+                if (notesAvailable && !notes && android.os.Build.VERSION.SDK_INT >= 34) PillButton(if (de) "Auswählen" else "Choose", { roles?.let { askRole.launch(it.createRequestRoleIntent(android.app.role.RoleManager.ROLE_NOTES)) } }, small = true)
+            }
+        }
+        Grp(if (de) "Mitteilungen und Android Auto" else "Notifications and Android Auto") {
+            SwitchRow(if (de) "Antworten als Mitteilung" else "Answers as notifications", if (de) "Kommt eine Antwort, während die App nicht vorne ist, zeigt Android sie als Nachricht – im Auto liest Android Auto sie vor, und du antwortest per Sprache." else "When an answer arrives while the app is not in front, Android shows it as a message – in the car Android Auto reads it aloud and you reply by voice.", answers) { on ->
+                answers = on
+                io.github.ra5on.titanos.agent.system.AnswerNotifier.setEnabled(context, on)
+                if (on && !io.github.ra5on.titanos.agent.system.AnswerNotifier.allowed(context)) askNotify.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+            Text(if (de) "Ohne Play Store: in Android Auto die Entwickleroptionen öffnen (zehnmal auf die Version tippen) und „Unbekannte Quellen“ einschalten." else "Without the Play Store: open the developer options of Android Auto (tap the version ten times) and switch on “Unknown sources”.", style = AgentText.sm, color = c.muted)
+        }
+    }
+}

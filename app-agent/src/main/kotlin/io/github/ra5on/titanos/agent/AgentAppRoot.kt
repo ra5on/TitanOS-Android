@@ -54,6 +54,8 @@ fun AgentAppRoot(graph: AgentGraph, link: PairLink?, onLinkTaken: () -> Unit) {
             model,
             ask = graph.pendingAsk,
             onAskTaken = { graph.pendingAsk = null },
+            open = graph.pendingOpen,
+            onOpenTaken = { graph.pendingOpen = null },
             versionName = versionName(context),
             hostname = graph.pairing?.hostname.orEmpty(),
             user = graph.pairing?.user.orEmpty(),

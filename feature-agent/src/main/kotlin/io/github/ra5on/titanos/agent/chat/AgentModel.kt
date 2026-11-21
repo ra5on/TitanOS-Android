@@ -577,6 +577,29 @@ class AgentModel(
         }
     }
 
+    /** Antwort aus einer Mitteilung (auch Android Auto): öffnet den Chat und schickt den Text. */
+    fun replyTo(id: String, text: String) {
+        if (sending) return
+        sending = true
+        scope.launch {
+            try {
+                val chat = api.message(id, request(text, false))
+                started(chat)
+                opened++
+                detach()
+                current = chat
+                author = null
+                watch(chat.id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                error = problemOf(e, status?.maxRuns ?: 0)
+            } finally {
+                sending = false
+            }
+        }
+    }
+
     /** Eine Nachricht noch einmal fragen: mit Text geändert („Bearbeiten“), ohne dasselbe („Neu erzeugen“). */
     fun resend(entry: Entry, text: String = "") {
         val chat = current ?: return

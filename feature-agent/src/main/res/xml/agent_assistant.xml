@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Die Agent-App als digitaler Assistent (Rolle ROLE_ASSISTANT). -->
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="io.github.ra5on.titanos.agent.system.AgentAssistSessionService"
+    android:recognitionService="io.github.ra5on.titanos.agent.system.AgentRecognitionService"
+    android:supportsAssist="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="false"
+    android:supportsLocalInteraction="false" />
