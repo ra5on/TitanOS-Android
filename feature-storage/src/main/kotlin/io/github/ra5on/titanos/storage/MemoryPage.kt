@@ -12,7 +12,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.ra5on.titanos.admin.AdminEnv
-import io.github.ra5on.titanos.admin.ChoiceRow
+import io.github.ra5on.titanos.admin.Segments
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import io.github.ra5on.titanos.admin.Loading
 import io.github.ra5on.titanos.admin.Notice
 import io.github.ra5on.titanos.admin.PageBody
@@ -75,33 +77,35 @@ internal fun MemoryPage(env: AdminEnv, pollMs: Long = 5000) {
         if (s.readOnly) Notice(t("memoryPolicy.readOnly"), tone = Tone.Warn)
         if (s.memory.lowAvailable == true) Notice(t("memoryPolicy.lowAvailable"), tone = Tone.Warn)
         SettingGroup(t("memoryPolicy.group.budget")) {
-            ChoiceRow(
-                t("memoryPolicy.percent"),
-                (10..90 step 10).map { it.toString() to "$it %" },
-                percent.toString(),
-                { value ->
-                    percent = value.toInt()
-                    scope.launch {
-                        busy = true
-                        revision++
-                        error = null
-                        saved = false
-                        try {
-                            status = api.saveMemory(percent)
-                            saved = true
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            error = e
+            // Alle Anteile als Knöpfe untereinander umbrechend; der lange Titel hat die ganze Breite.
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(t("memoryPolicy.percent"), style = TitanType.rowTitle, color = Titan.colors.text)
+                Text(t("memoryPolicy.hint"), style = TitanType.rowSub, color = Titan.colors.muted)
+                Segments(
+                    (10..90 step 10).map { it.toString() to "$it %" },
+                    percent.toString(),
+                    { value ->
+                        percent = value.toInt()
+                        scope.launch {
+                            busy = true
+                            revision++
+                            error = null
+                            saved = false
+                            try {
+                                status = api.saveMemory(percent)
+                                saved = true
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                error = e
+                            }
+                            busy = false
                         }
-                        busy = false
-                    }
-                },
-                desc = t("memoryPolicy.hint"),
-                icon = "memory",
-                enabled = !busy && !s.readOnly,
-            )
-            if (saved) Text(t("memoryPolicy.saved"), style = TitanType.small, color = Titan.colors.muted, modifier = Modifier.padding(14.dp))
+                    },
+                    enabled = !busy && !s.readOnly,
+                )
+                if (saved) Text(t("memoryPolicy.saved"), style = TitanType.small, color = Titan.colors.muted)
+            }
         }
         SettingGroup(t("memoryPolicy.group.now")) {
             SettingRow(t("memoryPolicy.budget"), value = formatBytes(s.budgetBytes))
