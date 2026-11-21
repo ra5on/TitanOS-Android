@@ -81,6 +81,9 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost {
         if (graph.pairing != null) NotifyScheduler.arm(this)
         // Kontakte und Kalender des Handys: der SyncAdapter holt sich hier die Verbindung.
         io.github.ra5on.titanos.pim.sync.PimRuntime.nas = { graph.connection() }
+        // Mail in eigenen Fenstern (MailWindowActivity, auch für mailto:) holt sich hier die Verbindung.
+        io.github.ra5on.titanos.mail.MailRuntime.nas = { graph.connection() }
+        io.github.ra5on.titanos.mail.MailRuntime.stream = { graph.connection(io.github.ra5on.titanos.notify.NotifyApi.streamClient(graph.shared)) }
         graph.pairing?.let { io.github.ra5on.titanos.pim.sync.PimAccount.ensure(this, io.github.ra5on.titanos.pim.sync.PimAccount.nameFor(it.user, it.hostname)) }
         // Ungekoppelt und die Agent-App ist gekoppelt: sie koppelt diese App mit.
         Sibling.ask(this, this)
