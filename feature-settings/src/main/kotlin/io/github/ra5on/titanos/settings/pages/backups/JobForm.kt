@@ -356,7 +356,7 @@ private fun BoxScope.FolderPicker(volumes: List<String>, shares: List<Share>, st
                     if (f.isEmpty()) Muted(t("backup.pick.empty"))
                     for (name in f) {
                         val isShare = path.isEmpty() && shares.any { it.volume == volume && it.name == name }
-                        PickRow(WebIcons["folder"], name, if (isShare) tr.t("backup.pick.share") else null) { go(volume, if (path.isNotEmpty()) "$path/$name" else name) }
+                        PickRow(WebIcons["folder"], breakable(name), if (isShare) tr.t("backup.pick.share") else null) { go(volume, if (path.isNotEmpty()) "$path/$name" else name) }
                     }
                 }
             }

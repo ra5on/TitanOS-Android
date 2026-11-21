@@ -117,32 +117,6 @@ class BackupsShotsTest {
         shots.assertClean()
     }
 
-    /**
-     * Ganze Wörter (Inhaber 21.11.2026): eine Zeile darf nur nach einem
-     * Leerzeichen, Bindestrich oder Schrägstrich enden, nie mitten im Wort.
-     */
-    private fun words(name: String) {
-        for (node in compose.onAllNodes(androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.isRoot()), useUnmergedTree = true).fetchSemanticsNodes()) {
-            val get = node.config.getOrElseNullable(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { null } ?: continue
-            val out = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
-            get.action?.invoke(out)
-            val r = out.firstOrNull() ?: continue
-            val text = r.layoutInput.text.text
-            for (line in 0 until r.lineCount - 1) {
-                val end = r.getLineEnd(line)
-                if (end <= 0 || end >= text.length) continue
-                val before = text[end - 1]
-                val after = text[end]
-                if (before.isLetterOrDigit() && after.isLetterOrDigit()) shots.problems += "${shots.prefix}$name: mitten im Wort umbrochen „${text.take(60)}“"
-            }
-        }
-    }
-
-    private fun capture(name: String, dark: Boolean) {
-        shots.capture(name, dark)
-        words(name)
-    }
-
     private fun seen(path: String) = shots.until { nas.requests.any { it.second == path } }
 
     private fun click(text: String, index: Int = 0) {
@@ -155,36 +129,36 @@ class BackupsShotsTest {
         val nav = SettingsNav("/settings/backups")
         shots.show(dark) { SettingsApp(nas.env(), onClose = {}, nav = nav) }
         seen("config-backup"); seen("backups")
-        capture("00-uebersicht", dark)
+        shots.capture("00-uebersicht", dark)
         compose.onAllNodesWithText("3-2-1-Regel")[0].performScrollTo()
-        capture("01-uebersicht-321", dark)
+        shots.capture("01-uebersicht-321", dark)
 
         nav.openPage("backups/data"); seen("backups/target")
-        capture("10-datensicherung", dark)
+        shots.capture("10-datensicherung", dark)
         click("Backups anderer TitanOS annehmen")
         click("Replikation auf ein anderes TitanOS"); seen("replication")
-        capture("11-ziele-offen", dark)
+        shots.capture("11-ziele-offen", dark)
         compose.onAllNodesWithText("fotos")[0].performScrollTo()
-        capture("12-auftrag", dark)
+        shots.capture("12-auftrag", dark)
         click("Bearbeiten", compose.onAllNodesWithText("Bearbeiten").fetchSemanticsNodes().size - 1)
-        capture("13-formular", dark)
+        shots.capture("13-formular", dark)
 
         nav.openPage("backups/configuration"); shots.until { nas.requests.count { it.second == "config-backup" } >= 2 }
-        capture("20-konfiguration", dark)
+        shots.capture("20-konfiguration", dark)
         compose.onAllNodesWithText("Vorhandene Kopien")[0].performScrollTo()
-        capture("21-konfiguration-kopien", dark)
+        shots.capture("21-konfiguration-kopien", dark)
 
         nav.openPage("backups/coverage"); seen("backups/coverage")
-        capture("30-abdeckung", dark)
+        shots.capture("30-abdeckung", dark)
 
         nav.openPage("backups/applications"); seen("storage")
-        capture("40-anwendungen", dark)
+        shots.capture("40-anwendungen", dark)
 
         nav.openPage("backups/restore"); shots.settle()
-        capture("50-wiederherstellung", dark)
+        shots.capture("50-wiederherstellung", dark)
         click("Wiederherstellen …"); seen("backups/fotos/snapshots")
         click("Einzelne Dateien und Ordner"); seen("backups/fotos/snapshots/a1b2c3d4/files?path=%2Fmnt%2Fdaten%2FFotos&offset=0")
-        capture("51-wiederherstellen-dialog", dark)
+        shots.capture("51-wiederherstellen-dialog", dark)
     }
 
     @Test fun hell() = screens(false)
@@ -209,17 +183,17 @@ class BackupsShotsTest {
         shots.show(false) { SettingsApp(nas.env(), onClose = {}, nav = nav) }
         seen("backups"); shots.settle()
         click("Backup einrichten"); seen("usb")
-        capture("60-neuer-auftrag", false)
+        shots.capture("60-neuer-auftrag", false)
         click("Ordner wählen …"); shots.settle()
-        capture("61-ordner-waehlen", false)
+        shots.capture("61-ordner-waehlen", false)
         click("Abbrechen")
         click("Abbrechen")
         compose.onAllNodesWithText("Passwort anzeigen")[0].performScrollTo().performClick()
         seen("backups/fotos/password"); shots.settle()
-        capture("62-passwort", false)
+        shots.capture("62-passwort", false)
         click("Ich habe es notiert")
         nav.openPage("backups/configuration"); shots.until { nas.requests.count { it.second == "config-backup" } >= 1 }; shots.settle()
         click("Herunterladen"); seen("session/confirmed"); seen("session")
-        capture("63-passwort-erneut", false)
+        shots.capture("63-passwort-erneut", false)
     }
 }

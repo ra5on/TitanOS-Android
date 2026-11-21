@@ -122,13 +122,13 @@ private fun Overview(a: PageArgs) {
     val waiting = tr.t(if (loading) "common.loading" else "safeguard.unknown")
 
     SettingGroup(t("safeguard.state")) {
-        SettingRow(t("safeguard.lastData"), icon = WebIcons["archive"], id = "backup-last-data", control = {
+        SettingRow(t("safeguard.lastData"), icon = iconFor(t("safeguard.lastData"), WebIcons["archive"]), id = "backup-last-data", control = {
             Value(if (unknown.isNotEmpty()) tr.t("safeguard.unknown") else if (views != null) date(lastData) else waiting)
         })
-        SettingRow(t("safeguard.lastConfig"), icon = WebIcons["gear"], id = "backup-last-config", control = {
+        SettingRow(t("safeguard.lastConfig"), icon = iconFor(t("safeguard.lastConfig"), WebIcons["gear"]), id = "backup-last-config", control = {
             Value(if (backup != null) date(lastConfig) else waiting)
         })
-        SettingRow(t("safeguard.next"), icon = WebIcons["clock"], id = "backup-next", control = {
+        SettingRow(t("safeguard.next"), icon = iconFor(t("safeguard.next"), WebIcons["clock"]), id = "backup-next", control = {
             Value(if (views == null || backup == null) waiting else if (next != null) Fmt.dateTime(tr, next) else tr.t("safeguard.noSchedule"))
         })
     }
@@ -168,21 +168,21 @@ private fun Overview(a: PageArgs) {
     if (views != null) Rule321Group(a, views)
 
     SettingGroup(t("safeguard.data"), desc = t("safeguard.dataHint"), tools = { SmallButton(t("safeguard.manage"), { a.openPage("backups/data") }) }) {
-        SettingRow(t("safeguard.jobs"), icon = WebIcons["list"], onClick = { a.openPage("backups/data") })
-        SettingRow(t("safeguard.targets"), icon = WebIcons["disk"], onClick = { a.openAt("backups/data", tr.t("safeguard.targets")) })
-        SettingRow(t("safeguard.history"), icon = WebIcons["activity"], id = "backup-data-history", onClick = { a.openAt("backups/data", tr.t("safeguard.history")) })
-        SettingRow(t("coverage.title"), icon = WebIcons["shield"], onClick = { a.openPage("backups/coverage") })
-        SettingRow(t("applications.title"), icon = WebIcons["box"], onClick = { a.openPage("backups/applications") })
+        SettingRow(t("safeguard.jobs"), icon = iconFor(t("safeguard.jobs"), WebIcons["list"]), onClick = { a.openPage("backups/data") })
+        SettingRow(t("safeguard.targets"), icon = iconFor(t("safeguard.targets"), WebIcons["disk"]), onClick = { a.openAt("backups/data", tr.t("safeguard.targets")) })
+        SettingRow(t("safeguard.history"), icon = iconFor(t("safeguard.history"), WebIcons["activity"]), id = "backup-data-history", onClick = { a.openAt("backups/data", tr.t("safeguard.history")) })
+        SettingRow(t("coverage.title"), icon = iconFor(t("coverage.title"), WebIcons["shield"]), onClick = { a.openPage("backups/coverage") })
+        SettingRow(t("applications.title"), icon = iconFor(t("applications.title"), WebIcons["box"]), onClick = { a.openPage("backups/applications") })
     }
     SettingGroup(t("safeguard.config"), desc = t("safeguard.configHint"), tools = { SmallButton(t("stick.title"), { a.openPage("backups/configuration") }) }) {
-        SettingRow(t("safeguard.automatic"), icon = WebIcons["clock"], onClick = { a.openAt("backups/configuration", tr.t("stick.settings")) })
-        SettingRow(t("safeguard.download"), icon = WebIcons["download"], onClick = { a.openAt("backups/configuration", tr.t("stick.backups")) })
-        SettingRow(t("safeguard.history"), icon = WebIcons["activity"], id = "backup-config-history", onClick = { a.openAt("backups/configuration", tr.t("stick.state")) })
+        SettingRow(t("safeguard.automatic"), icon = iconFor(t("safeguard.automatic"), WebIcons["clock"]), onClick = { a.openAt("backups/configuration", tr.t("stick.settings")) })
+        SettingRow(t("safeguard.download"), icon = iconFor(t("safeguard.download"), WebIcons["download"]), onClick = { a.openAt("backups/configuration", tr.t("stick.backups")) })
+        SettingRow(t("safeguard.history"), icon = iconFor(t("safeguard.history"), WebIcons["activity"]), id = "backup-config-history", onClick = { a.openAt("backups/configuration", tr.t("stick.state")) })
     }
     SettingGroup(t("safeguard.restore"), desc = t("safeguard.recoveryHint"), tools = { SmallButton(t("safeguard.openRestore"), { a.openPage("backups/restore") }) }) {
-        SettingRow(t("safeguard.filesRestore"), icon = WebIcons["folder"], onClick = { a.openAt("backups/restore", tr.t("safeguard.filesRestore")) })
-        SettingRow(t("safeguard.configRestore"), icon = WebIcons["undo"], onClick = { a.openAt("backups/restore", tr.t("safeguard.configRestore")) })
-        SettingRow(t("stick.replace"), icon = WebIcons["key"], onClick = { a.openAt("backups/restore", tr.t("stick.replace")) })
+        SettingRow(t("safeguard.filesRestore"), icon = iconFor(t("safeguard.filesRestore"), WebIcons["folder"]), onClick = { a.openAt("backups/restore", tr.t("safeguard.filesRestore")) })
+        SettingRow(t("safeguard.configRestore"), icon = iconFor(t("safeguard.configRestore"), WebIcons["undo"]), onClick = { a.openAt("backups/restore", tr.t("safeguard.configRestore")) })
+        SettingRow(t("stick.replace"), icon = iconFor(t("stick.replace"), WebIcons["key"]), onClick = { a.openAt("backups/restore", tr.t("stick.replace")) })
     }
 }
 

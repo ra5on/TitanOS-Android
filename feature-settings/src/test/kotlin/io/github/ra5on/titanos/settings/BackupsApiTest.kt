@@ -133,6 +133,7 @@ class BackupsApiTest {
     @Test
     fun jobActions() = runTest {
         val api = nas.api()
+        nas.on("GET backups/fotos/snapshots/a1b2/files", "{}")
         BkApi.act(api, "fotos", "run"); assertEquals("POST", nas.requests.last().first); assertEquals("backups/fotos/run", nas.requests.last().second)
         BkApi.act(api, "fotos", "stop"); assertEquals("backups/fotos/stop", nas.requests.last().second)
         BkApi.deleteJob(api, "fotos"); assertEquals("DELETE" to "backups/fotos", nas.requests.last().let { it.first to it.second })
@@ -222,8 +223,9 @@ class BackupsApiTest {
     fun removeJobAsksForTheFingerprint() {
         val nav = SettingsNav("/settings/backups/data")
         compose.setContent { io.github.ra5on.titanos.ui.theme.TitanTheme(dark = false) { SettingsApp(nas.env(), onClose = {}, nav = nav) } }
-        waitFor { compose.onAllNodesWithText("Entfernen").fetchSemanticsNodes().isNotEmpty() }
-        compose.onAllNodesWithText("Entfernen")[0].performScrollTo().performClick()
+        waitFor { compose.onAllNodesWithText("Gefahrenzone").fetchSemanticsNodes().isNotEmpty() }
+        val onPage = compose.onAllNodesWithText("Entfernen")
+        onPage[onPage.fetchSemanticsNodes().size - 1].performScrollTo().performClick()
         compose.waitForIdle()
         val buttons = compose.onAllNodesWithText("Entfernen")
         buttons[buttons.fetchSemanticsNodes().size - 1].performClick()

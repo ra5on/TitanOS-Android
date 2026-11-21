@@ -463,3 +463,24 @@ internal fun CheckBox(checked: Boolean, onChange: (Boolean) -> Unit, label: Stri
         }
     }
 }
+
+/**
+ * Datei- und Ordnernamen dürfen nach „-“, „_“, „.“ und „/“ umbrechen
+ * (Android bricht sonst mitten im Wort); ein unsichtbarer Trennpunkt, kein Zeichen mehr.
+ */
+internal fun breakable(name: String): String = name.replace(Regex("([-_./])(?=.)"), "$1\u200B")
+
+/**
+ * Das Symbol einer Zeile, solange das längste Wort des Titels daneben ganz
+ * passt; sonst keins (große Schrift, schmales Fenster): ganze Wörter gehen
+ * vor dem Symbol.
+ */
+@Composable
+internal fun iconFor(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, extra: androidx.compose.ui.unit.Dp = 0.dp): androidx.compose.ui.graphics.vector.ImageVector? {
+    val widest = io.github.ra5on.titanos.ui.rememberWidestWord(listOf(title), TitanType.rowTitle.copy(fontSize = TitanType.body.fontSize))
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val screen = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp
+    // Seitenrand, Innenabstand der Zeile, Symbol mit Abstand, Pfeil rechts.
+    val room = with(density) { (screen - 24.dp - 24.dp - 36.dp - 34.dp - extra).toPx() }
+    return if (screen < 600.dp && widest > room) null else icon
+}

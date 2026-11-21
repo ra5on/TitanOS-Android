@@ -194,8 +194,8 @@ private fun SnapshotFiles(job: String, snapshot: String, start: String, selected
                 val dir = e.str("type") == "dir"
                 Row(Modifier.fillMaxWidth().padding(end = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     CheckBox(p in selected, { on -> onSelected(if (on) selected + p else selected - p) }, e.str("name"))
-                    if (dir) LinkText(e.str("name") + "/", { if (!loading) open(p) }, Modifier.weight(1f))
-                    else Body(e.str("name"), Modifier.weight(1f))
+                    if (dir) LinkText(breakable(e.str("name")) + "/", { if (!loading) open(p) }, Modifier.weight(1f))
+                    else Body(breakable(e.str("name")), Modifier.weight(1f))
                     if (!dir) Mono(Fmt.bytes(tr, e.long("size")), color = c.muted)
                 }
             }
