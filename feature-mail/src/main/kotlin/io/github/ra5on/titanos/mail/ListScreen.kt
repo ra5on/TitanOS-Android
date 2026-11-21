@@ -271,9 +271,10 @@ fun ListScreen(
         // Liest man nebenan schon, folgt der Lesebereich (wie j/k im Web).
         if (selected != null) onOpen(next.row)
     }
-    LaunchedEffect(Unit) { runCatching { rootFocus.requestFocus() } }
+    val keyboard = hasKeyboard()
+    LaunchedEffect(keyboard) { if (keyboard) runCatching { rootFocus.requestFocus() } }
     Page(
-        modifier = Modifier.focusRequester(rootFocus).focusable().onPreviewKeyEvent { e ->
+        modifier = (if (keyboard) Modifier.focusRequester(rootFocus).focusable() else Modifier).onPreviewKeyEvent { e ->
             if (!prefs.shortcuts || e.type != KeyEventType.KeyDown || e.isCtrlPressed || e.isAltPressed || e.isMetaPressed) return@onPreviewKeyEvent false
             if (searchFocused) {
                 if (e.key == Key.Escape) { runCatching { rootFocus.requestFocus() }; return@onPreviewKeyEvent true }

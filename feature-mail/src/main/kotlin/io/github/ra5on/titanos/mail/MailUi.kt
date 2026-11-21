@@ -426,6 +426,10 @@ fun reduceMotion(): Boolean {
     return remember { android.provider.Settings.Global.getFloat(ctx.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
 }
 
+/** Eine echte Tastatur ist angeschlossen (Desktop-Modus, Tastatur-Hülle): dann gelten die Tastenkürzel. */
+@Composable
+fun hasKeyboard(): Boolean = androidx.compose.ui.platform.LocalConfiguration.current.keyboard == android.content.res.Configuration.KEYBOARD_QWERTY
+
 /** Die Sprache der Oberfläche, beobachtbar für Compose. */
 @Composable
 fun currentLocale(): java.util.Locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]

@@ -192,9 +192,10 @@ fun ReadScreen(
     val attachmentSaved = stringResource(R.string.mail_attachment_saved, "%1\$s", "%2\$s")
     val savedDownloads = stringResource(R.string.mailx_saved_downloads, "%1\$s")
 
-    LaunchedEffect(Unit) { runCatching { rootFocus.requestFocus() } }
+    val keyboard = hasKeyboard()
+    LaunchedEffect(keyboard) { if (keyboard) runCatching { rootFocus.requestFocus() } }
     Page(
-        modifier = Modifier.focusRequester(rootFocus).focusable().onPreviewKeyEvent { e ->
+        modifier = (if (keyboard) Modifier.focusRequester(rootFocus).focusable() else Modifier).onPreviewKeyEvent { e ->
             val m = msg
             if (!model.prefs.shortcuts || m == null || e.type != KeyEventType.KeyDown || e.isCtrlPressed || e.isAltPressed || e.isMetaPressed) return@onPreviewKeyEvent false
             when (e.key) {
