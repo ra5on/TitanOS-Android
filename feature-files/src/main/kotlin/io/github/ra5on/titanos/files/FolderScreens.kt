@@ -311,8 +311,10 @@ private fun Modifier.entryDrag(e: FileEntry, on: FolderCallbacks, selected: Bool
             val scope = this
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                android.util.Log.d("TitanOS", "Ziehen: down ${down.type} markiert=$now")
                 if (down.type == androidx.compose.ui.input.pointer.PointerType.Mouse || now) {
                     val slop = awaitTouchSlopOrCancellation(down.id) { change: androidx.compose.ui.input.pointer.PointerInputChange, _: androidx.compose.ui.geometry.Offset -> change.consume() }
+                    android.util.Log.d("TitanOS", "Ziehen: slop=${slop != null}")
                     if (slop != null) d(e)?.let { scope.startTransfer(it) }
                 }
             }

@@ -18,6 +18,7 @@ android {
         targetSdk = 37
         versionCode = 3
         versionName = "0.03"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
         if (releaseKeystore != null && releasePassword != null) {
@@ -88,4 +89,7 @@ dependencies {
     testImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.androidx.test.core)
     debugImplementation(libs.compose.ui.test.manifest)
+    androidTestImplementation(libs.androidx.test.uiautomator)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }
