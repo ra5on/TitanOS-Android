@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -103,7 +104,7 @@ private fun DayStrip(model: CalendarModel, start: LocalDate) {
             ) {
                 Text(CalDates.shortDay(d.dayOfWeek), style = TitanType.small, color = c.muted)
                 Box(
-                    Modifier.size(34.dp).clip(CircleShape).background(when { isToday -> c.statusError; sel -> c.text; else -> Color.Transparent }),
+                    Modifier.defaultMinSize(34.dp, 34.dp).clip(CircleShape).background(when { isToday -> c.statusError; sel -> c.text; else -> Color.Transparent }).padding(horizontal = 4.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(d.dayOfMonth.toString(), style = TitanType.rowTitle.copy(fontWeight = if (sel || isToday) FontWeight.Bold else FontWeight.Normal),
@@ -188,8 +189,8 @@ internal fun TimeGrid(model: CalendarModel, days: List<LocalDate>, go: (CalRoute
         val allDay = days.map { d -> model.eventsOn(d).filter { CalDates.spansDays(it, z) } }
         val tasks = days.map { model.tasksOn(it) }
         if (allDay.any { it.isNotEmpty() } || tasks.any { it.isNotEmpty() }) {
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                Text(stringResource(R.string.cal_all_day), style = TitanType.small, color = c.muted, modifier = Modifier.width(52.dp).padding(start = 6.dp))
+            Text(stringResource(R.string.cal_all_day), style = TitanType.small, color = c.muted, modifier = Modifier.padding(start = 6.dp, top = 4.dp))
+            Row(Modifier.fillMaxWidth().padding(start = 52.dp, bottom = 4.dp)) {
                 days.forEachIndexed { i, _ ->
                     Column(Modifier.weight(1f).padding(horizontal = 2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         for (e in allDay[i]) {
@@ -319,8 +320,8 @@ private fun EventBlock(
     val longerLabel = stringResource(R.string.cal_a11y_longer)
     val time = if (e.allDay) "" else "${CalDates.time(origStart)} – ${CalDates.time(origEnd)}"
     Box(
-        Modifier.offset(x = w * column, y = top).width(w).height(h).padding(1.dp).clip(RoundedCornerShape(5.dp))
-            .background(color.copy(alpha = .22f)).clickable(onClick = onOpen)
+        Modifier.offset(x = w * column, y = top).width(w).height(h).padding(1.dp)
+            .background(color.copy(alpha = .22f), RoundedCornerShape(5.dp)).clickable(onClick = onOpen)
             .semantics(mergeDescendants = true) {
                 contentDescription = "${e.title}, $time"
                 if (canMove) customActions = listOf(
@@ -344,10 +345,10 @@ private fun EventBlock(
     ) {
         Box(Modifier.width(3.dp).fillMaxSize().background(color))
         Column(Modifier.padding(start = 6.dp, end = 3.dp, top = 2.dp)) {
+            // Nur, was Platz hat; der ganze Text steht in der Ansicht des Termins und für Bildschirmleser.
             Text(eventTitle(e), style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = c.text)
-            if (endMin - startMin >= 45) {
-                Text(listOf(time, e.location).filter { it.isNotBlank() }.joinToString(" · "), style = TitanType.small, color = c.muted)
-            }
+            if (endMin - startMin >= 60 && time.isNotBlank()) Text(time, style = TitanType.small, color = c.muted)
+            if (endMin - startMin >= 90 && e.location.isNotBlank()) Text(e.location, style = TitanType.small, color = c.muted)
         }
         if (canMove) {
             // Griff unten: ziehen ändert die Länge.

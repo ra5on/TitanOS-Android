@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -100,10 +101,23 @@ sealed interface CalRoute {
 
 /** Kalender wie im Web am Handy (web/src/routes/calendar, lib/pim/cal), am großen Bildschirm wie am PC. */
 @Composable
-fun CalendarScreen(nas: NasConnection, stream: NasConnection, onClose: () -> Unit, onSyncSettings: () -> Unit) {
+fun CalendarScreen(
+    nas: NasConnection,
+    stream: NasConnection,
+    onClose: () -> Unit,
+    onSyncSettings: () -> Unit,
+    startRoute: CalRoute = CalRoute.Home,
+    startView: CalView? = null,
+    startAnchor: LocalDate? = null,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val model = remember(nas) { CalendarModel(CalendarApi(nas), scope, CalPrefsStore(context)) }
+    val model = remember(nas) {
+        CalendarModel(CalendarApi(nas), scope, CalPrefsStore(context)).also { m ->
+            startView?.let { m.view = it }
+            startAnchor?.let { m.anchor = it }
+        }
+    }
     LaunchedEffect(model) { model.start() }
     // Live: jede Änderung am NAS (Web, iPhone, Abgleich) lädt neu, gebündelt.
     LaunchedEffect(stream) {
@@ -116,7 +130,7 @@ fun CalendarScreen(nas: NasConnection, stream: NasConnection, onClose: () -> Uni
             }
         }
     }
-    var route by remember { mutableStateOf<CalRoute>(CalRoute.Home) }
+    var route by remember { mutableStateOf(startRoute) }
     val go: (CalRoute) -> Unit = { route = it }
     when (val r = route) {
         CalRoute.Home -> CalendarHome(model, go, onClose)
@@ -251,7 +265,7 @@ private fun HomeBar(model: CalendarModel, width: Width, go: (CalRoute) -> Unit, 
             )
             Segmented(views, model.view.name, { model.view = CalView.valueOf(it) }, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp))
         }
-        Text(
+        if (model.view != CalView.Month && model.view != CalView.Year) Text(
             title(model),
             style = TitanType.big,
             color = c.text,
@@ -260,7 +274,7 @@ private fun HomeBar(model: CalendarModel, width: Width, go: (CalRoute) -> Unit, 
     }
 }
 
-internal val listIcon by lazy { TitanIcons.archive }
+internal val listIcon by lazy { io.github.ra5on.titanos.pim.PimIcons.list }
 
 @Composable
 private fun title(model: CalendarModel): String {
@@ -360,7 +374,7 @@ internal fun MiniMonth(model: CalendarModel, month: YearMonth, selected: LocalDa
                     ) {
                         if (inMonth) {
                             Box(
-                                Modifier.size(24.dp).clip(CircleShape).background(when { isToday -> c.statusError; sel -> c.chip; else -> Color.Transparent }),
+                                Modifier.defaultMinSize(24.dp, 24.dp).clip(CircleShape).background(when { isToday -> c.statusError; sel -> c.chip; else -> Color.Transparent }).padding(horizontal = 2.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(d.dayOfMonth.toString(), style = TitanType.small.copy(fontWeight = if (isToday || sel) FontWeight.SemiBold else null), color = if (isToday) Color.White else c.text)
@@ -437,7 +451,7 @@ private fun DayCell(model: CalendarModel, d: LocalDate, isToday: Boolean, titles
             .semantics(mergeDescendants = true) { contentDescription = said }.padding(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(30.dp).clip(CircleShape).background(if (isToday) c.statusError else Color.Transparent), contentAlignment = Alignment.Center) {
+        Box(Modifier.defaultMinSize(30.dp, 30.dp).clip(CircleShape).background(if (isToday) c.statusError else Color.Transparent).padding(horizontal = 3.dp), contentAlignment = Alignment.Center) {
             Text(d.dayOfMonth.toString(), style = TitanType.rowTitle.copy(fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal),
                 color = when { isToday -> Color.White; weekend -> c.muted; else -> c.text })
         }

@@ -266,7 +266,7 @@ internal fun EventEditor(model: CalendarModel, ev: CalEvent?, day: LocalDate?, t
     LaunchedEffect(ev?.key) {
         if (editing) runCatching { model.api.event(ev!!.calendar, ev.id, ev.occurrence) }.onSuccess { full = it }
     }
-    val init = remember(full?.etag) {
+    val init = remember(full) {
         val e = full
         if (e != null) {
             val s = CalDates.start(e, z)
@@ -360,7 +360,6 @@ internal fun EventEditor(model: CalendarModel, ev: CalEvent?, day: LocalDate?, t
         if (titleMissing) Problem(stringResource(R.string.cal_title_missing), Modifier.padding(top = 6.dp))
         TextInput(location, { location = it }, stringResource(R.string.cal_location), Modifier.padding(top = 8.dp), leading = TitanIcons.pin, placeholder = stringResource(R.string.cal_location))
 
-        SectionHeader(stringResource(R.string.cal_calendar))
         val writable = model.writable
         SettingsGroup(stringResource(R.string.cal_calendar), writable.firstOrNull { it.id == calendarId }?.name ?: "", key = "cal") {
             writable.forEachIndexed { i, c ->
@@ -390,7 +389,6 @@ internal fun EventEditor(model: CalendarModel, ev: CalEvent?, day: LocalDate?, t
             }
         }
 
-        SectionHeader(stringResource(R.string.cal_repeat))
         val kinds = RepeatKind.entries
         SettingsGroup(stringResource(R.string.cal_repeat), repeatLabel(kind, start.toLocalDate(), repeat), key = "repeat") {
             ChoiceRows(kinds.map { it to repeatLabel(it, start.toLocalDate(), null) }, kind, { k ->

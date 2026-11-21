@@ -21,11 +21,13 @@ fun CalendarApp(nas: NasConnection, stream: NasConnection, onClose: () -> Unit) 
     io.github.ra5on.titanos.pim.cal.CalendarScreen(nas, stream, onClose, onSyncSettings = { sync = true })
 }
 
-/** Kontakte wie im Web am Handy (web/src/routes/contacts, lib/pim/con). */
+/** Kontakte wie im Web am Handy (web/src/routes/contacts, lib/pim/con), am großen Bildschirm wie am PC. */
 @Composable
-fun ContactsApp(nas: NasConnection, onClose: () -> Unit) {
-    BackHandler(onBack = onClose)
-    Page(topBar = { TopBar(stringResource(R.string.con_title), onBack = onClose) }) {
-        EmptyState(stringResource(R.string.con_title), "")
+fun ContactsApp(nas: NasConnection, stream: NasConnection?, onClose: () -> Unit) {
+    var sync by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    if (sync) {
+        io.github.ra5on.titanos.pim.sync.SyncScreen(nas) { sync = false }
+        return
     }
+    io.github.ra5on.titanos.pim.con.ContactsScreen(nas, stream, onClose, onSyncSettings = { sync = true })
 }

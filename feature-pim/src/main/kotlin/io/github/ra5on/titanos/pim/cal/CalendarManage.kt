@@ -366,7 +366,7 @@ internal fun TaskEditor(model: CalendarModel, task: Task?, listId: String, due: 
     var full by remember { mutableStateOf(task) }
     LaunchedEffect(task?.id) { if (task != null) runCatching { model.api.task(task.list, task.id) }.onSuccess { full = it } }
     val z = model.zone
-    val init = remember(full?.etag) { full }
+    val init = remember(full) { full }
     var title by remember(init) { mutableStateOf(init?.title.orEmpty()) }
     var notes by remember(init) { mutableStateOf(init?.notes.orEmpty()) }
     var list by remember(init) { mutableStateOf(init?.list ?: listId) }

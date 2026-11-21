@@ -25,7 +25,7 @@ internal fun ProgramHost(graph: AppGraph, id: String, onClose: () -> Unit) {
     when (id) {
         "mail" -> MailApp(nas, stream, onClose)
         "calendar" -> CalendarApp(nas, stream, onClose)
-        "contacts" -> ContactsApp(nas, onClose)
+        "contacts" -> ContactsApp(nas, stream, onClose)
         PIM_SYNC -> io.github.ra5on.titanos.pim.sync.SyncScreen(nas, onClose)
         else -> onClose()
     }
