@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="docker_pick">Eine App oder einen Container in der Liste wählen.</string>
+    <string name="docker_busy">wird ausgeführt</string>
+    <string name="docker_logs_lines">Letzte Zeilen</string>
+    <string name="docker_copy">Kopieren</string>
+    <string name="docker_time_invalid">Uhrzeit als HH:MM angeben, z. B. 04:00.</string>
+    <string name="docker_compose_note">Übernehmen erstellt die Container der App mit dieser Compose-Datei neu; Daten in Volumes und Ordnern bleiben.</string>
+    <string name="docker_compose_applied">Übernommen. Die Container werden neu erstellt.</string>
+    <string name="docker_compose_reset">Änderungen verwerfen</string>
+    <string name="docker_compose_reset_text">Die Compose-Datei kehrt zum gespeicherten Stand zurück.</string>
+    <string name="docker_gateway">Gateway</string>
+    <string name="docker_casaos_note">Eine Vorlage im CasaOS-Format: Variablen, Pfade und Ports vor dem Installieren in der Compose-Datei prüfen.</string>
+</resources>
