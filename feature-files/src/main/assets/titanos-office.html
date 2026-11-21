@@ -94,6 +94,29 @@ iframe { border: 0; width: 100%; height: 100%; display: block; }
     try { const j = await r.json(); return j.mtime ? String(j.mtime) : mtimeNs(j.modified); } catch (e) { return null; }
   }
 
+  // Datei aus einer anderen App (Öffnen mit): Inhalt und Speichern über die App.
+  function openLocal() {
+    try {
+      const bytes = fromB64(B.readLocal());
+      post({ type: 'webapp-open', name: cfg.name, bytes }, [bytes]);
+      B.opened(bytes.byteLength);
+    } catch (e) {
+      B.error('open', String(e.message || e));
+    }
+  }
+  async function saveLocal(m) {
+    const name = String(m.name || cfg.name);
+    if (!m.saveAs && same(base(name), cfg.name) && cfg.writable) {
+      const r = B.writeLocal(toB64(m.bytes));
+      if (r === 'ok') B.saved(cfg.name);
+      else B.error('save', r);
+      post({ type: 'webapp-saved', ok: r === 'ok' });
+      return;
+    }
+    B.keepOnPhone(name, toB64(m.bytes));
+    post({ type: 'webapp-saved', ok: false });
+  }
+
   async function openDoc() {
     try {
       const p = await props(doc.path);
@@ -204,12 +227,13 @@ iframe { border: 0; width: 100%; height: 100%; display: block; }
         if (ready) return;
         ready = true;
         B.ready();
-        if (doc) openDoc();
+        if (cfg.local) openLocal();
+        else if (doc) openDoc();
         else if (cfg.startNew) post({ type: 'webapp-command', command: 'new' });
         break;
       case 'webapp-save':
         if (!(m.bytes instanceof ArrayBuffer)) return;
-        queue = queue.then(() => onSave(m)).catch((e) => B.error('save', String(e && e.message || e)));
+        queue = queue.then(() => (cfg.local ? saveLocal(m) : onSave(m))).catch((e) => B.error('save', String(e && e.message || e)));
         break;
       case 'webapp-dirty':
         B.dirty(!!m.dirty);

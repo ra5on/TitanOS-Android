@@ -95,10 +95,13 @@ class FilesModel(
 
     private val jobs = ConcurrentHashMap<Long, Job>()
 
+    val appContext: Context get() = context
+
     /** Die weiteren Routen (Vorschau, Kopieren, Papierkorb …); null ohne Kopplung. */
-    val access: FilesAccess? = FilesRuntime.access()
-    val files: FilesApi? = access?.api
-    private val prefsApi = access?.let { PrefsApi(it.connection) }
+    // Bei jedem Zugriff neu: das Modell kann vor dem Anschluss der Laufzeit entstehen (AppGraph im Start der App).
+    val access: FilesAccess? get() = FilesRuntime.access()
+    val files: FilesApi? get() = access?.api
+    private val prefsApi: PrefsApi? get() = access?.let { PrefsApi(it.connection) }
 
     /** Einstellungen des Dateimanagers im Konto (mit dem Web geteilt). */
     var prefs by mutableStateOf(FilePrefs())
@@ -130,10 +133,17 @@ class FilesModel(
         stack.add(r)
     }
 
+    /** In einem weiteren Fenster: zurück bis zum Start schließt das Fenster. */
+    var onLeaveRoots: (() -> Unit)? = null
+
     fun pop() {
         if (stack.size > 1) stack.removeAt(stack.lastIndex)
         if (route !is FilesRoute.Folder) close()
+        if (route == FilesRoute.Roots) onLeaveRoots?.invoke()
     }
+
+    /** Datei in der Vorschau neben der Liste (ab „Split“); null: keine. */
+    var previewing by mutableStateOf<String?>(null)
 
     fun replaceTop(r: FilesRoute) {
         stack[stack.lastIndex] = r
@@ -421,6 +431,20 @@ class FilesModel(
         return act {
             val job = files!!.copy(CopyRequest(clip.from.root.id, clip.names.map { clip.from.full(it) }, target.root.id, target.path, clip.move, conflict))
             if (clip.move) clipboard = null
+            nasJobs = listOf(job) + nasJobs.filter { it.id != job.id }
+            watchJobs()
+        }
+    }
+
+    /** Abgelegtes aus TitanOS (auch aus einem anderen Fenster): am NAS kopieren bzw. in derselben Ablage verschieben. */
+    suspend fun dropNas(target: Location, p: DragDrop.Payload, copy: Boolean = false): Boolean {
+        if (p.root == target.root.id && p.paths.all { it.substringBeforeLast('/', "") == target.path }) return false
+        if (p.root == target.root.id && p.paths.any { target.path == it || target.path.startsWith("$it/") }) {
+            actionError = FilesError.IntoItself
+            return false
+        }
+        return act {
+            val job = files!!.copy(CopyRequest(p.root, p.paths, target.root.id, target.path, move = !copy && p.root == target.root.id, conflict = "rename"))
             nasJobs = listOf(job) + nasJobs.filter { it.id != job.id }
             watchJobs()
         }

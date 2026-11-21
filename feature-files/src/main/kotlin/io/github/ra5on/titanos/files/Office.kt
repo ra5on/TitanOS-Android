@@ -120,6 +120,9 @@ data class OfficeHost(val base: HttpUrl, val spki: String, val allowPublic: Bool
     }
 }
 
+/** Eine Datei aus einer anderen App („Öffnen mit“), nicht vom NAS. */
+data class LocalDoc(val uri: Uri, val name: String, val writable: Boolean)
+
 /** Eine offene Frage der Seite an die App. */
 data class OfficeAsk(val kind: String, val name: String, val id: Int)
 
@@ -135,7 +138,7 @@ private val ALLOWED_API = listOf("/api/v1/files/", "/api/v1/webapps", "/api/v1/p
  */
 @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
 @Composable
-fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: String?, onClose: () -> Unit) {
+fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: String?, onClose: () -> Unit, local: LocalDoc? = null) {
     val access = model.access ?: return
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -201,7 +204,13 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
             if (h != null && failed == null) {
                 val bridge = remember(h) {
                     OfficeBridge(
-                        config = officeConfig(app, location, name, model.userName.orEmpty(), texts.copyWord),
+                        config = officeConfig(app, location, name, model.userName.orEmpty(), texts.copyWord, local),
+                        readLocal = { local?.let { l -> Base64.encodeToString(context.contentResolver.openInputStream(l.uri)!!.let { FilesApi.readLimited(it, LOCAL_LIMIT) }, Base64.NO_WRAP) }.orEmpty() },
+                        writeLocal = { b64 ->
+                            val l = local
+                            if (l == null || !l.writable) "readonly"
+                            else runCatching { context.contentResolver.openOutputStream(l.uri, "wt")!!.use { it.write(Base64.decode(b64, Base64.DEFAULT)) } }.fold({ "ok" }, { "error" })
+                        },
                         renew = { runBlocking { runCatching { model.files?.webapps() } }; setCookie(access, h) },
                         onAsk = { a -> main.post { askName = a.name; ask = a } },
                         onDirty = { d -> main.post { dirty = d } },
@@ -316,7 +325,7 @@ internal fun otherName(name: String): String {
 private data class OfficeTexts(val certificate: String, val unreachable: String, val saved: String, val keptOnPhone: String, val copyWord: String)
 
 /** Was die Rahmenseite beim Start bekommt (wie appSrc in protocol.ts). */
-internal fun officeConfig(app: WebApp, location: Location, name: String?, author: String, copyWord: String): String {
+internal fun officeConfig(app: WebApp, location: Location, name: String?, author: String, copyWord: String, local: LocalDoc? = null): String {
     val src = app.url!!.trimEnd('/') + "/?" + listOf("author" to author, "bridge" to app.bridge, "app" to app.id)
         .joinToString("&") { (k, v) -> k + "=" + java.net.URLEncoder.encode(v, "UTF-8").replace("+", "%20") }
     return buildJsonObject {
@@ -327,6 +336,9 @@ internal fun officeConfig(app: WebApp, location: Location, name: String?, author
         put("bridge", app.bridge)
         put("startNew", app.startNew == true)
         put("copyWord", copyWord)
+        put("local", local != null)
+        put("name", local?.name ?: name)
+        put("writable", local?.writable ?: true)
         put("types", buildJsonArray { app.types.forEach { add(JsonPrimitive(it)) } })
     }.toString()
 }
@@ -342,6 +354,8 @@ private fun setCookie(access: FilesAccess, host: OfficeHost) {
 /** Die Schnittstelle der Rahmenseite; nichts davon gibt die Sitzung heraus. */
 private class OfficeBridge(
     private val config: String,
+    private val readLocal: () -> String,
+    private val writeLocal: (String) -> String,
     private val renew: () -> Unit,
     private val onAsk: (OfficeAsk) -> Unit,
     private val onDirty: (Boolean) -> Unit,
@@ -351,6 +365,8 @@ private class OfficeBridge(
     private val onKeep: (String, String) -> Unit,
 ) {
     @JavascriptInterface fun config(): String = config
+    @JavascriptInterface fun readLocal(): String = runCatching { readLocal.invoke() }.getOrDefault("")
+    @JavascriptInterface fun writeLocal(data: String): String = runCatching { writeLocal.invoke(data) }.getOrDefault("error")
     @JavascriptInterface fun ready() = Unit
     @JavascriptInterface fun opened(@Suppress("UNUSED_PARAMETER") size: Long) = Unit
     @JavascriptInterface fun renew(): Boolean = runCatching { renew.invoke() }.isSuccess
@@ -411,6 +427,7 @@ private fun acceptTypes(accept: String): Array<String> {
 }
 
 private const val PICK_LIMIT = 50L * 1024 * 1024
+private const val LOCAL_LIMIT = 200L * 1024 * 1024
 
 private fun readPicked(context: Context, uri: Uri): Pair<String, ByteArray>? {
     var name = "datei"

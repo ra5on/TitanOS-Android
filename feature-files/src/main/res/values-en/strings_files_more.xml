@@ -128,6 +128,10 @@
     <string name="office_keep_nas">On the NAS</string>
     <string name="office_keep_phone">On the phone</string>
     <string name="office_kept_phone">Saved to Downloads on the phone.</string>
+    <string name="office_no_app">No matching office program is installed on the NAS (Settings › Web apps).</string>
+    <string name="office_no_file">No file was passed.</string>
+    <string name="office_not_paired">The app is not paired with a NAS.</string>
+    <string name="office_open_label">TitanOS Office</string>
     <string name="office_other_name">Other name</string>
     <string name="office_save_as">Save as</string>
     <string name="office_save_as_text">In the folder %1$s.</string>
@@ -242,6 +246,7 @@
     <string name="view_text_too_large">Too large for the preview (over 512 KB).</string>
     <string name="view_title">View</string>
     <string name="view_too_large">Too large for the preview.</string>
+    <string name="window_open">Open in new window</string>
     <plurals name="clip_copied">
         <item quantity="one">%d item copied</item>
         <item quantity="other">%d items copied</item>

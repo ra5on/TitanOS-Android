@@ -40,6 +40,19 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.draganddrop.dragAndDropSource
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.DragAndDropTransferData
+import io.github.ra5on.titanos.ui.onSecondaryClick
 import io.github.ra5on.titanos.model.FileEntry
 import io.github.ra5on.titanos.ui.Format
 import io.github.ra5on.titanos.ui.R as UiR
@@ -77,6 +90,10 @@ data class FolderUi(
     val jobs: List<Job> = emptyList(),
     val undo: UndoOffer? = null,
     val offlinePaths: Set<String> = emptySet(),
+    /** Zeile unter dem Tastaturfokus (Pfeiltasten). */
+    val cursor: String? = null,
+    /** Datei in der Vorschau daneben (ab Split). */
+    val previewing: String? = null,
 ) {
     val selecting: Boolean get() = selected.isNotEmpty()
     val writable: Boolean get() = state.location.root.writable
@@ -101,6 +118,10 @@ class FolderCallbacks(
     val jobs: () -> Unit = {},
     val undo: () -> Unit = {},
     val dismissUndo: () -> Unit = {},
+    /** Was beim Ziehen eines Eintrags mitgeht; null: Ziehen aus. */
+    val drag: ((FileEntry) -> DragAndDropTransferData?)? = null,
+    /** Abgelegt auf einem Ordner (Eintrag) oder in den offenen Ordner (null). */
+    val drop: ((DragAndDropEvent, FileEntry?) -> Boolean)? = null,
 )
 
 @Composable
@@ -133,7 +154,21 @@ fun FolderScreen(
     val c = Titan.colors
     val location = ui.state.location
     val title = location.segments.lastOrNull() ?: location.root.name
-    Box {
+    var hotFolder by remember { mutableStateOf(false) }
+    val folderDrop = on.drop?.let { drop ->
+        remember(drop) {
+            object : DragAndDropTarget {
+                override fun onDrop(event: DragAndDropEvent): Boolean { hotFolder = false; return drop(event, null) }
+                override fun onEntered(event: DragAndDropEvent) { hotFolder = true }
+                override fun onExited(event: DragAndDropEvent) { hotFolder = false }
+                override fun onEnded(event: DragAndDropEvent) { hotFolder = false }
+            }
+        }
+    }
+    Box(
+        (if (folderDrop != null) Modifier.dragAndDropTarget(shouldStartDragAndDrop = { DragDrop.accepts(it) }, target = folderDrop) else Modifier)
+            .then(if (hotFolder) Modifier.border(3.dp, c.accent) else Modifier),
+    ) {
         Page(
             scroll = false,
             topBar = {
@@ -218,7 +253,7 @@ fun FolderScreen(
                     item(key = "_header") { header() }
                     items(entries, key = { "e:" + it.name }) { e ->
                         val up = ui.uploads.firstOrNull { it.name == e.name }
-                        EntryListRow(api, location, e, up, e.name in ui.selected, ui.selecting, location.full(e.name) in ui.offlinePaths, on, first = e == entries.first())
+                        EntryListRow(api, location, e, up, e.name in ui.selected, ui.selecting, location.full(e.name) in ui.offlinePaths, on, first = e == entries.first(), cursor = ui.cursor == e.name || ui.previewing == e.name)
                     }
                     items(extraUploads, key = { "u:" + it.id }) { u -> UploadRow(u) }
                 }
@@ -228,7 +263,7 @@ fun FolderScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         item(key = "_header", span = { GridItemSpan(maxLineSpan) }) { header() }
                         items(entries, key = { "e:" + it.name }) { e ->
-                            EntryTile(api, location, e, e.name in ui.selected, ui.selecting, ui.view == FileView.Large, on)
+                            EntryTile(api, location, e, e.name in ui.selected, ui.selecting, ui.view == FileView.Large, on, cursor = ui.cursor == e.name || ui.previewing == e.name)
                         }
                         items(extraUploads, key = { "u:" + it.id }, span = { GridItemSpan(maxLineSpan) }) { u -> UploadRow(u) }
                     }
@@ -252,10 +287,43 @@ private fun UploadRow(u: Transfer) {
 
 @OptIn(ExperimentalFoundationApi::class)
 private fun Modifier.entryClicks(e: FileEntry, selecting: Boolean, on: FolderCallbacks): Modifier =
-    combinedClickable(
-        onClick = { if (selecting) on.select(e) else on.open(e) },
-        onLongClick = { on.select(e) },
-    )
+    onSecondaryClick { on.entryMenu(e) }
+        .combinedClickable(
+            onClick = { if (selecting) on.select(e) else on.open(e) },
+            onLongClick = { on.select(e) },
+        )
+
+/** Ziehen (langes Drücken und Bewegen) und, für Ordner, Ablegen darauf. */
+@Composable
+private fun Modifier.entryDrag(e: FileEntry, on: FolderCallbacks, onHot: (Boolean) -> Unit): Modifier {
+    var m = this
+    on.drag?.let { d -> m = m.dragAndDropSource { _ -> d(e) } }
+    val drop = on.drop
+    if (e.dir && drop != null) {
+        val target = remember(e, drop) {
+            object : DragAndDropTarget {
+                override fun onDrop(event: DragAndDropEvent): Boolean { onHot(false); return drop(event, e) }
+                override fun onEntered(event: DragAndDropEvent) = onHot(true)
+                override fun onExited(event: DragAndDropEvent) = onHot(false)
+                override fun onEnded(event: DragAndDropEvent) = onHot(false)
+            }
+        }
+        m = m.dragAndDropTarget(shouldStartDragAndDrop = { DragDrop.accepts(it) }, target = target)
+    }
+    return m
+}
+
+/** Hervorhebung unter dem Mauszeiger, dem Tastaturfokus oder beim Ablegen. */
+@Composable
+private fun rowTint(selected: Boolean, cursor: Boolean, hot: Boolean, hovered: Boolean): androidx.compose.ui.graphics.Color {
+    val c = Titan.colors
+    return when {
+        hot -> c.accent.copy(alpha = .30f)
+        selected -> c.accent.copy(alpha = .16f)
+        hovered || cursor -> c.chip
+        else -> c.surface
+    }
+}
 
 @Composable
 private fun SelectMark(selected: Boolean) {
@@ -274,13 +342,20 @@ private fun EntryListRow(
     offline: Boolean,
     on: FolderCallbacks,
     first: Boolean,
+    cursor: Boolean = false,
 ) {
     val c = Titan.colors
     val date = entryDate(e.modified)
     val sub = listOfNotNull(if (e.dir) null else Format.bytes(e.size), date, if (offline) stringResource(R.string.files_offline_short) else null).joinToString(" · ")
+    val hover = remember { MutableInteractionSource() }
+    val hovered by hover.collectIsHoveredAsState()
+    var hot by remember { mutableStateOf(false) }
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-            .background(if (selected) c.accent.copy(alpha = .16f) else c.surface)
+            .background(rowTint(selected, cursor, hot, hovered))
+            .then(if (cursor) Modifier.border(2.dp, c.accent, RoundedCornerShape(10.dp)) else Modifier)
+            .hoverable(hover)
+            .entryDrag(e, on) { hot = it }
             .semantics { this.selected = selected },
     ) {
         if (!first) Divider()
@@ -306,12 +381,17 @@ private fun EntryListRow(
 }
 
 @Composable
-private fun EntryTile(api: FilesApi?, location: Location, e: FileEntry, selected: Boolean, selecting: Boolean, large: Boolean, on: FolderCallbacks) {
+private fun EntryTile(api: FilesApi?, location: Location, e: FileEntry, selected: Boolean, selecting: Boolean, large: Boolean, on: FolderCallbacks, cursor: Boolean = false) {
     val c = Titan.colors
     val shape = RoundedCornerShape(12.dp)
+    val hover = remember { MutableInteractionSource() }
+    val hovered by hover.collectIsHoveredAsState()
+    var hot by remember { mutableStateOf(false) }
     Column(
-        Modifier.fillMaxWidth().clip(shape).background(if (selected) c.accent.copy(alpha = .18f) else c.surface)
-            .border(1.dp, if (selected) c.accent else c.border, shape)
+        Modifier.fillMaxWidth().clip(shape).background(rowTint(selected, cursor, hot, hovered))
+            .border(if (cursor) 2.dp else 1.dp, if (selected || cursor) c.accent else c.border, shape)
+            .hoverable(hover)
+            .entryDrag(e, on) { hot = it }
             .entryClicks(e, selecting, on).semantics { this.selected = selected }.padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -533,6 +613,7 @@ fun BoxScope.FolderMenu(
     onDuplicates: () -> Unit,
     onReload: () -> Unit,
     onDismiss: () -> Unit,
+    onWindow: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     val on = stringResource(UiR.string.ui_on)
@@ -549,6 +630,7 @@ fun BoxScope.FolderMenu(
             ListRow(stringResource(R.string.files_select_all), icon = { RowIcon(TitanIcons.check) }, onClick = { onDismiss(); onSelectAll() })
             ListRow(stringResource(R.string.files_properties), icon = { RowIcon(TitanIcons.info) }, divider = true, onClick = { onDismiss(); onProperties() })
             ListRow(stringResource(R.string.menu_reload), icon = { RowIcon(TitanIcons.restart) }, divider = true, onClick = { onDismiss(); onReload() })
+            onWindow?.let { w -> ListRow(stringResource(R.string.window_open), icon = { RowIcon(TitanIcons.monitor) }, divider = true, onClick = { onDismiss(); w() }) }
             if (hasTrash) ListRow(stringResource(R.string.files_trash), icon = { RowIcon(TitanIcons.trash) }, chevron = true, divider = true, onClick = { onDismiss(); onTrash() })
             ListRow(stringResource(R.string.jobs_title), icon = { RowIcon(TitanIcons.sync) }, chevron = true, divider = true, onClick = { onDismiss(); onJobs() })
         }
@@ -582,6 +664,7 @@ fun BoxScope.EntrySheet(
     onProperties: (() -> Unit)?,
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
+    onWindow: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     val single = entries.singleOrNull()
@@ -616,6 +699,7 @@ fun BoxScope.EntrySheet(
                 divider = true
             }
             onOpen?.let { row(stringResource(R.string.entry_open), TitanIcons.file, action = it) }
+            onWindow?.let { row(stringResource(R.string.window_open), TitanIcons.monitor, action = it) }
             officeName?.let { row(stringResource(R.string.view_open_in, it), TitanIcons.edit, action = onOffice) }
             onEdit?.let { row(stringResource(R.string.view_edit), TitanIcons.edit, action = it) }
             onOpenWith?.let { row(stringResource(R.string.view_open_with), TitanIcons.box, stringResource(R.string.view_open_with_text), action = it) }

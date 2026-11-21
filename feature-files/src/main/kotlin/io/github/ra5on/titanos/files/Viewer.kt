@@ -92,6 +92,8 @@ class ViewerActions(
     val edit: ((FileEntry) -> Unit)? = null,
     val delete: ((FileEntry) -> Unit)? = null,
     val rename: ((FileEntry) -> Unit)? = null,
+    /** In einem eigenen Fenster öffnen. */
+    val window: ((FileEntry) -> Unit)? = null,
     /** Name des Office-Programms für die Datei, wenn TitanOS eines hat („T-Word“). */
     val officeName: (FileEntry) -> String? = { null },
     val office: (FileEntry) -> Unit = {},
@@ -115,16 +117,20 @@ fun ViewerScreen(
     actions: ViewerActions,
     onBack: () -> Unit,
     onPage: (Int) -> Unit = {},
+    /** Neben der Liste (ab Split): kein Vollbild, Leiste immer sichtbar. */
+    embedded: Boolean = false,
 ) {
     val pager = rememberPagerState(initialPage = start.coerceIn(0, (files.size - 1).coerceAtLeast(0))) { files.size }
     var zoomed by remember { mutableStateOf(false) }
     var chrome by remember { mutableStateOf(true) }
     var menu by remember { mutableStateOf(false) }
+    // Von außen gewählt (Vorschau neben der Liste): dorthin blättern.
+    LaunchedEffect(start) { if (start in files.indices && start != pager.currentPage) pager.scrollToPage(start) }
     LaunchedEffect(pager.currentPage) {
         zoomed = false
         onPage(pager.currentPage)
     }
-    FullScreen(!chrome)
+    if (!embedded) FullScreen(!chrome) else LaunchedEffect(Unit) { chrome = true }
     val current = files.getOrNull(pager.currentPage)
     val kind = current?.let { Kinds.of(it.name) } ?: FileKind.Other
     val c = Titan.colors
@@ -135,10 +141,10 @@ fun ViewerScreen(
             val top = if (chrome) 64.dp else 0.dp
             Box(Modifier.fillMaxSize()) {
                 when (Kinds.of(e.name)) {
-                    FileKind.Image -> ImagePage(api, location, e, active, onZoom = { if (active) zoomed = it }, onTap = { chrome = !chrome })
+                    FileKind.Image -> ImagePage(api, location, e, active, onZoom = { if (active) zoomed = it }, onTap = { if (!embedded) chrome = !chrome })
                     FileKind.Video -> if (api != null) MediaPage(api, location, e, active, audio = false)
                     FileKind.Audio -> if (api != null) MediaPage(api, location, e, active, audio = true)
-                    FileKind.Pdf -> PdfPage(api, location, e, top, onZoom = { if (active) zoomed = it }, onTap = { chrome = !chrome }, actions)
+                    FileKind.Pdf -> PdfPage(api, location, e, top, onZoom = { if (active) zoomed = it }, onTap = { if (!embedded) chrome = !chrome }, actions)
                     FileKind.Text -> TextPage(api, location, e, top, actions)
                     else -> OtherPage(api, location, e, top, actions)
                 }
@@ -203,6 +209,7 @@ private fun BoxScope.ViewerMenu(e: FileEntry, a: ViewerActions, onDismiss: () ->
             }
             ListRow(stringResource(R.string.view_open_with), sub = stringResource(R.string.view_open_with_text), icon = { RowIcon(TitanIcons.box) }, divider = true, onClick = { onDismiss(); a.openWith(e) })
             ListRow(stringResource(R.string.files_download), icon = { RowIcon(TitanIcons.download) }, divider = true, onClick = { onDismiss(); a.download(e) })
+            a.window?.let { w -> ListRow(stringResource(R.string.window_open), icon = { RowIcon(TitanIcons.monitor) }, divider = true, onClick = { onDismiss(); w(e) }) }
             ListRow(stringResource(R.string.files_properties), icon = { RowIcon(TitanIcons.info) }, divider = true, onClick = { onDismiss(); a.info(e) })
             a.rename?.let { r -> ListRow(stringResource(R.string.files_rename), icon = { RowIcon(TitanIcons.edit) }, divider = true, onClick = { onDismiss(); r(e) }) }
             a.delete?.let { d ->
@@ -298,14 +305,16 @@ private fun PdfPage(api: FilesApi?, location: Location, e: FileEntry, top: andro
             PdfDoc.Failed(false)
         }
     }
-    DisposableEffect(doc) { onDispose { (doc as? PdfDoc.Open)?.close() } }
+    // Den Wert festhalten: beim Wechsel von „lädt“ auf „offen“ darf nicht das neue Dokument schließen.
+    val opened = doc
+    DisposableEffect(opened) { onDispose { (opened as? PdfDoc.Open)?.close() } }
     val width = LocalConfiguration.current.screenWidthDp
     val px = with(LocalDensity.current) { width.dp.roundToPx() } * 2
     when (val d = doc) {
         null -> CenterNote(stringResource(R.string.view_loading_percent, Format.percent(progress.toDouble())), top)
         is PdfDoc.Failed -> OtherPage(api, location, e, top, actions, problem = stringResource(if (d.tooLarge) R.string.view_too_large else R.string.view_pdf_failed))
         is PdfDoc.Open -> ZoomBox(onZoom, onTap, Modifier.fillMaxSize()) {
-            LazyColumn(Modifier.fillMaxSize().background(Titan.colors.track), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = top + 8.dp, bottom = 24.dp)) {
+            LazyColumn(Modifier.fillMaxSize().background(Titan.colors.track).statusBarsPadding(), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = top + 8.dp, bottom = 24.dp)) {
                 itemsIndexed(List(d.pages) { it }) { _, i ->
                     val ratio = d.ratio(i)
                     val page by produceState<Bitmap?>(null, d, i) { value = d.render(i, px) }
@@ -342,7 +351,7 @@ sealed interface PdfDoc {
                             p.render(it, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                         }
                     }
-                }.getOrNull()
+                }.onFailure { android.util.Log.w("TitanOS", "PDF-Seite $i", it) }.getOrNull()
             }
         }
 

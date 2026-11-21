@@ -15,6 +15,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.focusable
+import androidx.compose.runtime.key
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import io.github.ra5on.titanos.ui.currentWidth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import io.github.ra5on.titanos.model.FileEntry
@@ -161,7 +169,7 @@ fun FilesTab(model: FilesModel, nav: @Composable () -> Unit) {
             val api = model.files
             if (api == null) model.pop() else EditorScreen(api, route.location, route.name) { scope.launch { model.reload() }; model.pop() }
         }
-        is FilesRoute.Office -> OfficeScreen(model, route.app, route.location, route.name) { scope.launch { model.reload() }; model.pop() }
+        is FilesRoute.Office -> OfficeScreen(model, route.app, route.location, route.name, onClose = { scope.launch { model.reload() }; model.pop() })
         FilesRoute.TrashRoots -> {
             BackHandler { model.pop() }
             LaunchedEffect(Unit) { model.loadRoots() }
@@ -258,6 +266,7 @@ private fun viewerActions(model: FilesModel, loc: Location, chooser: String, ope
     delete = if (loc.root.writable) onDelete else null,
     officeName = { e -> model.officeFor(e.name)?.name },
     office = { e -> model.officeFor(e.name)?.let { model.push(FilesRoute.Office(loc, e.name, it)) } },
+    window = { e -> FilesWindow.open(model.appContext, loc, e.name) },
 )
 
 @Composable
@@ -283,6 +292,9 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> uris.forEach { model.upload(location, it) } }
     val defaultFile = stringResource(R.string.add_file_default)
     val entries = model.sorted(location, state.entries.orEmpty())
+    val width = currentWidth()
+    var cursor by remember(location) { mutableStateOf<String?>(null) }
+    LaunchedEffect(location) { model.previewing = null }
     val (view, sort, desc) = model.prefs.forFolder(location.root.id, location.path)
     val uploads = model.transfers.items.filter {
         it.root == location.root.id && it.dir == location.path && it.direction == Direction.Upload &&
@@ -298,10 +310,16 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
         val office = if (Kinds.of(e.name) == FileKind.Office) model.officeFor(e.name) else null
         if (office != null) {
             model.push(FilesRoute.Office(location, e.name, office))
+        } else if (width.twoPanes) {
+            model.previewing = e.name
         } else {
             val files = entries.filter { !it.dir }
             model.push(FilesRoute.Viewer(location, files, files.indexOfFirst { it.name == e.name }.coerceAtLeast(0)))
         }
+    }
+    fun viewFull(e: FileEntry) {
+        val files = entries.filter { !it.dir }
+        model.push(FilesRoute.Viewer(location, files, files.indexOfFirst { it.name == e.name }.coerceAtLeast(0)))
     }
     fun toggle(e: FileEntry) { model.selection = if (e.name in model.selection) model.selection - e.name else model.selection + e.name }
     model.showProperties?.let { (n, p) ->
@@ -334,6 +352,8 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
         jobs = model.nasJobs,
         undo = model.undo,
         offlinePaths = model.offline.pins.filter { it.root == location.root.id }.map { it.path }.toSet(),
+        cursor = cursor,
+        previewing = model.previewing,
     )
     val callbacks = FolderCallbacks(
         back = up,
@@ -362,9 +382,79 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
         jobs = { model.push(FilesRoute.Jobs) },
         undo = { scope.launch { model.undoLast() } },
         dismissUndo = { model.undo = null },
+        drag = { e -> DragDrop.transfer(context, location, if (e.name in model.selection) selectedEntries else listOf(e)) },
+        drop = { event, target ->
+            val into = target?.let { location.child(it.name) } ?: location
+            val p = DragDrop.payload(event)
+            if (p != null) {
+                scope.launch { model.dropNas(into, p) }
+                true
+            } else if (into.root.writable) {
+                val uris = DragDrop.uris(context, event)
+                uris.forEach { model.upload(into, it) }
+                uris.isNotEmpty()
+            } else {
+                false
+            }
+        },
     )
     val dismiss = { overlay = null }
-    FolderScreen(ui, model.files, callbacks, bottomBar = nav) {
+    // Tastatur wie im Web (keyboard.ts): Pfeile, Enter, Leertaste, Kopieren/Einfügen, Entf, F2, Strg+F, Strg+Umschalt+N.
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(location) { runCatching { focus.requestFocus() } }
+    fun onKey(k: FolderKey?): Boolean {
+        if (k == null || overlay != null) return false
+        val idx = entries.indexOfFirst { it.name == cursor }
+        val current = entries.getOrNull(idx)
+        val targets = selectedEntries.ifEmpty { listOfNotNull(current) }
+        when (k) {
+            FolderKey.Down -> cursor = entries.getOrNull((idx + 1).coerceAtMost(entries.lastIndex))?.name
+            FolderKey.Up -> cursor = entries.getOrNull((idx - 1).coerceAtLeast(0))?.name
+            FolderKey.Home -> cursor = entries.firstOrNull()?.name
+            FolderKey.End -> cursor = entries.lastOrNull()?.name
+            FolderKey.Open -> current?.let(::openEntry) ?: return false
+            FolderKey.Preview -> current?.let { e ->
+                if (e.dir) openEntry(e)
+                else if (width.twoPanes) model.previewing = if (model.previewing == e.name) null else e.name
+                else viewFull(e)
+            } ?: return false
+            FolderKey.Copy -> if (targets.isNotEmpty()) model.copyToClipboard(location, targets, move = false) else return false
+            FolderKey.Cut -> if (targets.isNotEmpty() && location.root.writable) model.copyToClipboard(location, targets, move = true) else return false
+            FolderKey.Paste -> if (model.clipboard != null) callbacks.paste() else return false
+            FolderKey.Delete -> if (targets.isNotEmpty() && location.root.writable) overlay = FolderOverlay.Delete(targets) else return false
+            FolderKey.Rename -> current?.takeIf { location.root.writable }?.let { e -> text = e.name; model.actionError = null; overlay = FolderOverlay.Rename(e) } ?: return false
+            FolderKey.Search -> callbacks.search()
+            FolderKey.NewFolder -> if (location.root.writable) { text = ""; model.actionError = null; overlay = FolderOverlay.NewFolder } else return false
+            FolderKey.SelectAll -> callbacks.selectAll()
+            FolderKey.Back -> up()
+            FolderKey.Escape -> when {
+                model.selection.isNotEmpty() -> model.selection = emptySet()
+                model.previewing != null -> model.previewing = null
+                else -> return false
+            }
+            FolderKey.Menu -> overlay = if (targets.isNotEmpty()) FolderOverlay.Entry(targets) else FolderOverlay.Menu
+            FolderKey.Refresh -> scope.launch { model.reload() }
+        }
+        return true
+    }
+    val previewFiles = entries.filter { !it.dir }
+    val previewIndex = previewFiles.indexOfFirst { it.name == model.previewing }
+    Column(Modifier.fillMaxSize().focusRequester(focus).focusable().onPreviewKeyEvent { onKey(folderKey(it)) }) {
+    Row(Modifier.weight(1f)) {
+    if (width.sidebar) {
+        FilesSidebar(
+            model.roots.roots.orEmpty(), model.prefs.favorites, location.root.id,
+            onRoot = { r -> model.openFolder(Location(r)) },
+            onFavorite = { f -> model.roots.roots?.firstOrNull { it.id == f.root }?.let { model.openFolder(Location(it, f.path)) } },
+            onTrash = { model.push(FilesRoute.Trash(location.root)) },
+            onJobs = { model.push(FilesRoute.Jobs) },
+            onTransfers = { model.push(FilesRoute.Transfers) },
+            onOffline = { model.push(FilesRoute.Offline) },
+            onSearch = callbacks.search,
+        )
+    }
+    Box(Modifier.weight(1f)) {
+    FolderScreen(ui, model.files, callbacks, bottomBar = { if (!width.twoPanes) nav() }) {
         when (val o = overlay) {
             null -> Unit
             FolderOverlay.Add -> AddSheet(
@@ -395,6 +485,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
                 onDuplicates = { model.push(FilesRoute.Duplicates(location)) },
                 onReload = { scope.launch { model.reload() } },
                 onDismiss = dismiss,
+                onWindow = { FilesWindow.open(context, location) },
             )
             FolderOverlay.Sort -> SortSheet(
                 view, model.localSort ?: sort, desc, model.prefs.showHidden,
@@ -432,6 +523,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
                     onProperties = single?.let { s -> { overlay = FolderOverlay.Props(s.name, location.full(s.name)) } },
                     onDelete = { overlay = FolderOverlay.Delete(list) },
                     onDismiss = { if (overlay == o) overlay = null },
+                    onWindow = single?.let { s -> { if (s.dir) FilesWindow.open(context, location.child(s.name)) else FilesWindow.open(context, location, s.name) } },
                 )
             }
             is FolderOverlay.Rename -> RenameDialog(o.entry.name, text, { text = it }, model.actionError, onDo = {
@@ -498,6 +590,23 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
                 onDismiss = dismiss,
             )
         }
+    }
+    }
+    if (width.twoPanes && previewIndex >= 0) {
+        Box(Modifier.weight(if (width.sidebar) 1.2f else 1f)) {
+            key(location) {
+                ViewerScreen(
+                    model.files, location, previewFiles, previewIndex,
+                    viewerActions(model, location, chooser, openWith) { e -> overlay = FolderOverlay.Delete(listOf(e)) },
+                    onBack = { model.previewing = null },
+                    onPage = { i -> previewFiles.getOrNull(i)?.let { model.previewing = it.name } },
+                    embedded = true,
+                )
+            }
+        }
+    }
+    }
+    if (width.twoPanes) nav()
     }
 }
 
