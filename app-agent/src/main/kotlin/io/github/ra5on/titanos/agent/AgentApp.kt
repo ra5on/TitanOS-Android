@@ -25,7 +25,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import java.io.File
 
-class AgentApp : Application(), SiblingHost {
+class AgentApp : Application(), SiblingHost, io.github.ra5on.titanos.agent.system.AgentHost {
+    // Assistent, Notizen-Rolle und Mitteilungen (feature-agent system/) holen hier das Modell.
+    override fun agentModel() = graph.model
+    override fun openAgent(context: android.content.Context, chatId: String?) {
+        graph.pendingOpen = chatId ?: ""
+        context.startActivity(android.content.Intent(context, MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+    override fun webSession(): io.github.ra5on.titanos.agent.ui.WebSession? {
+        val p = graph.pairing ?: return null
+        val cookie = graph.sessions.current() ?: return null
+        val base = p.addresses.firstNotNullOfOrNull { it.address }?.baseUrl()?.toString() ?: return null
+        return io.github.ra5on.titanos.agent.ui.WebSession(base, cookie.name, cookie.token, p.addresses.map { it.spki }.filter { it.isNotEmpty() })
+    }
+
     // Eine Kopplung für beide Apps (feature-pairing Sibling.kt).
     override val siblingApp get() = "agent"
     override val siblingStore get() = graph.store
@@ -66,6 +79,9 @@ class AgentGraph(private val app: Application, val store: PairingStore, val key:
     /** Ein Wunsch aus dem Teilen-Menü oder vom Widget, der auf die Oberfläche wartet. */
     var pendingAsk by mutableStateOf<AskRequest?>(null)
 
+    /** Ein Chat, den die App zeigen soll (aus dem Assistenten, einer Mitteilung); "" ein neuer. */
+    var pendingOpen by mutableStateOf<String?>(null)
+
     val sessions = SessionManager({ pairing }, key).also {
         it.onDeviceUnknown = { main.post { forget(byNas = true) } }
     }
@@ -83,6 +99,7 @@ class AgentGraph(private val app: Application, val store: PairingStore, val key:
         ChatCache(cacheFile),
         scope,
         online = ::online,
+        prefs = io.github.ra5on.titanos.agent.app.SharedDevicePrefs(app),
     )
 
     fun paired(p: Pairing) {
