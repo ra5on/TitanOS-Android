@@ -42,8 +42,9 @@ class PhotoBackup(
         val (gens, versions) = scanner.generations()
         val items = scanner.scan()
         val byId = items.associateBy { it.id }
-        val todo = selectForUpload(items.map { it.media }, store.snapshot().marks(), settings.target, kinds, settings.folders)
+        val todo = selectForUpload(items.map { it.media }, store.snapshot().handled(), settings, kinds)
             .mapNotNull { byId[it.id] }
+        val device = PhotosRuntime.deviceName()
         PhotosRuntime.report(Progress(running = true, total = todo.size))
         var done = 0
         val made = HashSet<String>()
@@ -53,13 +54,14 @@ class PhotoBackup(
                 // Eine Aufnahme, die sich nicht lesen lässt (gerade gelöscht), wird übersprungen;
                 // das ist kein Fehler des NAS.
                 val sums = batch.mapNotNull { item -> localSum(item)?.let { item to it } }.toMap()
+                // Je Ziel fragen (Videos können ein eigenes haben).
                 val answers = if (settings.skipDuplicates) {
-                    photos.check(
-                        PhotoCheckRequest(
-                            settings.root, settings.dir.trim('/'),
-                            sums.map { (it, sum) -> PhotoItem(sum.first, sum.second, pathInDir(it)) },
-                        ),
-                    ).items.associateBy { it.sha256 }
+                    sums.entries.groupBy { (it, _) -> it.media.kind.let { k -> settings.rootOf(k) to settings.dirOf(k) } }
+                        .flatMap { (target, list) ->
+                            photos.check(
+                                PhotoCheckRequest(target.first, target.second, list.map { (it, sum) -> PhotoItem(sum.first, sum.second, pathInDir(it, device)) }),
+                            ).items
+                        }.associateBy { it.sha256 }
                 } else {
                     emptyMap()
                 }
@@ -72,7 +74,7 @@ class PhotoBackup(
                     } else {
                         PhotosRuntime.report(Progress(running = true, done = done, total = todo.size, current = item.media.name))
                         try {
-                            upload(item, sha, size, made)
+                            upload(item, sha, size, made, device)
                         } catch (_: java.io.FileNotFoundException) {
                             // Am Handy gelöscht, während sie wartete: nichts zu sichern.
                         }
@@ -97,9 +99,9 @@ class PhotoBackup(
     }
 
     /** Ort relativ zum Ordner der Sicherung, z. B. `2026/11/IMG_1.jpg`. */
-    private fun pathInDir(item: MediaItem): String {
-        val sub = targetDir("", settings.yearMonth, item.media.taken)
-        return if (sub.isEmpty()) item.media.name else "$sub/${item.media.name}"
+    private fun pathInDir(item: MediaItem, device: String): String {
+        val (sub, name) = pathInTarget(settings, item.media, device)
+        return if (sub.isEmpty()) name else "$sub/$name"
     }
 
     private fun localSum(item: MediaItem): Pair<String, Long>? = try {
@@ -122,24 +124,42 @@ class PhotoBackup(
         val m = item.media
         store.update {
             it.copy(
-                saved = it.saved + (m.id to Saved(m.size, m.modified, sha, settings.target, path)),
+                saved = it.saved + (m.id to Saved(m.size, m.modified, sha, settings.targetOf(m.kind), path)),
                 uploads = it.uploads - m.id,
+                skipped = it.skipped - m.id,
                 lastSaved = System.currentTimeMillis(),
             )
         }
         PhotosRuntime.changed()
     }
 
-    private suspend fun upload(item: MediaItem, sha: String, size: Long, made: MutableSet<String>) {
-        val dir = targetDir(settings.dir, settings.yearMonth, item.media.taken)
+    /** Bei „Überspringen“: am NAS heißt schon eine andere Datei so; merken, nicht als gesichert. */
+    private fun skip(item: MediaItem, sha: String, path: String) {
+        val m = item.media
+        store.update { it.copy(skipped = it.skipped + (m.id to Saved(m.size, m.modified, sha, settings.targetOf(m.kind), path)), uploads = it.uploads - m.id) }
+    }
+
+    private suspend fun upload(item: MediaItem, sha: String, size: Long, made: MutableSet<String>, device: String) {
+        val kind = item.media.kind
+        val root = settings.rootOf(kind)
+        val (sub, name) = pathInTarget(settings, item.media, device)
+        val dir = listOf(settings.dirOf(kind), sub).filter { it.isNotEmpty() }.joinToString("/")
         for (p in parents(dir)) {
-            if (p !in made) {
-                photos.mkdir(settings.root, p)
-                made += p
+            if ("$root|$p" !in made) {
+                photos.mkdir(root, p)
+                made += "$root|$p"
             }
         }
-        val start = resume(item, dir, sha, size) ?: titan.uploadStart(settings.root, dir, item.media.name, size, conflict = "rename").also { s ->
-            store.update { it.copy(uploads = it.uploads + (item.id to Started(s.id, dir, item.media.name, size, sha))) }
+        val start = resume(item, dir, sha, size) ?: try {
+            titan.uploadStart(root, dir, name, size, conflict = settings.sameName.wire)
+        } catch (e: ApiException) {
+            if (e.status == 409 && e.code == "file_exists" && settings.sameName == SameName.Skip) {
+                skip(item, sha, "$dir/$name")
+                return
+            }
+            throw e
+        }.also { s ->
+            store.update { it.copy(uploads = it.uploads + (item.id to Started(s.id, dir, name, size, sha))) }
         }
         val sent = Uploader(titan).send(start, { scanner.open(item) })
         try {
@@ -170,7 +190,7 @@ class PhotoBackup(
         } catch (e: ApiException) {
             if (e.status != 404) throw e
             // Nach einem Neustart des NAS: in seinem Ordner wiederfinden.
-            photos.uploads(settings.root, dir).firstOrNull { it.id == started.id }
+            photos.uploads(settings.rootOf(item.media.kind), dir).firstOrNull { it.id == started.id }
                 ?: null.also { store.update { s -> s.copy(uploads = s.uploads - item.id) } }
         }
     }

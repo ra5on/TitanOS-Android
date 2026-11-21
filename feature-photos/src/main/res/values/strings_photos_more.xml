@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Foto-Sicherung: Ablage, Auswahl, Galerie (Deutsch). -->
+<resources>
+    <string name="gallery_all">Alle</string>
+    <string name="gallery_empty">Noch nichts gesichert</string>
+    <string name="gallery_empty_text">Gesicherte Fotos und Videos erscheinen hier, nach Monaten sortiert.</string>
+    <string name="gallery_failed">Der Ordner am NAS ließ sich nicht lesen.</string>
+    <string name="gallery_loading">Liest den Ordner am NAS …</string>
+    <string name="gallery_photo">Foto %1$s</string>
+    <string name="gallery_reload">Neu laden</string>
+    <string name="gallery_row_text">%1$s › %2$s, nach Monaten</string>
+    <string name="gallery_title">Auf dem NAS</string>
+    <string name="gallery_truncated">Sehr viele Ordner: nicht alles ist zu sehen.</string>
+    <string name="gallery_video">Video %1$s</string>
+    <string name="ps_applies_new">Ordner und Namen gelten für neue Sicherungen; schon Gesichertes bleibt, wo es ist, und wird nicht noch einmal hochgeladen.</string>
+    <string name="ps_example">Beispiel: %1$s</string>
+    <string name="ps_group_closed">zugeklappt</string>
+    <string name="ps_group_open">aufgeklappt</string>
+    <string name="ps_month">Monat im Namen</string>
+    <string name="ps_month_name">Nur der Name</string>
+    <string name="ps_month_number">Zahl</string>
+    <string name="ps_month_number_name">Zahl und Name</string>
+    <string name="ps_month_year_dash">Jahr-Monat</string>
+    <string name="ps_motion">Bewegtbilder (Live-Fotos)</string>
+    <string name="ps_motion_text">Fotos mit kurzem Video darin, ganz gesichert</string>
+    <string name="ps_name_pattern">Muster für den Namen</string>
+    <string name="ps_naming">Dateinamen</string>
+    <string name="ps_naming_custom">Eigenes Muster</string>
+    <string name="ps_naming_original">Wie am Handy</string>
+    <string name="ps_naming_skip_note">Achtung: Zwei Aufnahmen in derselben Sekunde bekommen denselben Namen; mit „Überspringen“ käme die zweite nicht auf das NAS.</string>
+    <string name="ps_naming_taken">Nach Aufnahmezeit</string>
+    <string name="ps_naming_taken_original">Aufnahmezeit und Originalname</string>
+    <string name="ps_nothing">Nichts</string>
+    <string name="ps_older">Auch ältere Aufnahmen</string>
+    <string name="ps_older_off">Nur Aufnahmen ab %1$s</string>
+    <string name="ps_older_on">Alle Aufnahmen, auch die von früher</string>
+    <string name="ps_pattern">Muster für die Ordner</string>
+    <string name="ps_pattern_help">Schrägstrich trennt Ordner. Platzhalter: {Jahr}, {Monat} (im gewählten Format), {MonatZahl}, {MonatName}, {Tag}, {Stunde}, {Minute}, {Sekunde}, {Album}, {Ordner}, {Name}, {Art}, {Gerät}.</string>
+    <string name="ps_pattern_invalid">Das Muster hat offene Klammern oder „..“.</string>
+    <string name="ps_raw">RAW-Fotos</string>
+    <string name="ps_raw_text">DNG, CR2, NEF, ARW und andere</string>
+    <string name="ps_same">Gleicher Name am NAS</string>
+    <string name="ps_same_rename">Beide behalten</string>
+    <string name="ps_same_rename_text">Die neue heißt „IMG_1 (2).jpg“</string>
+    <string name="ps_same_replace">Ersetzen</string>
+    <string name="ps_same_replace_text">Die Datei am NAS wird überschrieben</string>
+    <string name="ps_same_skip">Überspringen</string>
+    <string name="ps_same_skip_text">Die Aufnahme bleibt nur auf dem Handy</string>
+    <string name="ps_screenshots">Bildschirmfotos</string>
+    <string name="ps_screenshots_text">Ordner „Screenshots“ und Namen „Screenshot…“</string>
+    <string name="ps_structure">Ordnerstruktur</string>
+    <string name="ps_structure_album">Nach Album (Ordner am Handy)</string>
+    <string name="ps_structure_album_year">Album, dann Jahr</string>
+    <string name="ps_structure_album_year_month">Album, dann Jahr und Monat</string>
+    <string name="ps_structure_custom">Eigenes Muster</string>
+    <string name="ps_structure_flat">Alles in einen Ordner</string>
+    <string name="ps_structure_flat_example">keine Unterordner</string>
+    <string name="ps_structure_year">Nur Jahr</string>
+    <string name="ps_structure_year_album">Jahr, dann Album</string>
+    <string name="ps_structure_year_month">Jahr und Monat</string>
+    <string name="ps_structure_year_month_album">Jahr, Monat, dann Album</string>
+    <string name="ps_structure_year_month_day">Jahr, Monat und Tag</string>
+    <string name="ps_target_note">Unterordner und Dateinamen stellst du in den Einstellungen unter „Ordnerstruktur“ und „Dateinamen“ ein.</string>
+    <string name="ps_target_photos">Fotos (und Videos)</string>
+    <string name="ps_target_videos">Ziel für Videos</string>
+    <string name="ps_video_own">Videos in ein eigenes Ziel</string>
+    <string name="ps_video_own_text">Andere Freigabe oder anderer Ordner</string>
+    <string name="ps_what">Was gesichert wird</string>
+    <plurals name="gallery_count">
+        <item quantity="one">%1$d Aufnahme in %2$d Ordnern</item>
+        <item quantity="other">%1$d Aufnahmen in %2$d Ordnern</item>
+    </plurals>
+    <plurals name="ps_folders_chosen">
+        <item quantity="one">%d Ordner gewählt</item>
+        <item quantity="other">%d Ordner gewählt</item>
+    </plurals>
+</resources>

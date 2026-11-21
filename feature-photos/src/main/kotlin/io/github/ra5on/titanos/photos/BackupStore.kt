@@ -22,6 +22,8 @@ data class StateFile(
     val saved: Map<Long, Saved> = emptyMap(),
     val hashes: Map<Long, Hashed> = emptyMap(),
     val uploads: Map<Long, Started> = emptyMap(),
+    /** Übersprungen, weil am NAS schon eine andere Datei so heißt („Überspringen“); nie für „Speicher freigeben“. */
+    val skipped: Map<Long, Saved> = emptyMap(),
     val generations: Map<String, Long> = emptyMap(),
     val versions: Map<String, String> = emptyMap(),
     /** Zuletzt etwas gesichert, Millisekunden. */
@@ -93,3 +95,6 @@ class BackupStore(private val file: File) {
 
 /** Die Marken für die Regeln (Rules.kt). */
 fun StateFile.marks(): Map<Long, SavedMark> = saved.mapValues { (_, s) -> SavedMark(s.size, s.modified, s.sha256, s.target) }
+
+/** Für die Auswahl: gesichert oder bewusst übersprungen. */
+fun StateFile.handled(): Map<Long, SavedMark> = skipped.mapValues { (_, s) -> SavedMark(s.size, s.modified, s.sha256, s.target) } + marks()

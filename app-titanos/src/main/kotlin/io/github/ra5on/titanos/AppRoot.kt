@@ -315,7 +315,7 @@ private fun MainShell(graph: AppGraph) {
             }
         }
         Tab.Files -> io.github.ra5on.titanos.files.FilesTab(files, nav)
-        Tab.Photos -> PhotosTab(photos, nav)
+        Tab.Photos -> PhotosTab(photos, nav, files)
         Tab.Notifications -> NotifyTab(nav)
     }
 }

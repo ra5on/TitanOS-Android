@@ -74,20 +74,21 @@ class PhotosModel(
             items = scanned
             val state = store.snapshot()
             val marks = state.marks()
+            val handled = state.handled()
             val media = scanned.map { it.media }
-            val pending = Kind.entries.associateWith { selectForUpload(media, marks, s.target, setOf(it), s.folders).size }
+            val pending = Kind.entries.associateWith { selectForUpload(media, handled, s, setOf(it)).size }
             val device = withContext(Dispatchers.IO) { deviceState(app) }
             val waits = Kind.entries.associateWith { k ->
                 waitReason(pending.getValue(k), s.enabled, access != Access.None, s.hasTarget, s.whenOf(k), s.mobileData, device, state.problem)
             }
             val chosen = media.filter { s.folders?.contains(it.folder) ?: defaultFolder(it.folder) }
-            val tiles = chosen.sortedByDescending { it.taken }.take(TILES).map { m -> Tile(m.id, m.kind, isSaved(m, marks[m.id], s.target), m.taken) }
+            val tiles = chosen.sortedByDescending { it.taken }.take(TILES).map { m -> Tile(m.id, m.kind, isSaved(m, marks[m.id], s.targetOf(m.kind)), m.taken) }
             settings = s
             folders = scanner.folders(scanned)
             view = PhotosView(
                 settings = s,
                 access = access,
-                savedCount = state.saved.values.count { it.target == s.target },
+                savedCount = state.saved.values.count { it.target == s.target || it.target == s.targetOf(Kind.Video) },
                 lastSaved = state.lastSaved.takeIf { it > 0 }?.let(Instant::ofEpochMilli),
                 pending = pending,
                 waits = waits,
@@ -128,7 +129,7 @@ class PhotosModel(
     /** „Jetzt sichern“, solange die App sichtbar ist. */
     fun backupNow() {
         val s = settingsStore.load()
-        val bytes = selectForUpload(items.map { it.media }, store.snapshot().marks(), s.target, Kind.entries.toSet(), s.folders).sumOf { it.size }
+        val bytes = selectForUpload(items.map { it.media }, store.snapshot().handled(), s, Kind.entries.toSet()).sumOf { it.size }
         message = if (PhotoScheduler.backupNow(app, bytes)) R.string.photos_now_started else R.string.photos_now_refused
     }
 

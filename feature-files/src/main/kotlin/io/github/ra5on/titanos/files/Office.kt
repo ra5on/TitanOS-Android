@@ -206,7 +206,7 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
                         onDirty = { d -> main.post { dirty = d } },
                         onError = { kind, code -> main.post { notice = context.getString(R.string.office_error, kind, code) } },
                         onSaved = { path -> main.post { notice = texts.saved; current = path.substringAfterLast('/'); dirty = false; scope.launch { model.reload() } } },
-                        onPick = { accept, multiple -> main.post { pick.launch(acceptTypes(accept)) ; if (!multiple) Unit } },
+                        onPick = { accept, _ -> main.post { pick.launch(acceptTypes(accept)) } },
                         onKeep = { n, b64 ->
                             val ok = runCatching { keepOnPhone(context, n, Base64.decode(b64, Base64.DEFAULT)) }.isSuccess
                             main.post { notice = if (ok) texts.keptOnPhone else context.getString(R.string.office_error, "phone", "") }
@@ -317,7 +317,7 @@ private data class OfficeTexts(val certificate: String, val unreachable: String,
 /** Was die Rahmenseite beim Start bekommt (wie appSrc in protocol.ts). */
 internal fun officeConfig(app: WebApp, location: Location, name: String?, author: String, copyWord: String): String {
     val src = app.url!!.trimEnd('/') + "/?" + listOf("author" to author, "bridge" to app.bridge, "app" to app.id)
-        .joinToString("&") { (k, v) -> k + "=" + Uri.encode(v) }
+        .joinToString("&") { (k, v) -> k + "=" + java.net.URLEncoder.encode(v, "UTF-8").replace("+", "%20") }
     return buildJsonObject {
         put("src", src)
         put("root", location.root.id)

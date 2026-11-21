@@ -324,6 +324,8 @@ class FilesApi(private val nas: NasConnection) {
     suspend fun properties(root: String, path: String, checksum: Boolean = false): Properties =
         get("files/properties", listOfNotNull("root" to root, "path" to path, if (checksum) "checksum" to "sha256" else null))
 
+    suspend fun list(root: String, path: String): List<FileEntry> = get("files/list", listOf("root" to root, "path" to path))
+
     suspend fun photos(root: String, path: String): PhotoList = get("files/photos", listOf("root" to root, "path" to path))
 
     /** Vorschaubild (JPEG/PNG) in einer Kiste von höchstens [size] Pixeln; null bei 415 (keine Vorschau). */

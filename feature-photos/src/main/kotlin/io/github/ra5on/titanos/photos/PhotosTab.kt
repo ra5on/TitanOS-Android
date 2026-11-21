@@ -32,11 +32,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
-private enum class Route { Main, Settings, Target, Folders }
+private enum class Route { Main, Settings, Target, VideoTarget, Folders, Gallery }
 
 /** Die Seiten der Foto-Sicherung im Reiter „Fotos“ (Entwürfe 30–33). */
 @Composable
-fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit) {
+fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit, files: io.github.ra5on.titanos.files.FilesModel? = null) {
     val context = LocalContext.current
     var route by rememberSaveable { mutableStateOf(Route.Main) }
     var menu by remember { mutableStateOf(false) }
@@ -77,6 +77,7 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit) {
             onAllowAccess = allowAccess,
             thumb = { t, m -> MediaThumb(model, t, m) },
             bottomBar = bottomBar,
+            onGallery = { route = Route.Gallery },
         ) {
             if (menu) {
                 PhotosMenu(
@@ -84,6 +85,7 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit) {
                     onFree = { menu = false; model.prepareFree() },
                     onSettings = { menu = false; route = Route.Settings },
                     onDismiss = { menu = false },
+                    onGallery = if (model.settings.hasTarget) { { menu = false; route = Route.Gallery } } else null,
                 )
             }
             model.free?.let { state ->
@@ -103,11 +105,11 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit) {
                     model.update(next)
                     if (next.enabled && model.view.access == Access.None) ask.launch(MediaAccess.PERMISSIONS)
                 },
-                onTarget = { route = Route.Target },
+                onTarget = { k -> route = if (k == Kind.Video) Route.VideoTarget else Route.Target },
                 onFolders = { route = Route.Folders },
                 onWhen = { whenFor = it },
                 onBack = { route = Route.Main },
-                sample = targetDir("", true, Instant.now()),
+                device = PhotosRuntime.deviceName(),
             ) {
                 whenFor?.let { kind ->
                     WhenSheet(kind, model.settings.whenOf(kind), onPick = { w ->
@@ -119,7 +121,15 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit) {
         }
         Route.Target -> {
             BackHandler { route = Route.Settings }
-            TargetRoute(model) { route = Route.Settings }
+            TargetRoute(model, Kind.Photo) { route = Route.Settings }
+        }
+        Route.VideoTarget -> {
+            BackHandler { route = Route.Settings }
+            TargetRoute(model, Kind.Video) { route = Route.Settings }
+        }
+        Route.Gallery -> {
+            BackHandler { route = Route.Main }
+            GalleryRoute(model, files) { route = Route.Main }
         }
         Route.Folders -> {
             BackHandler { route = Route.Settings }
@@ -129,28 +139,34 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit) {
 }
 
 @Composable
-private fun TargetRoute(model: PhotosModel, done: () -> Unit) {
+private fun TargetRoute(model: PhotosModel, kind: Kind, done: () -> Unit) {
     val s = model.settings
-    var root by rememberSaveable { mutableStateOf(s.root) }
-    var rootName by rememberSaveable { mutableStateOf(s.rootName) }
-    var dir by rememberSaveable { mutableStateOf(s.dir.ifEmpty { PhotosRuntime.deviceName().replace('/', ' ').trim() }) }
-    var yearMonth by rememberSaveable { mutableStateOf(s.yearMonth) }
+    val video = kind == Kind.Video
+    var root by rememberSaveable { mutableStateOf(if (video) s.videoRoot.ifEmpty { s.root } else s.root) }
+    var rootName by rememberSaveable { mutableStateOf(if (video) s.videoRootName.ifEmpty { s.rootName } else s.rootName) }
+    val base = PhotosRuntime.deviceName().replace('/', ' ').trim()
+    var dir by rememberSaveable { mutableStateOf(if (video) s.videoDir.ifEmpty { s.dir.ifEmpty { base } + " Videos" } else s.dir.ifEmpty { base }) }
     var invalid by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { model.loadRoots() }
     TargetScreen(
-        model.roots, model.rootsFailed, root, dir, yearMonth, invalid,
+        model.roots, model.rootsFailed, root, dir, invalid,
         onRoot = { root = it.id; rootName = it.name },
         onDir = { dir = it; invalid = false },
-        onYearMonth = { yearMonth = it },
         onSave = {
             if (!validDir(dir)) {
                 invalid = true
             } else {
-                model.update(model.settings.copy(enabled = true, root = root, rootName = rootName, dir = dir.trim().trim('/'), yearMonth = yearMonth))
+                val clean = dir.trim().trim('/')
+                model.update(
+                    if (video) model.settings.copy(videoOwnTarget = true, videoRoot = root, videoRootName = rootName, videoDir = clean)
+                    else model.settings.copy(enabled = true, root = root, rootName = rootName, dir = clean),
+                )
                 done()
             }
         },
         onBack = done,
+        title = stringResource(if (video) R.string.ps_target_videos else R.string.photos_target_title),
+        note = stringResource(R.string.ps_target_note),
     )
 }
 
