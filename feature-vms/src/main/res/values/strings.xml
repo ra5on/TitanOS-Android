@@ -46,4 +46,8 @@
     <string name="vms_touch_zoom_hint">Zwei Finger spreizen zoomt; vergrößert verschieben zwei Finger das Bild.</string>
     <string name="vms_on_state">an</string>
     <string name="vms_time_invalid">Uhrzeit als hh:mm, etwa 07:30.</string>
+    <string name="vms_job_failed">Der Auftrag ist fehlgeschlagen:</string>
+    <string name="vms_job_review">Das Ergebnis braucht eine Prüfung:</string>
+    <string name="vms_pick_file">Datei wählen …</string>
+    <string name="vms_sha_invalid">64 Hexadezimalzeichen (0–9, a–f).</string>
 </resources>

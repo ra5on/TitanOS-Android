@@ -8,14 +8,8 @@ fun VmScreenTab(env: ComputeEnv, state: VmsState, vm: Vm, full: Boolean, onFull:
     io.github.ra5on.titanos.vms.screen.VmScreen(env, state.api, vm, full, onFull)
 
 
-@Composable
-fun MediaPage(api: VmApi) {}
 
-@Composable
-fun AdoptPage(api: VmApi, onAdopted: (String) -> Unit) {}
 
-@Composable
-fun VmSnapshots(api: VmApi, vm: Vm) {}
 
 @Composable
 fun LxcRoot(env: ComputeEnv, onBack: () -> Unit) {}

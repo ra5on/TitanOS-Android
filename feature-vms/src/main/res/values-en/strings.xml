@@ -46,4 +46,8 @@
     <string name="vms_touch_zoom_hint">Spread two fingers to zoom; when zoomed, two fingers move the picture.</string>
     <string name="vms_on_state">on</string>
     <string name="vms_time_invalid">Time as hh:mm, for example 07:30.</string>
+    <string name="vms_job_failed">The job failed:</string>
+    <string name="vms_job_review">The result needs a review:</string>
+    <string name="vms_pick_file">Choose file …</string>
+    <string name="vms_sha_invalid">64 hexadecimal characters (0–9, a–f).</string>
 </resources>
