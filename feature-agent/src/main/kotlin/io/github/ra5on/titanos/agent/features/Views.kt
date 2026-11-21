@@ -199,7 +199,7 @@ internal fun HandbookView(model: AgentModel) {
             }
         }
         val vols = h["volumes"].objs()
-        if (vols.isNotEmpty()) item { SGroup(tr.t("agent.f.protect.h.volume")) { for (v in vols) SRow(v.str("name"), desc = v.str("line")) } }
+        if (vols.isNotEmpty()) item { SGroup(tr.t("agent.f.protect.h.build")) { for (v in vols) SRow(tr.t("agent.f.protect.h.volume", "name" to v.str("name")), desc = v.str("line")) } }
         for (s in h.os("sections")) item {
             SRow(s.str("title"), desc = s.str("sub"), icon = "fileText") {
                 s.strs("steps").forEachIndexed { i, step -> Text("${i + 1}. $step", style = AgentText.md, color = c.text) }
@@ -226,19 +226,18 @@ internal fun EmergencyView(model: AgentModel) {
     var reason by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
     var printed by remember { mutableStateOf<Pair<String, String>?>(null) }
-    var confirm by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var confirm by remember { mutableStateOf<Pair<JsonObject, String>?>(null) }
     var reload by remember { mutableStateOf(0) }
     val admin = model.status?.admin == true
     Box {
         Loaded(model, if (admin) "agent/protect/emergency" else "agent/protect/me", reload) { v, re ->
             err?.let { item { Notice(it, tone = "error") } }
             if (admin) {
-                item { Text(tr.t("agent.f.protect.e.explain"), style = AgentText.sm, color = c.muted) }
                 item {
                     SGroup(tr.t("agent.f.protect.e.persons")) {
                         val persons = v.os("persons")
                         if (persons.isEmpty()) Text(tr.t("agent.f.protect.e.noPersons"), style = AgentText.md, color = c.muted)
-                        for (p in persons) SRow(p.str("account"), desc = tr.t("agent.f.protect.e.personSub", "days" to p.int("waitDays"), "shares" to p.strs("shares").joinToString(", ")), icon = "user", control = {
+                        for (p in persons) SRow(p.str("account"), desc = tr.t("agent.f.protect.e.personSub", "account" to p.str("account"), "days" to p.int("waitDays")) + p.strs("shares").takeIf { it.isNotEmpty() }?.joinToString(", ", prefix = " · ").orEmpty(), icon = "user", control = {
                             if (v.bool("code")) PillButton(if (p.bool("codeSet")) tr.t("agent.f.protect.e.newCode") else tr.t("agent.f.protect.e.printCode"), {
                                 act(model, scope, tr, { err = it }, re) { printed = p.str("account") to model.api.sendJson("POST", "agent/protect/emergency/code/${p.str("account")}").obj().str("code") }
                             }, small = true)
@@ -246,16 +245,17 @@ internal fun EmergencyView(model: AgentModel) {
                     }
                 }
                 item {
-                    SGroup(tr.t("agent.f.protect.e.openRequests")) {
-                        val reqs = v.os("requests")
-                        if (reqs.isEmpty()) Text(tr.t("agent.f.protect.e.without"), style = AgentText.md, color = c.muted)
-                        for (r in reqs) SRow(r.str("account"), desc = listOf(tr.t("agent.f.protect.e.state.${r.str("state")}"), r.str("reason"), dateTime(r.str("created")), r.str("due").takeIf { r.str("state") == "waiting" }?.let { tr.t("agent.f.protect.e.at", "time" to dateTime(it)) }.orEmpty()).filter { it.isNotEmpty() }.joinToString(" · "), icon = "key", control = {
+                    val reqs = v.os("requests")
+                    val waiting = reqs.count { it.str("state") == "waiting" }
+                    SGroup(if (waiting == 1) tr.t("agent.f.protect.e.openRequest") else tr.t("agent.f.protect.e.openRequests", "count" to waiting)) {
+                        if (reqs.isEmpty()) Text("–", style = AgentText.md, color = c.muted)
+                        for (r in reqs) SRow(r.str("account"), desc = listOf(tr.t("agent.f.protect.e.state.${r.str("state")}"), dateTime(r.str("created")), tr.t("agent.f.protect.e.reason", "reason" to r.str("reason").ifEmpty { "–" }), r.str("due").takeIf { r.str("state") == "waiting" }?.let { tr.t("agent.f.protect.e.without", "when" to dateTime(it)) + " " + r.strs("shares").joinToString(", ") }.orEmpty()).filter { it.isNotEmpty() }.joinToString(" · "), icon = "key", control = {
                             Buttons {
                                 if (r.str("state") == "waiting") {
-                                    PillButton(tr.t("agent.f.protect.e.grantNow"), { confirm = r.str("id") to "grant" }, kind = Btn.Primary, small = true)
-                                    PillButton(tr.t("agent.f.protect.e.decline"), { confirm = r.str("id") to "decline" }, small = true)
+                                    PillButton(tr.t("agent.f.protect.e.grantNow"), { confirm = r to "grant" }, kind = Btn.Primary, small = true)
+                                    PillButton(tr.t("agent.f.protect.e.decline"), { confirm = r to "decline" }, small = true)
                                 }
-                                if (r.str("state") == "granted") PillButton(tr.t("agent.f.protect.e.endNow"), { confirm = r.str("id") to "end" }, kind = Btn.Danger, small = true)
+                                if (r.str("state") == "granted") PillButton(tr.t("agent.f.protect.e.endNow"), { confirm = r to "end" }, kind = Btn.Danger, small = true)
                             }
                         })
                     }
@@ -269,7 +269,9 @@ internal fun EmergencyView(model: AgentModel) {
                         })
                         v.o("person").isEmpty() -> Text(tr.t("agent.f.protect.e.notRegistered"), style = AgentText.md, color = c.muted)
                         else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Field(reason, { reason = it }, multiline = true, label = tr.t("agent.f.protect.e.reasonLabel"), placeholder = tr.t("agent.f.protect.e.reason"))
+                            val person = v.o("person")
+                            Text(tr.t("agent.f.protect.e.explain", "days" to (person["waitDays"]?.let { person.int("waitDays") } ?: 3), "shares" to person.strs("shares").joinToString(", ")), style = AgentText.sm, color = c.muted)
+                            Field(reason, { reason = it }, multiline = true, label = tr.t("agent.f.protect.e.reasonLabel"), placeholder = tr.t("agent.f.protect.e.reasonLabel"))
                             if (v.bool("codes")) Field(code, { code = it }, label = tr.t("agent.f.protect.e.codeLabel"), placeholder = tr.t("agent.f.protect.e.codeLabel"))
                             PillButton(tr.t("agent.f.protect.e.ask"), { act(model, scope, tr, { err = it }, re) { model.api.sendJson("POST", "agent/protect/emergency/request", jsonOf("reason" to reason, "code" to code)) } }, kind = Btn.Primary, enabled = reason.isNotBlank())
                         }
@@ -288,11 +290,14 @@ internal fun EmergencyView(model: AgentModel) {
         }) { Text(pr?.second.orEmpty(), style = AgentText.lg.copy(fontFamily = FontFamily.Monospace, fontSize = 24.sp, fontWeight = FontWeight.SemiBold), color = c.text) }
         val cf = confirm
         AgentDialog(cf != null, cf?.let { tr.t(when (it.second) { "decline" -> "agent.f.protect.e.declineTitle"; "end" -> "agent.f.protect.e.endTitle"; else -> "agent.f.protect.e.grantNow" }) } ?: "", { confirm = null },
-            text = cf?.let { tr.t(when (it.second) { "decline" -> "agent.f.protect.e.declineConfirm"; "end" -> "agent.f.protect.e.endConfirm"; else -> "agent.f.protect.e.grantConfirm" }) }, actions = {
+            text = cf?.let { (req, action) ->
+                val shares = (if (action == "end" && req.strs("added").isNotEmpty()) req.strs("added") else req.strs("shares")).joinToString(", ")
+                tr.t(when (action) { "decline" -> "agent.f.protect.e.declineConfirm"; "end" -> "agent.f.protect.e.endConfirm"; else -> "agent.f.protect.e.grantConfirm" }, "name" to req.str("account"), "shares" to shares)
+            }, actions = {
                 PillButton(cf?.let { tr.t(when (it.second) { "decline" -> "agent.f.protect.e.decline"; "end" -> "agent.f.protect.e.endNow"; else -> "agent.f.protect.e.grantNow" }) } ?: "", {
                     val x = confirm ?: return@PillButton
                     confirm = null
-                    act(model, scope, tr, { err = it }, { reload++ }) { model.api.sendJson("POST", "agent/protect/emergency/${x.first}/${x.second}") }
+                    act(model, scope, tr, { err = it }, { reload++ }) { model.api.sendJson("POST", "agent/protect/emergency/${x.first.str("id")}/${x.second}") }
                 }, kind = if (cf?.second == "grant") Btn.Primary else Btn.Danger)
                 PillButton(tr.t("common.cancel"), { confirm = null })
             })
@@ -312,7 +317,7 @@ internal fun AdvisorView(model: AgentModel, onPlay: (String) -> Unit) {
         val saved = v.o("saved")
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(if (saved.isNotEmpty()) tk("lastRun", "when" to dateTime(saved.str("lastRun"))) else tk("empty"), style = AgentText.sm, color = c.muted)
+                Text(if (saved.isNotEmpty()) tk("lastRun", "time" to dateTime(saved.str("lastRun"))) else tk("empty"), style = AgentText.sm, color = c.muted)
                 PillButton(if (v.bool("running")) tk("running") else tk("run"), { act(model, scope, tr, { err = it }, reload) { model.api.sendJson("POST", "agent/advisor/run", JsonObject(emptyMap())) } }, enabled = !v.bool("running"), small = true)
             }
         }
@@ -326,7 +331,7 @@ internal fun AdvisorView(model: AgentModel, onPlay: (String) -> Unit) {
         val icon = mapOf("disk" to "💽", "memory" to "🧠", "volume" to "📦", "cpu" to "⚙️", "gpu" to "🎮", "temperature" to "🌡️")
         for (f in findings.filter { !(it.str("area") == "disk" && (it.str("level") == "ok" || it.str("level") == "fail")) }) item {
             val tone = when (f.str("level")) { "ok" -> "ok"; "fail" -> "error"; else -> "warn" }
-            SRow((icon[f.str("area")] ?: "") + " " + tk("area." + f.str("area"), "name" to f.str("subject")), desc = findingText(tr, f), control = { Tag(tk("lv." + f.str("level")), tone = tone) })
+            SRow((icon[f.str("area")] ?: "") + " " + tk("area." + f.str("area"), "name" to f.str("subject")), desc = findingText(tr, f), control = { Tag(tk("badge." + f.str("level")), tone = tone) })
         }
         item { Text(if (v.bool("web")) tk("footer") else tk("footerNoPrices"), style = AgentText.sm, color = c.muted) }
     }
@@ -392,7 +397,7 @@ internal fun BuddyView(model: AgentModel) {
                 SGroup(tr.or("agent.f.family.buddy.invite", "Code")) {
                     val chosen = shares ?: all.toSet()
                     val cd = v.o("code")
-                    if (cd.isNotEmpty()) Notice(cd.str("code").replace(Regex("(.{3})(?=.)"), "$1-") + " · " + dateTime(cd.str("expires")), tone = "ok")
+                    if (cd.isNotEmpty()) Notice(cd.str("code").let { k -> if ('-' in k) k else k.replace(Regex("(.{3})(?=.)"), "$1-") } + " · " + dateTime(cd.str("expires")), tone = "ok")
                     Field(quota, { quota = it.filter(Char::isDigit) }, label = "GB", placeholder = "GB", keyboard = KeyboardType.Number)
                     for (s in all) Check(s, s in chosen, { on -> shares = if (on) chosen + s else chosen - s })
                     Buttons {

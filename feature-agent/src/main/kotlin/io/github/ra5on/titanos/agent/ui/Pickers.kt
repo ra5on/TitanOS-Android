@@ -84,18 +84,30 @@ fun TimeField(value: String, onChange: (String) -> Unit, label: String, modifier
     PickerBox(shown, label, "clock", enabled, if (width != null) modifier.width(width) else modifier.fillMaxWidth()) { open = true }
     if (open) {
         val state = rememberTimePickerState(h, m, is24)
-        var typing by remember { mutableStateOf(false) }
+        // Bei großer Schrift überlappen die Zahlen der Uhr: dann gleich Eintippen (umschaltbar).
+        val big = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.4f
+        var typing by remember { mutableStateOf(big) }
+        val c = Titan.colors
+        // Farben der App (Akzent, Fläche) statt der lila Vorgaben von Material.
+        val colors = androidx.compose.material3.TimePickerDefaults.colors(
+            clockDialColor = c.chip, selectorColor = c.accent, containerColor = c.surface,
+            clockDialSelectedContentColor = c.onAccent, clockDialUnselectedContentColor = c.text,
+            periodSelectorSelectedContainerColor = c.accent.copy(alpha = 0.25f), periodSelectorUnselectedContentColor = c.muted, periodSelectorSelectedContentColor = c.text,
+            timeSelectorSelectedContainerColor = c.accent.copy(alpha = 0.25f), timeSelectorUnselectedContainerColor = c.chip,
+            timeSelectorSelectedContentColor = c.text, timeSelectorUnselectedContentColor = c.text,
+        )
         AlertDialog(
+            containerColor = c.surface, titleContentColor = c.text, textContentColor = c.text,
             onDismissRequest = { open = false },
-            confirmButton = { TextButton({ open = false; onChange("%02d:%02d".format(state.hour, state.minute)) }) { Text(tr.t("common.save")) } },
+            confirmButton = { TextButton({ open = false; onChange("%02d:%02d".format(state.hour, state.minute)) }) { Text(tr.t("common.save"), color = c.accent) } },
             dismissButton = {
                 Row {
-                    TextButton({ typing = !typing }) { Text(if (typing) (if (tr.de) "Uhr" else "Dial") else (if (tr.de) "Eintippen" else "Type")) }
-                    TextButton({ open = false }) { Text(tr.t("common.cancel")) }
+                    TextButton({ typing = !typing }) { Text(if (typing) (if (tr.de) "Uhr" else "Dial") else (if (tr.de) "Eintippen" else "Type"), color = c.accent) }
+                    TextButton({ open = false }) { Text(tr.t("common.cancel"), color = c.accent) }
                 }
             },
             title = { Text(label) },
-            text = { Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) { if (typing) TimeInput(state) else TimePicker(state) } },
+            text = { Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) { if (typing) TimeInput(state, colors = colors) else TimePicker(state, colors = colors) } },
         )
     }
 }
@@ -114,15 +126,23 @@ fun DateField(value: String, onChange: (String) -> Unit, label: String, modifier
             initialSelectedDateMillis = (date ?: LocalDate.now()).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
             initialDisplayMode = DisplayMode.Picker,
         )
+        val c = Titan.colors
+        val colors = DatePickerDefaults.colors(
+            containerColor = c.surface, titleContentColor = c.muted, headlineContentColor = c.text, weekdayContentColor = c.muted,
+            subheadContentColor = c.muted, navigationContentColor = c.text, yearContentColor = c.text, currentYearContentColor = c.accent,
+            selectedYearContainerColor = c.accent, selectedYearContentColor = c.onAccent, dayContentColor = c.text,
+            selectedDayContainerColor = c.accent, selectedDayContentColor = c.onAccent, todayContentColor = c.accent, todayDateBorderColor = c.accent,
+        )
         DatePickerDialog(
+            colors = colors,
             onDismissRequest = { open = false },
             confirmButton = {
                 TextButton({
                     open = false
                     state.selectedDateMillis?.let { onChange(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate().toString()) }
-                }) { Text(tr.t("common.save")) }
+                }) { Text(tr.t("common.save"), color = c.accent) }
             },
-            dismissButton = { TextButton({ open = false }) { Text(tr.t("common.cancel")) } },
-        ) { DatePicker(state, showModeToggle = true, title = { Text(label, modifier = Modifier.padding(start = 24.dp, top = 16.dp)) }, colors = DatePickerDefaults.colors()) }
+            dismissButton = { TextButton({ open = false }) { Text(tr.t("common.cancel"), color = c.accent) } },
+        ) { DatePicker(state, showModeToggle = true, title = { Text(label, modifier = Modifier.padding(start = 24.dp, top = 16.dp)) }, colors = colors) }
     }
 }

@@ -101,7 +101,8 @@ object AgentColors {
 }
 
 object AgentText {
-    val base = TitanType.body
+    /** Silbentrennung (Deutsch): bei großer Schrift bricht ein Wort mit Bindestrich statt mitten drin. */
+    val base = TitanType.body.copy(hyphens = androidx.compose.ui.text.style.Hyphens.Auto)
     /** --text-md (14 px). */
     val md = base.copy(fontSize = 14.sp, lineHeight = 19.sp)
     val sm = base.copy(fontSize = 12.sp, lineHeight = 16.8.sp)
@@ -300,7 +301,9 @@ fun <T> Segments(
             )
         }
     }
-    if (fill) {
+    // Bei großer Schrift brechen gleich breite Felder Wörter mitten durch: dann umbrechen statt teilen.
+    val big = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
+    if (fill && !big) {
         Row(modifier.fillMaxWidth().then(outer).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 4.dp)) {
             options.forEach { (k, l) -> item(Modifier.weight(1f), k, l) }
         }

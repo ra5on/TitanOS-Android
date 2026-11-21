@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -685,7 +686,7 @@ private fun BoxScope.Layers(
     ) {
         val info = model.currentInfo
         val shape = RoundedCornerShape(14.dp)
-        Column(Modifier.width(240.dp).clip(shape).background(c.surface).border(1.dp, c.border, shape).padding(vertical = 6.dp)) {
+        Column(Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max).then(Modifier.widthIn(min = 240.dp, max = 340.dp)).clip(shape).background(c.surface).border(1.dp, c.border, shape).padding(vertical = 6.dp)) {
             if (info != null) ChatActionItems(model, nav, info, export, close, find = true)
         }
     }

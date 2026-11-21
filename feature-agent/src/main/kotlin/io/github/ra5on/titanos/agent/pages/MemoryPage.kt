@@ -189,14 +189,14 @@ fun MemoryPage(model: AgentModel, query: String, draft: String, onOpenChat: (Str
                             val chatTitle = model.chats.firstOrNull { it.id == m.str("chat") && it.author == null }?.title.orEmpty()
                             if (chatTitle.isNotEmpty()) {
                                 Text(tr.t("agent.mem.fromChat", "title" to chatTitle), style = AgentText.sm, color = AgentColors.link, modifier = Modifier.clickable { onOpenChat(m.str("chat")) })
-                                Text("·", style = AgentText.sm, color = c.muted)
                             }
                             val parts = listOfNotNull(
                                 dateOnly(m.str("at")),
                                 topicOf(m).takeIf { order != "topic" && it != none },
                                 if (m.str("used").isNotEmpty()) tr.t("agent.mem.used", "when" to ago(tr, m.str("used"))) else tr.t("agent.mem.unused"),
                             )
-                            Text(parts.joinToString(" · "), style = AgentText.sm, color = c.muted)
+                            // Der Punkt gehört zum Text danach: allein auf einer Zeile stünde er sonst verloren da.
+                            Text((if (chatTitle.isNotEmpty()) "· " else "") + parts.joinToString(" · "), style = AgentText.sm, color = c.muted)
                             if (m.bool("pinned")) Tag(tr.t("agent.mem.pinned"), tone = "info")
                             if (fading(m)) Tag(tr.t("agent.mem.fading"), tone = "warn")
                             if (m.bool("untrusted")) Tag(tr.t("agent.untrusted"), tone = "warn")

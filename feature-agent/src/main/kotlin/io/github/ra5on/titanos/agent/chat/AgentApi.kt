@@ -34,8 +34,11 @@ import java.util.concurrent.atomic.AtomicReference
  */
 class AgentApi(private val nas: NasConnection, private val stream: NasConnection = nas) {
 
+    /** Ein „?…“ im Pfad wird zur Abfrage (sonst kodiert OkHttp es als %3F in den Pfad). */
     private fun url(base: HttpUrl, path: String, query: List<Pair<String, String>> = emptyList()): HttpUrl =
-        base.newBuilder().encodedPath("/api/v1/$path").apply { query.forEach { (k, v) -> addQueryParameter(k, v) } }.build()
+        base.newBuilder().encodedPath("/api/v1/" + path.substringBefore('?'))
+            .apply { if ('?' in path) encodedQuery(path.substringAfter('?')) }
+            .apply { query.forEach { (k, v) -> addQueryParameter(k, v) } }.build()
 
     private suspend inline fun <reified T> get(path: String, query: List<Pair<String, String>> = emptyList()): T =
         withContext(Dispatchers.IO) { nas.execute { Request.Builder().url(url(it, path, query)).build() }.decode<T>() }

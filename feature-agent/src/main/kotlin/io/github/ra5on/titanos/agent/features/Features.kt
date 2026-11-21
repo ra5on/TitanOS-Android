@@ -238,7 +238,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                         Text(tr.t("agent.f.protect.s.excludeHint"), style = AgentText.sm, color = c.muted)
                         PillButton(tr.t("common.save"), { nas(n.sub("guard", "exclude", ex.lines().map { it.trim() }.filter { it.isNotEmpty() })) }, small = true)
                     }
-                    PillButton(tr.t("agent.f.protect.g.openAlerts"), { onFeature("guard") }, small = true)
+                    PillButton(tr.t("agent.f.menu.guard"), { onFeature("guard") }, small = true)
                 }
                 val h = n.o("handbook")
                 SRow(tr.t("agent.f.protect.handbook"), desc = tr.t("agent.f.protect.h.rowSub"), icon = "fileText", control = { nasSwitch("handbook") }) {
@@ -271,7 +271,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                     PillButton(tr.t("agent.f.menu.handbook"), { onFeature("handbook") }, small = true)
                 }
                 val em = n.o("emergency")
-                SRow(tr.t("agent.f.protect.emergency"), desc = tr.t("agent.f.protect.e.rowSub"), icon = "key", control = { nasSwitch("emergency") }) {
+                SRow(tr.t("agent.f.protect.emergency"), desc = tr.t("agent.f.protect.e.rowSub", "days" to (n.o("emergency")["persons"].objs().firstOrNull()?.let { it["waitDays"]?.toString()?.toIntOrNull() } ?: 3)), icon = "key", control = { nasSwitch("emergency") }) {
                     if (admin) {
                         val persons = em["persons"].objs()
                         persons.forEachIndexed { i, pr ->
@@ -518,7 +518,7 @@ private fun GuardView(model: AgentModel) {
     Box {
         Loaded(model, "agent/protect/guard", reload) { g, _ ->
             err?.let { item { Notice(it, tone = "error") } }
-            item { Notice(if (g.bool("watching")) tr.t("agent.f.protect.g.watching") else tr.t("agent.f.protect.g.notWatching"), tone = if (g.bool("watching")) "ok" else "warn") }
+            item { Notice(if (g.bool("watching")) tr.t("agent.f.protect.g.watching") else tr.t("agent.f.protect.g.notWatching", "error" to g.str("error")), tone = if (g.bool("watching")) "ok" else "warn") }
             if (g.str("error").isNotEmpty()) item { Notice(g.str("error"), tone = "error") }
             val alerts = g.os("alerts")
             if (alerts.isEmpty()) item { Text(tr.t("agent.f.protect.g.calm"), style = AgentText.md, color = c.muted) }
@@ -527,7 +527,7 @@ private fun GuardView(model: AgentModel) {
                 SRow(
                     tr.t("agent.f.protect.g.what.${a.str("reason")}") + " · " + a.str("share"),
                     desc = listOf(tr.t("agent.f.protect.g.state.${a.str("state")}"), dateTime(a.str("last")), listOf(client.str("user"), client.str("ip"), client.str("machine")).filter { it.isNotEmpty() }.joinToString(" · ")).filter { it.isNotEmpty() }.joinToString(" · "),
-                    icon = "shield", badge = { if (a.bool("locked")) Tag(tr.t("agent.f.protect.g.locked"), tone = "warn") },
+                    icon = "shield", badge = { if (a.bool("locked")) Tag(tr.t("agent.f.protect.g.locked", "share" to a.str("share")), tone = "warn") },
                 ) {
                     for (f in a.os("files").take(20)) Text(f.str("was") + " → " + f.str("now"), style = AgentText.sm, color = c.text)
                     if (a.int("more") > 0) Text(tr.t("agent.f.protect.g.more", "count" to a.int("more")), style = AgentText.sm, color = c.muted)

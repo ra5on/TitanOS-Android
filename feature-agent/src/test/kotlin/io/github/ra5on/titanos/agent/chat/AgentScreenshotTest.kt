@@ -4,7 +4,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.ra5on.titanos.agent.app.AgentNav
 import io.github.ra5on.titanos.agent.app.AgentShell
@@ -89,6 +94,12 @@ class AgentScreenshotTest {
 
     @Volatile private var busyChat = false
 
+    /** Funktionen aus den Web-Tests scripts/test-ui-agent54-*.mjs (tools/fixtures54.mjs). */
+    private val fx: kotlinx.serialization.json.JsonObject = kotlinx.serialization.json.Json.parseToJsonElement(
+        javaClass.classLoader!!.getResource("agent54-fixtures.json")!!.readText(),
+    ) as kotlinx.serialization.json.JsonObject
+    private fun fx(key: String) = fx[key].toString()
+
     private val dispatcher = object : Dispatcher() {
         override fun dispatch(request: RecordedRequest): MockResponse {
             val path = request.url.encodedPath.removePrefix("/api/v1")
@@ -96,6 +107,14 @@ class AgentScreenshotTest {
             fun ok(body: String) = MockResponse.Builder().code(200).addHeader("Content-Type", "application/json").body(body).build()
             return when {
                 path == "/agent/status" -> ok(status)
+                path == "/storage" -> ok(fx("storage"))
+                path == "/agent/whatif" && get -> ok("""{"enabled":true,"levels":["raid1","raid5","raid6","raid10","raid1c3"]}""")
+                path == "/agent/whatif" -> ok(if (request.body?.utf8()?.contains("\"full\"") == true) fx("full") else fx("disk"))
+                path == "/agent/advisor" -> ok(fx("advisor"))
+                path == "/agent/paper" -> ok(fx("paper"))
+                path == "/agent/buddy" -> ok(fx("buddy"))
+                path == "/agent/protect/handbook" -> ok(fx("handbook"))
+                path == "/agent/protect/emergency" -> ok(fx("emergency"))
                 path == "/agent/chats" && get -> ok(chats)
                 path == "/agent/chats/c9aaaaaaaaaa0001" -> ok(if (busyChat) chatJson("c9aaaaaaaaaa0001", "running", entries.substringBefore(",\n        {\"id\":\"t1\"")) else chatJson("c9aaaaaaaaaa0001", "idle", entries))
                 path.endsWith("/events") -> if (busyChat) MockResponse.Builder().addHeader("Content-Type", "text/event-stream")
@@ -114,7 +133,7 @@ class AgentScreenshotTest {
                 path == "/agent/map" -> ok("""{"built":false,"map":{}}""")
                 path == "/agent/prefs" -> ok("{}")
                 path == "/agent/settings" -> ok("""{"locations":[],"ollama":""}""")
-                path == "/agent/features/me" -> ok("""{"mine":{"docs":{},"paper":{}},"nas":{"docs":true,"deadlines":true,"paper":true,"guard":true,"handbook":true,"emergency":false,"whatIf":true,"advisor":true,"buddy":false,"catalog":true}}""")
+                path == "/agent/features/me" -> ok("""{"mine":{"docs":{},"paper":{}},"nas":{"docs":true,"deadlines":true,"paper":true,"guard":true,"handbook":true,"emergency":true,"whatIf":true,"advisor":true,"buddy":true,"catalog":true}}""")
                 path == "/agent/features" -> ok("""{"docs":{"enabled":true,"deadlines":true,"paper":true,"at":"03:00"},"guard":{"enabled":true,"mode":"report"},"handbook":{"enabled":true},"emergency":{},"whatIf":{"enabled":true},"advisor":{"enabled":true},"buddy":{},"catalog":{"enabled":true},"rev":"1"}""")
                 path == "/agent/protect/me" -> ok("""{"guard":true,"handbook":true,"emergency":false}""")
                 path == "/agent/speech" -> ok("""{"say":false,"hear":false}""")
@@ -186,9 +205,38 @@ class AgentScreenshotTest {
 
     private var prefix = ""
 
+    /** Texte, deren Zeilen nicht in ihren Platz passen (abgeschnitten, ausgeblendet), je Bildschirm. */
+    private val cut = mutableListOf<String>()
+
     private fun capture(name: String, dark: Boolean) {
         settle(600)
         compose.onRoot().captureRoboImage("build/outputs/roborazzi/$prefix$name-${if (dark) "dunkel" else "hell"}.png")
+        overflow(name)
+    }
+
+    /** Mit Dialogen (Wähler): alle Fenster. */
+    private fun captureScreen(name: String, dark: Boolean) {
+        settle(600)
+        com.github.takahirom.roborazzi.captureScreenRoboImage("build/outputs/roborazzi/$prefix$name-${if (dark) "dunkel" else "hell"}.png")
+    }
+
+    private fun overflow(name: String) {
+        for (node in compose.onAllNodes(androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.isRoot()), useUnmergedTree = true).fetchSemanticsNodes()) {
+            val get = node.config.getOrElseNullable(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { null } ?: continue
+            val out = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            get.action?.invoke(out)
+            val r = out.firstOrNull() ?: continue
+            // Nicht gefüllte Platzhalter oder rohe Schlüssel.
+            val text = r.layoutInput.text.text
+            if (Regex("\\{[a-zA-Z]+\\}").containsMatchIn(text) || Regex("^(agent|agentpim|common)\\.[a-zA-Z.]+$").matches(text.trim()) || Regex("\\bagent\\.f\\.[a-z]").containsMatchIn(text))
+                cut += "$prefix$name: Platzhalter „${text.take(80)}“"
+            // Breiter oder höher als der Platz, oder mit „…“ gekürzt: abgeschnitten.
+            val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
+            val bottom = if (r.lineCount > 0) r.getLineBottom(r.lineCount - 1) else 0f
+            val dots = (0 until r.lineCount).any { r.isLineEllipsized(it) }
+            if (widest > node.size.width + 2 || bottom > node.size.height + 2 || dots)
+                cut += "$prefix$name: „${r.layoutInput.text.text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
+        }
     }
 
     private fun screens(dark: Boolean) {
@@ -219,9 +267,31 @@ class AgentScreenshotTest {
         nav.layer = Layer.ProjectEdit(model.projects.first()); capture("63-projekt-bearbeiten", dark)
         nav.layer = Layer.Notes; capture("60-notizen", dark)
         nav.layer = Layer.Archive; capture("64-archiv", dark)
-        nav.layer = Layer.Feature("guard"); capture("65-funktion-waechter", dark)
+        for ((id, n) in listOf("guard" to "waechter", "whatif" to "was-waere-wenn", "paper" to "papierkram", "handbook" to "handbuch", "emergency" to "notfall", "advisor" to "berater", "buddy" to "partner")) {
+            nav.layer = Layer.Feature(id); capture("65-funktion-$n", dark)
+        }
+        nav.layer = null
+        nav.show(AgentView.Planned); settle()
+        // Die Liste von Geplant (nicht die Seitenleiste in Split und Breit).
+        val list = compose.onAllNodes(androidx.compose.ui.test.hasScrollAction() and androidx.compose.ui.test.hasAnyDescendant(androidx.compose.ui.test.hasText("Morgenbericht"))).onFirst()
+        list.performScrollToNode(androidx.compose.ui.test.hasText("Auftrag oder Erinnerung", substring = true)); settle(300)
+        compose.onAllNodesWithText("Auftrag oder Erinnerung", substring = true).onFirst().performClick(); settle(300)
+        list.performScrollToNode(androidx.compose.ui.test.hasContentDescription("Uhrzeit"))
+        capture("42-geplant-formular", dark)
+        compose.onAllNodesWithContentDescription("Uhrzeit").onFirst().performClick()
+        captureScreen("43-zeitwaehler", dark)
+        val toggle = if (compose.onAllNodesWithText("Eintippen").fetchSemanticsNodes().isNotEmpty()) "Eintippen" else "Uhr"
+        compose.onAllNodesWithText(toggle).onFirst().performClick()
+        captureScreen("44-zeit-umschalten", dark)
+        compose.onAllNodesWithText("Abbrechen").onFirst().performClick(); settle(300)
+        nav.show(AgentView.Chat)
         nav.layer = Layer.Talk; capture("80-sprechmodus", dark)
         nav.layer = null
+    }
+
+    @After
+    fun noCut() {
+        check(cut.isEmpty()) { "Abgeschnittene Texte:\n" + cut.distinct().joinToString("\n") }
     }
 
     @Test fun dunkel() = screens(true)
@@ -247,19 +317,13 @@ class AgentScreenshotTest {
     @Config(qualifiers = "de-w1280dp-h800dp-xhdpi")
     fun breit() { prefix = "breit-"; screens(true) }
 
-    /** Schrift 200 %: nichts wird abgeschnitten, alles bricht um. */
+    /** Schrift 200 % (Android): nichts wird abgeschnitten, alles bricht um – jeder Bildschirm. */
     @Test
     @Config(qualifiers = "de-w390dp-h844dp-xxhdpi")
     fun schrift200() {
-        Appearance.fontScale = 2f
-        try {
-            show(false)
-            capture("95-schrift200-start", false)
-            model.open("c9aaaaaaaaaa0001"); until { model.current?.entries?.size == 5 }
-            capture("96-schrift200-chat", false)
-            nav.show(AgentView.Settings); capture("97-schrift200-einstellungen", false)
-        } finally {
-            Appearance.fontScale = 1f
-        }
+        // Wie „Schriftgröße“ 200 % in den Bedienungshilfen von Android: jeder Bildschirm.
+        org.robolectric.RuntimeEnvironment.setFontScale(2f)
+        prefix = "schrift200-"
+        screens(false)
     }
 }

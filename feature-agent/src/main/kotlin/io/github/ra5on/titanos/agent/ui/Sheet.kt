@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -173,7 +174,7 @@ fun SheetItem(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         when {
-            emoji != null -> Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) { Text(emoji, style = AgentText.lg) }
+            emoji != null -> Box(Modifier.defaultMinSize(20.dp, 20.dp), contentAlignment = Alignment.Center) { Text(emoji, style = AgentText.lg) }
             icon != null -> WIcon(icon, 18.dp, if (danger) c.dangerInk else c.muted)
         }
         Column(Modifier.weight(1f)) {

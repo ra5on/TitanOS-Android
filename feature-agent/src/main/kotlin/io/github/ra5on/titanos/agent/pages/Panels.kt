@@ -465,7 +465,7 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false
                                 WIcon(icon, 16.dp, c.muted)
                                 Text(label, style = AgentText.md, color = c.text, modifier = Modifier.weight(1f))
                                 Text("$count", style = AgentText.sm, color = c.muted)
-                                if (menu) SmallIcon("more", tr.t("agent.notes.folderMenu")) { menuFor = "folder:$key" } else Box(Modifier.width(8.dp))
+                                if (menu) SmallIcon("more", tr.t("agent.notes.folderMenu", "name" to key.substringAfterLast('/'))) { menuFor = "folder:$key" } else Box(Modifier.width(8.dp))
                             }
                         }
                         frow("", tr.t("agent.notes.all"), "fileText", notes.size)
@@ -481,7 +481,7 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false
                             Text(n.str("title"), style = AgentText.md.copy(fontWeight = FontWeight.SemiBold), color = c.text)
                             Text(listOf(dateTime(n.str("modified")), n.str("preview")).filter { it.isNotEmpty() }.joinToString(" · "), style = AgentText.sm, color = c.muted)
                         }
-                        SmallIcon("more", tr.t("agent.notes.noteMenu")) { menuFor = n.str("path") }
+                        SmallIcon("more", tr.t("agent.notes.noteMenu", "name" to n.str("title"))) { menuFor = n.str("path") }
                     }
                 }
             }
@@ -490,7 +490,7 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false
     // Menü einer Notiz oder eines Ordners, dazu die Dialoge.
     Box(Modifier.fillMaxSize()) {
         val target = menuFor
-        AgentSheet(target != null, { menuFor = null }, tr.t("agent.notes.noteMenu")) {
+        AgentSheet(target != null, { menuFor = null }, (target ?: "").let { tg -> if (tg.startsWith("folder:")) tr.t("agent.notes.folderMenu", "name" to tg.removePrefix("folder:").substringAfterLast('/')) else tr.t("agent.notes.noteMenu", "name" to (notes.firstOrNull { it.str("path") == tg }?.str("title") ?: tg)) }) {
             val t = target ?: return@AgentSheet
             if (t.startsWith("folder:")) {
                 val f = t.removePrefix("folder:")
@@ -532,7 +532,10 @@ fun NotesPanel(model: AgentModel, onClose: () -> Unit, startNew: Boolean = false
             }
         }
         AgentDialog(d is NoteDialog.Delete, if ((d as? NoteDialog.Delete)?.isFolder == true) tr.t("agent.notes.deleteFolderTitle") else tr.t("agent.notes.deleteTitle"), { dialog = null },
-            text = if ((d as? NoteDialog.Delete)?.isFolder == true) tr.t("agent.notes.deleteFolderText") else tr.t("agent.notes.deleteText"), actions = {
+            text = (d as? NoteDialog.Delete)?.let { x ->
+                if (x.isFolder) tr.t("agent.notes.deleteFolderText", "name" to x.path.substringAfterLast('/'), "count" to notes.count { it.str("path").startsWith(x.path + "/") })
+                else tr.t("agent.notes.deleteText", "name" to (notes.firstOrNull { it.str("path") == x.path }?.str("title") ?: x.path))
+            }, actions = {
                 PillButton(tr.t("common.delete"), {
                     val x = d as? NoteDialog.Delete ?: return@PillButton
                     run { model.api.sendJson("DELETE", "agent/notes", query = listOf("path" to x.path)); if (open?.path?.let { it == x.path || it.startsWith(x.path + "/") } == true) open = null; if (folder == x.path) folder = "" }
@@ -579,7 +582,7 @@ fun NasPicker(model: AgentModel, onClose: () -> Unit, onPick: (List<String>) -> 
             }
         } else {
             Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Field(query, { query = it }, Modifier.weight(1f), placeholder = tr.t("agent.nasSearch"), leading = "search", onDone = {
+                Field(query, { query = it }, Modifier.weight(1f), placeholder = tr.t("agent.nasSearch", "name" to (dir.substringAfterLast('/').ifEmpty { r.str("name") })), leading = "search", onDone = {
                     scope.launch {
                         try { rows = model.api.sendJson("POST", "files/search", jsonOf("root" to r.str("id"), "path" to dir, "query" to query.trim())).obj().os("entries"); found = true }
                         catch (e: CancellationException) { throw e } catch (e: Exception) { error = problemText(tr, problemOf(e)) }
