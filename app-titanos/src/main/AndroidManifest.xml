@@ -53,12 +53,31 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
+        <!-- mailto: aus anderen Apps öffnet Verfassen in Mail (feature-mail, eigenes Fenster). -->
+        <activity
+            android:name="io.github.ra5on.titanos.mail.MailWindowActivity"
+            android:exported="true"
+            tools:node="merge"
+            tools:replace="android:exported">
+            <intent-filter>
+                <action android:name="android.intent.action.SENDTO" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="mailto" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="mailto" />
+            </intent-filter>
+        </activity>
         <!-- WorkManager mit eigener Konfiguration (TitanApp.workManagerConfiguration). -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
-            tools:node="merge">
+            tools:node="merge"
+            tools:replace="android:exported">
             <meta-data
                 android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup"

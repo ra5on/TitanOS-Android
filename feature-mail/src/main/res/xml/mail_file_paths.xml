@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nach außen gehen nur Anhänge, die man öffnet oder teilt (Cache, wird beim Öffnen von Mail geleert). -->
+<paths>
+    <cache-path name="mail" path="mail/" />
+</paths>

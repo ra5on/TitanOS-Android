@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Einfarbig für die Designfarben-Symbole von Android 13+: Android färbt es selbst. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:scaleX="2" android:scaleY="2" android:translateX="26" android:translateY="26">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="2" android:strokeLineJoin="round"
+            android:pathData="M14 2 25 8.5v11L14 26 3 19.5v-11Z" />
+        <path android:fillColor="#FFFFFF" android:pathData="M8.6 9.3h10.8v2.3H8.6zM12.85 12.6h2.3v7.4h-2.3z" />
+    </group>
+</vector>

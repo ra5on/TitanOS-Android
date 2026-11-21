@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="io.github.ra5on.titanos"
+    android:icon="@mipmap/pim_account"
+    android:smallIcon="@mipmap/pim_account"
+    android:label="@string/pim_account_label" />
