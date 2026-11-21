@@ -71,7 +71,22 @@ import kotlinx.coroutines.launch
 fun VmsRoot(env: ComputeEnv, onBack: () -> Unit) {
     val api = remember(env.access) { VmApi(env.access) }
     val state = remember(api) { VmsState(api) }
-    var section by rememberSaveable { mutableStateOf("machines") }
+    VmsProgram(env, state, onBack)
+}
+
+/** Daten, die die Abschnitte schon haben (Bildtests); sonst lesen sie selbst. */
+class VmsPreload(
+    val media: MediaPreload? = null,
+    val adopt: List<AdoptCandidate>? = null,
+    val form: FormPreload? = null,
+    val screen: io.github.ra5on.titanos.vms.screen.ScreenSession? = null,
+)
+
+/** Das Programm VMs mit seinem Zustand; [VmsRoot] legt ihn an. */
+@Composable
+internal fun VmsProgram(env: ComputeEnv, state: VmsState, onBack: () -> Unit, initialSection: String = "machines", preload: VmsPreload? = null) {
+    val api = state.api
+    var section by rememberSaveable { mutableStateOf(initialSection) }
     var editing by remember { mutableStateOf<Vm?>(null) }
     var fullScreen by remember { mutableStateOf(false) }
     val sections = listOf(
@@ -91,7 +106,7 @@ fun VmsRoot(env: ComputeEnv, onBack: () -> Unit) {
     if (fullScreen && current != null && current.running) {
         BackHandler { fullScreen = false }
         ProgramShell(current.label, "vm", "violet", emptyList(), "", {}, { fullScreen = false }) {
-            VmScreenTab(env, state, current, full = true, onFull = { fullScreen = false })
+            VmScreenTab(env, state, current, full = true, onFull = { fullScreen = false }, preset = preload?.screen)
         }
         return
     }
@@ -134,7 +149,7 @@ fun VmsRoot(env: ComputeEnv, onBack: () -> Unit) {
             when {
                 editVm != null -> {
                     BackHandler { editing = null }
-                    VmForm(env, api, existing = editVm, onDone = { name ->
+                    VmForm(env, api, existing = editVm, preload = preload?.form, onDone = { name ->
                         editing = null
                         scope.launch {
                             state.load()
@@ -142,22 +157,22 @@ fun VmsRoot(env: ComputeEnv, onBack: () -> Unit) {
                         }
                     }, onCancel = { editing = null })
                 }
-                section == "new" -> VmForm(env, api, existing = null, onDone = { name ->
+                section == "new" -> VmForm(env, api, existing = null, preload = preload?.form, onDone = { name ->
                     section = "machines"
                     scope.launch {
                         state.load()
                         state.vms.firstOrNull { it.name == name }?.let { state.choose(it) }
                     }
                 }, onCancel = { section = "machines" }, onStartFailed = { name, e -> state.failures[name] = VmFailure(e, "start") })
-                section == "media" -> MediaPage(api)
-                section == "adopt" -> AdoptPage(api, onAdopted = { name ->
+                section == "media" -> MediaPage(api, preload?.media)
+                section == "adopt" -> AdoptPage(api, initial = preload?.adopt, onAdopted = { name ->
                     section = "machines"
                     scope.launch {
                         state.load()
                         state.vms.firstOrNull { it.name == name }?.let { state.choose(it) }
                     }
                 })
-                else -> Machines(env, state, onNew = { section = "new" }, onAdopt = { section = "adopt" }, onMedia = { section = "media" }, onEdit = { editing = it }, onFull = { fullScreen = true })
+                else -> Machines(env, state, preload?.screen, onNew = { section = "new" }, onAdopt = { section = "adopt" }, onMedia = { section = "media" }, onEdit = { editing = it }, onFull = { fullScreen = true })
             }
         }
     }
@@ -168,6 +183,7 @@ fun VmsRoot(env: ComputeEnv, onBack: () -> Unit) {
 private fun Machines(
     env: ComputeEnv,
     state: VmsState,
+    screen: io.github.ra5on.titanos.vms.screen.ScreenSession?,
     onNew: () -> Unit,
     onAdopt: () -> Unit,
     onMedia: () -> Unit,
@@ -205,7 +221,7 @@ private fun Machines(
                 },
                 detail = {
                     val vm = state.current
-                    if (vm != null) VmDetail(env, state, vm, actions, onFull)
+                    if (vm != null) VmDetail(env, state, vm, actions, onFull, screen)
                 },
             )
         }
@@ -293,7 +309,7 @@ fun VmRow(vm: Vm, selected: Boolean, onOpen: () -> Unit, onMenu: () -> Unit) {
 /** Kopf, Hinweise, Reiter und Inhalt der gewählten VM (+page.svelte rechts). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun VmDetail(env: ComputeEnv, state: VmsState, vm: Vm, actions: VmActions, onFull: () -> Unit) {
+fun VmDetail(env: ComputeEnv, state: VmsState, vm: Vm, actions: VmActions, onFull: () -> Unit, screen: io.github.ra5on.titanos.vms.screen.ScreenSession? = null) {
     val tab = state.tab
     Column(Modifier.fillMaxSize()) {
         if (tab == VmTab.Screen && vm.running) {
@@ -303,7 +319,7 @@ fun VmDetail(env: ComputeEnv, state: VmsState, vm: Vm, actions: VmActions, onFul
                 VmNotices(state, vm, actions)
                 VmTabs(state)
             }
-            Box(Modifier.weight(1f).fillMaxWidth()) { VmScreenTab(env, state, vm, full = false, onFull = onFull) }
+            Box(Modifier.weight(1f).fillMaxWidth()) { VmScreenTab(env, state, vm, full = false, onFull = onFull, preset = screen) }
         } else {
             ScrollPage {
                 VmHeader(state, vm, actions)
@@ -311,7 +327,7 @@ fun VmDetail(env: ComputeEnv, state: VmsState, vm: Vm, actions: VmActions, onFul
                 VmTabs(state)
                 when (tab) {
                     VmTab.Overview, VmTab.Hardware, VmTab.Schedule -> VmOverview(state, vm, tab, actions)
-                    VmTab.Snapshots -> VmSnapshots(state.api, vm)
+                    VmTab.Snapshots -> VmSnapshots(state.api, vm, state.snapshots[vm.name]) { state.snapshots[vm.name] = it }
                     VmTab.Screen -> {
                         NoticeBox(NoticeLevel.Info, t("vms.off", "name" to vm.label)) {
                             Tool(t("vms.startVm"), TitanIcons.play, { actions.act(vm, "start") }, enabled = !state.isBusy(vm) && state.canStart(vm), primary = true)

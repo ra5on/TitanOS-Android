@@ -168,7 +168,7 @@ fun accelerate(delta: Float, dtMs: Long): Float {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun VmScreen(env: ComputeEnv, api: VmApi, vm: Vm, full: Boolean, onFull: () -> Unit) {
+fun VmScreen(env: ComputeEnv, api: VmApi, vm: Vm, full: Boolean, onFull: () -> Unit, preset: ScreenSession? = null) {
     val context = LocalContext.current
     val view = LocalView.current
     val density = LocalDensity.current
@@ -176,9 +176,9 @@ fun VmScreen(env: ComputeEnv, api: VmApi, vm: Vm, full: Boolean, onFull: () -> U
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboardManager.current
     val prefs = remember { ScreenPrefs(context) }
-    val session = remember(vm.name) { ScreenSession(api, vm.name) }
+    val session = remember(vm.name) { preset?.takeIf { it.vm == vm.name } ?: ScreenSession(api, vm.name) }
     var attempt by remember(vm.name) { mutableStateOf(0) }
-    LaunchedEffect(session, attempt) { session.connect() }
+    LaunchedEffect(session, attempt) { if (session !== preset || attempt > 0) session.connect() }
     DisposableEffect(session) { onDispose { session.close() } }
 
     var mode by remember { mutableStateOf(prefs.mode) }

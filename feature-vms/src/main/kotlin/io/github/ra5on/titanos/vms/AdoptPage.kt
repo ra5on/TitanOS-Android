@@ -37,13 +37,13 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AdoptPage(api: VmApi, onAdopted: (String) -> Unit) {
+fun AdoptPage(api: VmApi, onAdopted: (String) -> Unit, initial: List<AdoptCandidate>? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var candidates by remember { mutableStateOf<List<AdoptCandidate>?>(null) }
+    var candidates by remember { mutableStateOf(initial) }
     var loading by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf<String?>(null) }
-    var chosen by remember { mutableStateOf("") }
+    var chosen by remember { mutableStateOf(initial?.firstOrNull { it.missing.isEmpty() }?.key.orEmpty()) }
     var newName by remember { mutableStateOf("") }
     var takenNow by remember { mutableStateOf(setOf<String>()) }
     var busy by remember { mutableStateOf(false) }
@@ -74,7 +74,7 @@ fun AdoptPage(api: VmApi, onAdopted: (String) -> Unit) {
             loading = false
         }
     }
-    LaunchedEffect(Unit) { load() }
+    LaunchedEffect(Unit) { if (initial == null) load() }
     val changeText = @Composable { code: String -> tOr("vms.adopt.change.$code", code) }
 
     ScrollPage {

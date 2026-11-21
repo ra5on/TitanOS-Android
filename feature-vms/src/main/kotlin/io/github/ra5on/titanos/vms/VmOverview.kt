@@ -44,8 +44,8 @@ fun VmOverview(state: VmsState, vm: Vm, part: VmTab, actions: VmActions) {
     val api = state.api
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
-    var addresses by remember(vm.name) { mutableStateOf<Addresses?>(null) }
-    var snapshots by remember(vm.name) { mutableStateOf<SnapshotStatus?>(null) }
+    val addresses = state.addresses[vm.name]
+    val snapshots = state.snapshots[vm.name]
     var hardware by remember(vm.name) { mutableStateOf<HardwareList?>(null) }
     var mediumBusy by remember { mutableStateOf(false) }
     var ejectError by remember { mutableStateOf<String?>(null) }
@@ -54,7 +54,7 @@ fun VmOverview(state: VmsState, vm: Vm, part: VmTab, actions: VmActions) {
 
     if (vm.running) {
         Poll(30_000, vm.name) {
-            addresses = try {
+            state.addresses[vm.name] = try {
                 api.addresses(vm.name)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
@@ -63,7 +63,7 @@ fun VmOverview(state: VmsState, vm: Vm, part: VmTab, actions: VmActions) {
             }
         }
     }
-    Poll(30_000, vm.name) { runCatching { snapshots = api.snapshots(vm.name) } }
+    Poll(30_000, vm.name) { runCatching { state.snapshots[vm.name] = api.snapshots(vm.name) } }
     val devices = vm.pci.orEmpty() + vm.usb.orEmpty()
     LaunchedEffect(vm.name, devices.isNotEmpty()) {
         if (devices.isNotEmpty() && hardware == null) runCatching { hardware = api.hardware().hardware }

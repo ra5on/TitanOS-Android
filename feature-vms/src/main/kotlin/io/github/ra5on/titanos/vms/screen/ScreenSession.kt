@@ -104,6 +104,15 @@ class ScreenSession(private val api: VmApi, val vm: String) : RfbListener {
         })
     }
 
+    /** Zeigt ein Bild ohne Verbindung (Bildtests). */
+    internal fun preview(image: Bitmap) {
+        bitmap = image
+        width = image.width
+        height = image.height
+        phase = ScreenPhase.Connected
+        frame++
+    }
+
     fun close() {
         client?.close()
         socket?.close()

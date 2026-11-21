@@ -49,6 +49,9 @@ import kotlinx.coroutines.withContext
 import java.io.InputStream
 import java.security.MessageDigest
 
+/** Schon gelesene Daten der Seite Medien (Bildtests). */
+class MediaPreload(val jobs: List<MediaJob>, val media: List<MediaEntry>, val vms: List<Vm>, val volumes: List<Volume>)
+
 /** Eine gewählte Datei auf dem Gerät. */
 data class PickedFile(val uri: Uri, val name: String, val size: Long)
 
@@ -140,19 +143,19 @@ class MediaUploader(private val api: VmApi, private val context: Context) {
 /** Abschnitt Medien (routes/vms/media): Importe per Adresse oder Hochladen, vorhandene Medien. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun MediaPage(api: VmApi) {
+fun MediaPage(api: VmApi, preload: MediaPreload? = null) {
     val ui = LocalComputeUi.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val uploader = remember { MediaUploader(api, context) }
-    var jobs by remember { mutableStateOf<List<MediaJob>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
+    var jobs by remember { mutableStateOf(preload?.jobs.orEmpty()) }
+    var loading by remember { mutableStateOf(preload == null) }
     var loadError by remember { mutableStateOf<String?>(null) }
     var chunk by remember { mutableStateOf(8L shl 20) }
-    var media by remember { mutableStateOf<List<MediaEntry>?>(null) }
+    var media by remember { mutableStateOf(preload?.media) }
     var mediaError by remember { mutableStateOf<String?>(null) }
-    var vms by remember { mutableStateOf<List<Vm>>(emptyList()) }
-    var volumes by remember { mutableStateOf<List<Volume>>(emptyList()) }
+    var vms by remember { mutableStateOf(preload?.vms.orEmpty()) }
+    var volumes by remember { mutableStateOf(preload?.volumes.orEmpty()) }
     var adding by remember { mutableStateOf(false) }
     val controlling = remember { mutableStateListOf<String>() }
     var reselectFor by remember { mutableStateOf<MediaJob?>(null) }

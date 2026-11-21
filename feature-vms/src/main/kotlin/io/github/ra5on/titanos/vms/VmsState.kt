@@ -44,6 +44,10 @@ class VmsState(val api: VmApi) {
     var allNotices by mutableStateOf(false)
     val history = mutableStateMapOf<String, List<Double>>()
 
+    /** Zuletzt gelesene Adressen und Snapshots je VM: kein Flackern beim Wechsel der Reiter. */
+    val addresses = mutableStateMapOf<String, Addresses>()
+    val snapshots = mutableStateMapOf<String, SnapshotStatus>()
+
     private val loading = Mutex()
 
     val vms: List<Vm> get() = status?.vms.orEmpty()

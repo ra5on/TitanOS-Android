@@ -66,6 +66,9 @@ import kotlinx.coroutines.launch
 
 private val TEMPLATES = listOf("linux", "windows", "other")
 
+/** Schon gelesene Daten des Formulars (Bildtests). */
+class FormPreload(val status: VmStatus, val host: VmHost, val hardware: Hardware, val shares: List<Share>, val media: List<MediaEntry>, val volumes: List<Volume>)
+
 /** Werte des Formulars einer VM (VmForm.svelte), als Zustand für die Abschnitte. */
 @Stable
 class VmFormState(val existing: Vm?) {
@@ -115,17 +118,18 @@ fun VmForm(
     onDone: (String) -> Unit,
     onCancel: () -> Unit,
     onStartFailed: (String, Throwable) -> Unit = { _, _ -> },
+    preload: FormPreload? = null,
 ) {
     val ui = LocalComputeUi.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val f = remember(existing?.name) { VmFormState(existing) }
-    var status by remember { mutableStateOf<VmStatus?>(null) }
-    var host by remember { mutableStateOf(VmHost()) }
-    var hardware by remember { mutableStateOf<Hardware?>(null) }
-    var shares by remember { mutableStateOf<List<Share>>(emptyList()) }
-    var media by remember { mutableStateOf<List<MediaEntry>>(emptyList()) }
-    var volumes by remember { mutableStateOf<List<Volume>?>(null) }
+    var status by remember { mutableStateOf(preload?.status) }
+    var host by remember { mutableStateOf(preload?.host ?: VmHost()) }
+    var hardware by remember { mutableStateOf(preload?.hardware) }
+    var shares by remember { mutableStateOf(preload?.shares.orEmpty()) }
+    var media by remember { mutableStateOf(preload?.media.orEmpty()) }
+    var volumes by remember { mutableStateOf(preload?.volumes) }
     val partErrors = remember { mutableStateMapOf<String, String>() }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<Pair<String, String>?>(null) }

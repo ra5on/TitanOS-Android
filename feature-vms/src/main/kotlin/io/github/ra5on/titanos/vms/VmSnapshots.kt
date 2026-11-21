@@ -42,11 +42,11 @@ private val SNAP_DAYS = listOf("sun", "mon", "tue", "wed", "thu", "fri", "sat")
 /** Reiter Snapshots einer VM (Snapshots.svelte): Liste, Zeitplan, anlegen, wiederherstellen, löschen. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun VmSnapshots(api: VmApi, vm: Vm) {
+fun VmSnapshots(api: VmApi, vm: Vm, initial: SnapshotStatus? = null, onLoaded: (SnapshotStatus) -> Unit = {}) {
     val ui = LocalComputeUi.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var status by remember(vm.name) { mutableStateOf<SnapshotStatus?>(null) }
+    var status by remember(vm.name) { mutableStateOf(initial) }
     var loadError by remember(vm.name) { mutableStateOf<String?>(null) }
     var error by remember(vm.name) { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -54,7 +54,7 @@ fun VmSnapshots(api: VmApi, vm: Vm) {
 
     suspend fun load() {
         try {
-            status = api.snapshots(vm.name)
+            status = api.snapshots(vm.name).also(onLoaded)
             loadError = null
         } catch (e: CancellationException) {
             throw e

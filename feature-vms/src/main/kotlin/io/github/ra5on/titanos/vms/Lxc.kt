@@ -117,6 +117,14 @@ fun lxcProblem(context: android.content.Context, e: Throwable): String =
 fun LxcRoot(env: ComputeEnv, onBack: () -> Unit) {
     val api = remember(env.access) { VmApi(env.access) }
     val state = remember(api) { LxcState(api) }
+    LxcProgram(env, state, onBack)
+}
+
+/** Das Programm LXC mit seinem Zustand; [LxcRoot] legt ihn an. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun LxcProgram(env: ComputeEnv, state: LxcState, onBack: () -> Unit) {
+    val api = state.api
     var form by remember { mutableStateOf<LxcContainer?>(null) }
     var creating by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
