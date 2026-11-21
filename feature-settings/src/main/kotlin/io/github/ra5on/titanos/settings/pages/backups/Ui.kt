@@ -87,9 +87,11 @@ internal fun BoxScope.BkDialog(
 ) {
     BackHandler { if (!locked) onDismiss() }
     val c = Titan.colors
+    val closeLabel = t("common.close")
     Box(
         Modifier.matchParentSize().background(Color.Black.copy(alpha = .5f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { if (!locked) onDismiss() },
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { if (!locked) onDismiss() }
+            .semantics { contentDescription = closeLabel },
     )
     val shape = RoundedCornerShape(22.dp)
     Column(
