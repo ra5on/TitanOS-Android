@@ -37,6 +37,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -152,7 +160,23 @@ fun ViewerScreen(
         if (black) ctl?.isAppearanceLightStatusBars = false
         onDispose { if (before != null) ctl.isAppearanceLightStatusBars = before }
     }
-    Box(Modifier.fillMaxSize().background(if (darkKind(kind)) Color.Black else c.bg)) {
+    // Tastatur: Pfeile blättern, Escape schließt (ab Split nur, wenn die Vorschau den Fokus hat).
+    val keys = rememberCoroutineScope()
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) { if (!embedded) runCatching { focus.requestFocus() } }
+    Box(
+        Modifier.fillMaxSize().background(if (darkKind(kind)) Color.Black else c.bg)
+            .focusRequester(focus).focusable()
+            .onPreviewKeyEvent { ev ->
+                if (ev.type != androidx.compose.ui.input.key.KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (ev.key) {
+                    Key.DirectionRight, Key.PageDown -> { keys.launch { pager.animateScrollToPage((pager.currentPage + 1).coerceAtMost(files.lastIndex)) }; true }
+                    Key.DirectionLeft, Key.PageUp -> { keys.launch { pager.animateScrollToPage((pager.currentPage - 1).coerceAtLeast(0)) }; true }
+                    Key.Escape -> { onBack(); true }
+                    else -> false
+                }
+            },
+    ) {
         HorizontalPager(pager, Modifier.fillMaxSize(), userScrollEnabled = !zoomed, beyondViewportPageCount = 1, key = { files[it].name }) { page ->
             val e = files[page]
             val active = page == pager.currentPage
@@ -290,6 +314,8 @@ private fun MediaPage(api: FilesApi, location: Location, e: FileEntry, active: B
     var cast by remember { mutableStateOf(false) }
     val c = Titan.colors
     val context = LocalContext.current
+    // Verlässt man die Seite, endet auch die Freigabe für Fernseher/Lautsprecher.
+    DisposableEffect(e.name) { onDispose { MediaRelay.stop() } }
     if (pip) {
         // Bild im Bild: nur das Video.
         if (!audio) NasPlayer(api, location.root.id, location.full(e.name), active = true, onError = { error = it }, modifier = Modifier.fillMaxSize(), controls = false)

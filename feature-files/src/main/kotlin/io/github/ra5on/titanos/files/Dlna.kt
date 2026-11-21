@@ -133,14 +133,26 @@ object MediaRelay {
     private val shares = java.util.concurrent.ConcurrentHashMap<String, Share>()
     private var server: ServerSocket? = null
     private val random = SecureRandom()
+    @Volatile private var lastUse = 0L
+
+    /** Ohne Anfrage so lange, dann schließt der Weiterreicher von selbst. */
+    private const val IDLE_MS = 2 * 60 * 60 * 1000L
 
     @Synchronized
     fun share(root: String, path: String, mime: String, size: Long): String? {
         val host = Dlna.localAddress() ?: return null
-        val s = server ?: ServerSocket(0, 8).also { srv ->
+        // Nur an der Adresse im Heimnetz, nicht an allen Schnittstellen (mobile Daten).
+        val s = server ?: ServerSocket(0, 8, InetAddress.getByName(host)).also { srv ->
             server = srv
             thread(name = "titanos-relay", isDaemon = true) { accept(srv) }
+            thread(name = "titanos-relay-idle", isDaemon = true) {
+                while (!srv.isClosed) {
+                    Thread.sleep(60_000)
+                    if (System.currentTimeMillis() - lastUse > IDLE_MS) stop()
+                }
+            }
         }
+        lastUse = System.currentTimeMillis()
         val token = ByteArray(18).also(random::nextBytes).joinToString("") { "%02x".format(it) }
         shares.clear()
         shares[token] = Share(root, path, mime, size)
@@ -171,6 +183,7 @@ object MediaRelay {
         val out = c.getOutputStream()
         val token = target.trim('/').substringBefore('/')
         val share = shares[token]
+        lastUse = System.currentTimeMillis()
         if (share == null || (method != "GET" && method != "HEAD")) return status(out, 404, "Not Found")
         val range = headers.firstOrNull { it.startsWith("Range:", ignoreCase = true) }?.substringAfter(':')?.trim()
         val from = range?.removePrefix("bytes=")?.substringBefore('-')?.toLongOrNull() ?: 0L

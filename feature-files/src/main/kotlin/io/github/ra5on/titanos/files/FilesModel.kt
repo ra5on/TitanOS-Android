@@ -512,8 +512,39 @@ class FilesModel(
         watchJobs(started = true)
     }
 
-    /** Mehrere Dateien in Downloads speichern. */
-    fun saveManyToDownloads(location: Location, entries: List<FileEntry>) = entries.filter { !it.dir }.forEach { saveToDownloads(location, it) }
+    /**
+     * In Downloads speichern wie im Web: eine Datei als sie selbst, Ordner und
+     * mehrere Einträge zusammen als ZIP (`files/zip`).
+     */
+    fun saveManyToDownloads(location: Location, entries: List<FileEntry>) {
+        val single = entries.singleOrNull()
+        if (single != null && !single.dir) return saveToDownloads(location, single)
+        if (entries.isEmpty()) return
+        val base = single?.name ?: location.segments.lastOrNull() ?: location.root.name
+        val name = cleanZipName(base)
+        val t = transfers.add(Transfer(0, name, Direction.Download, location.place, location.root.id, location.path, total = entries.sumOf { it.size }))
+        run(t) {
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Downloads.DISPLAY_NAME, name)
+                put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/zip")
+                put(android.provider.MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val resolver = context.contentResolver
+            val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: throw IOException("no Downloads")
+            try {
+                resolver.openOutputStream(uri)!!.use { out -> files!!.zipTo(location.root.id, entries.map { location.full(it.name) }, name, out) { progress(t.id, it, -1) } }
+                resolver.update(uri, android.content.ContentValues().apply { put(android.provider.MediaStore.Downloads.IS_PENDING, 0) }, null, null)
+            } catch (e: Exception) {
+                resolver.delete(uri, null, null)
+                throw e
+            }
+        }
+    }
+
+    private fun cleanZipName(base: String): String {
+        val n = base.replace(Regex("[/\\\u0000\r\n]"), "_").take(190).ifBlank { "TitanOS" }
+        return "$n.zip"
+    }
 
     /** Führt eine Aktion aus und hält den Fehler fest; true bei Erfolg. */
     private suspend fun act(block: suspend () -> Unit): Boolean = try {

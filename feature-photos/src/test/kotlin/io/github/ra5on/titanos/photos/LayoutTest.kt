@@ -100,7 +100,9 @@ class LayoutTest {
         assertEquals("share/Fotos/Handy", s.targetOf(Kind.Photo))
         assertEquals("share/Media/Videos", s.targetOf(Kind.Video))
         assertTrue(s.hasTarget)
-        assertFalse(s.copy(videoRoot = "").hasTarget)
+        // Noch kein Video-Ziel gewählt: Videos gehen ins Ziel der Fotos, die Sicherung läuft weiter.
+        assertTrue(s.copy(videoRoot = "").hasTarget)
+        assertEquals("share/Fotos/Handy", s.copy(videoRoot = "").targetOf(Kind.Video))
         // Ohne eigenes Ziel gilt für Videos das der Fotos, wie vor dem Update.
         assertEquals(s.target, s.copy(videoOwnTarget = false).targetOf(Kind.Video))
     }

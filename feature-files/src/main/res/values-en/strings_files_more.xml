@@ -38,6 +38,7 @@
     <string name="clip_drop">Clear clipboard</string>
     <string name="clip_from">from %1$s</string>
     <string name="clip_paste">Paste here</string>
+    <string name="download_zip_text">As a ZIP file</string>
     <string name="dupes_group">%1$d files · %2$s each</string>
     <string name="dupes_running">The NAS is comparing the files …</string>
     <string name="dupes_text">Find identical files in this folder</string>

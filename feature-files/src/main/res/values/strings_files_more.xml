@@ -38,6 +38,7 @@
     <string name="clip_drop">Zwischenablage leeren</string>
     <string name="clip_from">aus %1$s</string>
     <string name="clip_paste">Hier einfügen</string>
+    <string name="download_zip_text">Als ZIP-Datei</string>
     <string name="dupes_group">%1$d Dateien · je %2$s</string>
     <string name="dupes_running">Das NAS vergleicht die Dateien …</string>
     <string name="dupes_text">Gleiche Dateien in diesem Ordner finden</string>

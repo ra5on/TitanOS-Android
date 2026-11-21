@@ -39,7 +39,8 @@ data class PhotoSettings(
 
     private val videoSeparate: Boolean get() = videoOwnTarget && videoRoot.isNotEmpty() && videoDir.isNotEmpty()
 
-    val hasTarget: Boolean get() = root.isNotEmpty() && dir.isNotEmpty() && (!videoOwnTarget || videoSeparate)
+    /** Ohne gewähltes Video-Ziel gehen Videos weiter ins Ziel der Fotos; die Sicherung hält nicht an. */
+    val hasTarget: Boolean get() = root.isNotEmpty() && dir.isNotEmpty()
 
     /** Kennung des Ziels; was für ein anderes Ziel gesichert wurde, gilt hier nicht. Format wie bisher. */
     val target: String get() = "$root/${dir.trim('/')}"

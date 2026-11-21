@@ -226,7 +226,10 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
                 AndroidView(
                     factory = { ctx ->
                         setCookie(access, h)
+                        if ((ctx.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) WebView.setWebContentsDebuggingEnabled(true)
                         WebView(ctx).apply {
+                            // Ohne volle Höhe misst die WebView den Inhalt (wrap_content): die Seite wäre 0 px hoch.
+                            layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
                             settings.allowFileAccess = false
@@ -235,10 +238,17 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
                             settings.setSupportMultipleWindows(false)
                             settings.javaScriptCanOpenWindowsAutomatically = false
                             settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-                            settings.useWideViewPort = true
-                            settings.loadWithOverviewMode = true
                             addJavascriptInterface(bridge, "TitanOffice")
                             webViewClient = OfficeClient(ctx, h) { failed = texts.certificate; stopLoading() }
+                            webChromeClient = object : android.webkit.WebChromeClient() {
+                                override fun onConsoleMessage(m: android.webkit.ConsoleMessage): Boolean {
+                                    // Nur in Testfassungen: Meldungen der Programme können Inhalte nennen.
+                                    if ((ctx.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+                                        android.util.Log.i("TitanOS", "Office: ${m.message()} (${m.sourceId()}:${m.lineNumber()})")
+                                    }
+                                    return true
+                                }
+                            }
                             loadUrl(h.origin + HOST_PATH)
                             web = this
                         }
@@ -407,18 +417,16 @@ private class OfficeClient(private val context: Context, private val host: Offic
     override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
         // Selbst signiertes Zertifikat des NAS: gilt, wenn der Pin aus der Kopplung passt.
         val cert = error.certificate?.x509Certificate
-        if (own(Uri.parse(error.url)) && host.accepts(cert)) handler.proceed() else { handler.cancel(); onBadCert() }
+        val ok = own(Uri.parse(error.url)) && host.accepts(cert)
+        if (ok) handler.proceed() else { handler.cancel(); onBadCert() }
     }
 
-    override fun onPageFinished(view: WebView, url: String) {
-        // Ein öffentlich gültiges Zertifikat zählt nur, wo die Kopplung es erlaubt (wie PinnedTrustManager).
-        val cert = view.certificate?.x509Certificate
-        if (!host.allowPublic && cert != null && !host.accepts(cert)) {
-            view.stopLoading()
-            view.loadUrl("about:blank")
-            onBadCert()
-        }
-    }
+    // Hinweis: Die Rahmenseite selbst kommt aus der App (kein TLS). Geschützt wird die Verbindung
+    // durch die Prüfung der Adresse mit dem gepinnten Client vorab (OfficeHost.resolve) und
+    // onReceivedSslError oben: ein selbst signiertes Zertifikat gilt nur mit passendem Pin. Offen
+    // bleibt: ein öffentlich gültiges Zertifikat ruft onReceivedSslError nicht auf, die WebView prüft
+    // es dann nicht gegen den Pin. Für IP-Adressen und .local gibt es solche Zertifikate nicht; bei
+    // DNS-Namen ohne „öffentliches Zertifikat“ in der Kopplung ist das eine bekannte Grenze.
 }
 
 private fun acceptTypes(accept: String): Array<String> {

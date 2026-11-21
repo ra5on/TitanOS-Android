@@ -41,6 +41,9 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.draganddrop.dragAndDropSource
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -296,10 +299,26 @@ private fun Modifier.entryClicks(e: FileEntry, selecting: Boolean, on: FolderCal
         )
 
 /** Ziehen (langes Drücken und Bewegen) und, für Ordner, Ablegen darauf. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Modifier.entryDrag(e: FileEntry, on: FolderCallbacks, onHot: (Boolean) -> Unit): Modifier {
+private fun Modifier.entryDrag(e: FileEntry, on: FolderCallbacks, selected: Boolean, onHot: (Boolean) -> Unit): Modifier {
     var m = this
-    on.drag?.let { d -> m = m.dragAndDropSource { _ -> d(e) } }
+    // Ziehen: mit der Maus sofort, am Touchscreen markierter Einträge (langes Drücken markiert, dann ziehen).
+    val now by androidx.compose.runtime.rememberUpdatedState(selected)
+    on.drag?.let { d ->
+        @Suppress("DEPRECATION")
+        val block: suspend androidx.compose.foundation.draganddrop.DragAndDropSourceScope.() -> Unit = {
+            val scope = this
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                if (down.type == androidx.compose.ui.input.pointer.PointerType.Mouse || now) {
+                    val slop = awaitTouchSlopOrCancellation(down.id) { change: androidx.compose.ui.input.pointer.PointerInputChange, _: androidx.compose.ui.geometry.Offset -> change.consume() }
+                    if (slop != null) d(e)?.let { scope.startTransfer(it) }
+                }
+            }
+        }
+        m = m.dragAndDropSource(drawDragDecoration = {}, block = block)
+    }
     val drop = on.drop
     if (e.dir && drop != null) {
         val target = remember(e, drop) {
@@ -357,7 +376,7 @@ private fun EntryListRow(
             .background(rowTint(selected, cursor, hot, hovered))
             .then(if (cursor) Modifier.border(2.dp, c.accent, RoundedCornerShape(10.dp)) else Modifier)
             .hoverable(hover)
-            .entryDrag(e, on) { hot = it }
+            .entryDrag(e, on, selected) { hot = it }
             .semantics { this.selected = selected },
     ) {
         if (!first) Divider()
@@ -393,7 +412,7 @@ private fun EntryTile(api: FilesApi?, location: Location, e: FileEntry, selected
         Modifier.fillMaxWidth().clip(shape).background(rowTint(selected, cursor, hot, hovered))
             .border(if (cursor) 2.dp else 1.dp, if (selected || cursor) c.accent else c.border, shape)
             .hoverable(hover)
-            .entryDrag(e, on) { hot = it }
+            .entryDrag(e, on, selected) { hot = it }
             .entryClicks(e, selecting, on).semantics { this.selected = selected }.padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -705,10 +724,11 @@ fun BoxScope.EntrySheet(
             officeName?.let { row(stringResource(R.string.view_open_in, it), TitanIcons.edit, action = onOffice) }
             onEdit?.let { row(stringResource(R.string.view_edit), TitanIcons.edit, action = it) }
             onOpenWith?.let { row(stringResource(R.string.view_open_with), TitanIcons.box, stringResource(R.string.view_open_with_text), action = it) }
-            if (files.isNotEmpty()) {
-                row(stringResource(R.string.files_share), TitanIcons.share, stringResource(R.string.files_share_text), action = onShare)
-                row(stringResource(R.string.files_download), TitanIcons.download, action = onDownload)
-            }
+            if (files.isNotEmpty()) row(stringResource(R.string.files_share), TitanIcons.share, stringResource(R.string.files_share_text), action = onShare)
+            row(
+                stringResource(R.string.files_download), TitanIcons.download,
+                if (entries.size > 1 || single?.dir == true) stringResource(R.string.download_zip_text) else null, action = onDownload,
+            )
             if (offline != null) {
                 ListRow(
                     stringResource(R.string.files_offline),

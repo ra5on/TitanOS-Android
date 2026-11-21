@@ -392,6 +392,30 @@ class FilesApi(private val nas: NasConnection) {
         }
     }
 
+    /** Ordner oder mehrere Einträge als ZIP (`GET files/zip`, gestreamt, ohne Länge). */
+    suspend fun zipTo(root: String, paths: List<String>, name: String, out: java.io.OutputStream, progress: (Long) -> Unit = {}) = withContext(Dispatchers.IO) {
+        nas.execute { base ->
+            val u = base.newBuilder().encodedPath("/api/v1/files/zip").addQueryParameter("root", root).apply {
+                paths.forEach { addQueryParameter("path", it) }
+                addQueryParameter("name", name)
+            }.build()
+            Request.Builder().url(u).build()
+        }.use { r ->
+            r.throwIfError()
+            r.body.byteStream().use { input ->
+                val buf = ByteArray(64 * 1024)
+                var done = 0L
+                while (true) {
+                    val n = input.read(buf)
+                    if (n < 0) break
+                    out.write(buf, 0, n)
+                    done += n
+                    progress(done)
+                }
+            }
+        }
+    }
+
     suspend fun text(root: String, path: String): TextDoc = get("files/text", listOf("root" to root, "path" to path))
 
     suspend fun previousText(root: String, path: String): TextDoc = get("files/text/previous", listOf("root" to root, "path" to path))

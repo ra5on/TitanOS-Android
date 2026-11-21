@@ -42,6 +42,8 @@ fun BoxScope.CastSheet(location: Location, e: FileEntry, onDismiss: () -> Unit) 
         devices = null
         devices = runCatching { Dlna.discover(context) }.getOrDefault(emptyList())
     }
+    // Ohne laufende Wiedergabe gibt der Weiterreicher nichts mehr frei.
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { if (playing == null) MediaRelay.stop() } }
     val c = Titan.colors
     Sheet(onDismiss) {
         Text(stringResource(R.string.cast_title), style = TitanType.rowTitle, color = c.text, modifier = Modifier.padding(bottom = 6.dp))

@@ -201,9 +201,13 @@ fun PhotosSettingsScreen(
             ListRow(
                 stringResource(R.string.ps_video_own),
                 sub = stringResource(R.string.ps_video_own_text),
-                right = { Toggle(settings.videoOwnTarget, { onChange(settings.copy(videoOwnTarget = it)) }, on, off) },
+                right = { Toggle(settings.videoOwnTarget, { v -> onChange(settings.copy(videoOwnTarget = v)); if (v && settings.videoRoot.isEmpty()) onTarget(Kind.Video) }, on, off) },
                 divider = true,
-                onClick = { onChange(settings.copy(videoOwnTarget = !settings.videoOwnTarget)) },
+                onClick = {
+                    val v = !settings.videoOwnTarget
+                    onChange(settings.copy(videoOwnTarget = v))
+                    if (v && settings.videoRoot.isEmpty()) onTarget(Kind.Video)
+                },
             )
             if (settings.videoOwnTarget) {
                 ListRow(

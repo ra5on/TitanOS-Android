@@ -101,6 +101,8 @@ class PhotosModel(
 
     /** Neue Einstellungen speichern und die Aufträge danach einplanen. */
     fun update(next: PhotoSettings) {
+        // „Überspringen“ abgewählt: die übersprungenen Aufnahmen kommen beim nächsten Lauf wieder dran.
+        if (settings.sameName == SameName.Skip && next.sameName != SameName.Skip) store.update { it.copy(skipped = emptyMap()) }
         settingsStore.save(next)
         settings = next
         PhotoScheduler.arm(app, settingsChanged = true)
