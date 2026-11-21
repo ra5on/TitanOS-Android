@@ -13,7 +13,7 @@
     <application>
         <!-- Teilen und Ziehen einer Visitenkarte (.vcf) in andere Apps. -->
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name=".con.PimShareProvider"
             android:authorities="${applicationId}.pim.share"
             android:exported="false"
             android:grantUriPermissions="true">
