@@ -485,7 +485,7 @@ internal fun LoginLookEditor(s: LoginLookState, account: JsonObject) {
                 s.change(d.with("background" to bg.with("source" to src, "id" to if (src == "builtin") bg.str("id").takeIf { it in BACKGROUND_IDS } ?: BACKGROUND_IDS[0] else "")))
                 if (src == "custom" && d.image() == null) pick.launch(LOGIN_IMAGE_TYPES.toTypedArray())
             }, label = t("loginLook.background"))
-        }) {
+        }, id = "login-bg", startOpen = true) {
             if (source == "builtin") {
                 FlowRow(Modifier.padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (id in BACKGROUND_IDS) Motif(id, bg.str("id") == id) { setBg("id", id) }
@@ -618,6 +618,7 @@ private fun LoginPreview(d: JsonObject, p: TitanAppearance.Palette, picture: Ima
         Modifier.fillMaxWidth().aspectRatio(16f / 10f).clip(RoundedCornerShape(12.dp)).background(p.bg.color())
             .border(1.dp, Titan.colors.border, RoundedCornerShape(12.dp)).semantics { contentDescription = tr.t("loginLook.preview") },
     ) {
+        if (picture == null && bg.str("source") == "builtin") Box(Modifier.matchParentSize().background(wallpaperBrush(Wall(false, bg.str("id"), 0, true), false)))
         if (picture != null) {
             val cover = bg.str("fit") != "contain"
             val zoom = if (cover) bg.int("zoom", 100) / 100f else 1f
