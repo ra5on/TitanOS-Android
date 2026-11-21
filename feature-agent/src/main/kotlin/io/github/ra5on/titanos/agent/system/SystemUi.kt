@@ -79,7 +79,9 @@ fun AssistSheet(context: Context, model: AgentModel?, onClose: () -> Unit, onOpe
             var sent by remember { mutableStateOf(false) }
             val policy = remember { AssistScreen.get(context) }
             val hasScreen = AssistContent.text.isNotEmpty() || AssistContent.screenshot != null
-            var withScreen by remember { mutableStateOf(policy == AssistScreen.ALWAYS && hasScreen) }
+            // Kommt der Bildschirm erst nach dem Öffnen, gilt „Immer“ trotzdem; „Fragen“ wartet auf das Häkchen.
+            var choice by remember { mutableStateOf<Boolean?>(null) }
+            val withScreen = hasScreen && (choice ?: (policy == AssistScreen.ALWAYS))
             val clock = remember { FigureClock() }
             val hear = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
                 val said = r.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim().orEmpty()
@@ -130,7 +132,7 @@ fun AssistSheet(context: Context, model: AgentModel?, onClose: () -> Unit, onOpe
                     if (!sent) {
                         Field(text, { text = it }, multiline = true, minHeight = 56.dp, placeholder = tr.t("agent.inputShort"), label = tr.t("agent.input"))
                         if (hasScreen && policy != AssistScreen.NEVER) {
-                            if (policy == AssistScreen.ASK) Check(if (tr.de) "Bildschirminhalt mitsenden (nur an dein NAS)" else "Send what is on the screen (only to your NAS)", withScreen, { withScreen = it })
+                            if (policy == AssistScreen.ASK) Check(if (tr.de) "Bildschirminhalt mitsenden (nur an dein NAS)" else "Send what is on the screen (only to your NAS)", withScreen, { choice = it })
                             else Text(if (tr.de) "Der Bildschirminhalt geht mit (Einstellung „Immer“)." else "What is on the screen goes along (setting “Always”).", style = AgentText.sm, color = c.muted)
                         }
                         Buttons {

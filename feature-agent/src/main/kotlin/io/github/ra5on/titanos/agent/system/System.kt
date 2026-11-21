@@ -90,6 +90,12 @@ class AgentAssistSessionService : VoiceInteractionSessionService() {
  * Bildschirms entgegen und öffnet das Assistenten-Blatt mit Spracheingabe.
  */
 class AgentAssistSession(context: Context) : VoiceInteractionSession(context) {
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    private var launched = false
+    private var gotText = false
+    private var gotShot = false
+    private var wants = false
+
     // Jede Anfrage bekommt eine neue Sitzung. Android kann Text und Bild des Bildschirms schon
     // vor onShow liefern: deshalb hier leeren, nicht in onShow (sonst wäre beides wieder weg).
     override fun onCreate() {
@@ -99,34 +105,41 @@ class AgentAssistSession(context: Context) : VoiceInteractionSession(context) {
 
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
-        // Ohne Bildschirminhalt sofort; sonst warten, bis Text und Bild da sind (höchstens 0,8 s).
-        val wants = showFlags and (SHOW_WITH_ASSIST or SHOW_WITH_SCREENSHOT) != 0
-        if (AssistScreen.get(context) == AssistScreen.NEVER || !wants) launch()
-        else android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ launch() }, 800)
+        val policy = AssistScreen.get(context)
+        wants = policy != AssistScreen.NEVER && showFlags and (SHOW_WITH_ASSIST or SHOW_WITH_SCREENSHOT) != 0
+        android.util.Log.d(TAG, "show flags=$showFlags policy=$policy wants=$wants")
+        // Ohne Bildschirminhalt sofort; sonst, sobald Text und Bild da sind, höchstens nach 0,8 s.
+        if (!wants || (gotText && gotShot)) launch() else main.postDelayed({ launch() }, 800)
     }
 
     override fun onHandleAssist(state: AssistState) {
-        if (AssistScreen.get(context) != AssistScreen.NEVER) {
-            state.assistStructure?.let { s ->
-                AssistContent.text = AssistContent.textOf(s)
-                AssistContent.app = s.activityComponent?.packageName.orEmpty()
-            }
+        val s = state.assistStructure
+        android.util.Log.d(TAG, "assist structure=${s != null} policy=${AssistScreen.get(context)}")
+        if (AssistScreen.get(context) != AssistScreen.NEVER && s != null) {
+            AssistContent.text = AssistContent.textOf(s)
+            AssistContent.app = s.activityComponent?.packageName.orEmpty()
         }
+        gotText = true
+        if (wants && gotShot) launch()
     }
 
     override fun onHandleScreenshot(screenshot: Bitmap?) {
+        android.util.Log.d(TAG, "screenshot=${screenshot != null}")
         if (AssistScreen.get(context) != AssistScreen.NEVER) AssistContent.screenshot = screenshot
-        launch()
+        gotShot = true
+        if (wants && gotText) launch()
     }
 
-    private var launched = false
     private fun launch() {
         if (launched) return
         launched = true
         val intent = Intent(context, AssistActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         runCatching { startAssistantActivity(intent) }.onFailure { runCatching { context.startActivity(intent) } }
-        finish()
+        // Die Sitzung erst etwas später beenden: was Android noch schickt, kommt so noch ins Blatt.
+        main.postDelayed({ finish() }, 1500)
     }
+
+    private companion object { const val TAG = "AgentAssist" }
 }
 
 /** Eine Spracherkennung muss ein Assistent nennen; diese verweist auf die Erkennung des Handys bzw. des NAS im Blatt. */
