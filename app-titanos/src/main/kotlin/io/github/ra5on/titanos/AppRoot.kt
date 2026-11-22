@@ -294,6 +294,17 @@ private fun MainShell(graph: AppGraph) {
         return
     }
     var confirmUnpair by remember { mutableStateOf(false) }
+    // „Uhr koppeln“ (Paket G): die Uhr zeigt sechs Ziffern, diese App bestätigt sie.
+    var watchPair by remember { mutableStateOf(false) }
+    if (watchPair) {
+        BackHandler { watchPair = false }
+        io.github.ra5on.titanos.pairing.WatchPairScreen(
+            addresses = graph.pairing?.addresses?.map { it.server }.orEmpty(),
+            nas = remember(graph.pairing) { graph.connection() },
+            onBack = { watchPair = false },
+        )
+        return
+    }
     when (tab) {
         Tab.Home -> Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
@@ -333,6 +344,13 @@ private fun MainShell(graph: AppGraph) {
                             chevron = true,
                             divider = true,
                             onClick = { menu = false; graph.openProgram = PIM_SYNC },
+                        )
+                        ListRow(
+                            stringResource(io.github.ra5on.titanos.pairing.R.string.pair_watch_title),
+                            icon = { RowIcon(TitanIcons.monitor) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; watchPair = true },
                         )
                         ListRow(
                             stringResource(HomeR.string.home_menu_unpair),

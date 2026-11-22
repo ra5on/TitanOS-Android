@@ -31,5 +31,6 @@ include(
     ":feature-pim",
     ":app-titanos",
     ":app-agent",
+    ":app-watch",
     ":lint-rules",
 )

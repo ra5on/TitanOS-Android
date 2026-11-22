@@ -11,10 +11,18 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
 
-/** Die beiden Apps und wie ihre Dateien im Release heißen. */
+/** Die Apps und wie ihre Dateien im Release heißen. */
 enum class AppKind(val packageName: String, val assetPrefix: String) {
     TitanOS("io.github.ra5on.titanos", "TitanOS-Android-"),
     Agent("io.github.ra5on.titanos.agent", "TitanOS-Agent-"),
+    /** Die Uhr-App (Wear OS, PLAN 116 Paket G). */
+    Watch("io.github.ra5on.titanos.watch", "TitanOS-Watch-"),
+    ;
+
+    companion object {
+        /** Die App, die gerade läuft; sie aktualisiert sich selbst. */
+        fun own(packageName: String): AppKind = entries.firstOrNull { it.packageName == packageName } ?: TitanOS
+    }
 }
 
 /** Eine Version auf GitHub: Tag vX.Y.0 → angezeigt X.YY, versionCode X·100+Y. */
