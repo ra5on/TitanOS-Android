@@ -188,6 +188,8 @@ object AnswerNotifier {
     private const val CHANNEL = "agent-answers"
     const val EXTRA_CHAT = "chat"
     const val KEY_REPLY = "reply"
+    /** NotificationCompat.Action.EXTRA_SHOWS_USER_INTERFACE: Android Auto liest es an Antworten und Gelesen. */
+    const val EXTRA_SHOWS_USER_INTERFACE = "android.support.action.showsUserInterface"
     const val ACTION_REPLY = "io.github.ra5on.titanos.agent.REPLY"
     const val ACTION_READ = "io.github.ra5on.titanos.agent.READ"
     private const val PREF = "notify.answers"
@@ -227,10 +229,14 @@ object AnswerNotifier {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val input = RemoteInput.Builder(KEY_REPLY).setLabel(tr.t("agent.inputShort")).build()
+        // Android Auto verlangt für beide Aktionen „zeigt keine Oberfläche“ (NotificationCompat
+        // setShowsUserInterface(false) schreibt genau dieses Extra; ohne es gilt „zeigt eine“).
+        fun noUi() = android.os.Bundle().apply { putBoolean(EXTRA_SHOWS_USER_INTERFACE, false) }
         val replyAction = Notification.Action.Builder(null, if (tr.de) "Antworten" else "Reply", reply)
-            .addRemoteInput(input).setSemanticAction(Notification.Action.SEMANTIC_ACTION_REPLY).setAllowGeneratedReplies(true).build()
+            .addRemoteInput(input).setSemanticAction(Notification.Action.SEMANTIC_ACTION_REPLY).setAllowGeneratedReplies(true)
+            .addExtras(noUi()).build()
         val readAction = Notification.Action.Builder(null, if (tr.de) "Gelesen" else "Mark as read", read)
-            .setSemanticAction(Notification.Action.SEMANTIC_ACTION_MARK_AS_READ).build()
+            .setSemanticAction(Notification.Action.SEMANTIC_ACTION_MARK_AS_READ).addExtras(noUi()).build()
         val n = Notification.Builder(context, CHANNEL)
             .setSmallIcon(context.applicationInfo.icon)
             .setStyle(style)

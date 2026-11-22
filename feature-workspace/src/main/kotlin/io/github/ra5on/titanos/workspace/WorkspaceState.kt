@@ -40,6 +40,9 @@ class WorkspaceState(
     var programs by mutableStateOf(listOf<Program>())
     var launcher by mutableStateOf(false)
     var query by mutableStateOf("")
+
+    /** Das Suchfeld der oberen Leiste: Strg + Leertaste setzt die Tastatur hinein (wie das Web). */
+    val searchFocus = androidx.compose.ui.focus.FocusRequester()
     var menu by mutableStateOf<DeskMenu?>(null)
     var dialog by mutableStateOf<DeskDialog?>(null)
     var editWidgets by mutableStateOf(false)

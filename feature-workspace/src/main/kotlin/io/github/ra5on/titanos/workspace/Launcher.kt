@@ -79,7 +79,7 @@ internal fun BoxScope.Launcher(state: WorkspaceState) {
             val q = state.query.trim().lowercase()
             val all = menuSorted(state.programs, state.store.prefs.menuOrder, { it.key }, { it.label })
             val shown = when {
-                q.isNotEmpty() -> all.filter { it.label.lowercase().contains(q) || it.key.lowercase().contains(q) }
+                q.isNotEmpty() -> searchHits(state)
                 filter == "recent" -> state.store.prefs.recent.mapNotNull { state.programOf(it) }
                 filter == "docker" -> all.filter { it.kind == "docker" }
                 filter == "system" -> all.filter { it.kind == "system" || it.kind == "android" }
@@ -163,4 +163,12 @@ internal fun ProgramGrid(state: WorkspaceState, programs: List<Program>, modifie
             }
         }
     }
+}
+
+/** Programme, die zur Suche im Menü passen, in der Reihenfolge des Menüs (Enter öffnet den ersten wie im Web). */
+internal fun searchHits(state: WorkspaceState): List<Program> {
+    val q = state.query.trim().lowercase()
+    if (q.isEmpty()) return emptyList()
+    return menuSorted(state.programs, state.store.prefs.menuOrder, { it.key }, { it.label })
+        .filter { it.label.lowercase().contains(q) || it.key.lowercase().contains(q) }
 }

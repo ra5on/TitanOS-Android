@@ -107,7 +107,7 @@
     <string name="agent_err_share">Die geteilte Datei ließ sich nicht lesen.</string>
 
     <string name="agent_off_title">Der KI-Agent ist aus</string>
-    <string name="agent_off_text">Ein Besitzer kann ihn im Browser unter Einstellungen › KI-Agent einschalten.</string>
+    <string name="agent_off_text">Ein Besitzer kann ihn in der Systemsteuerung (TitanOS-App oder Browser) unter KI-Agent einschalten.</string>
     <string name="agent_not_allowed_title">Der KI-Agent ist für dein Konto nicht freigegeben</string>
     <string name="agent_no_volume_title">Kein Daten-Volume</string>
 

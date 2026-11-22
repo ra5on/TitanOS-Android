@@ -51,7 +51,7 @@
     <string name="vpn_setup_title">VPN einrichten</string>
     <string name="vpn_setup_text">Die App legt am NAS einen eigenen WireGuard-Zugang für dieses Handy an. Der Schlüssel entsteht hier und bleibt auf dem Handy; das NAS bekommt nur den öffentlichen Teil. Der Zugang steht danach am NAS unter Einstellungen › WireGuard.</string>
     <string name="vpn_setup_do">Zugang anlegen</string>
-    <string name="vpn_reason_off">Der WireGuard-Server des NAS ist aus. Im Browser unter Einstellungen › Netzwerk und Fernzugriff › WireGuard einschalten, die Adresse aus dem Internet eintragen und am Router UDP 51820 an das NAS weiterleiten.</string>
+    <string name="vpn_reason_off">Der WireGuard-Server des NAS ist aus. In der Systemsteuerung (App oder Browser) unter Netzwerk und Fernzugriff › WireGuard einschalten, die Adresse aus dem Internet eintragen und am Router UDP 51820 an das NAS weiterleiten.</string>
     <string name="vpn_reason_no_endpoint">WireGuard am NAS hat keine Adresse aus dem Internet. Unter Einstellungen › WireGuard eintragen oder Dynamisches DNS einrichten.</string>
     <string name="vpn_reason_admin_only">Einen WireGuard-Zugang dürfen nur Besitzer und Administratoren anlegen. Dieses Konto hat kein Verwaltungsrecht.</string>
     <string name="vpn_reason_key_used">Ein anderes Gerät hat diesen Schlüssel schon. Bitte noch einmal versuchen.</string>

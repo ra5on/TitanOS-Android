@@ -31,4 +31,19 @@ class OpenLinkTest {
         assertFalse(NotifyRuntime.requestOpen("/storage"))
         assertEquals(null, NotifyRuntime.openLink.value)
     }
+
+    @Test
+    fun theAppsRouterDecidesTheOtherLinks() {
+        // Die TitanOS-App setzt ihren Router (Links.kt); absolute Adressen bleiben bei der Liste.
+        val before = NotifyRuntime.appLinks
+        try {
+            NotifyRuntime.appLinks = { it.startsWith("/storage") || NotifyRuntime.pimLink(it) }
+            assertTrue(NotifyRuntime.opensInApp("/storage"))
+            assertTrue(NotifyRuntime.opensInApp("/mail"))
+            assertFalse(NotifyRuntime.opensInApp("https://example.org/storage"))
+            assertFalse(NotifyRuntime.opensInApp("/welcome"))
+        } finally {
+            NotifyRuntime.appLinks = before
+        }
+    }
 }

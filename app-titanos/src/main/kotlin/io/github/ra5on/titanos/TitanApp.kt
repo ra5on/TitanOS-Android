@@ -82,6 +82,8 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.r
         super.onCreate()
         // Mehrere NAS: die Liste übernimmt beim ersten Start eine bestehende Einzelkopplung (NasRegistry).
         graph = AppGraph(this, NasRegistry.prefs(this))
+        // Mitteilungen mit Link öffnen jedes Programm, das der Router kennt, an der Stelle (wie im Web).
+        io.github.ra5on.titanos.notify.NotifyRuntime.appLinks = { linkTarget(it) is LinkTarget.Program }
         // Worker (Übertragungen, Offline) brauchen die Verbindung auch ohne Activity.
         FilesRuntime.store = graph.transfers
         FilesRuntime.offline = graph.offline

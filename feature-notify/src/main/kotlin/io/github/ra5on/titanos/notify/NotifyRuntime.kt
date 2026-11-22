@@ -107,9 +107,19 @@ object NotifyRuntime {
     /** Eine Mitteilung mit Link in ein Programm der App (Mail, Kalender, Kontakte) wurde angetippt. */
     val openLink: StateFlow<String?> = _openLink
 
+    /** Mail, Kalender und Kontakte: die Links, die dieses Modul selbst kennt. */
+    fun pimLink(link: String): Boolean =
+        listOf("/mail", "/calendar", "/contacts").any { link == it || link.startsWith("$it?") || link.startsWith("$it/") }
+
+    /**
+     * Welche Links die App an ihrer Stelle öffnet. Die TitanOS-App setzt hier ihren Router
+     * (Links.kt: Speicher, Docker, Systemsteuerung …); ohne ihn nur Mail, Kalender und Kontakte.
+     */
+    @Volatile
+    var appLinks: (String) -> Boolean = ::pimLink
+
     /** Links, die die App selbst öffnet; alle anderen führen zur Liste. */
-    fun opensInApp(link: String?): Boolean =
-        link != null && listOf("/mail", "/calendar", "/contacts").any { link == it || link.startsWith("$it?") || link.startsWith("$it/") }
+    fun opensInApp(link: String?): Boolean = link != null && link.startsWith("/") && appLinks(link)
 
     /** Öffnet [link] in der App, wenn sie ihn kennt. */
     fun requestOpen(link: String?): Boolean {

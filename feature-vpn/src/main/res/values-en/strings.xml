@@ -51,7 +51,7 @@
     <string name="vpn_setup_title">Set up the VPN</string>
     <string name="vpn_setup_text">The app adds a WireGuard access of its own for this phone on the NAS. The key is made here and stays on the phone; the NAS gets only the public part. The access then shows on the NAS under Settings › WireGuard.</string>
     <string name="vpn_setup_do">Create access</string>
-    <string name="vpn_reason_off">The WireGuard server of the NAS is off. In the browser, switch it on under Settings › Network and remote access › WireGuard, enter the address from the internet and forward UDP 51820 to the NAS on the router.</string>
+    <string name="vpn_reason_off">The WireGuard server of the NAS is off. Switch it on in the settings (app or browser) under Network and remote access › WireGuard, enter the address from the internet and forward UDP 51820 to the NAS on the router.</string>
     <string name="vpn_reason_no_endpoint">WireGuard on the NAS has no address from the internet. Enter it under Settings › WireGuard or set up dynamic DNS.</string>
     <string name="vpn_reason_admin_only">Only owners and administrators may create a WireGuard access. This account has no administration rights.</string>
     <string name="vpn_reason_key_used">Another device has this key already. Please try again.</string>

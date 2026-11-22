@@ -244,10 +244,14 @@ internal fun deskKey(state: WorkspaceState, e: androidx.compose.ui.input.key.Key
     }
     if ((e.isCtrlPressed || e.isMetaPressed) && e.key == Key.Spacebar) {
         state.launcher = !state.launcher
+        // Wie das Web: das offene Menü nimmt Getipptes im Suchfeld der Leiste an (fehlt es bei
+        // schmaler Leiste, bleibt der Fokus, wo er war).
+        if (state.launcher) runCatching { state.searchFocus.requestFocus() }
         return true
     }
     if (e.key == Key.Escape && (state.launcher || state.openFolder != null || state.editWidgets || state.editDock || state.menu != null)) {
         state.launcher = false
+        state.query = "" // wie das Web: was getippt war, geht mit dem Menü
         state.openFolder = null
         state.editWidgets = false
         state.editDock = false

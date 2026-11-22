@@ -2,6 +2,7 @@ package io.github.ra5on.titanos.workspace
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -26,10 +27,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -126,10 +134,22 @@ internal fun BoxScope.DeskIcons(state: WorkspaceState) {
                         onDragCancel = { drag = null; state.dragKey = null; state.dragAt = null },
                     )
                 }
+                // TalkBack und Tastatur (Tab, Enter) wie ein Knopf; die Gesten oben bleiben für Finger und Maus.
                 .semantics(mergeDescendants = true) {
                     role = Role.Button
                     contentDescription = label
+                    onClick { state.open(key); true }
+                    onLongClick { state.menu = DeskMenu(x + grid.colW / 2f, y + px / 2f, DeskMenu.Kind.Icon, key); true }
                 }
+                .onKeyEvent { e ->
+                    if (e.type == KeyEventType.KeyUp && (e.key == Key.Enter || e.key == Key.NumPadEnter || e.key == Key.Spacebar)) {
+                        state.open(key)
+                        true
+                    } else {
+                        false
+                    }
+                }
+                .focusable()
                 .padding(vertical = 6.dp, horizontal = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
