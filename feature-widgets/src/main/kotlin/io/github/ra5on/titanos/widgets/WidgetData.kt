@@ -15,6 +15,8 @@ import io.github.ra5on.titanos.model.Volume
 import io.github.ra5on.titanos.net.ApiException
 import io.github.ra5on.titanos.net.TitanApi
 import io.github.ra5on.titanos.net.certificateChange
+import io.github.ra5on.titanos.net.NasNames
+import io.github.ra5on.titanos.net.NasRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -48,31 +50,59 @@ data class PhotosSnapshot(
     val atMs: Long = 0,
 )
 
-/** Ablage der Widget-Daten (SharedPreferences, JSON). */
+/**
+ * Ablage der Widget-Daten (SharedPreferences, JSON), je NAS (`nas`/`photos`
+ * für die alte Kopplung, sonst mit `-<nas>`), und welches NAS ein Widget zeigt.
+ */
 object WidgetStore {
     private val json = Json { ignoreUnknownKeys = true }
     private fun prefs(context: Context) = context.getSharedPreferences("widgets", Context.MODE_PRIVATE)
 
-    fun nas(context: Context): NasSnapshot =
-        prefs(context).getString("nas", null)?.let { runCatching { json.decodeFromString(NasSnapshot.serializer(), it) }.getOrNull() } ?: NasSnapshot()
+    fun nas(context: Context, nas: String = WidgetRuntime.active()): NasSnapshot =
+        prefs(context).getString("nas" + NasNames.suffix(nas), null)?.let { runCatching { json.decodeFromString(NasSnapshot.serializer(), it) }.getOrNull() } ?: NasSnapshot()
 
-    fun photos(context: Context): PhotosSnapshot =
-        prefs(context).getString("photos", null)?.let { runCatching { json.decodeFromString(PhotosSnapshot.serializer(), it) }.getOrNull() } ?: PhotosSnapshot()
+    fun photos(context: Context, nas: String = WidgetRuntime.active()): PhotosSnapshot =
+        prefs(context).getString("photos" + NasNames.suffix(nas), null)?.let { runCatching { json.decodeFromString(PhotosSnapshot.serializer(), it) }.getOrNull() } ?: PhotosSnapshot()
 
-    fun saveNas(context: Context, s: NasSnapshot) = prefs(context).edit().putString("nas", json.encodeToString(NasSnapshot.serializer(), s)).apply()
+    fun saveNas(context: Context, s: NasSnapshot, nas: String = WidgetRuntime.active()) =
+        prefs(context).edit().putString("nas" + NasNames.suffix(nas), json.encodeToString(NasSnapshot.serializer(), s)).apply()
 
     /** Schreibt nur, wenn sich etwas geändert hat; gibt true zurück, wenn das Widget neu zeichnen soll. */
-    fun savePhotos(context: Context, s: PhotosSnapshot): Boolean {
-        val old = photos(context)
+    fun savePhotos(context: Context, s: PhotosSnapshot, nas: String = WidgetRuntime.active()): Boolean {
+        val old = photos(context, nas)
         if (old.copy(atMs = 0) == s.copy(atMs = 0)) return false
-        prefs(context).edit().putString("photos", json.encodeToString(PhotosSnapshot.serializer(), s)).apply()
+        prefs(context).edit().putString("photos" + NasNames.suffix(nas), json.encodeToString(PhotosSnapshot.serializer(), s)).apply()
         return true
+    }
+
+    /** Das NAS, das ein Widget zeigt (im Widget gewählt); ohne Wahl das in der App gewählte. */
+    fun nasFor(context: Context, appWidgetId: Int): String =
+        prefs(context).getString("w-$appWidgetId", null)?.takeIf { id -> WidgetRuntime.nasList().any { it.id == id } } ?: WidgetRuntime.active()
+
+    /** Hat man für das Widget ein NAS gewählt? */
+    fun chosen(context: Context, appWidgetId: Int): String? = prefs(context).getString("w-$appWidgetId", null)
+
+    fun choose(context: Context, appWidgetId: Int, nas: String?) {
+        prefs(context).edit().apply { if (nas == null) remove("w-$appWidgetId") else putString("w-$appWidgetId", nas) }.apply()
+    }
+
+    /** Ein NAS entfernt: seine Stände und die Wahl der Widgets, die es zeigten, weg. */
+    fun forget(context: Context, nas: String) {
+        val p = prefs(context)
+        val e = p.edit().remove("nas" + NasNames.suffix(nas)).remove("photos" + NasNames.suffix(nas))
+        p.all.filter { (k, v) -> k.startsWith("w-") && v == nas }.keys.forEach { e.remove(it) }
+        e.apply()
     }
 }
 
-/** Die App setzt die Verbindung, damit der Worker ohne Activity laden kann. */
+/** Ein gekoppeltes NAS für die Widgets. */
+data class WidgetNas(val id: String, val name: String)
+
+/** Die App setzt die Verbindungen, damit der Worker ohne Activity laden kann. */
 object WidgetRuntime {
-    @Volatile var api: () -> TitanApi? = { null }
+    @Volatile var api: (nas: String) -> TitanApi? = { null }
+    @Volatile var nasList: () -> List<WidgetNas> = { emptyList() }
+    @Volatile var active: () -> String = { NasRegistry.LEGACY_ID }
 }
 
 object WidgetRefresh {
@@ -80,8 +110,8 @@ object WidgetRefresh {
     private const val NOW = "widgets-refresh-now"
 
     /** Lädt Zustand, Volumes und (für Verwalter) CPU/RAM; ohne NAS bleibt der letzte Stand mit „nicht erreichbar“. */
-    suspend fun load(context: Context, api: TitanApi?): NasSnapshot {
-        val last = WidgetStore.nas(context)
+    suspend fun load(context: Context, api: TitanApi?, nas: String = WidgetRuntime.active()): NasSnapshot {
+        val last = WidgetStore.nas(context, nas)
         if (api == null) return last.copy(state = "unpaired")
         return try {
             val system = api.system()
@@ -118,11 +148,20 @@ object WidgetRefresh {
         )
     }
 
+    /** Lädt den Stand jedes NAS (auch für die Schnelleinstellung „NAS-Zustand“) und zeichnet die Widgets neu. */
     suspend fun refresh(context: Context) {
-        WidgetStore.saveNas(context, load(context, WidgetRuntime.api()))
+        for (n in WidgetRuntime.nasList()) {
+            val s = load(context, WidgetRuntime.api(n.id), n.id)
+            WidgetStore.saveNas(context, s, n.id)
+        }
         NasWidget().updateAll(context)
         PhotosWidget().updateAll(context)
+        onRefreshed?.invoke(context)
     }
+
+    /** Nach jedem Laden (die Schnelleinstellung „NAS-Zustand“ zeichnet sich neu). */
+    @Volatile
+    var onRefreshed: ((Context) -> Unit)? = null
 
     /** Alle 30 Minuten, solange Widgets da sind (Glance-Empfänger planen es). */
     fun schedule(context: Context) {

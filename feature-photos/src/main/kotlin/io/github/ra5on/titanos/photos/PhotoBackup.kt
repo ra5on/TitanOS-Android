@@ -30,8 +30,10 @@ class PhotoBackup(
     private val context: Context,
     private val titan: TitanApi,
     private val photos: PhotosApi,
-    private val settings: PhotoSettings = SettingsStore(context).load(),
-    private val store: BackupStore = BackupStore.get(context),
+    /** Das NAS, an das gesichert wird (eigene Einstellungen und eigener Stand je NAS). */
+    private val nas: String = io.github.ra5on.titanos.net.NasRegistry.LEGACY_ID,
+    private val settings: PhotoSettings = SettingsStore(context, nas).load(),
+    private val store: BackupStore = BackupStore.get(context, nas),
     private val scanner: MediaScanner = MediaScanner(context),
 ) {
     suspend fun run(kinds: Set<Kind>, stopped: () -> Boolean = { false }): Outcome =
@@ -39,13 +41,14 @@ class PhotoBackup(
 
     private suspend fun runLocked(kinds: Set<Kind>, stopped: () -> Boolean): Outcome = withContext(Dispatchers.IO) {
         if (!settings.enabled || !settings.hasTarget || MediaAccess.access(context) == Access.None) return@withContext Outcome.Skipped
+        if (PhotosRuntime.paused(context)) return@withContext Outcome.Skipped
         val (gens, versions) = scanner.generations()
         val items = scanner.scan()
         val byId = items.associateBy { it.id }
         val todo = selectForUpload(items.map { it.media }, store.snapshot().handled(), settings, kinds)
             .mapNotNull { byId[it.id] }
         val device = PhotosRuntime.deviceName()
-        PhotosRuntime.report(Progress(running = true, total = todo.size))
+        PhotosRuntime.report(Progress(running = true, total = todo.size, nas = nas))
         var done = 0
         val made = HashSet<String>()
         try {
@@ -72,7 +75,7 @@ class PhotoBackup(
                     if (known?.state == "saved") {
                         mark(item, sha, known.path)
                     } else {
-                        PhotosRuntime.report(Progress(running = true, done = done, total = todo.size, current = item.media.name))
+                        PhotosRuntime.report(Progress(running = true, done = done, total = todo.size, current = item.media.name, nas = nas))
                         try {
                             upload(item, sha, size, made, device)
                         } catch (_: java.io.FileNotFoundException) {
@@ -80,7 +83,7 @@ class PhotoBackup(
                         }
                     }
                     done++
-                    PhotosRuntime.report(Progress(running = true, done = done, total = todo.size))
+                    PhotosRuntime.report(Progress(running = true, done = done, total = todo.size, nas = nas))
                 }
             }
             store.update { it.copy(generations = gens, versions = versions, problem = null, lastRun = System.currentTimeMillis()) }

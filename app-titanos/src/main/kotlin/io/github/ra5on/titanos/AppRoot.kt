@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -88,23 +91,33 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
         }
     }
     var step by rememberSaveable { mutableStateOf(SetupStep.Welcome) }
+    // Ein Kopplungslink, während schon ein NAS gekoppelt ist: ein weiteres NAS hinzufügen.
+    var addLink by remember { mutableStateOf<PairLink?>(null) }
     LaunchedEffect(link) {
         if (link != null) {
-            pairingModel.startFromLink(link)
-            step = SetupStep.Confirm
+            if (graph.pairing == null) {
+                pairingModel.startFromLink(link)
+                step = SetupStep.Confirm
+            } else {
+                if (graph.adding == null) graph.beginAdd()
+                addLink = link
+            }
             onLinkTaken()
         }
     }
+    val adding = graph.adding
     when {
         pairing == null -> SetupFlow(graph, pairingModel, step) { step = it }
+        adding != null -> AddFlow(graph, adding, addLink, onLinkUsed = { addLink = null }) { permissionsPending = true }
         permissionsPending -> PermissionsRoute(
             onNext = { permissionsPending = false; step = SetupStep.Welcome },
             photoPermissions = MediaAccess.PERMISSIONS,
-            photosOn = { SettingsStore(context).load().enabled && MediaAccess.access(context) != Access.None },
+            // Je NAS eigene Einstellungen: die des gerade gekoppelten (gewählten) NAS.
+            photosOn = { SettingsStore(context, graph.activeId).load().enabled && MediaAccess.access(context) != Access.None },
             photosPartial = { MediaAccess.access(context) == Access.Partial },
             // Eingeschaltet wird hier; das Ziel wählt man danach unter Fotos.
             onPhotos = { on ->
-                graph.photos?.update(SettingsStore(context).load().copy(enabled = on)) ?: SettingsStore(context).let { it.save(it.load().copy(enabled = on)) }
+                graph.photos?.update(SettingsStore(context, graph.activeId).load().copy(enabled = on)) ?: SettingsStore(context, graph.activeId).let { it.save(it.load().copy(enabled = on)) }
             },
             // Mitteilungen ohne Google; danach die Bitte um die Akku-Ausnahme (TECHNIK §5).
             notifyOn = { notificationsOn(context) },
@@ -115,20 +128,42 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
             // Kontakte und Kalender über das Android-Konto der Kopplung (feature-pim).
             contactsPermissions = arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS),
             calendarPermissions = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR),
-            pimOn = { kind -> SyncStore(context).load().let { if (kind == "contacts") it.contacts else it.calendars } },
+            pimOn = { kind -> SyncStore(context, graph.activeProfile?.let(graph::pimName)).load().let { if (kind == "contacts") it.contacts else it.calendars } },
             onPim = { kind, on ->
-                val store = SyncStore(context)
+                val store = SyncStore(context, graph.activeProfile?.let(graph::pimName))
                 store.save(store.load().let { if (kind == "contacts") it.copy(contacts = on) else it.copy(calendars = on) })
                 PimSync.configure(context)
                 if (on) PimSync.requestNow(context, manual = false, only = if (kind == "contacts") ContactsContract.AUTHORITY else CalendarContract.AUTHORITY)
             },
         )
-        else -> MainShell(graph)
+        // Je NAS fängt die Oberfläche neu an: keine Seite behält die Verbindung des vorigen NAS.
+        else -> androidx.compose.runtime.key(graph.nasEpoch) { MainShell(graph) }
     }
 }
 
+/** „NAS hinzufügen“: derselbe Ablauf wie beim ersten Koppeln, mit eigenem Schlüssel; Zurück bricht ab. */
 @Composable
-private fun SetupFlow(graph: AppGraph, model: PairingModel, step: SetupStep, go: (SetupStep) -> Unit) {
+private fun AddFlow(graph: AppGraph, adding: io.github.ra5on.titanos.net.AddingPairingStore, link: PairLink?, onLinkUsed: () -> Unit, onPaired: () -> Unit) {
+    val context = LocalContext.current
+    val model: PairingModel = viewModel(key = "add-" + adding.id) {
+        PairingModel(graph.addingKey(adding), adding, graph.shared, defaultDeviceName(context)) { _ ->
+            graph.added(adding)
+            onPaired()
+        }
+    }
+    var step by rememberSaveable(adding.id) { mutableStateOf(SetupStep.Welcome) }
+    LaunchedEffect(link) {
+        if (link != null) {
+            model.startFromLink(link)
+            step = SetupStep.Confirm
+            onLinkUsed()
+        }
+    }
+    SetupFlow(graph, model, step, { step = it }, onCancelAdd = { graph.cancelAdd() })
+}
+
+@Composable
+private fun SetupFlow(graph: AppGraph, model: PairingModel, step: SetupStep, go: (SetupStep) -> Unit, onCancelAdd: (() -> Unit)? = null) {
     val context = LocalContext.current
     var invalidScan by remember { mutableStateOf(false) }
     val scan = rememberLauncherForActivityResult(ScanContract()) { result ->
@@ -158,20 +193,31 @@ private fun SetupFlow(graph: AppGraph, model: PairingModel, step: SetupStep, go:
         }
     }
     when (step) {
-        SetupStep.Welcome -> WelcomeScreen(
-            onScan = {
-                scan.launch(
-                    ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt(scanPrompt)
-                        .setBeepEnabled(false).setOrientationLocked(false),
-                )
-            },
-            onManual = { go(SetupStep.Manual) },
-            problem = when {
-                invalidScan -> stringResource(PairR.string.pair_scan_invalid)
-                graph.unpairedByNas -> stringResource(R.string.app_unpaired)
-                else -> null
-            },
-        )
+        SetupStep.Welcome -> Box(Modifier.fillMaxSize()) {
+            if (onCancelAdd != null) BackHandler(onBack = onCancelAdd)
+            WelcomeScreen(
+                onScan = {
+                    scan.launch(
+                        ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt(scanPrompt)
+                            .setBeepEnabled(false).setOrientationLocked(false),
+                    )
+                },
+                onManual = { go(SetupStep.Manual) },
+                problem = when {
+                    invalidScan -> stringResource(PairR.string.pair_scan_invalid)
+                    graph.unpairedByNas && onCancelAdd == null -> stringResource(R.string.app_unpaired)
+                    else -> null
+                },
+                title = if (onCancelAdd != null) stringResource(R.string.nas_add) else null,
+                text = if (onCancelAdd != null) stringResource(R.string.nas_add_text) else null,
+            )
+            // Weiteres NAS: sichtbarer Weg zurück (nicht nur die Zurück-Geste).
+            if (onCancelAdd != null) {
+                Box(Modifier.statusBarsPadding().padding(start = 6.dp, top = 4.dp)) {
+                    io.github.ra5on.titanos.ui.components.IconButton(TitanIcons.back, stringResource(UiR.string.ui_back), onCancelAdd)
+                }
+            }
+        }
         SetupStep.Manual -> {
             BackHandler { go(SetupStep.Welcome) }
             ManualScreen(
@@ -242,8 +288,20 @@ private fun MainShell(graph: AppGraph) {
         ) { tab = Tab.valueOf(it) }
         Box(Modifier.navigationBarsPadding())
     }
-    // Je Kopplung ein eigenes Modell, sonst behielte es nach neuem Koppeln die alte Verbindung.
-    val home: HomeModel = viewModel(key = "home-" + graph.pairing?.device) { HomeModel(api, { graph.sessions.user?.role ?: "user" }, graph.pairing?.hostname.orEmpty()) }
+    // Je Kopplung (und Cluster-Knoten) ein eigenes Modell, sonst behielte es nach neuem Koppeln die alte Verbindung.
+    val home: HomeModel = viewModel(key = "home-" + graph.activeId + "-" + graph.pairing?.device + "-" + graph.pairing?.node) {
+        HomeModel(api, { graph.sessions.user?.role ?: "user" }, graph.pairing?.let { it.nodeName.ifBlank { it.hostname } }.orEmpty())
+    }
+    // Ein NAS hat die Kopplung beendet, andere sind noch da: sagen, welches.
+    val ended = graph.endedByNas
+    if (ended != null) {
+        val text = stringResource(R.string.nas_ended, ended)
+        LaunchedEffect(ended) {
+            Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+            graph.endedByNas = null
+        }
+    }
+
     DisposableEffect(tab) {
         if (tab == Tab.Home) {
             home.start()
@@ -286,6 +344,18 @@ private fun MainShell(graph: AppGraph) {
         return
     }
     var menu by remember { mutableStateOf(false) }
+    var switcher by remember { mutableStateOf(false) }
+    // „NAS und Konten“: eigene Seite über der Leiste.
+    if (graph.openNasList) {
+        BackHandler { graph.openNasList = false }
+        NasListPage(
+            graph,
+            onBack = { graph.openNasList = false },
+            onAdd = { graph.openNasList = false; graph.beginAdd() },
+            onPhotos = { graph.openNasList = false; graph.openPhotos = true },
+        )
+        return
+    }
     // „Über die App“ mit Selbst-Update; die Mitteilung „Version … ist da“ öffnet es direkt.
     if (graph.openAbout) {
         BackHandler { graph.openAbout = false }
@@ -296,7 +366,15 @@ private fun MainShell(graph: AppGraph) {
     }
     // Eigenes VPN (feature-vpn): Seite über der Leiste.
     if (graph.openVpn) {
-        io.github.ra5on.titanos.vpn.VpnPage(onBack = { graph.openVpn = false })
+        // Android erlaubt nur ein VPN gleichzeitig: es gehört einem NAS; mit mehreren NAS steht dabei, welchem.
+        val several = graph.profiles.size > 1
+        val owner = graph.vpnOwner()
+        val access = remember { runCatching { io.github.ra5on.titanos.vpn.VpnRuntime.store.profile() != null }.getOrDefault(false) }
+        io.github.ra5on.titanos.vpn.VpnPage(
+            onBack = { graph.openVpn = false },
+            ownerNas = if (several && access && owner != null && owner.id != graph.activeId) owner.name else "",
+            forNas = if (several) (owner ?: graph.activeProfile)?.name.orEmpty() else "",
+        )
         return
     }
     PimLive(graph)
@@ -307,6 +385,16 @@ private fun MainShell(graph: AppGraph) {
     var confirmUnpair by remember { mutableStateOf(false) }
     // Rechnen (Docker, VMs, LXC, NVR, Terminal): eigene Seiten über der Leiste (Compute.kt).
     var compute by rememberSaveable { mutableStateOf<String?>(null) }
+    // Kurzbefehl „zuletzt geöffnet“: das Programm wie von der Startseite.
+    LaunchedEffect(graph.openShortcut) {
+        val id = graph.openShortcut ?: return@LaunchedEffect
+        graph.openShortcut = null
+        when (id) {
+            in ADMIN_PROGRAMS -> admin = id
+            in PROGRAMS -> graph.openProgram = id
+            in COMPUTE_PROGRAMS -> compute = id
+        }
+    }
     compute?.let { id ->
         BackHandler { compute = null }
         ComputeProgram(id, graph) { compute = null }
@@ -318,6 +406,8 @@ private fun MainShell(graph: AppGraph) {
                 HomeScreen(
                     home.state,
                     onProgram = { p ->
+                        // Zuletzt geöffnete Programme als Kurzbefehle am App-Symbol.
+                        if (p.id in ADMIN_PROGRAMS || p.id in PROGRAMS || p.id in COMPUTE_PROGRAMS) Shortcuts.opened(context, p.id)
                         when (p.id) {
                             // Freigaben, Speicher, Benutzer, Plugins, Werkzeuge (Ablage und Werkzeuge) wie im Web.
                             in ADMIN_PROGRAMS -> admin = p.id
@@ -333,6 +423,7 @@ private fun MainShell(graph: AppGraph) {
                     modifier = Modifier.weight(1f),
                     photos = homeTileText(photos.view),
                     onPhotos = { tab = Tab.Photos },
+                    onSwitchNas = { switcher = true },
                 )
                 nav()
             }
@@ -345,6 +436,14 @@ private fun MainShell(graph: AppGraph) {
                             icon = { RowIcon(TitanIcons.info) },
                             chevron = true,
                             onClick = { menu = false; graph.openAbout = true },
+                        )
+                        ListRow(
+                            stringResource(R.string.nas_title),
+                            sub = stringResource(R.string.nas_manage_sub),
+                            icon = { RowIcon(TitanIcons.nodes) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; graph.openNasList = true },
                         )
                         ListRow(
                             stringResource(io.github.ra5on.titanos.pim.R.string.sync_title),
@@ -372,6 +471,14 @@ private fun MainShell(graph: AppGraph) {
                         )
                     }
                 }
+            }
+            if (switcher) {
+                NasSwitcherSheet(
+                    graph,
+                    onDismiss = { switcher = false },
+                    onAdd = { graph.beginAdd() },
+                    onManage = { graph.openNasList = true },
+                )
             }
             if (confirmUnpair) {
                 ConfirmDialog(

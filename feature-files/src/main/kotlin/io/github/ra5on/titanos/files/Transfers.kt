@@ -43,6 +43,8 @@ data class Transfer(
     /** Upload: Quelle ist eine Kopie der App (Teilen), nach dem Hochladen löschen. */
     val ownCopy: Boolean = false,
     val waiting: WaitReason = WaitReason.None,
+    /** Das NAS, zu dem die Übertragung gehört (mehrere NAS); leer: aus der Zeit davor, die alte Kopplung. */
+    val nas: String = "",
 ) {
     val fraction: Float get() = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f
     val finishedAt: Instant? get() = finishedAtMs?.let(Instant::ofEpochMilli)

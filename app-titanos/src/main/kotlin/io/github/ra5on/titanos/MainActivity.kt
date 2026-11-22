@@ -33,6 +33,19 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun take(intent: Intent?) {
+        val graph = (application as TitanApp).graph
+        // Widget, Kachel, Gerätesteuerung oder Mitteilung eines bestimmten NAS: dorthin wechseln, bevor sich etwas öffnet.
+        val nas = intent?.getStringExtra(io.github.ra5on.titanos.net.NasRegistry.EXTRA_NAS)
+            ?: io.github.ra5on.titanos.notify.NotifyRuntime.nasOf(intent)
+        if (nas != null) {
+            intent?.removeExtra(io.github.ra5on.titanos.net.NasRegistry.EXTRA_NAS)
+            graph.switchTo(nas)
+        }
+        // Kurzbefehl oder Gerätesteuerung: ein Programm der Startseite.
+        intent?.getStringExtra(Shortcuts.EXTRA_PROGRAM)?.let {
+            intent.removeExtra(Shortcuts.EXTRA_PROGRAM)
+            graph.openShortcut = it
+        }
         if (intent?.getBooleanExtra(io.github.ra5on.titanos.update.UpdateWorker.EXTRA_OPEN_ABOUT, false) == true) {
             (application as TitanApp).graph.openAbout = true
         }

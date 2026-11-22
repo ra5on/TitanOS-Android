@@ -50,7 +50,7 @@ private fun codeOf(e: Throwable): String = when (e) {
  * Standort (mit Erklärung vorher auf der Seite), Mitteilungen, Akku-Ausnahme.
  */
 @Composable
-fun VpnPage(onBack: () -> Unit) {
+fun VpnPage(onBack: () -> Unit, ownerNas: String = "", forNas: String = "") {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     BackHandler(onBack = onBack)
@@ -126,6 +126,8 @@ fun VpnPage(onBack: () -> Unit) {
     }
 
     val ui = VpnUi(
+        ownerNas = ownerNas,
+        forNas = forNas,
         live = live, settings = settings, profile = profile, answer = answer, loading = loading, error = error, busy = busy,
         perms = perms, currentSsid = ssid, gone = gone,
     )
