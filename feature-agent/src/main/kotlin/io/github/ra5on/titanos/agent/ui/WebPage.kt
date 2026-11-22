@@ -71,8 +71,14 @@ fun WebPage(session: WebSession, path: String, title: String, onClose: () -> Uni
 fun officeApp(context: Context): Boolean =
     context.packageManager.queryIntentActivities(Intent(OfficeIntent.ACTION).setPackage(OfficeIntent.PACKAGE), 0).isNotEmpty()
 
-/** Öffnet eine Datei („root/pfad“) oder eine Seite in der TitanOS-App; false, wenn sie es nicht kann. */
+/**
+ * Öffnet eine Datei („root/pfad“) in der TitanOS-App; false, wenn sie es nicht kann.
+ * Seiten der Weboberfläche ([href] ohne [path], z. B. `/mail/compose?agentDraft=…`)
+ * bettet die TitanOS-App nicht ein (SiblingOfficeActivity): dafür false, damit der
+ * Aufrufer die eigene WebView mit der Sitzung der App zeigt statt eines Hinweises.
+ */
 fun openInTitanOS(context: Context, path: String? = null, href: String? = null): Boolean {
+    if (path == null) return false
     if (!officeApp(context)) return false
     val i = Intent(OfficeIntent.ACTION).setPackage(OfficeIntent.PACKAGE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     if (path != null) i.putExtra(OfficeIntent.EXTRA_PATH, path)
