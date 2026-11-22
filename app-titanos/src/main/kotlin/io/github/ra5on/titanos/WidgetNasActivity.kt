@@ -14,7 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.glance.appwidget.updateAll
+import io.github.ra5on.titanos.widgets.redraw
 import androidx.lifecycle.lifecycleScope
 import io.github.ra5on.titanos.ui.R as UiR
 import io.github.ra5on.titanos.ui.components.Card
@@ -55,8 +55,8 @@ class WidgetNasActivity : ComponentActivity() {
                     WidgetStore.choose(this, id, nas)
                     lifecycleScope.launch {
                         runCatching {
-                            NasWidget().updateAll(this@WidgetNasActivity)
-                            PhotosWidget().updateAll(this@WidgetNasActivity)
+                            NasWidget().redraw(this@WidgetNasActivity)
+                            PhotosWidget().redraw(this@WidgetNasActivity)
                         }
                         WidgetRefresh.now(this@WidgetNasActivity)
                         setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id))

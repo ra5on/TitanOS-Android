@@ -21,6 +21,9 @@ import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.state.updateAppWidgetState
+import androidx.glance.currentState
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
@@ -71,6 +74,22 @@ private fun placeOf(context: Context, id: GlanceId): Pair<String, Boolean> {
     return WidgetStore.nasFor(context, appWidgetId) to (category and AppWidgetProviderInfo.WIDGET_CATEGORY_KEYGUARD != 0)
 }
 
+/**
+ * Marke im Glance-Zustand jedes Widgets: [redraw] setzt sie neu, damit ein
+ * laufendes Widget wirklich neu liest (Daten außerhalb des Glance-Zustands
+ * sieht die Komposition sonst erst nach dem Ende ihrer Sitzung).
+ */
+internal val STAMP = longPreferencesKey("stamp")
+
+/** Zeichnet alle Widgets dieser Art mit neu gelesenen Daten (NAS gewählt, neuer Stand). */
+suspend fun GlanceAppWidget.redraw(context: Context) {
+    val manager = GlanceAppWidgetManager(context)
+    for (id in manager.getGlanceIds(this.javaClass)) {
+        updateAppWidgetState(context, id) { it[STAMP] = System.currentTimeMillis() }
+        update(context, id)
+    }
+}
+
 /** Mit mehreren NAS steht der Name dabei. */
 private fun severalNas(): Boolean = WidgetRuntime.nasList().size > 1
 
@@ -89,9 +108,13 @@ private fun Card(onClick: Action, content: @Composable () -> Unit) {
 /** NAS-Zustand mit Volumes (Entwurf 82): Zustand in Worten, nie nur Farbe. */
 class NasWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val (nas, locked) = placeOf(context, id)
-        val s = WidgetStore.nas(context, nas)
-        provideContent { GlanceTheme { NasContent(context, s, nas, locked) } }
+        provideContent {
+            // Neu lesen, sobald redraw die Marke setzt.
+            currentState(STAMP)
+            val (nas, locked) = placeOf(context, id)
+            val s = WidgetStore.nas(context, nas)
+            GlanceTheme { NasContent(context, s, nas, locked) }
+        }
     }
 
     @Composable
@@ -136,10 +159,11 @@ class NasWidget : GlanceAppWidget() {
 /** Foto-Sicherung (Entwurf 82): Stand in Worten, Tippen öffnet die App. */
 class PhotosWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val (nas, _) = placeOf(context, id)
-        val s = WidgetStore.photos(context, nas)
-        val title = if (severalNas()) context.getString(R.string.w_photos_nas, nasName(nas)) else context.getString(R.string.w_photos)
         provideContent {
+            currentState(STAMP)
+            val (nas, _) = placeOf(context, id)
+            val s = WidgetStore.photos(context, nas)
+            val title = if (severalNas()) context.getString(R.string.w_photos_nas, nasName(nas)) else context.getString(R.string.w_photos)
             GlanceTheme {
                 Card(launch(context, EXTRA_OPEN_PHOTOS, nas)) {
                     Column(GlanceModifier.fillMaxWidth()) {

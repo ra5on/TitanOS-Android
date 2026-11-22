@@ -1,7 +1,6 @@
 package io.github.ra5on.titanos.widgets
 
 import android.content.Context
-import androidx.glance.appwidget.updateAll
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -154,8 +153,8 @@ object WidgetRefresh {
             val s = load(context, WidgetRuntime.api(n.id), n.id)
             WidgetStore.saveNas(context, s, n.id)
         }
-        NasWidget().updateAll(context)
-        PhotosWidget().updateAll(context)
+        NasWidget().redraw(context)
+        PhotosWidget().redraw(context)
         onRefreshed?.invoke(context)
     }
 

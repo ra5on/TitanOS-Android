@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.glance.appwidget.updateAll
+import io.github.ra5on.titanos.widgets.redraw
 import io.github.ra5on.titanos.photos.upToDate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -266,7 +266,7 @@ private fun MainShell(graph: AppGraph) {
             atMs = System.currentTimeMillis(),
         )
         if (io.github.ra5on.titanos.widgets.WidgetStore.savePhotos(context, snap)) {
-            runCatching { io.github.ra5on.titanos.widgets.PhotosWidget().updateAll(context) }
+            runCatching { io.github.ra5on.titanos.widgets.PhotosWidget().redraw(context) }
         }
     }
     // Tippen auf das Widget „Fotos“ öffnet den Reiter.
