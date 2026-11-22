@@ -80,7 +80,7 @@ object Poster {
             NotificationChannel(CHANNEL_LIVE, context.getString(R.string.notify_live_channel), NotificationManager.IMPORTANCE_MIN).apply {
                 description = context.getString(R.string.notify_live_channel_text)
                 setShowBadge(false)
-                group = GROUP
+                this.group = GROUP
             },
         )
     }

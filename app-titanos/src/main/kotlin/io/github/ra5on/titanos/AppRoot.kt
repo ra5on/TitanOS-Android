@@ -107,7 +107,7 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
     }
     val adding = graph.adding
     when {
-        pairing == null -> SetupFlow(graph, pairingModel, step) { step = it }
+        pairing == null -> SetupFlow(graph, pairingModel, step, { step = it })
         adding != null -> AddFlow(graph, adding, addLink, onLinkUsed = { addLink = null }) { permissionsPending = true }
         permissionsPending -> PermissionsRoute(
             onNext = { permissionsPending = false; step = SetupStep.Welcome },
