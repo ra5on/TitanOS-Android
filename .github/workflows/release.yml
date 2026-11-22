@@ -61,7 +61,7 @@ jobs:
           major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[2]}
           want_name=$(printf '%d.%02d' "$major" "$minor")
           want_code=$((major * 100 + minor))
-          for app in app-titanos app-agent; do
+          for app in app-titanos app-agent app-watch; do
             name=$(sed -nE 's/^\s*versionName = "([^"]+)".*/\1/p' $app/build.gradle.kts)
             code=$(sed -nE 's/^\s*versionCode = ([0-9]+).*/\1/p' $app/build.gradle.kts)
             if [ "$name" != "$want_name" ] || [ "$code" != "$want_code" ]; then
@@ -102,12 +102,13 @@ jobs:
           export TITANOS_KEYSTORE="$RUNNER_TEMP/titanos-release.p12"
           printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$TITANOS_KEYSTORE"
           trap 'rm -f "$TITANOS_KEYSTORE"' EXIT
-          ./gradlew --no-daemon :app-titanos:assembleRelease :app-agent:assembleRelease
+          ./gradlew --no-daemon :app-titanos:assembleRelease :app-agent:assembleRelease :app-watch:assembleRelease
       - name: Signatur und Version prüfen
         run: |
           bt="$ANDROID_HOME/build-tools/37.0.0"
           mkdir -p out
-          for pair in "app-titanos:TitanOS-Android" "app-agent:TitanOS-Agent"; do
+          # Ab 1.00 auch die Uhr-App (Wear OS, io.github.ra5on.titanos.watch), gleicher Schlüssel.
+          for pair in "app-titanos:TitanOS-Android" "app-agent:TitanOS-Agent" "app-watch:TitanOS-Watch"; do
             module=${pair%%:*} prefix=${pair##*:}
             apk=$module/build/outputs/apk/release/$module-release.apk
             # Die Agent-App ist erst ab 0.03 dabei; fehlt sie, bleibt es bei der TitanOS-App.

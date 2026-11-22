@@ -46,5 +46,6 @@ include(
     ":feature-vpn",
     ":app-titanos",
     ":app-agent",
+    ":app-watch",
     ":lint-rules",
 )

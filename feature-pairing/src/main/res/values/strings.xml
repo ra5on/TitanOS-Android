@@ -77,4 +77,22 @@
     <string name="pair_sibling_permission">TitanOS-Apps untereinander koppeln</string>
     <string name="pair_err_local_network">Android erlaubt der App den Zugriff auf Geräte im lokalen Netzwerk nicht. Ohne diese Erlaubnis erreicht sie das NAS im Heimnetz nicht.</string>
     <string name="pair_local_network_allow">Lokales Netzwerk erlauben</string>
+    <!-- Uhr koppeln (PLAN 116 Paket G) -->
+    <string name="pair_watch_title">Uhr koppeln</string>
+    <string name="pair_watch_back">Zurück</string>
+    <string name="pair_watch_intro">Für eine Uhr mit Wear OS, ohne Google. Installiere dort die App „TitanOS“ für die Uhr und öffne sie.</string>
+    <string name="pair_watch_step1">1. Diese Adresse auf der Uhr eintippen</string>
+    <string name="pair_watch_step2">2. Die Zahl von der Uhr hier eingeben</string>
+    <string name="pair_watch_code_label">Zahl von der Uhr</string>
+    <string name="pair_watch_confirm">Uhr koppeln</string>
+    <string name="pair_watch_busy">Wird gekoppelt …</string>
+    <string name="pair_watch_hint">Die Uhr bekommt einen eigenen Zugang mit den Rechten deines Kontos. Du kannst ihn im Web unter Mein Konto › Geräte einzeln beenden.</string>
+    <string name="pair_watch_done">„%1$s“ ist gekoppelt. Die Uhr macht jetzt von selbst weiter.</string>
+    <string name="pair_watch_close">Fertig</string>
+    <string name="pair_watch_err_code">Keine Uhr zeigt diese Zahl. Prüfe die Zahl auf der Uhr; nach 5 Minuten braucht sie eine neue.</string>
+    <string name="pair_watch_err_limit">Zu viele falsche Zahlen. Bitte warte kurz.</string>
+    <string name="pair_watch_err_old_nas">Das NAS kann noch keine Uhren koppeln. Es braucht TitanOS 1.19.</string>
+    <string name="pair_watch_err_app_limit">Es sind schon 20 Apps gekoppelt. Beende zuerst eine unter Mein Konto › Geräte.</string>
+    <string name="pair_watch_err_reach">Das NAS ist gerade nicht erreichbar.</string>
+    <string name="pair_watch_err_other">Das hat nicht geklappt. Bitte noch einmal.</string>
 </resources>

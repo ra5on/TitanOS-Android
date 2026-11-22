@@ -169,6 +169,23 @@ context.startActivity(
 - Ob die TitanOS-App die Aktion kann, prüft die Agent-App vorher (`queryIntentActivities`). Kann sie es nicht oder ist sie nicht installiert, öffnet die Agent-App dieselbe Seite des Webs in einer WebView mit ihrer eigenen Sitzung; fremde Zertifikate gelten dort nur, wenn sie das bei der Kopplung festgehaltene sind. Für eine Datei ist das der Ordner in den Dateien des Webs, weil das Web keine eigene Adresse für den Editor einer Datei hat.
 - Die Seite der TitanOS-App fehlt noch: bis sie die Aktion annimmt, nimmt die Agent-App immer die WebView.
 
+## Uhr (Wear OS)
+
+Die Uhr-App „TitanOS“ (`io.github.ra5on.titanos.watch`, Datei `TitanOS-Watch-X.YY.apk`) läuft auf Uhren mit **Wear OS 4** oder neuer und braucht ein NAS mit **TitanOS 1.19**. Sie kommt **ohne Google** aus: keine Play-Dienste, keine Datenverbindung über die Wear-OS-App des Handys. Die Uhr spricht selbst mit dem NAS, über WLAN, über das Handy (Bluetooth) oder über LTE. Mitteilungen des Handys spiegelt Android ohnehin auf die Uhr.
+
+- **Installieren:** Ohne Play Store kommt die APK per ADB auf die Uhr (Entwickleroptionen › ADB-Debugging bzw. Debugging über WLAN): `adb -s <uhr> install TitanOS-Watch-X.YY.apk`. Danach aktualisiert sie sich selbst unter Einstellungen › Update, geprüft wie bei den Handy-Apps (Prüfsumme aus `SHA256SUMS`, derselbe Signaturschlüssel).
+- **Koppeln, angestoßen vom Handy:**
+  1. In der TitanOS-App am Handy **Menü › Uhr koppeln** öffnen. Dort stehen die Adressen des NAS.
+  2. Auf der Uhr **Adresse eingeben** und eine davon eintippen oder sprechen.
+  3. Die Uhr zeigt **sechs Ziffern**. Diese am Handy eingeben und „Uhr koppeln“ tippen.
+  - Die Ziffern hängen am Schlüssel der Uhr und am Zertifikat, das die Uhr sieht. Sitzt jemand dazwischen, passen sie nicht. Die Uhr ist danach ein **eigenes Gerät** unter Mein Konto › Geräte und lässt sich dort einzeln beenden.
+- **Was die Uhr kann:**
+  - Zustand des NAS, Speicher und neue Meldungen als **Kachel** und als **Komplikation** fürs Zifferblatt.
+  - **Agent per Sprache:** Diktat über die Spracheingabe der Uhr. Ohne sie nimmt die Uhr selbst auf, und Whisper am NAS schreibt mit. Die Antwort kommt als Text, auf Wunsch vorgelesen (Stimme der Uhr oder Piper am NAS). **Freigaben** des Agenten erlauben oder ablehnen.
+  - **Schalten** nach den Rechten des Kontos: Geräte von Home Assistant, Container und VMs starten und stoppen. Stoppen fragt vorher nach.
+  - **Kameras:** Standbild und letzte Ereignisse des NVR.
+- **Akku:** keine Dauerverbindung. Die Uhr fragt nur, solange eine Seite sichtbar ist, und wenn Android Kachel oder Komplikation neu zeichnet (höchstens alle 15 bzw. 30 Minuten).
+
 ## Bauen
 
 Nötig sind JDK 21 und das Android-SDK mit `platforms;android-37.0` und `build-tools;37.0.0`.
@@ -179,9 +196,9 @@ export ANDROID_HOME=/pfad/zu/android-sdk
 ./gradlew assembleDebug testDebugUnitTest lint
 ```
 
-Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/debug/` und `app-agent/build/outputs/apk/debug/`.
+Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/debug/`, `app-agent/build/outputs/apk/debug/` und `app-watch/build/outputs/apk/debug/`.
 
-- **Bildtests:** `./gradlew recordRoborazziDebug` schreibt alle Bildschirme in 412 dp Breite, hell und dunkel, nach `app-titanos/build/outputs/roborazzi/`. Die Agent-App (`AgentScreenshotTest`) zeigt jeden Bildschirm in 390 dp wie die Aufnahmen des Webs, hell und dunkel, dazu die Figur als Bildserie, 1280 dp breit und Schrift 200 %; die App spricht dabei mit einem MockWebServer mit den Testdaten des Webs. Bilder nach `feature-agent/build/outputs/roborazzi/`.
+- **Bildtests:** `./gradlew recordRoborazziDebug` schreibt alle Bildschirme in 412 dp Breite, hell und dunkel, nach `app-titanos/build/outputs/roborazzi/`. Die Agent-App (`AgentScreenshotTest`) zeigt jeden Bildschirm in 390 dp wie die Aufnahmen des Webs, hell und dunkel, dazu die Figur als Bildserie, 1280 dp breit und Schrift 200 %; die App spricht dabei mit einem MockWebServer mit den Testdaten des Webs. Bilder nach `feature-agent/build/outputs/roborazzi/`. Die Uhr (`WatchScreenshotTest`) zeigt jeden Bildschirm rund (227 dp) und eckig (198 dp), mit normaler und doppelter Schrift, und meldet abgeschnittene oder getrennte Wörter und namenlose Bedienelemente; Bilder nach `app-watch/build/outputs/roborazzi/`.
 - **Release:** Ein Tag `vX.Y.0` startet `.github/workflows/release.yml`.
   - **Version:** angezeigt X.YY, `versionCode` X·100+Y. Der Workflow prüft, dass `build.gradle.kts` dazu passt.
   - **Signieren:** nur im Job „publish“ der Umgebung `release`. Die Umgebung lässt nur Tags `v*` zu und wartet auf die Freigabe des Inhabers. Der Schlüssel liegt dort als Secret.
@@ -210,6 +227,7 @@ Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/debug/` und `a
 | `:app-titanos` | die App „TitanOS“ (`io.github.ra5on.titanos`) |
 | `:feature-agent` | Chat mit dem KI-Agenten: Strom (SSE), Freigaben, Markdown, Projekte, Aufträge, Notizen |
 | `:app-agent` | die App „Agent“ (`io.github.ra5on.titanos.agent`) |
+| `:app-watch` | die Uhr-App (`io.github.ra5on.titanos.watch`, Wear OS): eigene Kopplung, Kachel, Komplikation, Agent, Schalten, Kameras |
 | `:lint-rules` | Lint-Regel gegen abgeschnittenen Text |
 
 ## Lizenz
