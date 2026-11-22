@@ -59,10 +59,10 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost {
     override val siblingSessions get() = graph.sessions
     override fun siblingPaired(pairing: Pairing) = graph.paired(pairing)
     // Mehrere NAS: die Agent-App bekommt jedes NAS angeboten, das sie noch nicht hat (das gewählte zuerst).
+    // Nur NAS, die man in dieser App bewusst gekoppelt oder gewählt hat (nicht eines aus einem fremden Link).
     override fun siblingPairings(): List<Pairing> =
-        graph.registry.let { r -> listOfNotNull(r.active) + r.profiles.filter { it.id != r.active?.id } }.map { it.pairing }
-    override fun siblingSessionsFor(pairing: Pairing): SessionManager =
-        graph.registry.profiles.firstOrNull { it.pairing.device == pairing.device && it.pairing.user == pairing.user }?.let { graph.link(it.id)?.sessions } ?: graph.sessions
+        graph.registry.let { r -> listOfNotNull(r.active) + r.profiles.filter { it.id != r.active?.id } }.filter { it.agent }.map { it.pairing }
+    override fun siblingSessionsFor(pairing: Pairing): SessionManager = graph.sessionsOf(pairing)
 
     /**
      * WorkManager nutzt JobScheduler-Kennungen unterhalb von 0x70000000;
@@ -298,6 +298,16 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
         return if (taken) "$base (${p.id.takeLast(4)})" else base
     }
 
+    /**
+     * Die Sitzung genau dieser Kopplung. Ohne passende Kopplung ein Fehler, nie
+     * die Sitzung eines anderen NAS (sonst ginge dessen Cookie an dieses NAS).
+     */
+    fun sessionsOf(pairing: Pairing): SessionManager {
+        val p = registry.profiles.firstOrNull { it.pairing.device == pairing.device && it.pairing.user == pairing.user }
+            ?: throw IllegalStateException("no pairing for this NAS")
+        return link(p.id)?.sessions ?: throw IllegalStateException("no pairing for this NAS")
+    }
+
     /** Ein Konto je Kopplung in Kontakte und Kalender; Konten ohne Kopplung gehen. */
     fun ensurePimAccounts() {
         val names = registry.profiles.map(::pimName).toSet()
@@ -306,8 +316,11 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
     }
 
     /** Zu einem anderen gekoppelten NAS wechseln. */
-    fun switchTo(id: String) {
-        if (registry.profile(id) == null || id == registry.active?.id) return
+    fun switchTo(id: String, deliberate: Boolean = true) {
+        val p = registry.profile(id) ?: return
+        // Bewusst gewählt (Umschalter, Seite „NAS und Konten“): jetzt darf die Agent-App es auch übernehmen.
+        if (deliberate && !p.agent) registry.update(id) { it.copy(agent = true) }
+        if (id == registry.active?.id) return
         registry.setActive(id)
         rebuild()
         afterSwitch()
@@ -353,7 +366,16 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
     var adding by mutableStateOf<AddingPairingStore?>(null)
         private set
 
-    fun beginAdd(): AddingPairingStore = AddingPairingStore(registry, NasRegistry.newId()).also { adding = it }
+    /**
+     * [fromLink]: angestoßen von einem Kopplungslink (Browser, andere App). Dann
+     * wird das neue NAS nicht gewählt und nicht der Agent-App angeboten, bis man
+     * es selbst im Umschalter wählt.
+     */
+    fun beginAdd(fromLink: Boolean = false): AddingPairingStore =
+        AddingPairingStore(registry, NasRegistry.newId(), activate = !fromLink).also { adding = it }
+
+    /** Ein NAS aus einem Link ist dazugekommen, aber nicht gewählt: sein Name für einen Hinweis. */
+    var addedQuietly by mutableStateOf<String?>(null)
 
     /** Schlüssel für die laufende Kopplung eines weiteren NAS. */
     fun addingKey(s: AddingPairingStore): DeviceKey = KeystoreDeviceKey(NasNames.keyAlias(s.id))
@@ -372,6 +394,13 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
         // Neu gekoppelt: der Schlüssel ist ein anderer, die Sitzung beginnt neu.
         synchronized(links) { links.remove(id) }
         s.replacedKey?.let { runCatching { KeystoreDeviceKey(it).delete() } }
+        if (!s.activate) {
+            // Aus einem Link: dazu, aber nicht gewählt und (noch) nicht für die Agent-App.
+            addedQuietly = registry.profile(id)?.name
+            rebuild()
+            armAll()
+            return
+        }
         registry.setActive(id)
         (app as? SiblingHost)?.let { Sibling.announce(app, it) }
         rebuild()

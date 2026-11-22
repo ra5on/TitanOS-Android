@@ -169,6 +169,34 @@ class MultiNasTest {
     }
 
     @Test
+    fun aNasFromALinkStaysUnchosenUntilPickedByHand() {
+        oldInstall()
+        val graph = AppGraph(app, NasRegistry.prefs(app))
+        val adding = graph.beginAdd(fromLink = true)
+        adding.save(parents)
+        graph.added(adding)
+        assertEquals(NasRegistry.LEGACY_ID, graph.activeProfile!!.id)
+        assertEquals("eltern", graph.addedQuietly)
+        val id = adding.landed
+        assertFalse(graph.registry.profile(id)!!.agent)
+        // Wechsel aus Widget oder Mitteilung ist keine bewusste Wahl, der Umschalter schon.
+        graph.switchTo(id, deliberate = false)
+        assertFalse(graph.registry.profile(id)!!.agent)
+        graph.switchTo(NasRegistry.LEGACY_ID)
+        graph.switchTo(id)
+        assertTrue(graph.registry.profile(id)!!.agent)
+    }
+
+    @Test
+    fun noSessionOfAnotherNasForAnUnknownPairing() {
+        oldInstall()
+        val graph = AppGraph(app, NasRegistry.prefs(app))
+        assertTrue(graph.sessionsOf(home) === graph.link(NasRegistry.LEGACY_ID)!!.sessions)
+        val failed = runCatching { graph.sessionsOf(parents) }
+        assertTrue(failed.exceptionOrNull() is IllegalStateException)
+    }
+
+    @Test
     fun clusterNodesOnlyWhenThisNasManagesThem() {
         val json = """{"nodes":[{"id":"a","name":"nas","self":true,"online":true},{"id":"b","name":"nas2","online":false}],"version":"1.19.0","manages":true}"""
         assertEquals(listOf("a", "b"), clusterNodesOf(json).map { it.id })

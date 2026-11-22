@@ -17,6 +17,8 @@ import java.util.UUID
  * [key] ist der Name des Schlüssels im Keystore, wenn er nicht zu [id] passt
  * (dasselbe NAS mit demselben Konto neu gekoppelt: die Daten bleiben bei [id],
  * der Schlüssel ist der neue).
+ * [agent]: die Agent-App darf dieses NAS übernehmen. Ein NAS aus einem fremden
+ * Link ist das erst, wenn man es in der App bewusst wählt.
  */
 @Serializable
 data class NasProfile(
@@ -24,6 +26,7 @@ data class NasProfile(
     val pairing: Pairing,
     val label: String = "",
     val key: String = "",
+    val agent: Boolean = true,
 ) {
     /** Der Name in Listen, Kanälen und Widgets. */
     val name: String get() = label.ifBlank { pairing.hostname.ifBlank { pairing.addresses.firstOrNull()?.server.orEmpty() } }
@@ -204,7 +207,12 @@ class ActivePairingStore(private val registry: NasRegistry) : PairingStore {
  * Speichern legt eine neue Kopplung mit [id] an („NAS hinzufügen“); vorher
  * gibt es hier nichts zu laden. Mit dem Schlüssel [NasNames.keyAlias] von [id].
  */
-class AddingPairingStore(private val registry: NasRegistry, val id: String, private val activate: Boolean = true) : PairingStore {
+class AddingPairingStore(
+    private val registry: NasRegistry,
+    val id: String,
+    /** Das neue NAS gleich wählen (und der Agent-App anbieten)? Nicht bei einem Link aus dem Browser. */
+    val activate: Boolean = true,
+) : PairingStore {
     /**
      * Wo die Kopplung gelandet ist: [id], oder die Kennung einer schon
      * vorhandenen Kopplung mit demselben NAS und Konto. Dann bekommt diese die
@@ -230,7 +238,7 @@ class AddingPairingStore(private val registry: NasRegistry, val id: String, priv
             return
         }
         val now = registry.profile(id)
-        if (now == null) registry.add(NasProfile(id, pairing), activate) else registry.update(id) { it.copy(pairing = pairing) }
+        if (now == null) registry.add(NasProfile(id, pairing, agent = activate), activate) else registry.update(id) { it.copy(pairing = pairing) }
     }
     override fun clear() = registry.remove(landed)
 }

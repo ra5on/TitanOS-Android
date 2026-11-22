@@ -46,15 +46,32 @@ import java.util.concurrent.Flow
 import java.util.function.Consumer
 
 /**
- * Fingerabdruck-Liste der App (`Guard` aus der Systemsteuerung): Ist
- * „Ausschalten“ ([GuardAction.Power], ab Werk an) gewählt, verlangt Android vor
- * dem Stoppen eines Containers oder einer VM und vor dem Entriegeln eines
- * Schlosses eine Bestätigung. Die Gerätesteuerung läuft in der Oberfläche von
- * Android; dort gibt es keinen eigenen Fingerabdruck-Dialog, aber das Handy
- * muss für diese Steuerelemente entsperrt sein (`setAuthRequired`).
+ * Wann Android vor einer Aktion eine Bestätigung verlangt:
+ * - Schlösser beim Entriegeln und Abdeckungen (Garagentor, Rollladen) in
+ *   beide Richtungen immer: wer ein Handy in der Hand hat, soll damit keine
+ *   Tür öffnen, ohne es zu bestätigen;
+ * - Container und VMs beim Stoppen, wenn in der Fingerabdruck-Liste
+ *   „Ausschalten“ ([GuardAction.Power], ab Werk an) gewählt ist.
+ * Die Gerätesteuerung läuft in der Oberfläche von Android; dort gibt es keinen
+ * eigenen Fingerabdruck-Dialog. Entsperrt sein muss das Handy für fast alles
+ * ([controlAuthRequired]).
  */
-internal fun controlNeedsConfirm(context: Context, kind: String, turningOff: Boolean): Boolean =
-    turningOff && kind in setOf(ControlId.CONTAINER, ControlId.VM, ControlId.HA) && Guard.enabled(context, GuardAction.Power)
+internal fun controlNeedsConfirm(kind: String, domain: String, on: Boolean, guardPower: Boolean): Boolean = when (kind) {
+    ControlId.HA -> domain == "cover" || (domain == "lock" && !on)
+    ControlId.CONTAINER, ControlId.VM -> !on && guardPower
+    else -> false
+}
+
+internal fun controlNeedsConfirm(context: Context, kind: String, domain: String, on: Boolean): Boolean =
+    controlNeedsConfirm(kind, domain, on, Guard.enabled(context, GuardAction.Power))
+
+/**
+ * Nur bei entsperrtem Handy? Ja für alles außer Licht und Ventilator: auch mit
+ * „Vom gesperrten Gerät aus steuern“ löst niemand mit dem gesperrten Handy ein
+ * Garagentor, eine Szene, ein Skript, einen Schalter, einen Container oder eine VM aus.
+ */
+internal fun controlAuthRequired(kind: String, domain: String): Boolean =
+    !(kind == ControlId.HA && (domain == "light" || domain == "fan"))
 
 /** Kennung eines Steuerelements: `<nas>|<art>|<kennung>`, damit gleiche Namen zweier NAS sich nicht stören. */
 data class ControlId(val nas: String, val kind: String, val id: String) {
@@ -100,9 +117,6 @@ internal fun haService(domain: String, on: Boolean): String = when (domain) {
     "scene", "script" -> "turn_on"
     else -> if (on) "turn_on" else "turn_off"
 }
-
-/** Ob ein Schalten „sicherheitsrelevant aus“ ist: nur das Entriegeln eines Schlosses. */
-internal fun haTurningOff(domain: String, on: Boolean): Boolean = domain == "lock" && !on
 
 /**
  * Home Assistant über die Anbindung des NAS, wie im Web: nur für Besitzer und
@@ -251,9 +265,8 @@ class TitanControlsService : ControlsProviderService() {
             }
         }
         val haDomain = if (cid.kind == ControlId.HA) cid.id.substringBefore('.') else ""
-        val off = if (cid.kind == ControlId.HA) haTurningOff(haDomain, on) else !on
         // Fingerabdruck-Liste: Android fragt nach (Bestätigung), dann kommt die Aktion mit challengeValue noch einmal.
-        if (controlNeedsConfirm(this, cid.kind, off) && action.challengeValue == null) {
+        if (controlNeedsConfirm(this, cid.kind, haDomain, on) && action.challengeValue == null) {
             consumer.accept(ControlAction.RESPONSE_CHALLENGE_ACK)
             return
         }
@@ -314,7 +327,7 @@ class TitanControlsService : ControlsProviderService() {
                         .setStatus(Control.STATUS_OK)
                         .setStatusText(text)
                         // Container und VMs nur bei entsperrtem Handy.
-                        .setAuthRequired(true)
+                        .setAuthRequired(controlAuthRequired(cid.kind, ""))
                         .setControlTemplate(ToggleTemplate(cid.toString(), ControlButton(running, getString(if (running) R.string.ctl_stop else R.string.ctl_start))))
                         .build()
                 }
@@ -347,8 +360,8 @@ class TitanControlsService : ControlsProviderService() {
                     .setDeviceType(type)
                     .setStatus(if (value.state == "unavailable") Control.STATUS_DISABLED else Control.STATUS_OK)
                     .setStatusText(text)
-                    // Schlösser nur entsperrt; Licht und Schalter folgen der Android-Einstellung „Vom gesperrten Gerät aus steuern“.
-                    .setAuthRequired(value.domain == "lock")
+                    // Nur Licht und Ventilator folgen der Android-Einstellung „Vom gesperrten Gerät aus steuern“.
+                    .setAuthRequired(controlAuthRequired(ControlId.HA, value.domain))
                     .setControlTemplate(template)
                     .build()
             }

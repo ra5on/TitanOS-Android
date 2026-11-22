@@ -40,7 +40,8 @@ class MainActivity : ComponentActivity() {
             ?: io.github.ra5on.titanos.notify.NotifyRuntime.nasOf(intent)
         if (nas != null) {
             intent?.removeExtra(io.github.ra5on.titanos.net.NasRegistry.EXTRA_NAS)
-            graph.switchTo(nas)
+            // Aus Widget, Kachel, Mitteilung: wechseln, aber nicht als bewusste Wahl für die Agent-App.
+            graph.switchTo(nas, deliberate = false)
         }
         // Kurzbefehl oder Gerätesteuerung: ein Programm der Startseite.
         intent?.getStringExtra(Shortcuts.EXTRA_PROGRAM)?.let {

@@ -36,9 +36,30 @@ class ControlsTest {
         assertEquals("turn_on", haService("scene", false))
         assertTrue(haIsOn(HaEntity("lock.tuer", state = "locked", domain = "lock")))
         assertFalse(haIsOn(HaEntity("cover.rollo", state = "closed", domain = "cover")))
-        // Nur das Entriegeln gilt als sicherheitsrelevant (Bestätigung nach der Fingerabdruck-Liste).
-        assertTrue(haTurningOff("lock", false))
-        assertFalse(haTurningOff("light", false))
+    }
+
+    @Test
+    fun lockedPhoneControlsOnlyLightsAndFans() {
+        // Auch mit „Vom gesperrten Gerät aus steuern“: nur Licht und Ventilator ohne Entsperren.
+        assertFalse(controlAuthRequired(ControlId.HA, "light"))
+        assertFalse(controlAuthRequired(ControlId.HA, "fan"))
+        for (d in listOf("cover", "lock", "scene", "script", "switch", "input_boolean")) assertTrue(d, controlAuthRequired(ControlId.HA, d))
+        assertTrue(controlAuthRequired(ControlId.CONTAINER, ""))
+        assertTrue(controlAuthRequired(ControlId.VM, ""))
+    }
+
+    @Test
+    fun doorsAndGaragesAlwaysAskContainersPerGuard() {
+        // Abdeckungen (Garagentor) in beide Richtungen, Schlösser beim Entriegeln – immer.
+        assertTrue(controlNeedsConfirm(ControlId.HA, "cover", on = true, guardPower = false))
+        assertTrue(controlNeedsConfirm(ControlId.HA, "cover", on = false, guardPower = false))
+        assertTrue(controlNeedsConfirm(ControlId.HA, "lock", on = false, guardPower = false))
+        assertFalse(controlNeedsConfirm(ControlId.HA, "lock", on = true, guardPower = true))
+        assertFalse(controlNeedsConfirm(ControlId.HA, "light", on = false, guardPower = true))
+        // Container und VMs stoppen nach der Fingerabdruck-Liste („Ausschalten“).
+        assertTrue(controlNeedsConfirm(ControlId.CONTAINER, "", on = false, guardPower = true))
+        assertFalse(controlNeedsConfirm(ControlId.CONTAINER, "", on = false, guardPower = false))
+        assertFalse(controlNeedsConfirm(ControlId.VM, "", on = true, guardPower = true))
     }
 
     @Test

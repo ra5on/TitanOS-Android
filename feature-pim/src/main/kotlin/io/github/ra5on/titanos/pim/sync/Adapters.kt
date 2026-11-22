@@ -108,7 +108,8 @@ object PimSync {
             val on = if (authority == ContactsContract.AUTHORITY) p.contacts else p.calendars
             ContentResolver.setIsSyncable(account, authority, 1)
             ContentResolver.setSyncAutomatically(account, authority, on && p.uploadOnChange || on && p.intervalMinutes > 0)
-            ContentResolver.getPeriodicSyncs(account, authority).forEach { ContentResolver.removePeriodicSync(account, authority, it.extras) }
+            // Eine Kopie: manche Umgebungen (Robolectric) geben die lebende Liste zurück.
+            ContentResolver.getPeriodicSyncs(account, authority).toList().forEach { ContentResolver.removePeriodicSync(account, authority, it.extras) }
             if (on && p.intervalMinutes > 0) {
                 ContentResolver.addPeriodicSync(account, authority, Bundle.EMPTY, maxOf(15, p.intervalMinutes) * 60L)
             }

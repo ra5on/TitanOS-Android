@@ -91,16 +91,17 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
         }
     }
     var step by rememberSaveable { mutableStateOf(SetupStep.Welcome) }
-    // Ein Kopplungslink, während schon ein NAS gekoppelt ist: ein weiteres NAS hinzufügen.
+    // Ein Kopplungslink, während schon ein NAS gekoppelt ist: erst fragen, dann ein weiteres NAS hinzufügen.
     var addLink by remember { mutableStateOf<PairLink?>(null) }
+    var askLink by remember { mutableStateOf<PairLink?>(null) }
     LaunchedEffect(link) {
         if (link != null) {
             if (graph.pairing == null) {
                 pairingModel.startFromLink(link)
                 step = SetupStep.Confirm
             } else {
-                if (graph.adding == null) graph.beginAdd()
-                addLink = link
+                // Ein fremder Link koppelt nie still: deutlicher Hinweis vorher, das neue NAS wird nicht gewählt.
+                askLink = link
             }
             onLinkTaken()
         }
@@ -108,7 +109,7 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
     val adding = graph.adding
     when {
         pairing == null -> SetupFlow(graph, pairingModel, step, { step = it })
-        adding != null -> AddFlow(graph, adding, addLink, onLinkUsed = { addLink = null }) { permissionsPending = true }
+        adding != null -> AddFlow(graph, adding, addLink, onLinkUsed = { addLink = null }) { if (adding.activate) permissionsPending = true }
         permissionsPending -> PermissionsRoute(
             onNext = { permissionsPending = false; step = SetupStep.Welcome },
             photoPermissions = MediaAccess.PERMISSIONS,
@@ -138,7 +139,26 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
         )
         // Je NAS fängt die Oberfläche neu an (keine Seite behält die Verbindung des vorigen NAS);
         // die Sperre beim Öffnen liegt außen, damit ein Wechsel des NAS nicht neu sperrt.
-        else -> AppLock { androidx.compose.runtime.key(graph.nasEpoch) { MainShell(graph) } }
+        else -> AppLock {
+            Box(Modifier.fillMaxSize()) {
+                androidx.compose.runtime.key(graph.nasEpoch) { MainShell(graph) }
+                askLink?.let { l ->
+                    ConfirmDialog(
+                        title = stringResource(R.string.nas_link_title),
+                        text = stringResource(R.string.nas_link_text, l.addresses.joinToString(", ") { it.address.server }),
+                        actions = listOf(
+                            DialogAction(stringResource(R.string.nas_link_go)) {
+                                askLink = null
+                                if (graph.adding == null) graph.beginAdd(fromLink = true)
+                                addLink = l
+                            },
+                            DialogAction(stringResource(UiR.string.ui_cancel)) { askLink = null },
+                        ),
+                        onDismiss = { askLink = null },
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -301,6 +321,15 @@ private fun MainShell(graph: AppGraph) {
     // Je Kopplung (und Cluster-Knoten) ein eigenes Modell, sonst behielte es nach neuem Koppeln die alte Verbindung.
     val home: HomeModel = viewModel(key = "home-" + graph.activeId + "-" + graph.pairing?.device + "-" + graph.pairing?.node) {
         HomeModel(api, { graph.sessions.user?.role ?: "user" }, graph.pairing?.let { it.nodeName.ifBlank { it.hostname } }.orEmpty())
+    }
+    // Ein NAS aus einem Link ist dazugekommen, aber nicht gewählt: sagen, wo man es findet.
+    val quiet = graph.addedQuietly
+    if (quiet != null) {
+        val text = stringResource(R.string.nas_link_added, quiet)
+        LaunchedEffect(quiet) {
+            Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+            graph.addedQuietly = null
+        }
     }
     // Ein NAS hat die Kopplung beendet, andere sind noch da: sagen, welches.
     val ended = graph.endedByNas

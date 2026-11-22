@@ -103,6 +103,17 @@ class NasRegistryTest {
     }
 
     @Test
+    fun aNasFromALinkIsNeitherChosenNorOfferedToTheAgent() {
+        val registry = NasRegistry(MemoryRegistryStorage(), MemoryRegistryStorage())
+        registry.add(NasProfile("n1", pairing()))
+        val adding = AddingPairingStore(registry, "n2", activate = false)
+        adding.save(pairing(user = "anna", spki = "pinB"))
+        assertEquals("n1", registry.active?.id)
+        assertEquals(false, registry.profile("n2")?.agent)
+        assertEquals(true, registry.profile("n1")?.agent)
+    }
+
+    @Test
     fun vpnOwnerIsForgottenWithItsNas() {
         val registry = NasRegistry(MemoryRegistryStorage(), MemoryRegistryStorage())
         registry.add(NasProfile("n1", pairing()))
