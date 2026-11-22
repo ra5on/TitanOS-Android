@@ -55,4 +55,14 @@ class LinksTest {
         assertEquals("a b", queryValue("/files?root=volume%2Fdata&path=a%20b", "path"))
         assertNull(queryValue("/files", "root"))
     }
+
+    @Test
+    fun openFilesFromTheSharesGoesThroughTheAddress() {
+        // „In Dateien öffnen“ (Freigaben): die Stelle steht in der Adresse, LinkedProgram öffnet sie.
+        val link = filesLink("share/Urlaub & Co", "2026/Strand+See")
+        assertEquals(LinkTarget.Program("files", link), linkTarget(link))
+        assertEquals("share/Urlaub & Co", queryValue(link, "root"))
+        assertEquals("2026/Strand+See", queryValue(link, "path"))
+        assertNull(queryValue(filesLink("share/Docs", ""), "path"))
+    }
 }

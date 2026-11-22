@@ -24,6 +24,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -184,7 +186,8 @@ fun ListRow(
             }
             if (right != null || chevron) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    right?.invoke()
+                    // Ein Schalter rechts heißt für TalkBack wie die Zeile (sonst nur „Aus, Schalter“).
+                    if (right != null) CompositionLocalProvider(LocalToggleLabel provides title) { right() }
                     if (chevron) Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(18.dp))
                 }
             }
@@ -198,22 +201,28 @@ fun RowIcon(icon: ImageVector, tint: Color = Titan.colors.muted, size: Dp = 22.d
     Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size))
 }
 
+/** Name eines Schalters ohne eigenes [Toggle]-label: der Titel der umgebenden [ListRow]. */
+val LocalToggleLabel = staticCompositionLocalOf<String?> { null }
+
 /**
  * Schalter (.a-tg). Der Zustand steht auch für Bildschirmleser in Worten da;
- * [label] sagt TalkBack, was geschaltet wird (sonst nur „Ein, Schalter“).
+ * [label] sagt TalkBack, was geschaltet wird (sonst nur „Ein, Schalter“). Ohne
+ * [label] gilt in einer [ListRow] deren Titel, sobald der Schalter selbst bedienbar ist.
  */
 @Composable
 fun Toggle(checked: Boolean, onChange: ((Boolean) -> Unit)?, stateOn: String, stateOff: String, enabled: Boolean = true, label: String? = null) {
     val c = Titan.colors
     val shape = RoundedCornerShape(14.dp)
+    val clickable = onChange != null && enabled
+    val name = label ?: if (clickable) LocalToggleLabel.current else null
     Box(
         Modifier.size(46.dp, 28.dp).clip(shape)
             .background(if (checked) c.accent else c.track)
             .border(1.dp, if (checked) c.accent else c.border, shape)
-            .then(if (onChange != null && enabled) Modifier.clickable(role = Role.Switch) { onChange(!checked) } else Modifier)
+            .then(if (clickable) Modifier.clickable(role = Role.Switch) { onChange(!checked) } else Modifier)
             .semantics {
                 stateDescription = if (checked) stateOn else stateOff
-                if (label != null) contentDescription = label
+                if (name != null) contentDescription = name
             },
     ) {
         Box(

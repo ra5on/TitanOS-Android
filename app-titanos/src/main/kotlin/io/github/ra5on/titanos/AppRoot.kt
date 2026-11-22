@@ -468,6 +468,9 @@ private fun MainShell(graph: AppGraph) {
                             in PROGRAMS -> graph.openProgram = p.id
                             in COMPUTE_PROGRAMS -> compute = p.id
                             in SETTINGS_PROGRAMS -> graph.openProgram = p.id
+                            // Sicherung wie apps.ts: die Sicherungen der Systemsteuerung (wie am Arbeitsplatz).
+                            "backup" -> openLink(context, graph, "/settings/backups", toastLater)
+                            "security" -> openLink(context, graph, "/settings/firewall", toastLater)
                             else -> toastLater()
                         }
                     },

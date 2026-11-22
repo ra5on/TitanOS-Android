@@ -6,11 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import android.widget.Toast
-import kotlinx.coroutines.launch
 import io.github.ra5on.titanos.admin.AdminEnv
 import io.github.ra5on.titanos.admin.AdminHttp
 import io.github.ra5on.titanos.net.NasConnection
@@ -37,7 +35,6 @@ fun AdminProgramAt(start: String, graph: AppGraph, link: String?, onBack: () -> 
     val pairing = graph.pairing ?: return
     val context = LocalContext.current
     val webOnly = stringResource(R.string.app_later_toast)
-    val scope = rememberCoroutineScope()
     var program by rememberSaveable(start) { mutableStateOf(start) }
     // Eine Adresse wie `/tools/activity` oder `/storage/smart?disk=sda` öffnet die Seite darin.
     var page by rememberSaveable(start, link) { mutableStateOf(startPage(link, start)) }
@@ -57,12 +54,12 @@ fun AdminProgramAt(start: String, graph: AppGraph, link: String?, onBack: () -> 
                 }
             },
             // „Im Dateimanager öffnen“ (Freigaben, Schnappschüsse): Dateien an dieser Stelle.
+            // Über die Adresse wie im Web: LinkedProgram öffnet den Ordner selbst. Ein launch im
+            // Scope dieses Programms bräche ab, sobald onBack() es aus der Komposition nimmt.
             openFiles = { root, path ->
-                val files = graph.files
-                if (files != null) {
+                if (graph.files != null) {
                     onBack()
-                    scope.launch { files.openAt(root, path) }
-                    graph.programLink = null
+                    graph.programLink = filesLink(root, path)
                     graph.openProgram = FILES_PROGRAM
                 }
             },

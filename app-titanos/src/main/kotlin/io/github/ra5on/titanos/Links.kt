@@ -74,6 +74,12 @@ internal fun startPage(link: String?, program: String): String? {
     return rest.removePrefix("/").takeIf { it.isNotEmpty() && !it.startsWith("?") }
 }
 
+/** Die Adresse des Webs für den Dateimanager an [root] und [path] (`/files?root=…&path=…`). */
+internal fun filesLink(root: String, path: String): String {
+    fun enc(v: String) = java.net.URLEncoder.encode(v, "UTF-8").replace("+", "%20")
+    return "/$FILES_PROGRAM?root=${enc(root)}" + if (path.isNotEmpty()) "&path=${enc(path)}" else ""
+}
+
 /** Ein Wert aus dem Teil hinter `?` (`root`, `path`), dekodiert. */
 internal fun queryValue(link: String, key: String): String? =
     link.substringAfter('?', "").substringBefore('#').split('&').firstOrNull { it.substringBefore('=') == key }

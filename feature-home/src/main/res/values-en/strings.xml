@@ -50,6 +50,8 @@
     <string name="app_monitor">Monitor</string>
     <string name="app_logs">Logs</string>
     <string name="app_planner">Task planner</string>
+    <string name="app_security">Security</string>
+    <string name="app_account">My account</string>
     <string name="app_settings">Settings</string>
     <string name="home_switch_nas">NAS and accounts</string>
 </resources>
