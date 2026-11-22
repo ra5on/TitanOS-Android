@@ -36,6 +36,7 @@ import java.util.Locale
 
 sealed interface AgentView {
     data object Idle : AgentView
+    data object Typing : AgentView
     data object Recording : AgentView
     data class Working(val question: String) : AgentView
     data class Answer(val question: String, val chat: Chat) : AgentView
@@ -114,7 +115,6 @@ fun AgentRoute() {
         }
     }
 
-    val type = rememberTextInput { ask(it) }
     val dictate = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         if (r.resultCode == Activity.RESULT_OK) {
             r.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.takeIf { it.isNotBlank() }?.let(::ask)
@@ -150,10 +150,14 @@ fun AgentRoute() {
         }
     }
 
+    if (view == AgentView.Typing) {
+        TextEntry(prompt, onDone = { ask(it) }, onCancel = { view = AgentView.Idle })
+        return
+    }
     AgentScreen(
         view,
         onSpeak = ::speakInput,
-        onType = { type.launch(textInputIntent(prompt)) },
+        onType = { view = AgentView.Typing },
         onStopRecording = { recording = false },
         onRead = { speak(answerOf(it)) },
         onDecide = ::decide,
@@ -178,6 +182,7 @@ fun AgentScreen(
                 item { RowButton(stringResource(R.string.w_agent_speak), onClick = onSpeak, icon = TitanIcons.mic, filled = true) }
                 item { RowButton(stringResource(R.string.w_agent_type), onClick = onType, icon = TitanIcons.edit) }
             }
+            AgentView.Typing -> Unit
             AgentView.Recording -> {
                 item { WText(stringResource(R.string.w_agent_listening), center = true) }
                 item { RowButton(stringResource(R.string.w_agent_done), onClick = onStopRecording, icon = TitanIcons.check, filled = true) }

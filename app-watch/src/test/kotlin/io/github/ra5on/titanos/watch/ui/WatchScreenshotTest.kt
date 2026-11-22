@@ -103,6 +103,7 @@ class WatchScreenshotTest {
 
     private val screens: List<Pair<String, @Composable () -> Unit>> = listOf(
         "koppeln" to { PairScreen() },
+        "koppeln-adresse" to { TextEntry("Adresse des NAS", "192.168.178.20", uri = true, onDone = {}, onCancel = {}) },
         "koppeln-zertifikat" to { PairScreen(initial = PairView.Failed(R.string.w_pair_err_cert, "192.168.178.20:443")) },
         "koppeln-abgemeldet" to { PairScreen(unpairedByNas = true) },
         "koppeln-zahl" to { CodeContent("titanos", "482913", listOf("63B5 2A1F 0C9D 7E44", "A1B2 C3D4 E5F6 0718")) },

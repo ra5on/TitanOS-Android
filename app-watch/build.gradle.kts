@@ -86,7 +86,6 @@ dependencies {
     implementation(libs.wear.protolayout)
     implementation(libs.wear.protolayout.material3)
     implementation(libs.wear.complications)
-    implementation(libs.wear.input)
     implementation(libs.concurrent.futures.ktx)
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)

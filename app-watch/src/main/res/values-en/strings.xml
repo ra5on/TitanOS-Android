@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="w_app_name">TitanOS</string>
+    <string name="w_entry_done">Continue</string>
     <string name="w_cancel">Cancel</string>
     <string name="w_loading">Loading …</string>
     <string name="w_err_reach">The NAS cannot be reached right now.</string>

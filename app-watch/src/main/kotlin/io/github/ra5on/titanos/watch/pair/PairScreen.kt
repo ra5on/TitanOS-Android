@@ -36,8 +36,7 @@ import io.github.ra5on.titanos.watch.ui.Problem
 import io.github.ra5on.titanos.watch.ui.RowButton
 import io.github.ra5on.titanos.watch.ui.WText
 import io.github.ra5on.titanos.watch.ui.WatchColors
-import io.github.ra5on.titanos.watch.ui.rememberTextInput
-import io.github.ra5on.titanos.watch.ui.textInputIntent
+import io.github.ra5on.titanos.watch.ui.TextEntry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -45,6 +44,7 @@ import java.io.IOException
 /** Was der Kopplungsbildschirm gerade zeigt. */
 sealed interface PairView {
     data object Intro : PairView
+    data class Entry(val initial: String) : PairView
     data class Connecting(val address: String) : PairView
     data class Code(val started: WatchStarted) : PairView
     data class Failed(val message: Int, val address: String?) : PairView
@@ -84,15 +84,15 @@ fun PairScreen(initial: PairView = PairView.Intro, unpairedByNas: Boolean = fals
             }
         }
     }
-    val input = rememberTextInput { connect(it) }
     val label = stringResource(R.string.w_pair_address_label)
     when (val v = view) {
         PairView.Intro -> Page {
             item { Header(stringResource(R.string.w_pair_title)) }
             if (unpairedByNas) item { Problem(stringResource(R.string.w_pair_ended)) }
             item { WText(stringResource(R.string.w_pair_intro), center = true, modifier = Modifier.padding(horizontal = 6.dp)) }
-            item { RowButton(stringResource(R.string.w_pair_address), onClick = { input.launch(textInputIntent(label)) }, icon = TitanIcons.edit, filled = true) }
+            item { RowButton(stringResource(R.string.w_pair_address), onClick = { view = PairView.Entry("") }, icon = TitanIcons.edit, filled = true) }
         }
+        is PairView.Entry -> TextEntry(label, v.initial, uri = true, onDone = { connect(it) }, onCancel = { view = PairView.Intro })
         is PairView.Connecting -> Page {
             item { Header(stringResource(R.string.w_pair_title)) }
             item { Busy(stringResource(R.string.w_pair_connecting, v.address)) }
@@ -102,7 +102,7 @@ fun PairScreen(initial: PairView = PairView.Intro, unpairedByNas: Boolean = fals
             item { Header(stringResource(R.string.w_pair_title)) }
             item { Problem(stringResource(v.message)) }
             if (v.address != null) item { RowButton(stringResource(R.string.w_pair_again), onClick = { connect(v.address) }, icon = TitanIcons.restart, filled = true) }
-            item { RowButton(stringResource(R.string.w_pair_other_address), onClick = { input.launch(textInputIntent(label)) }, icon = TitanIcons.edit) }
+            item { RowButton(stringResource(R.string.w_pair_other_address), onClick = { view = PairView.Entry(v.address.orEmpty()) }, icon = TitanIcons.edit) }
         }
     }
 }

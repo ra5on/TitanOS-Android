@@ -1,6 +1,9 @@
 package io.github.ra5on.titanos.pairing
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -79,7 +82,10 @@ fun WatchPairScreen(addresses: List<String>, nas: NasConnection?, onBack: () -> 
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<Int?>(null) }
     var done by remember { mutableStateOf<WatchConfirmed?>(null) }
-    Page(topBar = { TopBar(stringResource(R.string.pair_watch_title), onBack = onBack, backLabel = stringResource(R.string.pair_watch_back)) }) {
+    Page(
+        topBar = { Box(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.pair_watch_title), onBack = onBack, backLabel = stringResource(R.string.pair_watch_back)) } },
+        modifier = Modifier.navigationBarsPadding(),
+    ) {
         Spacer(Modifier.height(12.dp))
         val ok = done
         if (ok != null) {
