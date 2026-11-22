@@ -109,6 +109,8 @@ internal fun BoxScope.DeskWidgets(state: WorkspaceState) {
     val prefs = state.store.prefs
     if (prefs.widgetsHidden) return
     val wm = state.wm
+    // Schmaler als die PC-Aufteilung des Webs (900): kein Platz neben den Symbolen, die Widgets ruhen (Einstellung bleibt).
+    if (wm.area.w < 900) return
     val columns = maxOf(10, wm.area.w / CELL)
     val density = LocalDensity.current
     // Große Schrift: Widgets wachsen in der Höhe mit, damit nichts abgeschnitten wird.

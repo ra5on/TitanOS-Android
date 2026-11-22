@@ -181,11 +181,14 @@ fun Workspace(
                 wm.preview?.let { snap -> wm.snapRect(snap)?.let { r -> SnapPreview(r) } }
                 state.dragAt?.let { (x, y) -> DragGhost(state, x, y) }
                 if (state.editWidgets) EditBar(state)
-                FolderPop(state)
                 if (state.launcher) Launcher(state)
                 if (wm.switcher) Switcher(state)
-                DeskMenus(state, onAppearance)
-                DeskDialogs(state)
+                // Ordner, Menüs und Dialoge über allem (auch über dem Dock).
+                Box(Modifier.matchParentSize().zIndex(400_000f)) {
+                    FolderPop(state)
+                    DeskMenus(state, onAppearance)
+                    DeskDialogs(state)
+                }
             }
         }
     }

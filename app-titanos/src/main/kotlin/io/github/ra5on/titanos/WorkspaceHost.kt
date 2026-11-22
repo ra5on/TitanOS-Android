@@ -73,7 +73,13 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
             graph.scope,
         )
     }
-    if (!showWorkspace(settings.mode, width, external, holding = state.wm.windows.isNotEmpty())) return false
+    // Nur in dieser Sitzung gezeigt hält er sich (gemerkte Fenster vom letzten Mal halten ihn nicht am Handy fest).
+    var shown by remember(pairing) { mutableStateOf(false) }
+    if (!showWorkspace(settings.mode, width, external, holding = shown && state.wm.windows.isNotEmpty())) {
+        shown = false
+        return false
+    }
+    shown = true
     WorkspaceRoutes(graph, state)
     Workspace(state, program = { win, close -> WorkspaceProgram(graph, win, close) })
     return true
