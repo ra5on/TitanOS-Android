@@ -60,6 +60,13 @@ class MainActivity : ComponentActivity() {
         io.github.ra5on.titanos.notify.NotifyRuntime.take(intent)
         if (intent?.action != Intent.ACTION_VIEW) return
         val data = intent.dataString ?: return
-        PairLink.parse(data)?.let { pendingLink = it }
+        // Ein Kopplungscode gilt nur einmal: kommt derselbe Link wieder (Android startet die Aufgabe nach
+        // einem Update oder aus dem Verlauf mit ihrem ersten Intent neu), nicht noch einmal koppeln.
+        if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
+        val link = PairLink.parse(data) ?: return
+        val used = getSharedPreferences("pair-links", MODE_PRIVATE)
+        if (used.getBoolean(link.code, false)) return
+        used.edit().putBoolean(link.code, true).apply()
+        pendingLink = link
     }
 }

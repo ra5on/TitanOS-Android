@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -124,4 +126,9 @@ dependencies {
     androidTestImplementation(libs.androidx.test.uiautomator)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
+}
+
+// Ein hängender Bildtest beendet den Lauf, statt einen der zwei Gradle-Plätze der VM zu halten (viele Bildtests: 30 Minuten).
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(30))
 }

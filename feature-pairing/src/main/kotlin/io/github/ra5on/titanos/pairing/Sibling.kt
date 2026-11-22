@@ -113,6 +113,7 @@ object Sibling {
      */
     fun ask(context: Context, host: SiblingHost, force: Boolean = false) {
         val other = other(host.siblingApp)
+        android.util.Log.i("TitanSibling", "ask ${host.siblingApp}: force=$force installed=${installed(context, other)}")
         if ((force || host.siblingStore.load() == null) && installed(context, other)) {
             val have = host.siblingPairings().map { p -> pinsOf(p.addresses) }
             send(context, REQUEST, other) {
@@ -195,6 +196,7 @@ class SiblingReceiver : BroadcastReceiver() {
         }
         val all = host.siblingPairings()
         val todo = if (have == null) all.take(1) else all.filter { p -> have.none { pins -> pins.intersect(Sibling.pinsOf(p.addresses).toSet()).isNotEmpty() } }
+        android.util.Log.i("TitanSibling", "request: ${all.size} paired, ${todo.size} to offer")
         val other = Sibling.other(host.siblingApp)
         for (p in todo) {
             val nas = NasConnection.forPairing(host.siblingShared, p.copy(node = ""), host.siblingSessionsFor(p))
@@ -203,6 +205,8 @@ class SiblingReceiver : BroadcastReceiver() {
                     Request.Builder().url(it.newBuilder().encodedPath("/api/v1/app/pair/sibling").build())
                         .post(jsonBody(SiblingRequest(other))).build()
                 }.decode<SiblingResponse>().code
+            }.onFailure { e ->
+                android.util.Log.w("TitanSibling", "offer: ${e.javaClass.simpleName} ${(e as? io.github.ra5on.titanos.net.ApiException)?.let { "${it.status} ${it.code}" }.orEmpty()}")
             }.getOrNull() ?: continue
             // Die Adresse im eigenen VPN gibt es nur in dieser App.
             val addresses = TitanJson.encodeToString(ListSerializer(PinnedAddress.serializer()), p.addresses.filterNot { it.isVpn })
@@ -231,6 +235,7 @@ class SiblingReceiver : BroadcastReceiver() {
             intent.getStringExtra(Sibling.EXTRA_ADDRESSES) ?: return,
         )
         if (host.siblingHas(pinned)) return
+        android.util.Log.i("TitanSibling", "offer received for ${intent.getStringExtra(Sibling.EXTRA_HOSTNAME).orEmpty()}")
         val (key, store) = host.siblingNew()
         val client = PairingClient(key)
         // Der Code gilt einmal: nur über die erste erreichbare Adresse (Heimnetz zuerst), wie die andere App.
