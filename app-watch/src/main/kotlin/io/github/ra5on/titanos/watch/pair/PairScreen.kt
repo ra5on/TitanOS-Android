@@ -117,12 +117,22 @@ private fun CodePage(s: WatchStarted, onExpired: () -> Unit) {
             poll(context, s, onExpired)
         }
     }
-    val spoken = s.code.toList().joinToString(" ")
+    CodeContent(
+        title = s.hostname.ifBlank { s.address.server },
+        code = s.code,
+        fingerprint = if (s.probed.publiclyValid) null else Spki.displayLines(s.probed.hash),
+    )
+}
+
+/** Die sechs Ziffern groß, darunter was zu tun ist und der Fingerabdruck des gesehenen Zertifikats. */
+@Composable
+fun CodeContent(title: String, code: String, fingerprint: List<String>?) {
+    val spoken = code.toList().joinToString(" ")
     Page {
-        item { Header(s.hostname.ifBlank { s.address.server }) }
+        item { Header(title) }
         item {
             WText(
-                WatchCode.display(s.code),
+                WatchCode.display(code),
                 center = true,
                 style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontSize = 34.sp, letterSpacing = 2.sp),
                 color = WatchColors.accent,
@@ -130,10 +140,10 @@ private fun CodePage(s: WatchStarted, onExpired: () -> Unit) {
             )
         }
         item { WText(stringResource(R.string.w_pair_code_hint), center = true, modifier = Modifier.padding(horizontal = 6.dp)) }
-        if (!s.probed.publiclyValid) {
+        if (fingerprint != null) {
             item {
                 WText(
-                    stringResource(R.string.w_pair_fingerprint, Spki.displayLines(s.probed.hash).joinToString("\n")),
+                    stringResource(R.string.w_pair_fingerprint, fingerprint.joinToString("\n")),
                     center = true,
                     color = WatchColors.muted,
                     style = MaterialTheme.typography.labelSmall,

@@ -1,6 +1,7 @@
 package io.github.ra5on.titanos.watch.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
@@ -88,16 +91,45 @@ fun WText(
     color: Color = Color.Unspecified,
     center: Boolean = false,
 ) {
-    CompositionLocalProvider(LocalTextConfiguration provides if (center) unlimitedCentered else unlimited) {
-        Text(
-            text,
-            modifier = modifier,
-            color = color,
-            style = style.copy(hyphens = Hyphens.None, lineBreak = LineBreak.Paragraph),
-            textAlign = if (center) TextAlign.Center else TextAlign.Start,
-        )
+    val base = style.copy(hyphens = Hyphens.None, lineBreak = LineBreak.Paragraph)
+    BoxWithConstraints(modifier) {
+        // Ganze Wörter: passt das längste Wort bei großer Schrift nicht in die
+        // Breite, wird nur dieser Text so weit kleiner, dass es passt – statt
+        // es mitten im Wort zu trennen.
+        val measurer = rememberTextMeasurer()
+        val width = constraints.maxWidth
+        val fitted = remember(text, base, width) {
+            if (!constraints.hasBoundedWidth || !base.fontSize.isSp) {
+                base
+            } else {
+                val widest = text.split(wordGaps).filter { it.isNotEmpty() }
+                    .maxOfOrNull { measurer.measure(it, base, softWrap = false).size.width } ?: 0
+                if (widest <= width) {
+                    base
+                } else {
+                    val f = width.toFloat() / widest * 0.97f
+                    base.copy(
+                        fontSize = base.fontSize * f,
+                        lineHeight = if (base.lineHeight.isSp) base.lineHeight * f else base.lineHeight,
+                        letterSpacing = if (base.letterSpacing.isSp) base.letterSpacing * f else base.letterSpacing,
+                    )
+                }
+            }
+        }
+        CompositionLocalProvider(LocalTextConfiguration provides if (center) unlimitedCentered else unlimited) {
+            Text(
+                text,
+                modifier = if (center) Modifier.fillMaxWidth() else Modifier,
+                color = color,
+                style = fitted,
+                textAlign = if (center) TextAlign.Center else TextAlign.Start,
+            )
+        }
     }
 }
+
+/** Wo eine Zeile umbrechen darf: Leerzeichen, Zeilenende, nach einem Bindestrich. */
+private val wordGaps = Regex("""\s+|(?<=-)""")
 
 /** Eine Seite der Uhr: rund oder eckig, scrollt, alles untereinander. */
 @Composable

@@ -51,6 +51,11 @@ fun CamerasRoute(onCamera: (String) -> Unit) {
             if (e.isHidden()) cameras = emptyList() else problem = R.string.w_err_reach
         }
     }
+    CamerasScreen(cameras, problem, onCamera)
+}
+
+@Composable
+fun CamerasScreen(cameras: List<Camera>?, problem: Int?, onCamera: (String) -> Unit) {
     Page {
         item { Header(stringResource(R.string.w_cameras)) }
         problem?.let { item { Problem(stringResource(it)) } }
@@ -84,35 +89,54 @@ fun CameraRoute(id: String) {
         events = runCatching { api.events(id) }.getOrDefault(emptyList())
     }
     LaunchedEffect(id) { load() }
+    CameraScreen(
+        name = name,
+        image = image,
+        events = events,
+        shown = shown,
+        problem = problem,
+        onReload = { scope.launch { load() } },
+        onEvent = { e ->
+            scope.launch {
+                val bmp = if (e.hasSnapshot) runCatching { g.api()?.eventImage(e.id)?.let { decodeSmall(it) } }.getOrNull() else null
+                shown = e to bmp
+            }
+        },
+        onBackToLive = { shown = null },
+    )
+}
+
+@Composable
+fun CameraScreen(
+    name: String,
+    image: Bitmap?,
+    events: List<CameraEvent>?,
+    shown: Pair<CameraEvent, Bitmap?>?,
+    problem: Int?,
+    onReload: () -> Unit,
+    onEvent: (CameraEvent) -> Unit,
+    onBackToLive: () -> Unit,
+) {
     val title = name.ifBlank { stringResource(R.string.w_camera) }
     val picture = stringResource(R.string.w_camera_picture, title)
     Page {
         item { Header(title) }
         problem?.let { item { Problem(stringResource(it)) } }
-        val current = shown
-        if (current != null) {
-            item { WText(eventLabel(current.first), center = true) }
-            current.second?.let { bmp -> item { Picture(bmp, eventLabel(current.first)) } }
-            item { RowButton(stringResource(R.string.w_camera_back_live), onClick = { shown = null }, icon = TitanIcons.video) }
+        if (shown != null) {
+            item { WText(eventLabel(shown.first), center = true) }
+            shown.second?.let { bmp -> item { Picture(bmp, eventLabel(shown.first)) } }
+            item { RowButton(stringResource(R.string.w_camera_back_live), onClick = onBackToLive, icon = TitanIcons.video) }
         } else {
             image?.let { bmp -> item { Picture(bmp, picture) } }
             if (image == null && problem == null) item { Busy(stringResource(R.string.w_loading)) }
-            item { RowButton(stringResource(R.string.w_reload), onClick = { scope.launch { load() } }, icon = TitanIcons.restart) }
+            item { RowButton(stringResource(R.string.w_reload), onClick = onReload, icon = TitanIcons.restart) }
         }
-        val list = events
-        if (!list.isNullOrEmpty()) {
+        if (!events.isNullOrEmpty()) {
             item { Header(stringResource(R.string.w_camera_events)) }
-            list.forEach { e ->
-                item {
-                    RowButton(eventLabel(e), sub = time((e.start * 1000).toLong()), icon = TitanIcons.image, onClick = {
-                        scope.launch {
-                            val bmp = if (e.hasSnapshot) runCatching { g.api()?.eventImage(e.id)?.let { decodeSmall(it) } }.getOrNull() else null
-                            shown = e to bmp
-                        }
-                    })
-                }
+            events.forEach { e ->
+                item { RowButton(eventLabel(e), sub = time((e.start * 1000).toLong()), icon = TitanIcons.image, onClick = { onEvent(e) }) }
             }
-        } else if (list != null) {
+        } else if (events != null) {
             item { WText(stringResource(R.string.w_camera_no_events), center = true, color = WatchColors.muted) }
         }
     }

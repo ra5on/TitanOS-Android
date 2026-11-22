@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -98,3 +100,6 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     debugImplementation(libs.compose.ui.test.manifest)
 }
+
+// Ein hängender Bildtest blockiert sonst einen der zwei Gradle-Plätze der VM.
+tasks.withType<Test>().configureEach { timeout.set(Duration.ofMinutes(10)) }
