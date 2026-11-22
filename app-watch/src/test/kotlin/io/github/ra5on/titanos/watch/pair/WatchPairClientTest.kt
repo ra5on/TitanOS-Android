@@ -36,7 +36,7 @@ class WatchCodeTest {
         // Werte aus TitanOS appdevices/watch_test.go (TestWatchCodeIsStable).
         assertEquals("180943", WatchCode.code("id1", "a2V5", "bm9uY2U", "c2VjcmV0", "c3BraQ", false))
         assertEquals("005621", WatchCode.code("id1", "a2V5", "bm9uY2U", "c2VjcmV0", "c3BraQ", true))
-        assertEquals("orW-eInN5We5WVN-sxk01MXTBbJIwOeouxffCCiYL2A", WatchCode.commit("a2V5", "c2VjcmV0"))
+        assertEquals("U33id71fjniJnKVCkSvODTGJiBlT5FJCv7zsx4RRBEg", WatchCode.commit("a2V5", "c3BraQ", false, "c2VjcmV0"))
         assertEquals("005 621", WatchCode.display("005621"))
         assertEquals(43, WatchCode.secret().length)
     }
@@ -82,7 +82,8 @@ class WatchPairClientTest {
                         val o = json.parseToJsonElement(body).jsonObject
                         val secret = o["secret"]!!.jsonPrimitive.content
                         revealSpki = o["spki"]!!.jsonPrimitive.content
-                        assertEquals(WatchCode.commit(Base64.getEncoder().encodeToString(key.publicKeyDer()), secret), commit)
+                        val public = o["publicCert"]!!.jsonPrimitive.content.toBoolean()
+                        assertEquals(WatchCode.commit(Base64.getEncoder().encodeToString(key.publicKeyDer()), revealSpki, public, secret), commit)
                         answerReveal ?: ok("""{"state":"revealed"}""")
                     }
                     "/api/v1/app/pair/watch/w1/wait" -> {
