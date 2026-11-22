@@ -79,7 +79,7 @@ fun errorText(e: Throwable, detail: Boolean = false): String {
 /** Sprache der Oberfläche (die der App, wie `i18n.locale` im Web). */
 @Composable
 @ReadOnlyComposable
-fun uiLocale(): Locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+fun uiLocale(): Locale = LocalConfiguration.current.locales[0] ?: Locale.ROOT
 
 /** Zahlen, Größen und Zeiten wie web/src/lib/format.ts (Einheiten zu 1000, nie KiB). */
 object AdminFormat {

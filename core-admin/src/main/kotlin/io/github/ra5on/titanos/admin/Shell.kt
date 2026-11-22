@@ -69,8 +69,10 @@ data class SideGroup(val title: String?, val entries: List<SideEntry>)
  * - ab Wide: Seitenleiste links wie das Fenster am PC, rechts der Pfad
  *   „Programm › Seite“ mit den Aktionen.
  *
- * [onUp] führt eine Ebene zurück (Detail → Liste); ohne sie verlässt Zurück
- * das Programm ([onExit]). [onKey] bekommt Tastendrücke der ganzen Seite
+ * [onUp] führt eine Ebene zurück (Detail → Liste). Sonst führt Zurück zur
+ * zuvor gewählten Seite des Programms (Seiten als Ebenen wie am Handy im
+ * Web: Speicher › Importieren → Zurück → Übersicht) und erst auf der ersten
+ * Seite aus dem Programm hinaus ([onExit]). [onKey] bekommt Tastendrücke der ganzen Seite
  * (Tastenkürzel wie im Web), gibt true zurück, wenn sie sie verbraucht.
  */
 @Composable
@@ -90,13 +92,27 @@ fun AdminShell(
 ) {
     val width = currentWidth()
     val c = Titan.colors
-    BackHandler { (onUp ?: onExit)() }
+    // Verlauf der im Menü/in der Seitenleiste gewählten Seiten (Einträge mit action öffnen anderes, kein Verlauf).
+    var history by rememberSaveable { mutableStateOf("") }
+    val stack = history.split('\n').filter { it.isNotEmpty() }
+    val entries = groups.flatMap { it.entries }
+    val select: (String) -> Unit = { id ->
+        if (id != current && entries.firstOrNull { it.id == id }?.action != true) history = (stack + current).joinToString("\n")
+        onSelect(id)
+    }
+    val back: () -> Unit = onUp ?: if (stack.isNotEmpty()) {
+        {
+            history = stack.dropLast(1).joinToString("\n")
+            onSelect(stack.last())
+        }
+    } else onExit
+    BackHandler { back() }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     val keys = Modifier.focusRequester(focus).focusable().onPreviewKeyEvent { e -> onKey?.invoke(e) == true }
     if (width.sidebar) {
         Row(Modifier.fillMaxSize().background(c.bg).then(keys)) {
-            Sidebar(glyph, gradient, program, groups, current, onSelect, onExit)
+            Sidebar(glyph, gradient, program, groups, current, select, onExit)
             Box(Modifier.width(1.dp).fillMaxHeight().background(c.border))
             Column(Modifier.weight(1f).fillMaxHeight().statusBarsPadding().imePadding()) {
                 Row(
@@ -124,9 +140,9 @@ fun AdminShell(
             Box(Modifier.background(c.header).statusBarsPadding()) {
                 TopBar(
                     page,
-                    onBack = onUp ?: onExit,
+                    onBack = back,
                     backLabel = stringResource(R.string.admin_back),
-                    icon = if (onUp == null) ({ AppIcon(glyph, gradient, 30.dp) }) else null,
+                    icon = if (onUp == null && stack.isEmpty()) ({ AppIcon(glyph, gradient, 30.dp) }) else null,
                 ) {
                     actions()
                     if (groups.sumOf { it.entries.size } > 1) {
@@ -138,7 +154,7 @@ fun AdminShell(
         }
         if (menu) {
             AdminSheet(program, onDismiss = { menu = false }) {
-                SideList(groups, current) { menu = false; onSelect(it) }
+                SideList(groups, current) { menu = false; select(it) }
             }
         }
     }

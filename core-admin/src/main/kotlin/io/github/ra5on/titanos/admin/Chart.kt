@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -51,11 +51,11 @@ fun LineChart(
     legend: Boolean = true,
 ) {
     val c = Titan.colors
-    val context = LocalContext.current
+    val res = LocalResources.current
     val desc = series.joinToString("; ") { s ->
         val v = s.values.filterNotNull()
-        if (v.isEmpty()) context.getString(R.string.admin_chart_empty, "$title ${s.label}")
-        else context.getString(R.string.admin_chart, "$title ${s.label}", format(v.last()), format(v.max()), format(v.min()))
+        if (v.isEmpty()) res.getString(R.string.admin_chart_empty, "$title ${s.label}")
+        else res.getString(R.string.admin_chart, "$title ${s.label}", format(v.last()), format(v.max()), format(v.min()))
     }
     val top = max ?: (series.flatMap { it.values.filterNotNull() }.maxOrNull()?.let { if (it <= min) min + 1 else it * 1.1 } ?: (min + 1))
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {

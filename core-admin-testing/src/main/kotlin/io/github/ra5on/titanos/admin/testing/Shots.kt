@@ -2,6 +2,8 @@ package io.github.ra5on.titanos.admin.testing
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.github.takahirom.roborazzi.captureScreenRoboImage
@@ -39,9 +41,9 @@ class Shots(private val compose: ComposeContentTestRule, var prefix: String = ""
         }
     }
 
-    /** Wartet, bis ein Text zu sehen ist. */
+    /** Wartet, bis ein Text zu sehen ist (unsichtbare Umbruchstellen nach Bindestrichen zählen nicht). */
     fun untilText(text: String, substring: Boolean = true) = until {
-        compose.onAllNodes(androidx.compose.ui.test.hasText(text, substring = substring), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        compose.onAllNodes(hasPlainText(text, substring), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
     }
 
     private fun file(name: String, dark: Boolean) = "build/outputs/roborazzi/$prefix$name-${if (dark) "dunkel" else "hell"}.png"
@@ -58,5 +60,16 @@ class Shots(private val compose: ComposeContentTestRule, var prefix: String = ""
         settle(500)
         captureScreenRoboImage(file(name, dark))
         audit.check(compose, prefix + name)
+    }
+}
+
+/** Wie hasText, aber ohne die Umbruchstellen von breakAfterHyphens (U+200B). */
+fun hasPlainText(text: String, substring: Boolean = false): androidx.compose.ui.test.SemanticsMatcher {
+    val want = text.replace("\u200B", "")
+    return androidx.compose.ui.test.SemanticsMatcher("Text „$want“") { node ->
+        val c = node.config
+        val texts = c.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text } +
+            listOfNotNull(c.getOrNull(SemanticsProperties.EditableText)?.text)
+        texts.any { t -> t.replace("\u200B", "").let { if (substring) it.contains(want) else it == want } }
     }
 }

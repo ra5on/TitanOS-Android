@@ -43,7 +43,7 @@ class PluginsFlowTest {
     }
 
     private fun click(label: String, last: Boolean = false) {
-        val nodes = compose.onAllNodes(hasText(label, substring = false) and hasClickAction())
+        val nodes = compose.onAllNodes(io.github.ra5on.titanos.admin.testing.hasPlainText(label) and hasClickAction())
         (if (last) nodes.onLast() else nodes.onFirst()).performScrollTo().performClick()
         shots.settle()
     }
