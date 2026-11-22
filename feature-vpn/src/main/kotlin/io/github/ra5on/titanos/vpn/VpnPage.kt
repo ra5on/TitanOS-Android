@@ -37,6 +37,7 @@ fun permsOf(context: Context): VpnPerms = VpnPerms(
     vpnAllowed = VpnService.prepare(context) == null,
     batteryExempt = context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) == true,
     notifications = context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED,
+    backgroundAllowed = !io.github.ra5on.titanos.ui.Distribution.play(context),
 )
 
 private fun codeOf(e: Throwable): String = when (e) {

@@ -12,6 +12,12 @@ name: Release
 # Probelauf: „Run workflow“ auf einem Tag mit dry_run=true baut und
 # signiert mit einem Wegwerfschlüssel aus dem Lauf (nie mit dem
 # Produktionsschlüssel), legt die APK als Artefakt ab und veröffentlicht nichts.
+#
+# Bauvarianten (PLAN 116): veröffentlicht wird nur „github“ (mit Selbst-Update).
+# „play“ (Google Play, ohne Selbst-Update) entsteht als unsigniertes AAB im
+# Artefakt „titanos-android-play“; signiert und hochgeladen wird es von Hand
+# mit dem Upload-Schlüssel, sobald der Inhaber Google Play entscheidet.
+# Die Versionshinweise kommen aus docs/releases/<tag>.md (wie bei TitanOS).
 
 on:
   push:
@@ -73,7 +79,8 @@ jobs:
             fi
           done
       - name: Tests und Lint
-        run: ./gradlew --no-daemon testDebugUnitTest lint :lint-rules:test
+        # testDebugUnitTest läuft nur in Modulen ohne Bauvarianten; die App TitanOS hat github/play.
+        run: ./gradlew --no-daemon testDebugUnitTest :app-titanos:testGithubDebugUnitTest lint :app-titanos:lintPlayDebug :app-agent:lintPlayDebug :lint-rules:test
 
   publish:
     needs: test
@@ -99,7 +106,7 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;37.0.0"
       # Gradle baut unsigniert und sieht den Schlüssel nie; signiert wird danach nur mit apksigner.
       - name: Bauen (unsigniert)
-        run: ./gradlew --no-daemon :app-titanos:assembleRelease :app-agent:assembleRelease :app-watch:assembleRelease
+        run: ./gradlew --no-daemon :app-titanos:assembleGithubRelease :app-agent:assembleGithubRelease :app-watch:assembleRelease :app-titanos:bundlePlayRelease :app-agent:bundlePlayRelease
       # Probelauf: nie der Produktionsschlüssel, sondern ein Wegwerfschlüssel aus diesem Lauf.
       - name: Signieren
         env:
@@ -124,14 +131,16 @@ jobs:
             [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] || { echo "::error::Schlüssel fehlt"; exit 1; }
             printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$ks"
           fi
-          for module in app-titanos app-agent app-watch; do
-            dir=$module/build/outputs/apk/release
-            [ -f "$dir/$module-release-unsigned.apk" ] || continue
+          # Ausgabe je Modul: die Apps mit Bauvarianten unter apk/github/release, die Uhr ohne.
+          for pair in "app-titanos:github/release:app-titanos-github-release" "app-agent:github/release:app-agent-github-release" "app-watch:release:app-watch-release"; do
+            module=${pair%%:*} rest=${pair#*:}
+            dir=$module/build/outputs/apk/${rest%%:*} base=${rest#*:}
+            [ -f "$dir/$base-unsigned.apk" ] || continue
             # Wie die signingConfig in Gradle: v2 und v3 (ab Android 13 kein v1).
             "$bt/apksigner" sign --ks "$ks" --ks-type PKCS12 --ks-key-alias titanos-release \
               --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD \
               --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true \
-              --out "$dir/$module-release.apk" "$dir/$module-release-unsigned.apk"
+              --out "$dir/$module-release.apk" "$dir/$base-unsigned.apk"
             "$bt/zipalign" -c -P 16 4 "$dir/$module-release.apk"
           done
       - name: Signatur und Version prüfen
@@ -139,9 +148,9 @@ jobs:
           bt="$ANDROID_HOME/build-tools/37.0.0"
           mkdir -p out
           # Ab 1.00 auch die Uhr-App (Wear OS, io.github.ra5on.titanos.watch), gleicher Schlüssel.
-          for pair in "app-titanos:TitanOS-Android" "app-agent:TitanOS-Agent" "app-watch:TitanOS-Watch"; do
-            module=${pair%%:*} prefix=${pair##*:}
-            apk=$module/build/outputs/apk/release/$module-release.apk
+          for pair in "app-titanos:github/release:TitanOS-Android" "app-agent:github/release:TitanOS-Agent" "app-watch:release:TitanOS-Watch"; do
+            module=${pair%%:*} rest=${pair#*:} prefix=${pair##*:}
+            apk=$module/build/outputs/apk/${rest%%:*}/$module-release.apk
             # Die Agent-App ist erst ab 0.03 dabei; fehlt sie, bleibt es bei der TitanOS-App.
             [ -f "$apk" ] || { [ "$module" = app-agent ] && continue; echo "::error::$apk fehlt"; exit 1; }
             "$bt/apksigner" verify --print-certs "$apk" | tee signer.txt
@@ -155,6 +164,14 @@ jobs:
         with:
           name: titanos-android-release
           path: out/
+      # Google Play: unsigniert, nur als Artefakt (nicht im Release).
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: titanos-android-play
+          path: |
+            app-titanos/build/outputs/bundle/playRelease/*.aab
+            app-agent/build/outputs/bundle/playRelease/*.aab
+          if-no-files-found: error
       - name: Veröffentlichen
         if: github.event_name == 'push' || (inputs.dry_run == false && startsWith(github.ref, 'refs/tags/v'))
         env:
@@ -163,7 +180,7 @@ jobs:
           tag="${GITHUB_REF_NAME}"
           notes="docs/releases/$tag.md"
           [ -f "$notes" ] || { echo "::error::$notes fehlt"; exit 1; }
-          # Vor 1.00 sind es Testfassungen (Vorab-Release, nicht „Latest“).
+          # Vor 1.00 sind es Testfassungen (Vorab-Release, nicht „Latest“); ab v1.0.0 normale Releases.
           pre=""
           case "$tag" in v0.*) pre="--prerelease" ;; esac
           title="TitanOS für Android $NAME"

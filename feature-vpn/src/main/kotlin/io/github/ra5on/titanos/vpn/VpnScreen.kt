@@ -70,6 +70,13 @@ data class VpnPerms(
     val vpnAllowed: Boolean = false,
     val batteryExempt: Boolean = false,
     val notifications: Boolean = false,
+    /**
+     * Darf die App nach Standort „Immer“ fragen? Nicht in der Play-Variante: Google Play
+     * lässt Standort im Hintergrund nur für Kernfunktionen mit großem Nutzen zu
+     * (Sicherheit, Gesundheit), „Bequemlichkeit“ zählt nicht (Play-Hilfe „Understanding
+     * location in the background permissions“, gelesen 22.11.2026).
+     */
+    val backgroundAllowed: Boolean = true,
 )
 
 /** Alles, was die Seite zeigt (ohne Schlüssel). */
@@ -422,8 +429,12 @@ private fun HomeGroup(ui: VpnUi, actions: VpnActions, expanded: Boolean) {
     Group(stringResource(R.string.vpn_group_home), summary, expanded) {
         Text(stringResource(R.string.vpn_home_intro), style = TitanType.body, color = c.muted, modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 10.dp))
         PermRow(stringResource(R.string.vpn_location), stringResource(R.string.vpn_location_text), ui.perms.location, button = stringResource(R.string.vpn_location_ask), onClick = actions.askLocation)
-        if (ui.perms.location) {
+        if (ui.perms.location && ui.perms.backgroundAllowed) {
             PermRow(stringResource(R.string.vpn_location_background), stringResource(R.string.vpn_location_background_text), ui.perms.backgroundLocation, button = stringResource(R.string.vpn_location_background_ask), onClick = actions.askBackgroundLocation)
+        }
+        // Play-Variante: ohne Standort im Hintergrund kennt die App das WLAN bei geschlossener App nicht.
+        if (!ui.perms.backgroundAllowed) {
+            Box(Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) { Note(stringResource(R.string.vpn_location_play)) }
         }
         if (!ui.perms.locationOn) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

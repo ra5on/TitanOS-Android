@@ -32,6 +32,20 @@ android {
             }
         }
     }
+    // Bauvarianten (PLAN 116, Inhaber 21.11.2026): „github“ wie bisher mit Selbst-Update und Release auf
+    // GitHub; „play“ für Google Play ohne Selbst-Update, mit den Abweichungen aus den Play-Richtlinien
+    // (src/play: Manifest, R.bool.titan_play). Veröffentlicht wird nur github; play entsteht als AAB.
+    // versionName/versionCode stehen nur in defaultConfig (release.yml liest sie dort).
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("github") {
+            dimension = "distribution"
+            isDefault = true
+        }
+        create("play") {
+            dimension = "distribution"
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false

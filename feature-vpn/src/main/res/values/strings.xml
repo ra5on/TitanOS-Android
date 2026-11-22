@@ -163,4 +163,5 @@
     <string name="vpn_menu_sub">Tunnel zum NAS von unterwegs</string>
     <string name="vpn_other_nas">Das VPN gehört zum NAS „%1$s“. Android erlaubt nur ein VPN gleichzeitig. Für ein anderes NAS den Zugang hier entfernen und danach bei dem anderen NAS anlegen.</string>
     <string name="vpn_for_nas">Das VPN verbindet mit dem NAS „%1$s“. Android erlaubt nur ein VPN gleichzeitig, deshalb gilt es für ein NAS.</string>
+    <string name="vpn_location_play">Bei geschlossener App nennt Android den WLAN-Namen dieser Fassung nicht. Dann gilt die Einstellung „WLAN ohne erkennbaren Namen“ unten; ab Werk geht der Tunnel an, er führt nur zum NAS.</string>
 </resources>
