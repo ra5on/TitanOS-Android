@@ -150,7 +150,11 @@ private fun WorkspaceRoutes(graph: AppGraph, state: WorkspaceState) {
     val openLink by NotifyRuntime.openLink.collectAsStateWithLifecycle()
     LaunchedEffect(openLink) {
         val link = openLink ?: return@LaunchedEffect
-        state.open("app:" + link.removePrefix("/").substringBefore('?').substringBefore('/'), link)
+        // Über den Router (Links.kt): `/backups`, `/logs`, `/apps` heißen in der App anders.
+        when (val target = linkTarget(link)) {
+            is LinkTarget.Program -> state.open("app:${target.id}", target.link)
+            else -> openLink(context, graph, link) {}
+        }
         NotifyRuntime.linkOpened()
     }
     PimLive(graph)
