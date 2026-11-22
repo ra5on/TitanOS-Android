@@ -69,6 +69,8 @@ class AgentViewsApiTest {
     @After
     fun stop() {
         Guard.prompt = null
+        // Die Fingerabdruck-Liste nicht für spätere Testklassen eingeschaltet lassen.
+        Guard.reset(androidx.test.core.app.ApplicationProvider.getApplicationContext())
         nas.stop()
     }
 
