@@ -99,6 +99,8 @@ class HardwareApiTest {
     @Test
     fun energyProfileKeepsTheOtherSettings() {
         page("energy", "system/energy")
+        compose.onAllNodes(hasText("Prozessor")).onFirst().performScrollTo().performClick()
+        shots.settle(400)
         pick("CPU-Taktsteuerung", "performance")
         val body = sent("PUT", "system/energy")
         assertEquals("performance", body.str("governor"))

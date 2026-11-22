@@ -48,7 +48,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.util.Locale
 
-/** Antworten für die Ansichten der Funktionen des KI-Agenten (Formen wie features/*.ts im Web, Beispieldaten). */
+/** Antworten für die Ansichten der Funktionen des KI-Agenten (Formen wie web/src/lib/features im Web, Beispieldaten). */
 object AgentViewFixtures {
     const val paper = """{"month":"2026-11","months":["2026-11","2026-10","2026-09"],"total":128437,"count":7,"prevTotal":99010,
       "types":[{"type":"energy","cents":8900,"count":1,"senders":["Stadtwerke"]},{"type":"insurance","cents":45210,"count":3,"senders":["Allianz","HUK"]}],

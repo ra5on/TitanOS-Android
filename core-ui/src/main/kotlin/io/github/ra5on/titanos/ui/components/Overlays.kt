@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -69,7 +70,8 @@ fun BoxScope.Sheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() ->
     )
     val shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
     Column(
-        Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(shape).background(c.surface)
+        // Ein hohes Blatt endet unter der Statusleiste, nicht hinter ihr (Titel sonst unter der Uhr).
+        Modifier.align(Alignment.BottomCenter).statusBarsPadding().padding(top = 8.dp).fillMaxWidth().clip(shape).background(c.surface)
             .border(1.dp, c.border, shape)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
             .verticalScroll(rememberScrollState())

@@ -24,6 +24,8 @@ android {
             all {
                 it.maxHeapSize = "2g"
                 it.maxParallelForks = 1
+                // Ein hängender Bildtest darf keinen der zwei Gradle-Plätze der VM blockieren (RAHMEN.md).
+                it.timeout.set(java.time.Duration.ofMinutes(10))
             }
         }
     }

@@ -184,9 +184,13 @@ fun WireGuardPage(a: PageArgs) {
                 val connected = wgConnected(peer)
                 val seen = if (peer.str("lastHandshake").isNotEmpty()) t("wg.lastSeen", "time" to tr.whenOr(peer.str("lastHandshake"))) else t("wg.never")
                 val traffic = if (peer.long("received") > 0 || peer.long("sent") > 0) " · ↓ ${Fmt.bytes(tr, peer.long("sent"))} · ↑ ${Fmt.bytes(tr, peer.long("received"))}" else ""
+                // Ab TitanOS 1.19: App-Zugänge tragen ihr Konto und ob die App gerade im Tunnel sein darf (beides optional).
+                val app = peer.str("account").takeIf { it.isNotEmpty() }?.let { account ->
+                    t(if (peer["active"]?.toString() == "false") "wg.appInactive" else "wg.appOf", "account" to account) + " · "
+                }.orEmpty()
                 SettingRow(
                     peer.str("name"),
-                    desc = seen + traffic,
+                    desc = app + seen + traffic,
                     icon = WebIcons["monitor"],
                     control = {
                         Mono(peer.str("address").removeSuffix("/32"))
