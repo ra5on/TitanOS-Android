@@ -282,8 +282,19 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
         notifyApi = l.notifyApi()
     }
 
-    /** Name des Android-Kontos einer Kopplung („konto@nas“). */
-    fun pimName(p: NasProfile): String = PimAccount.nameFor(p.pairing.user, p.pairing.hostname)
+    /**
+     * Name des Android-Kontos einer Kopplung („konto@nas“). Haben zwei NAS
+     * denselben Namen (ab Werk heißt jedes NAS „titanos“), bekommt das spätere
+     * einen Zusatz aus seiner Kennung, damit jedes sein eigenes Konto hat. Die
+     * alte Kopplung behält ihren Namen (sonst löschte Android ihre Kontakte und Termine).
+     */
+    fun pimName(p: NasProfile): String {
+        val base = PimAccount.nameFor(p.pairing.user, p.pairing.hostname)
+        if (p.id == NasRegistry.LEGACY_ID) return base
+        val earlier = registry.profiles.takeWhile { it.id != p.id } + listOfNotNull(registry.profile(NasRegistry.LEGACY_ID))
+        val taken = earlier.filter { it.id != p.id }.any { PimAccount.nameFor(it.pairing.user, it.pairing.hostname) == base }
+        return if (taken) "$base (${p.id.takeLast(4)})" else base
+    }
 
     /** Ein Konto je Kopplung in Kontakte und Kalender; Konten ohne Kopplung gehen. */
     fun ensurePimAccounts() {

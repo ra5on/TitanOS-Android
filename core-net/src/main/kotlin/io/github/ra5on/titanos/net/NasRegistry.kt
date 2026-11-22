@@ -72,6 +72,10 @@ class MemoryRegistryStorage(initial: Map<String, String> = emptyMap()) : Registr
  * Fassung der App nach einem Zurückspielen weiter gekoppelt ist.
  */
 class NasRegistry(private val storage: RegistryStorage, private val legacy: RegistryStorage? = null) {
+    /** Hat dieser Start eine alte Einzelkopplung übernommen? (die App ignoriert dann den alten Kopplungslink der Aufgabe) */
+    var migrated: Boolean = false
+        private set
+
     @Volatile
     private var state: NasRegistryState = load()
 
@@ -136,9 +140,10 @@ class NasRegistry(private val storage: RegistryStorage, private val legacy: Regi
         // Migration: eine Kopplung aus der Zeit vor mehreren NAS.
         val old = legacy?.read(LEGACY_KEY)?.let { runCatching { TitanJson.decodeFromString(Pairing.serializer(), it) }.getOrNull() }
             ?: return NasRegistryState()
-        val migrated = NasRegistryState(listOf(NasProfile(LEGACY_ID, old)), LEGACY_ID)
-        storage.write(KEY, TitanJson.encodeToString(NasRegistryState.serializer(), migrated))
-        return migrated
+        val taken = NasRegistryState(listOf(NasProfile(LEGACY_ID, old)), LEGACY_ID)
+        storage.write(KEY, TitanJson.encodeToString(NasRegistryState.serializer(), taken))
+        migrated = true
+        return taken
     }
 
     companion object {

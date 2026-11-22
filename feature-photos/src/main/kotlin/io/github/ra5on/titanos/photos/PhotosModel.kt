@@ -97,6 +97,7 @@ class PhotosModel(
                 tiles = tiles,
                 progress = PhotosRuntime.progress.value.takeIf { it.nas == nas || it.nas.isEmpty() } ?: Progress(),
                 loading = false,
+                paused = PhotosRuntime.paused(app),
             )
         }
     }
@@ -128,6 +129,12 @@ class PhotosModel(
                 roots = emptyList()
             }
         }
+    }
+
+    /** Nach „Pausieren“ (Schnelleinstellung) fortsetzen. */
+    fun resume() {
+        PhotoScheduler.resume(app)
+        refresh()
     }
 
     /** „Jetzt sichern“, solange die App sichtbar ist. */

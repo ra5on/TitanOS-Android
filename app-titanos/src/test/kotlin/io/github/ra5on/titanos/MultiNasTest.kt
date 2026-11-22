@@ -157,6 +157,18 @@ class MultiNasTest {
     }
 
     @Test
+    fun twoNasWithTheSameNameGetTheirOwnContactsAccount() {
+        oldInstall()
+        val graph = AppGraph(app, NasRegistry.prefs(app))
+        // Ab Werk heißt jedes NAS „titanos“: dasselbe Konto auf zwei NAS ergäbe denselben Kontonamen.
+        val id = NasRegistry.newId()
+        graph.registry.add(NasProfile(id, home.copy(device = "other", addresses = listOf(PinnedAddress("10.1.1.1:8443", "pinOther")))))
+        val names = graph.registry.profiles.map(graph::pimName)
+        assertEquals("zeus@nas", names[0])
+        assertEquals("zeus@nas (${id.takeLast(4)})", names[1])
+    }
+
+    @Test
     fun clusterNodesOnlyWhenThisNasManagesThem() {
         val json = """{"nodes":[{"id":"a","name":"nas","self":true,"online":true},{"id":"b","name":"nas2","online":false}],"version":"1.19.0","manages":true}"""
         assertEquals(listOf("a", "b"), clusterNodesOf(json).map { it.id })

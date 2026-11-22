@@ -34,7 +34,6 @@
     <string name="nas_cluster_self">Dieses NAS</string>
     <string name="nas_cluster_offline">Nicht erreichbar</string>
     <string name="nas_ended">„%1$s“ kennt dieses Handy nicht mehr. Die Kopplung mit diesem NAS ist aufgehoben, die anderen bleiben.</string>
-    <string name="nas_switched">Gewählt: %1$s</string>
     <!-- Kurzbefehle und Schnelleinstellungen -->
     <string name="sc_ask">Agent fragen</string>
     <string name="sc_ask_long">Den KI-Agenten fragen</string>

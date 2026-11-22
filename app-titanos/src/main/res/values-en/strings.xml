@@ -34,7 +34,6 @@
     <string name="nas_cluster_self">This NAS</string>
     <string name="nas_cluster_offline">Not reachable</string>
     <string name="nas_ended">“%1$s” no longer knows this phone. The pairing with this NAS is removed, the others stay.</string>
-    <string name="nas_switched">Selected: %1$s</string>
     <!-- Shortcuts and quick settings -->
     <string name="sc_ask">Ask agent</string>
     <string name="sc_ask_long">Ask the AI agent</string>

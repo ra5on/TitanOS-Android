@@ -87,6 +87,8 @@ data class PhotosView(
     val tiles: List<Tile> = emptyList(),
     val progress: Progress = Progress(),
     val loading: Boolean = false,
+    /** Über die Schnelleinstellung pausiert (alle NAS), bis man fortsetzt. */
+    val paused: Boolean = false,
 )
 
 @Composable
@@ -150,6 +152,7 @@ fun PhotosScreen(
     thumb: @Composable (Tile, Modifier) -> Unit = { t, m -> TilePlaceholder(t, m) },
     bottomBar: (@Composable () -> Unit)? = null,
     onGallery: (() -> Unit)? = null,
+    onResume: () -> Unit = {},
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val c = Titan.colors
@@ -168,6 +171,10 @@ fun PhotosScreen(
         overlay = overlay,
     ) {
         Spacer(Modifier.height(14.dp))
+        if (view.paused) {
+            Problem(stringResource(R.string.photos_paused), Modifier.padding(bottom = 8.dp))
+            TitanButton(stringResource(R.string.photos_resume), onResume, Modifier.fillMaxWidth().padding(bottom = 12.dp), ButtonKind.Primary)
+        }
         StatusCard(view, onSetUp)
         if (onGallery != null && view.settings.hasTarget) {
             Card(Modifier.padding(top = 12.dp)) {

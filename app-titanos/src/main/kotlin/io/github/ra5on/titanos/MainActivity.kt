@@ -2,6 +2,7 @@ package io.github.ra5on.titanos
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.core.content.edit
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -66,7 +67,11 @@ class MainActivity : ComponentActivity() {
         val link = PairLink.parse(data) ?: return
         val used = getSharedPreferences("pair-links", MODE_PRIVATE)
         if (used.getBoolean(link.code, false)) return
-        used.edit().putBoolean(link.code, true).apply()
+        used.edit { putBoolean(link.code, true) }
+        // Erster Start nach dem Update auf mehrere NAS: Android liefert den Link, mit dem die alte
+        // Fassung gekoppelt wurde, noch einmal. Gehört er zum übernommenen NAS, nicht neu koppeln.
+        val pins = link.addresses.map { it.spki }.filter { it.isNotEmpty() }.toSet()
+        if (graph.registry.migrated && graph.registry.profiles.any { p -> p.pairing.addresses.any { it.spki in pins } }) return
         pendingLink = link
     }
 }

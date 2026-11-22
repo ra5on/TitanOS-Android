@@ -78,6 +78,7 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit, files: io.g
             thumb = { t, m -> MediaThumb(model, t, m) },
             bottomBar = bottomBar,
             onGallery = { route = Route.Gallery },
+            onResume = model::resume,
         ) {
             if (menu) {
                 PhotosMenu(

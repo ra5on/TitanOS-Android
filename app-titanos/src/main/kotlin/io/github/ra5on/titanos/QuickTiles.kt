@@ -38,7 +38,11 @@ object QuickTiles {
         }
     }
 
-    /** Öffnet eine Activity aus einer Kachel und schließt die Schnelleinstellungen (ab Android 14 nur mit PendingIntent). */
+    /**
+     * Öffnet eine Activity aus einer Kachel und schließt die Schnelleinstellungen (ab Android 14 nur mit PendingIntent).
+     * Die Fassung mit Intent läuft nur auf Android 13 (minSdk 33), wo es die mit PendingIntent noch nicht gibt.
+     */
+    @android.annotation.SuppressLint("StartActivityAndCollapseDeprecated")
     internal fun TileService.open(intent: Intent) {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (Build.VERSION.SDK_INT >= 34) {
