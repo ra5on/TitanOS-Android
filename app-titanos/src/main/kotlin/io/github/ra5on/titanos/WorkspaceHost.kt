@@ -84,7 +84,7 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
     WorkspaceRoutes(graph, state)
     // Hauptmenü wie im Web: Sperren (die App, mit Fingerabdruck oder Geräte-PIN), Neustart und Herunterfahren des NAS.
     var power by remember { mutableStateOf<Boolean?>(null) }
-    val env = rememberEnv(graph) { path -> openWebPath(graph, path) {} }
+    val env = rememberEnv(graph) { path -> openWebPath(context, graph, path) {} }
     state.onPower = if (env != null) { restart -> power = restart } else null
     // Mehrere NAS: Umschalten beginnt MainShell neu (key(nasEpoch)), der Arbeitsplatz lädt die Einrichtung des neuen NAS.
     // Gleiche Namen (zwei NAS „pc“): die Adresse dazu, sonst wäre Umschalten Raten.
@@ -169,16 +169,17 @@ internal fun WorkspaceProgram(graph: AppGraph, win: Win, close: () -> Unit) {
     val id = win.app.removePrefix("app:")
     when {
         // Docker-Apps öffnen das Programm Docker (die App zeigt keine Seiten fremder Apps in Fenstern).
-        win.app.startsWith("docker:") -> ComputeProgram("docker", graph, close)
+        win.app.startsWith("docker:") -> ComputeProgramAt("docker", graph, null, close)
         win.app.startsWith("webapp:") -> Later()
         id == "files" -> FilesWindow(graph, win)
         id == "photos" -> graph.photos?.let { io.github.ra5on.titanos.photos.PhotosTab(it, {}, graph.files) }
         id == "notifications" -> io.github.ra5on.titanos.notify.NotifyTab(nav = {})
         id == "agent" -> AgentWindow(graph, win.href)
         id in PROGRAMS || id == PIM_SYNC -> PimWindow(graph, id, win.href, close)
-        id == "appcenter" -> AdminProgram("plugins", graph, close)
-        id in ADMIN_PROGRAMS -> AdminProgram(id, graph, close)
-        id in COMPUTE_PROGRAMS -> ComputeProgram(id, graph, close)
+        // Links (Mitteilungen, Systemsteuerung, andere Programme) landen an ihrer Stelle (Links.kt, I1).
+        id == "appcenter" -> ComputeProgramAt("docker", graph, win.href.ifEmpty { "/docker/catalog" }, close)
+        id in ADMIN_PROGRAMS -> AdminProgramAt(id, graph, win.href.ifEmpty { null }, close)
+        id in COMPUTE_PROGRAMS -> ComputeProgramAt(id, graph, win.href.ifEmpty { null }, close)
         id == "vpn" -> io.github.ra5on.titanos.vpn.VpnPage(onBack = close)
         id == "about" -> {
             var nasVersion by remember { mutableStateOf<String?>(null) }
@@ -215,6 +216,11 @@ private fun FilesWindow(graph: AppGraph, win: Win) {
     val api = graph.api ?: return
     val model = if (workspaceFirstFiles == win.id) shared else remember(win.id, api) {
         io.github.ra5on.titanos.files.FilesModel(context.applicationContext, api, graph.transfers, graph.scope, graph.offline)
+    }
+    // `/files?root=…&path=…` aus einem Link: diesen Ordner zeigen.
+    LaunchedEffect(model, win.href) {
+        val root = queryValue(win.href, "root")
+        if (root != null) model.openAt(root, queryValue(win.href, "path").orEmpty())
     }
     io.github.ra5on.titanos.files.FilesTab(model, nav = {})
 }

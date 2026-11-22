@@ -186,6 +186,7 @@ internal fun DiskWakes(disk: DiskSleepDisk) {
                     Text(wakeCausesText(w), style = TitanType.small, color = c.muted)
                 }
             }
+            val open = LocalOpenProgram.current
             for (h in wakeHints(disk)) {
                 Text(
                     when (h) {
@@ -197,6 +198,15 @@ internal fun DiskWakes(disk: DiskSleepDisk) {
                     color = c.muted,
                     modifier = Modifier.padding(start = 22.dp, top = 4.dp),
                 )
+                // Wie im Web (DiskWakes.svelte): der Link führt zu Systemsteuerung › Systemdaten.
+                if (h == "systemData") {
+                    Text(
+                        t("storage.wakeHint.systemDataLink"),
+                        style = TitanType.small,
+                        color = c.accent,
+                        modifier = Modifier.padding(start = 22.dp).clickable(role = Role.Button) { open("settings", "systemdata") }.heightIn(min = 40.dp),
+                    )
+                }
             }
         }
     }

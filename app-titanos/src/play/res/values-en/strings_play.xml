@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="play_about_title">About the app</string>
+    <string name="play_about_name">TitanOS for Android</string>
+    <string name="play_about_version">Version %1$s</string>
+    <string name="play_about_nas">NAS %1$s</string>
+    <string name="play_about_updates">Updates</string>
+    <string name="play_about_updates_text">Google Play installs new versions.</string>
+    <string name="play_about_store">Google Play</string>
+    <string name="play_about_agent">Agent app</string>
+    <string name="play_about_agent_missing">not installed</string>
+    <string name="play_about_note">This edition comes from Google Play. The GitHub edition updates itself; the two cannot be installed at the same time.</string>
+</resources>

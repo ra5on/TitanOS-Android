@@ -55,10 +55,22 @@ class FakeNas {
             }
         }
         server.start()
+        active += this
         return this
     }
 
-    fun stop() = server.close()
+    fun stop() {
+        active -= this
+        server.close()
+    }
+
+    companion object {
+        /** Die laufenden nachgebauten NAS; ihre Antworten sind Daten, keine Textschlüssel ([Shots.isData]). */
+        val active: MutableSet<FakeNas> = Collections.synchronizedSet(LinkedHashSet())
+
+        /** Steht [text] wörtlich (als JSON-Text) in einer Antwort eines laufenden nachgebauten NAS? */
+        fun served(text: String): Boolean = synchronized(active) { active.any { nas -> nas.answers.values.any { it.contains("\"$text\"") } } }
+    }
 
     fun api(): SettingsApi = SettingsApi(NasConnection(listOf(Endpoint(server.url("/"), OkHttpClient())), null))
 
@@ -76,7 +88,7 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
     var prefix = ""
 
     /** Stammt der Text wörtlich aus den Antworten des nachgebauten NAS? Dann ist er Daten, kein Textschlüssel. */
-    var isData: (String) -> Boolean = { false }
+    var isData: (String) -> Boolean = { FakeNas.served(it) }
 
     fun show(dark: Boolean, content: @Composable () -> Unit) {
         compose.setContent { TitanTheme(dark = dark) { Box(Modifier.fillMaxSize()) { content() } } }

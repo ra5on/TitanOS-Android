@@ -70,6 +70,9 @@ class AgentApp : Application(), SiblingHost, io.github.ra5on.titanos.agent.syste
         // Ungekoppelt und die TitanOS-App ist gekoppelt: sie koppelt diese App mit.
         Sibling.ask(this, this)
     }
+
+    /** Nach der Erlaubnis „lokales Netzwerk“: die Kopplung über die TitanOS-App noch einmal (vorher scheiterte sie im Heimnetz still). */
+    fun retrySibling() = Sibling.ask(this, this)
 }
 
 /**

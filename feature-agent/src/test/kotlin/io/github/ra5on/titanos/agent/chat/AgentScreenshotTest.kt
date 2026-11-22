@@ -101,11 +101,17 @@ class AgentScreenshotTest {
     ) as kotlinx.serialization.json.JsonObject
     private fun fx(key: String) = fx[key].toString()
 
+    /** Ausgelieferte Antworten: was wörtlich darin steht, ist Daten, kein roher Textschlüssel. */
+    private val served: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf())
+
     private val dispatcher = object : Dispatcher() {
         override fun dispatch(request: RecordedRequest): MockResponse {
             val path = request.url.encodedPath.removePrefix("/api/v1")
             val get = request.method == "GET"
-            fun ok(body: String) = MockResponse.Builder().code(200).addHeader("Content-Type", "application/json").body(body).build()
+            fun ok(body: String): MockResponse {
+                served += body
+                return MockResponse.Builder().code(200).addHeader("Content-Type", "application/json").body(body).build()
+            }
             return when {
                 path == "/agent/status" -> ok(status)
                 path == "/storage" -> ok(fx("storage"))
@@ -237,13 +243,16 @@ class AgentScreenshotTest {
             val r = out.firstOrNull() ?: continue
             // Nicht gefüllte Platzhalter oder rohe Schlüssel.
             val text = r.layoutInput.text.text
-            if (Regex("\\{[a-zA-Z]+\\}").containsMatchIn(text) || Regex("^(agent|agentpim|common)\\.[a-zA-Z.]+$").matches(text.trim()) || Regex("\\bagent\\.f\\.[a-z]").containsMatchIn(text))
+            val fromNas = synchronized(served) { served.any { it.contains("\"${text.trim()}\"") } }
+            if (Regex("\\{[a-zA-Z]+\\}").containsMatchIn(text) || (!fromNas && Regex("^(agent|agentpim|common)\\.[a-zA-Z.]+$").matches(text.trim())) || Regex("\\bagent\\.f\\.[a-z]").containsMatchIn(text))
                 cut += "$prefix$name: Platzhalter „${text.take(80)}“"
             // Breiter oder höher als der Platz, oder mit „…“ gekürzt: abgeschnitten.
             val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
             val bottom = if (r.lineCount > 0) r.getLineBottom(r.lineCount - 1) else 0f
             val dots = (0 until r.lineCount).any { r.isLineEllipsized(it) }
-            if (widest > node.size.width + 2 || bottom > node.size.height + 2 || dots)
+            // Ein einzeiliges Eingabefeld scrollt waagrecht (Prüfregel aller Module, Abschluss I1).
+            val editable = node.config.getOrElseNullable(androidx.compose.ui.semantics.SemanticsProperties.EditableText) { null } != null
+            if ((!editable && widest > node.size.width + 2) || bottom > node.size.height + 2 || dots)
                 cut += "$prefix$name: „${r.layoutInput.text.text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
         }
     }

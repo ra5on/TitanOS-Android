@@ -143,9 +143,12 @@ internal fun pct(v: Double): String = String.format(Locale.getDefault(), "%.0f %
 internal fun nasHost(env: ComputeEnv): String = env.access.connection.endpoints.firstOrNull()?.base?.host.orEmpty()
 
 @Composable
-internal fun DockerProgram(env: ComputeEnv, onBack: () -> Unit) {
+internal fun DockerProgram(env: ComputeEnv, onBack: () -> Unit, start: String? = null) {
     val state = remember(env.access) { DockerState(DockerApi(env.access)) }
-    var section by rememberSaveable { mutableStateOf("containers") }
+    val first = start?.substringBefore('?')?.substringBefore('/')
+    var section by rememberSaveable { mutableStateOf(first?.takeIf { it in DOCKER_SECTIONS } ?: "containers") }
+    // `apps/<app>` (Systemsteuerung › Proxy › „Bearbeiten“): die App in der Liste öffnen, sobald sie geladen ist.
+    val openApp = start?.takeIf { first == "apps" }?.substringAfter("apps/", "")?.substringBefore('?')?.takeIf { it.isNotEmpty() }
     val sections = listOf(
         Section("containers", t("desktop.side.containers"), TitanIcons.box),
         Section("images", t("desktop.side.images"), TitanIcons.archive),
@@ -188,10 +191,12 @@ internal fun DockerProgram(env: ComputeEnv, onBack: () -> Unit) {
             "networks" -> NetworksPage(state.api)
             "cleanup" -> CleanupPage(state.api)
             "catalog" -> CatalogPage(state) { section = "containers" }
-            else -> ContainersPage(env, state)
+            else -> ContainersPage(env, state, openApp)
         }
     }
 }
+
+private val DOCKER_SECTIONS = setOf("containers", "images", "volumes", "networks", "cleanup", "catalog")
 
 private fun installMenu(ui: ComputeUi, state: DockerState, toCatalog: () -> Unit) {
     ui.menu(
@@ -231,7 +236,7 @@ internal fun updateApps(status: DockerStatus?): List<Pair<String, List<String>>>
 }
 
 @Composable
-private fun ContainersPage(env: ComputeEnv, state: DockerState) {
+private fun ContainersPage(env: ComputeEnv, state: DockerState, openApp: String? = null) {
     Poll(5_000) { state.load() }
     androidx.compose.runtime.LaunchedEffect(Unit) {
         state.layout = state.api.layout()
@@ -240,6 +245,10 @@ private fun ContainersPage(env: ComputeEnv, state: DockerState) {
     var openId by rememberSaveable { mutableStateOf<String?>(null) }
     val status = state.status
     val groups = remember(status) { groupsOf(status?.containers.orEmpty(), status?.jobs.orEmpty()) }
+    var appTaken by rememberSaveable { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(groups, openApp) {
+        if (openApp != null && !appTaken) groups.firstOrNull { it.app == openApp || it.name == openApp }?.let { openId = it.id; appTaken = true }
+    }
     val open = groups.firstOrNull { it.id == openId }
     ListDetail(
         detailOpen = open != null,

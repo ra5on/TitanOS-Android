@@ -53,30 +53,29 @@ internal fun rememberEnv(graph: AppGraph, onOpen: (String) -> Unit): SettingsEnv
     val context = LocalContext.current
     val version = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty() }.getOrDefault("") }
     return remember(pairing, user) {
-        SettingsEnv(SettingsApi(nas), { user?.name ?: pairing.user }, { user?.role ?: "user" }, onOpen, version)
+        SettingsEnv(
+            SettingsApi(nas), { user?.name ?: pairing.user }, { user?.role ?: "user" }, onOpen, version,
+            // Cluster: „Verwalten“ wählt den Knoten wie der Umschalter von „NAS und Konten“ (AppGraph.setNode).
+            switchNode = { id, name, then ->
+                graph.setNode(id, name)
+                if (then != null) onOpen(then)
+            },
+        )
     }
 }
 
 /**
- * Öffnet eine Adresse der Weboberfläche in der App: Systemsteuerung und Mein
- * Konto hier, Programme der Startseite, die die App kann, sonst ein Hinweis.
+ * Öffnet eine Adresse der Weboberfläche in der App: jedes Programm, das die
+ * App hat, an seiner Stelle (Links.kt), sonst ein Hinweis.
  */
-internal fun openWebPath(graph: AppGraph, path: String, later: () -> Unit) {
-    val first = path.removePrefix("/").substringBefore('?').substringBefore('#').substringBefore('/')
-    when {
-        first in SETTINGS_PROGRAMS || first in PROGRAMS -> {
-            graph.programLink = path
-            graph.openProgram = first
-        }
-        else -> later()
-    }
-}
+internal fun openWebPath(context: android.content.Context, graph: AppGraph, path: String, later: () -> Unit) =
+    openLink(context, graph, path, later)
 
 @Composable
 internal fun SettingsProgram(graph: AppGraph, id: String, onClose: () -> Unit, start: String? = graph.programLink) {
     val context = LocalContext.current
     val laterText = stringResource(R.string.app_later_toast)
-    val env = rememberEnv(graph) { path -> openWebPath(graph, path) { Toast.makeText(context, laterText, Toast.LENGTH_SHORT).show() } } ?: return
+    val env = rememberEnv(graph) { path -> openWebPath(context, graph, path) { Toast.makeText(context, laterText, Toast.LENGTH_SHORT).show() } } ?: return
     val link = start
     when (id) {
         "settings" -> {

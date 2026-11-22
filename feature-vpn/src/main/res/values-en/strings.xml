@@ -163,4 +163,5 @@
     <string name="vpn_menu_sub">Tunnel to the NAS when away</string>
     <string name="vpn_other_nas">The VPN belongs to the NAS “%1$s”. Android allows only one VPN at a time. For another NAS, remove the access here and then create it on the other NAS.</string>
     <string name="vpn_for_nas">The VPN connects to the NAS “%1$s”. Android allows only one VPN at a time, so it is for one NAS.</string>
+    <string name="vpn_location_play">While the app is closed, Android does not tell this edition the Wi-Fi name. The setting “Wi-Fi without a known name” below applies then; by default the tunnel goes on, and it only leads to the NAS.</string>
 </resources>

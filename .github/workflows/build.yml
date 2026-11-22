@@ -11,7 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Ab 1.00: Bauen beider Varianten, Tests, Lint und alle Bildtests (lokal schon 45 Minuten ohne Bilder).
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -36,18 +37,23 @@ jobs:
       - name: Kein TextOverflow.Ellipsis und kein maxLines
         run: |
           # Die Lint-Regel selbst (lint-rules) nennt die verbotenen Wörter und bleibt außen vor.
-          dirs=$(ls -d */src/main | grep -v '^lint-rules/')
+          dirs=$(ls -d */src/main */src/github */src/play 2>/dev/null | grep -v '^lint-rules/')
           if grep -rnE 'TextOverflow\.Ellipsis|\bmaxLines\b|android:ellipsize|android:singleLine|android:maxLines' \
               --include='*.kt' --include='*.xml' $dirs; then
             echo "::error::Abgeschnittener Text ist verboten – umbrechen oder scrollen."
             exit 1
           fi
 
+      # Beide Bauvarianten (github, play): assembleDebug baut beide; die Tests der App TitanOS
+      # heißen mit Variante (testDebugUnitTest läuft nur in Modulen ohne Varianten).
       - name: Bauen, Unit-Tests, Lint
-        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest lint :lint-rules:test
+        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest :app-titanos:testGithubDebugUnitTest lint :app-titanos:lintPlayDebug :app-agent:lintPlayDebug :lint-rules:test
+
+      - name: Play-Variante als AAB (unsigniert, nicht veröffentlicht)
+        run: ./gradlew --no-daemon :app-titanos:bundlePlayRelease :app-agent:bundlePlayRelease
 
       - name: Bildtests aufnehmen
-        run: ./gradlew --no-daemon recordRoborazziDebug
+        run: ./gradlew --no-daemon recordRoborazziDebug :app-titanos:recordRoborazziGithubDebug
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
@@ -61,4 +67,13 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: titanos-debug-apk
-          path: app-titanos/build/outputs/apk/debug/*.apk
+          path: |
+            app-titanos/build/outputs/apk/github/debug/*.apk
+            app-titanos/build/outputs/apk/play/debug/*.apk
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: titanos-play-aab
+          path: |
+            app-titanos/build/outputs/bundle/playRelease/*.aab
+            app-agent/build/outputs/bundle/playRelease/*.aab

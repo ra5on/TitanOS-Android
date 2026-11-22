@@ -37,6 +37,7 @@ fun permsOf(context: Context): VpnPerms = VpnPerms(
     vpnAllowed = VpnService.prepare(context) == null,
     batteryExempt = context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) == true,
     notifications = context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED,
+    backgroundAllowed = !io.github.ra5on.titanos.ui.Distribution.play(context),
 )
 
 private fun codeOf(e: Throwable): String = when (e) {
@@ -196,8 +197,8 @@ fun VpnPage(onBack: () -> Unit, ownerNas: String = "", forNas: String = "") {
             askVpn = { askVpn(thenConnect = false) },
             openVpnSettings = { settingsReturn.launch(Intent(Settings.ACTION_VPN_SETTINGS)) },
             askBattery = {
-                @Suppress("BatteryLife") // Außerhalb des Play Stores vertretbar (wie feature-notify); nur nach Tippen.
-                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + context.packageName))
+                // Nur nach Tippen; von Google Play nur die Liste der Akku-Optimierung (core-ui Distribution).
+                val intent = io.github.ra5on.titanos.ui.Distribution.batteryExemptionIntent(context)
                 runCatching { settingsReturn.launch(intent) }
             },
             askNotifications = { askNotify.launch(Manifest.permission.POST_NOTIFICATIONS) },

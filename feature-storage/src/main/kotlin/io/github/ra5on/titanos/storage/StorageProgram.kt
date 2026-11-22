@@ -50,6 +50,9 @@ internal class StorageModel(val api: StorageApi) {
 }
 
 /** Wohin das Programm gerade zeigt; Seiten wie die Seitenleiste in apps.ts. */
+/** Öffnet ein anderes Programm (AdminEnv.open) aus Bausteinen ohne eigenen Zugriff auf die Umgebung. */
+internal val LocalOpenProgram = androidx.compose.runtime.staticCompositionLocalOf<(String, String?) -> Unit> { { _, _ -> } }
+
 internal class StorageNav(start: String?) {
     var page by mutableStateOf(pageOf(start))
     var volume by mutableStateOf<String?>(null)
@@ -64,10 +67,16 @@ internal class StorageNav(start: String?) {
     }
 
     companion object {
-        fun pageOf(start: String?) = when (start) {
-            "manage", "smart", "import", "replace", "memory" -> start
+        /** Die Seite aus einem Start wie `smart?disk=sda` (Adresse `/storage/smart?disk=…` des Webs). */
+        fun pageOf(start: String?) = when (val page = start?.substringBefore('?')) {
+            "manage", "smart", "import", "replace", "memory" -> page
             else -> "overview"
         }
+
+        /** Ein Wert aus dem Teil hinter `?` eines Starts (`disk`). */
+        fun queryOf(start: String?, key: String): String? =
+            start?.substringAfter('?', "")?.split('&')?.firstOrNull { it.substringBefore('=') == key }
+                ?.substringAfter('=', "")?.let { java.net.URLDecoder.decode(it, "UTF-8") }?.takeIf { it.isNotEmpty() }
     }
 }
 
@@ -86,7 +95,7 @@ internal fun StorageProgram(
     overview: OverviewState = remember { OverviewState() },
 ) {
     val model = remember(env) { StorageModel(StorageApi(env.http)) }
-    val smart = remember { SmartSelection() }
+    val smart = remember(start) { SmartSelection().also { it.disk = StorageNav.queryOf(start, "disk") } }
     val scope = rememberCoroutineScope()
     val width = currentWidth()
 
@@ -114,6 +123,8 @@ internal fun StorageProgram(
     }
     val page = if (onUp != null && nav.page == "overview") overview.detailTitle(model.status) else null
 
+    // „Aufgeweckt durch“: der Hinweis auf die Systemdaten führt dorthin (DiskWakes, wie im Web /settings/systemdata).
+    androidx.compose.runtime.CompositionLocalProvider(LocalOpenProgram provides env.open) {
     AdminShell(
         glyph = "storage",
         gradient = "dark",
@@ -150,6 +161,7 @@ internal fun StorageProgram(
                 else -> OverviewPage(env, model, nav, overview)
             }
         }
+    }
     }
     LaunchedEffect(nav.page) { if (nav.page != "smart") smart.disk = null }
 }

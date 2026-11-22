@@ -12,9 +12,7 @@ import android.net.Network
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import android.provider.Settings
 import androidx.core.app.NotificationCompat
-import androidx.core.net.toUri
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -82,7 +80,8 @@ object NotifyScheduler {
     @SuppressLint("BatteryLife")
     fun askBatteryExemption(context: Context): Boolean {
         if (batteryExempt(context)) return true
-        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, ("package:" + context.packageName).toUri())
+        // Von Google Play nur die Liste der Akku-Optimierung, keine direkte Frage (core-ui Distribution).
+        val intent = io.github.ra5on.titanos.ui.Distribution.batteryExemptionIntent(context)
         if (context !is android.app.Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return try {
             context.startActivity(intent)

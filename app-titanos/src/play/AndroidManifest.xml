@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bauvariante „play“ (Google Play). Quellen, gelesen am 22.11.2026:
+  - REQUEST_INSTALL_PACKAGES darf nicht für Selbst-Updates dienen (Play-Hilfe „Permissions and APIs that
+    Access Sensitive Information“); feature-update fehlt in dieser Variante ganz, die Zeilen hier sichern ab.
+  - Standort im Hintergrund nur für Kernfunktionen mit großem Nutzen, „Bequemlichkeit“ zählt nicht
+    (Play-Hilfe „Understanding location in the background permissions“): das VPN erkennt das Heim-WLAN
+    nur bei offener App, sonst gilt „WLAN ohne erkennbaren Namen“.
+  - Die direkte Frage nach der Akku-Ausnahme nur, wenn Doze die Kernfunktion bricht
+    (developer.android.com „Optimize for Doze and App Standby“): die App öffnet die Liste der Akku-Optimierung.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" tools:node="remove" />
+</manifest>

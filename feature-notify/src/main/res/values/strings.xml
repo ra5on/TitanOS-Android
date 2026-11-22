@@ -28,7 +28,7 @@
     <string name="notify_battery_text">Nötig, damit Android die Verbindung nicht trennt</string>
     <string name="notify_battery_ask">Nötig, damit Android die Verbindung nicht trennt. Tippen, um es zu erlauben.</string>
     <string name="notify_unifiedpush">UnifiedPush nutzen</string>
-    <string name="notify_unifiedpush_text">Wenn eine App wie ntfy installiert ist – spart Akku, weil sich mehrere Apps eine Verbindung teilen. Kommt in einer späteren Testfassung.</string>
+    <string name="notify_unifiedpush_text">Wenn eine App wie ntfy installiert ist – spart Akku, weil sich mehrere Apps eine Verbindung teilen. Kommt in einer späteren Version.</string>
     <string name="notify_permission">Mitteilungen erlauben</string>
     <string name="notify_permission_text">Android zeigt sonst nichts an; die Liste in der App füllt sich trotzdem.</string>
     <string name="notify_permission_denied">Android hat es abgelehnt; in den Android-Einstellungen der App änderbar.</string>

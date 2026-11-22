@@ -38,6 +38,12 @@ class SettingsEnv(
     val open: (String) -> Unit = {},
     /** Version der App (Über die App). */
     val appVersion: String = "",
+    /**
+     * Cluster: einen anderen Knoten über dieses NAS verwalten (Knotenauswahl wie
+     * `switchNode` im Web), danach wahlweise eine Adresse öffnen (`/settings/updates`).
+     * null: die App kann es hier nicht (Bildtests).
+     */
+    val switchNode: ((id: String, name: String, then: String?) -> Unit)? = null,
 ) {
     val admin: Boolean get() = role().let { it == "owner" || it == "admin" }
     val owner: Boolean get() = role() == "owner"
