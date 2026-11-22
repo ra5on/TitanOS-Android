@@ -115,6 +115,7 @@ internal fun ToolsProgram(env: AdminEnv, start: String?, onBack: () -> Unit) {
         onExit = { guarded(onBack) },
         page = pageLabel,
         onUp = goCtx.up ?: if (stack.isNotEmpty()) back else null,
+        ownHistory = true,
         onKey = { e ->
             goCtx.keys?.invoke(e) == true || when {
                 // Strg+1 … Strg+0: die Seiten der Seitenleiste (Übersicht zuerst).

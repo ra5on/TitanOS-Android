@@ -72,7 +72,8 @@ data class SideGroup(val title: String?, val entries: List<SideEntry>)
  * [onUp] führt eine Ebene zurück (Detail → Liste). Sonst führt Zurück zur
  * zuvor gewählten Seite des Programms (Seiten als Ebenen wie am Handy im
  * Web: Speicher › Importieren → Zurück → Übersicht) und erst auf der ersten
- * Seite aus dem Programm hinaus ([onExit]). [onKey] bekommt Tastendrücke der ganzen Seite
+ * Seite aus dem Programm hinaus ([onExit]); mit [ownHistory] führt das
+ * Programm den Verlauf selbst. [onKey] bekommt Tastendrücke der ganzen Seite
  * (Tastenkürzel wie im Web), gibt true zurück, wenn sie sie verbraucht.
  */
 @Composable
@@ -88,6 +89,8 @@ fun AdminShell(
     onUp: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     onKey: ((KeyEvent) -> Boolean)? = null,
+    /** Das Programm führt seinen Seitenverlauf selbst (Werkzeuge) und meldet ihn über [onUp]. */
+    ownHistory: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val width = currentWidth()
@@ -99,7 +102,7 @@ fun AdminShell(
     val stack = history.split('\n').filter { it.isNotEmpty() }
     val select: (String) -> Unit = { id ->
         val action = groups.flatMap { it.entries }.firstOrNull { it.id == id }?.action == true
-        if (id != current && !action) history = (history.split('\n').filter { it.isNotEmpty() } + current).joinToString("\n")
+        if (id != current && !action && !ownHistory) history = (history.split('\n').filter { it.isNotEmpty() } + current).joinToString("\n")
         onSelect(id)
     }
     val pop: () -> Unit = {
