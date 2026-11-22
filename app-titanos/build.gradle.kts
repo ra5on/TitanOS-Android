@@ -105,6 +105,8 @@ dependencies {
     implementation(project(":feature-mail"))
     implementation(project(":feature-pim"))
     implementation(project(":feature-vpn"))
+    implementation(project(":feature-settings"))
+    implementation(project(":feature-account"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.zxing.embedded)
     implementation(libs.androidx.activity.compose)

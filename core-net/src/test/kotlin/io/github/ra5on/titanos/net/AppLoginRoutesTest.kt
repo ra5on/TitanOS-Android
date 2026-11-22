@@ -8,7 +8,7 @@ import org.junit.Test
 class AppLoginRoutesTest {
     @Test
     fun onlyPairingAndLoginGoWithoutSession() {
-        for (p in listOf("/api/v1/app/pair/claim", "/api/v1/app/pair/wait", "/api/v1/app/challenge", "/api/v1/app/session")) assertTrue(p, p.isAppLogin())
-        for (p in listOf("/api/v1/app/pair/sibling", "/api/v1/app/photos/check", "/api/v1/app/photos/uploads/abc/finish", "/api/v1/app/sessionx", "/api/v1/files/roots")) assertFalse(p, p.isAppLogin())
+        for (p in listOf("/api/v1/app/pair/claim", "/api/v1/app/pair/wait", "/api/v1/app/challenge", "/api/v1/app/session", "/api/v1/app/pair/watch", "/api/v1/app/pair/watch/x/reveal", "/api/v1/app/pair/watch/x/wait")) assertTrue(p, p.isAppLogin())
+        for (p in listOf("/api/v1/app/pair/sibling", "/api/v1/app/pair/watch/confirm", "/api/v1/app/photos/check", "/api/v1/app/photos/uploads/abc/finish", "/api/v1/app/sessionx", "/api/v1/files/roots")) assertFalse(p, p.isAppLogin())
     }
 }

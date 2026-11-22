@@ -212,6 +212,8 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
 
     /** Seite „VPN“ offen (Menü, Mitteilung oder Kachel). */
     var openVpn by mutableStateOf(false)
+    /** Ein Reiter der Leiste unten, z. B. aus der Systemsteuerung (`files`, `notifications`). */
+    var openTab by mutableStateOf<String?>(null)
 
     /** Mail, Kalender oder Kontakte in voller Größe (`mail`, `calendar`, `contacts`), sonst null. */
     var openProgram by mutableStateOf<String?>(null)
@@ -466,6 +468,8 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
             unpairedByNas = byNas
             nasEpoch++
             Shortcuts.clear(app)
+            // Die Darstellung des Kontos gehört zur Kopplung; mit der letzten geht sie (sonst holt AppearanceSync die des gewählten NAS).
+            io.github.ra5on.titanos.ui.theme.TitanAppearance.clear(app)
         } else {
             if (byNas) endedByNas = profile.name
             if (wasActive) afterSwitch() else WidgetRefresh.now(app)

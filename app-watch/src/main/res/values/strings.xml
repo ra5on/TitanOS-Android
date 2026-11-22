@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="w_app_name">TitanOS</string>
+    <string name="w_entry_done">Weiter</string>
+    <string name="w_cancel">Abbrechen</string>
+    <string name="w_loading">Wird geladen …</string>
+    <string name="w_err_reach">NAS gerade nicht erreichbar.</string>
+    <string name="w_stale">Stand %1$s</string>
+    <string name="w_reload">Neu laden</string>
+
+    <!-- Kopplung -->
+    <string name="w_pair_title">Uhr koppeln</string>
+    <string name="w_pair_intro">Öffne am Handy TitanOS › Menü › Uhr koppeln. Tippe hier eine der Adressen ein, die dort stehen.</string>
+    <string name="w_pair_address">Adresse eingeben</string>
+    <string name="w_pair_address_label">Adresse des NAS</string>
+    <string name="w_pair_other_address">Andere Adresse</string>
+    <string name="w_pair_again">Noch einmal</string>
+    <string name="w_pair_connecting">Verbinde mit %1$s …</string>
+    <string name="w_pair_code_hint">Gib diese Zahl am Handy unter „Uhr koppeln“ ein. Sie gilt 5 Minuten.</string>
+    <string name="w_pair_fingerprint">Zertifikat:\n%1$s</string>
+    <string name="w_pair_ended">Die Uhr wurde am NAS abgemeldet. Bitte neu koppeln.</string>
+    <string name="w_pair_err_address">Das ist keine Adresse. Beispiel: 192.168.1.20 oder nas.local:8443</string>
+    <string name="w_pair_err_reach">Unter dieser Adresse antwortet kein NAS. Ist die Uhr im selben Netz oder mit dem Handy verbunden?</string>
+    <string name="w_pair_err_cert">Die Uhr sieht ein anderes Zertifikat als das NAS ausliefert. Vielleicht ist jemand dazwischen. Nimm eine andere Adresse.</string>
+    <string name="w_pair_err_expired">Die Zahl ist abgelaufen. Hol eine neue.</string>
+    <string name="w_pair_err_limit">Gerade zu viele Versuche. Bitte gleich noch einmal.</string>
+    <string name="w_pair_err_old_nas">Das NAS kann noch keine Uhren koppeln. Es braucht TitanOS 1.19.</string>
+    <string name="w_pair_err_local_network">Die Uhr darf keine Geräte im lokalen Netzwerk erreichen. Erlaube es, sonst findet sie das NAS im Heimnetz nicht.</string>
+    <string name="w_pair_err_other">Das hat nicht geklappt. Bitte noch einmal.</string>
+
+    <!-- Startseite -->
+    <string name="w_state_ok">In Ordnung</string>
+    <string name="w_state_volume">Speicher braucht Hilfe</string>
+    <string name="w_state_warning">Neue Warnung</string>
+    <string name="w_volume_line">%1$s: %2$s</string>
+    <string name="w_vol_degraded">eingeschränkt</string>
+    <string name="w_vol_rebuilding">wird neu aufgebaut</string>
+    <string name="w_vol_checking">wird geprüft</string>
+    <string name="w_vol_failed">ausgefallen</string>
+    <string name="w_vol_missing">fehlt</string>
+    <string name="w_vol_unmounted">nicht eingebunden</string>
+    <string name="w_vol_other">nicht in Ordnung</string>
+    <string name="w_storage_line">Speicher: %1$d %% belegt, %2$s frei</string>
+    <plurals name="w_new_messages">
+        <item quantity="one">%d neue Meldung</item>
+        <item quantity="other">%d neue Meldungen</item>
+    </plurals>
+    <string name="w_agent">Agent fragen</string>
+    <string name="w_approvals">Freigaben</string>
+    <plurals name="w_approvals_waiting">
+        <item quantity="one">%d wartet</item>
+        <item quantity="other">%d warten</item>
+    </plurals>
+    <string name="w_switch">Schalten</string>
+    <string name="w_cameras">Kameras</string>
+    <string name="w_messages">Meldungen</string>
+    <string name="w_settings">Einstellungen</string>
+
+    <!-- Agent -->
+    <string name="w_agent_prompt">Was soll der Agent tun?</string>
+    <string name="w_agent_speak">Sprechen</string>
+    <string name="w_agent_type">Tippen</string>
+    <string name="w_agent_listening">Ich höre zu. Tippe auf „Fertig“, wenn du fertig bist.</string>
+    <string name="w_agent_done">Fertig</string>
+    <string name="w_agent_working">Der Agent arbeitet …</string>
+    <string name="w_agent_more">Weiter fragen</string>
+    <string name="w_agent_error">Der Agent konnte das nicht zu Ende bringen.</string>
+    <string name="w_agent_err_rights">Der KI-Agent ist für dieses Konto nicht freigegeben.</string>
+    <string name="w_agent_err_whisper">Mitschreiben ist am NAS nicht eingerichtet (Sprachdienste).</string>
+    <string name="w_agent_heard_nothing">Ich habe nichts verstanden.</string>
+    <string name="w_agent_no_mic">Ohne Mikrofon geht Sprechen nicht. Du kannst tippen.</string>
+    <string name="w_read_aloud">Vorlesen</string>
+    <string name="w_allow">Erlauben</string>
+    <string name="w_deny">Ablehnen</string>
+    <string name="w_approval">Der Agent fragt</string>
+    <string name="w_approval_high">Der Agent fragt (folgenreich)</string>
+    <string name="w_approvals_none">Nichts wartet auf dich.</string>
+
+    <!-- Schalten -->
+    <string name="w_switch_devices">Geräte</string>
+    <string name="w_switch_containers">Container</string>
+    <string name="w_switch_vms">VMs</string>
+    <string name="w_switch_none">Hier ist nichts zum Schalten, oder dein Konto darf es nicht.</string>
+    <string name="w_switch_err">Das Schalten hat nicht geklappt.</string>
+    <string name="w_switch_err_rights">Dein Konto darf das nicht schalten.</string>
+    <string name="w_run">Ausführen</string>
+    <string name="w_on">an</string>
+    <string name="w_off">aus</string>
+    <string name="w_unavailable">nicht erreichbar</string>
+    <string name="w_unknown">unbekannt</string>
+    <string name="w_running_tap_stop">läuft · Tippen zum Stoppen</string>
+    <string name="w_stopped_tap_start">gestoppt · Tippen zum Starten</string>
+    <string name="w_container_stop_title">„%1$s“ stoppen?</string>
+    <string name="w_container_stop_text">Der Container hält an, bis du ihn wieder startest.</string>
+    <string name="w_container_stop">Stoppen</string>
+    <string name="w_vm_stop_title">„%1$s“ herunterfahren?</string>
+    <string name="w_vm_stop_text">Die VM fährt geordnet herunter.</string>
+    <string name="w_vm_stop">Herunterfahren</string>
+
+    <!-- Kameras -->
+    <string name="w_cameras_none">Keine Kamera für dein Konto.</string>
+    <string name="w_camera">Kamera</string>
+    <string name="w_camera_picture">Standbild von %1$s</string>
+    <string name="w_camera_events">Letzte Ereignisse</string>
+    <string name="w_camera_no_events">Keine Ereignisse.</string>
+    <string name="w_camera_back_live">Zum Standbild</string>
+    <string name="w_camera_err">Kein Bild von dieser Kamera.</string>
+    <string name="w_camera_err_rights">Dein Konto darf diese Kamera nicht sehen.</string>
+    <string name="w_label_person">Person</string>
+    <string name="w_label_car">Auto</string>
+    <string name="w_label_animal">Tier</string>
+    <string name="w_label_package">Paket</string>
+
+    <!-- Meldungen -->
+    <string name="w_messages_none">Keine Meldungen.</string>
+    <string name="w_sev_warning">Warnung</string>
+    <string name="w_sev_error">Fehler</string>
+
+    <!-- Einstellungen -->
+    <string name="w_set_read_aloud">Antworten vorlesen</string>
+    <string name="w_set_nas_voice">Stimme des NAS</string>
+    <string name="w_set_nas_voice_sub">Vorlesen mit Piper am NAS statt der Stimme der Uhr</string>
+    <string name="w_update">Update</string>
+    <string name="w_version">Version %1$s</string>
+    <string name="w_update_check">Nach Updates suchen</string>
+    <string name="w_update_checking">Suche …</string>
+    <string name="w_update_none">Das ist die neueste Version.</string>
+    <string name="w_update_err">Suche gerade nicht möglich.</string>
+    <string name="w_update_found">Version %1$s ist da.</string>
+    <string name="w_update_install">Installieren</string>
+    <string name="w_update_allow">Erlauben</string>
+    <string name="w_update_allow_text">Erlaube der App einmal, Updates zu installieren.</string>
+    <string name="w_update_loading">Wird geladen …</string>
+    <string name="w_update_loading_of">%1$s von %2$s</string>
+    <string name="w_update_installing">Wird installiert …</string>
+    <string name="w_update_failed">Das Update hat nicht geklappt.</string>
+    <string name="w_pairing">Kopplung</string>
+    <string name="w_paired_with">%1$s auf %2$s</string>
+    <string name="w_unpair">Kopplung aufheben</string>
+    <string name="w_unpair_title">Kopplung aufheben?</string>
+    <string name="w_unpair_text">Die Uhr meldet sich ab. Am NAS bleibt sie unter Mein Konto › Geräte, bis du sie dort beendest.</string>
+
+    <!-- Kachel und Komplikation -->
+    <string name="w_tile_label">NAS</string>
+    <string name="w_tile_open">TitanOS öffnen</string>
+    <string name="w_tile_unpaired">Noch nicht gekoppelt</string>
+    <string name="w_tile_storage">%1$d %% belegt\n%2$s frei</string>
+    <string name="w_complication_label">NAS</string>
+    <string name="w_complication_title">NAS</string>
+    <string name="w_complication_none">nicht gekoppelt</string>
+    <string name="w_complication_storage">Speicher %1$d %% belegt</string>
+</resources>

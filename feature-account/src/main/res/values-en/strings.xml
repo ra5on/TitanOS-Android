@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="acc_title">My account</string>
+    <string name="acc_passkeys_app">A passkey cannot be created in the app: a passkey belongs to the address of the web interface it is made under, and Android gives it to an app only with a permission on that domain (Digital Asset Links). Create new passkeys in the web interface in a browser; you can remove them here too.</string>
+    <string name="acc_push_app">This app gets its notifications through its pairing, not through Web Push. Listed here are the browsers in which you switched notifications on; switching on happens in each browser.</string>
+    <string name="acc_pair_scan">Scan this code with the other phone in the TitanOS app:</string>
+    <string name="acc_dav_title">Device passwords for calendar and contacts</string>
+    <string name="acc_dav_desc">The iPhone logs in with your account name and a password of its own. Your account password and second factor never go onto the iPhone.</string>
+    <string name="acc_dav_created">Created on %1$s</string>
+    <string name="acc_dav_revoke">Revoke …</string>
+    <string name="acc_dav_revoke_title">Revoke device password</string>
+    <string name="acc_dav_revoke_text">“%1$s” can no longer log in and syncs nothing any more. Calendars and contacts on the NAS stay. On the device, remove the account in the iOS settings.</string>
+    <string name="acc_dav_revoke_confirm">Revoke</string>
+    <string name="acc_dav_new">New device password</string>
+    <string name="acc_dav_new_desc">One for each device: you lock out a lost iPhone on its own, the others keep working. To create one, TitanOS asks for your account password.</string>
+    <string name="acc_dav_full">An account has at most %1$d devices. Revoke an old one to create a new one.</string>
+    <string name="acc_dav_name_placeholder">Device name</string>
+    <string name="acc_dav_create">Create …</string>
+    <string name="acc_dav_create_title">Device password for “%1$s”</string>
+    <string name="acc_dav_create_confirm">Create</string>
+    <string name="acc_dav_sync_never">never synced</string>
+    <string name="acc_dav_sync_today">last synced today %1$s</string>
+    <string name="acc_dav_sync_yesterday">last synced yesterday %1$s</string>
+    <string name="acc_dav_sync_on">last synced on %1$s %2$s</string>
+    <string name="acc_dav_sync_before_restart">last synced before the restart: %1$s</string>
+    <string name="acc_dav_kind_caldav">calendar</string>
+    <string name="acc_dav_kind_carddav">contacts</string>
+    <string name="acc_dav_once_title">Device password for “%1$s”</string>
+    <string name="acc_dav_once_hint">Visible only now. Enter it on the device right away; TitanOS keeps only a hash and cannot show it again.</string>
+    <string name="acc_dav_copy">Copy</string>
+    <string name="acc_dav_copied">Copied</string>
+</resources>

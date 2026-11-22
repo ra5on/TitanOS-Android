@@ -28,10 +28,11 @@ object UpdateCheck {
         return try {
             val source = ReleaseSource(client)
             val all = source.releases()
-            val mine = ReleaseSource.pick(all, Installer.versionCode(context, AppKind.TitanOS), settings.includeTest, AppKind.TitanOS)
+            val own = AppKind.own(context.packageName)
+            val mine = ReleaseSource.pick(all, Installer.versionCode(context, own), settings.includeTest, own)
             val agentCode = Installer.versionCode(context, AppKind.Agent)
             // Die Agent-App nur, wenn sie installiert ist (installieren wäre eine eigene Entscheidung).
-            val agent = if (agentCode > 0) ReleaseSource.pick(all, agentCode, settings.includeTest, AppKind.Agent) else null
+            val agent = if (agentCode > 0 && own != AppKind.Agent) ReleaseSource.pick(all, agentCode, settings.includeTest, AppKind.Agent) else null
             UpdateState.available = mine
             UpdateState.agentAvailable = agent
             UpdateState.lastError = null

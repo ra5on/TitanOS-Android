@@ -19,6 +19,8 @@ import io.github.ra5on.titanos.compute.ControlItem
 import io.github.ra5on.titanos.compute.ControlState
 import io.github.ra5on.titanos.docker.DockerControls
 import io.github.ra5on.titanos.net.ApiException
+import io.github.ra5on.titanos.ui.guard.Guard
+import io.github.ra5on.titanos.ui.guard.GuardAction
 import io.github.ra5on.titanos.net.NasConnection
 import io.github.ra5on.titanos.net.NasProfile
 import io.github.ra5on.titanos.net.NasRegistry
@@ -44,29 +46,15 @@ import java.util.concurrent.Flow
 import java.util.function.Consumer
 
 /**
- * Kleine eigene Schnittstelle für die Fingerabdruck-Liste (bis `Guard` aus
- * der Systemsteuerung, feat/1.00-settings, zusammengeführt ist): Soll Android
- * vor dieser Aktion eine Bestätigung verlangen?
+ * Fingerabdruck-Liste der App (`Guard` aus der Systemsteuerung): Ist
+ * „Ausschalten“ ([GuardAction.Power], ab Werk an) gewählt, verlangt Android vor
+ * dem Stoppen eines Containers oder einer VM und vor dem Entriegeln eines
+ * Schlosses eine Bestätigung. Die Gerätesteuerung läuft in der Oberfläche von
+ * Android; dort gibt es keinen eigenen Fingerabdruck-Dialog, aber das Handy
+ * muss für diese Steuerelemente entsperrt sein (`setAuthRequired`).
  */
-fun interface ControlGuard {
-    fun confirm(context: Context, kind: String, turningOff: Boolean): Boolean
-
-    companion object {
-        /**
-         * Ab Werk wie `GuardAction.Power` (Ausschalten, ab Werk an): Container
-         * und VMs stoppen und Schlösser öffnen nur nach Bestätigung. Gelesen aus
-         * derselben Ablage wie `Guard` (`titan-guard`, Schlüssel `power`).
-         */
-        val Default = ControlGuard { context, kind, off ->
-            val power = context.getSharedPreferences("titan-guard", Context.MODE_PRIVATE).getBoolean("power", true)
-            power && when (kind) {
-                ControlId.CONTAINER, ControlId.VM -> off
-                ControlId.HA -> off // beim Schloss: „aus“ heißt entriegeln (siehe [haTurningOff])
-                else -> false
-            }
-        }
-    }
-}
+internal fun controlNeedsConfirm(context: Context, kind: String, turningOff: Boolean): Boolean =
+    turningOff && kind in setOf(ControlId.CONTAINER, ControlId.VM, ControlId.HA) && Guard.enabled(context, GuardAction.Power)
 
 /** Kennung eines Steuerelements: `<nas>|<art>|<kennung>`, damit gleiche Namen zweier NAS sich nicht stören. */
 data class ControlId(val nas: String, val kind: String, val id: String) {
@@ -173,7 +161,6 @@ private class ControlPublisher(
 class TitanControlsService : ControlsProviderService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val graph get() = (application as TitanApp).graph
-    private val guard: ControlGuard = ControlGuard.Default
 
     /** Zählt Schaltvorgänge; ein laufendes Abo liest danach sofort neu. */
     private val changed = MutableStateFlow(0L)
@@ -266,7 +253,7 @@ class TitanControlsService : ControlsProviderService() {
         val haDomain = if (cid.kind == ControlId.HA) cid.id.substringBefore('.') else ""
         val off = if (cid.kind == ControlId.HA) haTurningOff(haDomain, on) else !on
         // Fingerabdruck-Liste: Android fragt nach (Bestätigung), dann kommt die Aktion mit challengeValue noch einmal.
-        if (guard.confirm(this, cid.kind, off) && action.challengeValue == null) {
+        if (controlNeedsConfirm(this, cid.kind, off) && action.challengeValue == null) {
             consumer.accept(ControlAction.RESPONSE_CHALLENGE_ACK)
             return
         }
