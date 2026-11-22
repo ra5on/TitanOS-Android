@@ -576,11 +576,14 @@ private fun Entry(
             }
             if (prefs.avatars) SenderAvatar(model, r.from)
             Column(Modifier.weight(1f)) {
+                // Große Schrift: das Datum unter den Namen, damit lange Namen ganze Wörter behalten (keine Silbentrennung).
+                val big = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
                 Row(verticalAlignment = Alignment.Top) {
                     Text(io.github.ra5on.titanos.ui.breakWords(name), style = TitanType.rowTitle.copy(fontWeight = if (unread) FontWeight.Bold else FontWeight.SemiBold), color = c.text, modifier = Modifier.weight(1f))
-                    Text(listDate(r.date, locale, zone, now), style = TitanType.rowSub, color = c.muted, modifier = Modifier.padding(start = 8.dp))
+                    if (!big) Text(listDate(r.date, locale, zone, now), style = TitanType.rowSub, color = c.muted, modifier = Modifier.padding(start = 8.dp))
                     if (!editing) Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                 }
+                if (big) Text(listDate(r.date, locale, zone, now), style = TitanType.rowSub, color = c.muted)
                 Row(verticalAlignment = Alignment.Top) {
                     Text(io.github.ra5on.titanos.ui.breakWords(subject), style = TitanType.body.copy(fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal), color = c.text, modifier = Modifier.weight(1f))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(start = 6.dp)) {

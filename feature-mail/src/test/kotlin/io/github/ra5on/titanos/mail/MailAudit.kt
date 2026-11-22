@@ -20,7 +20,12 @@ import androidx.compose.ui.text.style.Hyphens
 internal object MailAudit {
     fun check(compose: SemanticsNodeInteractionsProvider, name: String): List<String> {
         val found = mutableListOf<String>()
+        // Links im Fließtext (LinkAnnotation) sind eigene antippbare Knoten; ihren Namen liest TalkBack aus dem Text drumherum.
+        val linkTexts = compose.onAllNodes(hasAnyAncestor(isRoot()), useUnmergedTree = true).fetchSemanticsNodes().filter { n ->
+            n.config.getOrNull(SemanticsProperties.Text)?.any { it.getLinkAnnotations(0, it.length).isNotEmpty() } == true
+        }.map { it.boundsInRoot }
         for (node in compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()) {
+            if (linkTexts.any { it.contains(node.boundsInRoot.topLeft) && it.contains(node.boundsInRoot.center) }) continue
             val cfg = node.config
             val named = cfg.getOrNull(SemanticsProperties.Text)?.any { it.text.isNotBlank() } == true ||
                 cfg.getOrNull(SemanticsProperties.ContentDescription)?.any { it.isNotBlank() } == true ||
@@ -37,7 +42,7 @@ internal object MailAudit {
             if (r.layoutInput.style.hyphens == Hyphens.Auto) found += "$name: Silbentrennung eingeschaltet „${text.take(60)}“"
             for (line in 0 until r.lineCount - 1) {
                 val end = r.getLineEnd(line, visibleEnd = false)
-                if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit() && !unavoidable(r, text, end, node.size.width, rootWidth))
+                if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit() && !identifier(text, end) && !unavoidable(r, text, end, node.size.width, rootWidth))
                     found += "$name: mitten im Wort umbrochen „${text.substring(maxOf(0, end - 12), minOf(text.length, end + 12))}“"
             }
             val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
@@ -49,6 +54,15 @@ internal object MailAudit {
                 found += "$name: „${text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
         }
         return found
+    }
+
+    /** Kennungen (Dateinamen, Adressen: Ziffern, / _ : @) dürfen überall brechen, wie in ScreenAudit. */
+    private fun identifier(text: String, at: Int): Boolean {
+        var a = at
+        var b = at
+        while (a > 0 && !text[a - 1].isWhitespace()) a--
+        while (b < text.length && !text[b].isWhitespace()) b++
+        return text.substring(a, b).any { it.isDigit() || it in "/_:@" }
     }
 
     /** Ein Wort, das allein breiter ist als ein fast bildschirmbreites Feld: ohne kleinere Schrift geht es nicht anders. */

@@ -2,7 +2,6 @@ package io.github.ra5on.titanos
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import io.github.ra5on.titanos.compute.webText
 import io.github.ra5on.titanos.home.ALL_PROGRAMS
 import io.github.ra5on.titanos.home.programLabelRes
 import io.github.ra5on.titanos.settings.shell.SettingsIndex
@@ -23,7 +22,7 @@ class PaletteTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val tr = Tr.parse("de", java.io.File("../feature-settings/src/main/assets/settings-i18n/de.json").readText())
     private val index = SettingsIndex.parse(java.io.File("../feature-settings/src/main/assets/settings-index.json").readText())
-    private val web: (String) -> String = { context.webText(it) }
+    private val web: (String) -> String = paletteText(context, tr)
 
     private fun all(admin: Boolean) = palettePages(
         admin, web, index, tr,
@@ -43,15 +42,13 @@ class PaletteTest {
 
     @Test
     fun pagesByRoleLikeTheWeb() {
-        val user = all(admin = false).map { it.href }
-        assertTrue("/files" in user)
-        assertTrue("/account" in user)
-        assertTrue("/storage" !in user)
-        assertTrue("/settings/network" !in user)
+        val user = palettePages(false, web, index, tr, listOf("mail" to "Mail"), emptyList()).map { it.href }
+        assertTrue("$user", "/files" in user && "/account" in user && "/mail" in user)
+        assertTrue("$user", "/storage" !in user && "/settings/network" !in user)
         val admin = all(admin = true).map { it.href }
-        assertTrue("/storage" in admin && "/settings/network" in admin && "/nvr/diagnosis" in admin)
+        assertTrue("$admin", "/storage" in admin && "/settings/network" in admin && "/nvr/diagnosis" in admin)
         // Jede Adresse nur einmal (Programm und Seite „Docker“ sind dasselbe).
-        assertEquals(admin.size, admin.toSet().size)
+        assertEquals(admin.groupBy { it }.filter { it.value.size > 1 }.keys.toString(), admin.size, admin.toSet().size)
     }
 
     @Test
@@ -70,9 +67,9 @@ class PaletteTest {
     @Test
     fun searchFoldsAccentsAndNeedsEveryWord() {
         val entries = all(admin = true)
-        assertTrue(findPaletteEntries(entries, "protokolle").any { it.href == "/tools/logs" })
-        assertTrue(findPaletteEntries(entries, "VPN").any { it.href == "app:vpn" })
-        assertTrue(findPaletteEntries(entries, "kalender").any { it.href == "/calendar" })
+        assertTrue(findPaletteEntries(entries, "aktivitat").toString(), findPaletteEntries(entries, "aktivitat").any { it.href == "/settings/systemdata" })
+        assertTrue(findPaletteEntries(entries, "vpn").toString(), findPaletteEntries(entries, "VPN").any { it.href == "app:vpn" })
+        assertTrue(findPaletteEntries(entries, "kalender").toString(), findPaletteEntries(entries, "kalender").any { it.href == "/calendar" })
         assertTrue(findPaletteEntries(entries, "zzqx").isEmpty())
     }
 

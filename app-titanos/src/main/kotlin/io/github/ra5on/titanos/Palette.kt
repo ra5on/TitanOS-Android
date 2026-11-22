@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.github.ra5on.titanos.compute.webText
+import io.github.ra5on.titanos.admin.adminText
 import io.github.ra5on.titanos.home.programLabelRes
 import io.github.ra5on.titanos.settings.common.SettingsApi
 import io.github.ra5on.titanos.settings.shell.SettingsIndex
@@ -181,7 +182,7 @@ internal fun paletteSettings(query: String, admin: Boolean, settings: Tr, index:
     return SettingsSearch.find(index, query, admin, settings, 40)
         .filter { it.kind != "page" }
         .map { hit ->
-            val tab = if (hit.tab != null && hit.page.startsWith("/settings")) "?tab=" + enc(hit.tab) else ""
+            val tab = hit.tab?.takeIf { hit.page.startsWith("/settings") }?.let { "?tab=" + enc(it) }.orEmpty()
             val find = if (hit.titles.isNotEmpty()) "#find=" + hit.titles.joinToString("|") { enc(it) } else ""
             PaletteEntry(hit.page + tab + find, hit.label, hit.where)
         }
@@ -241,6 +242,16 @@ internal suspend fun loadPaletteDynamic(graph: AppGraph, admin: Boolean, web: (S
     out to partial
 }
 
+/**
+ * Texte des Webs für die Palette: die Tabellen von core-compute, core-admin
+ * und der Systemsteuerung enthalten je einen Teil der Schlüssel des Webs.
+ */
+internal fun paletteText(context: Context, settings: Tr): (String) -> String = { key ->
+    context.webText(key).takeIf { it != key }
+        ?: context.adminText(key).takeIf { it != key }
+        ?: settings.t(key)
+}
+
 /** Strg/⌘+K (ohne Alt und Umschalt). */
 internal fun isPaletteKey(e: androidx.compose.ui.input.key.KeyEvent): Boolean =
     e.type == KeyEventType.KeyDown && e.key == Key.K && (e.isCtrlPressed || e.isMetaPressed) && !e.isAltPressed && !e.isShiftPressed
@@ -274,7 +285,7 @@ internal fun CommandPalette(graph: AppGraph, onClose: () -> Unit) {
     val admin = role == "owner" || role == "admin"
     val settingsTr = remember { Tr.load(context, "settings-i18n") }
     val index = remember { SettingsIndex.load(context) }
-    val web: (String) -> String = remember(context) { { key -> context.webText(key) } }
+    val web: (String) -> String = remember(context, settingsTr) { paletteText(context, settingsTr) }
     val appPages = APP_PAGES.map { href ->
         href to when (href) {
             "app:vpn" -> stringResource(io.github.ra5on.titanos.vpn.R.string.vpn_title)

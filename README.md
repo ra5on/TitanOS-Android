@@ -61,7 +61,7 @@ Unter **Mein Konto › Geräte** siehst du jede gekoppelte App und Uhr. Mit „B
 
 ## Was die App TitanOS kann
 
-- **Alle Programme der Weboberfläche nativ:** Dateien mit Betrachtern und Office (T-Word, T-Exel, T-PDF, T-Deck …, eingebettet), Fotos mit Zeitleiste, Mail, Kalender, Kontakte, Speicher, Freigaben, Benutzer, Plugins, Werkzeuge, Docker, VMs mit eigenem Bildschirm, LXC, NVR, Terminal, Systemsteuerung und Mein Konto. Links zwischen den Programmen führen wie im Web ins andere Programm.
+- **Alle Programme der Weboberfläche nativ:** Dateien mit Betrachtern und Office (T-Word, T-Exel, T-PDF, T-Deck …, eingebettet), Fotos mit Zeitleiste, Mail, Kalender, Kontakte, Speicher, Freigaben, Benutzer, Plugins, Werkzeuge, Docker, VMs mit eigenem Bildschirm, LXC, NVR, Terminal, Systemsteuerung und Mein Konto. Links zwischen den Programmen führen wie im Web ins andere Programm. **Schnell finden** (Suchfeld der Startseite, Strg/⌘ + K) findet wie im Web jede Seite, jedes Programm und jede einzelne Einstellung.
 - **Foto-Sicherung im Hintergrund** in eine frei wählbare Freigabe und Ablage (Jahr, Monat, Tag, Album, eigenes Muster), Doppelte erkennt das NAS am Inhalt; „Speicher freigeben“ löscht nur, was das NAS bestätigt, und nur auf Knopfdruck.
 - **Kontakte und Kalender** als Konto „TitanOS“ in den Apps des Handys, Abgleich in beide Richtungen.
 - **Mitteilungen ohne Google:** dieselben Meldungen wie im Browser, über eine eigene sparsame Verbindung zum NAS oder alle 15 Minuten.
@@ -69,7 +69,7 @@ Unter **Mein Konto › Geräte** siehst du jede gekoppelte App und Uhr. Mit „B
 - **Große Bildschirme:** Liste und Inhalt nebeneinander wie das Web am PC; am Monitor (Desktop-Modus) und ab 1280 dp der Arbeitsplatz wie im Web mit Fenstern, Dock, Widgets und derselben Einrichtung wie im Web (Automatisch, Immer oder Nie; wahlweise eine eigene für Android). Faltbare in Buch- und Tischhaltung. Maus, Tastatur, Ziehen und Ablegen.
 - **Extras:** Widgets (NAS-Zustand, Fotos, Agent fragen), auch auf dem Sperrbildschirm; Schnelleinstellungen; App-Kurzbefehle; Gerätesteuerung von Android für Container, VMs und Home Assistant.
 - **Fingerabdruck:** In einer Liste stellst du ein, welche Aktionen Fingerabdruck oder PIN verlangen, ab Werk z. B. Passwort, 2FA, Passkeys, Tokens, Netzwerk und Zerstörendes; wahlweise auch beim Öffnen der App. Konsolen fragen nie.
-- **Darstellung** wie im Web je Konto (Thema, Akzent, Hintergrund), je Gerät überschreibbar; hell und dunkel ab Werk wie das Handy. Deutsch und Englisch. Schrift bis 200 % ohne abgeschnittene Texte.
+- **Darstellung** wie im Web je Konto (Thema, Akzent, Hintergrund), je Gerät überschreibbar; hell und dunkel ab Werk wie das Handy. Deutsch und Englisch. Schrift bis 200 % ohne abgeschnittene Texte, Umbruch nur zwischen ganzen Wörtern.
 
 ## VPN
 
@@ -138,7 +138,7 @@ Die Uhr-App „TitanOS“ (`io.github.ra5on.titanos.watch`, Datei `TitanOS-Watch
 
 - **Nicht auf echter Hardware geprüft:** das VPN über den Kernel-Tunnel des NAS samt Routing, DNS und MTU; die Uhr mit Bluetooth-Proxy und LTE; Android Auto; der Desktop-Modus am Monitor.
 - **Im Emulator nicht nachweisbar:** Videowiedergabe und Spulen, Bildschirminhalt für den Assistenten, Diktat, ein Durchgang mit TalkBack über alle Bildschirme.
-- **Nur in der Weboberfläche:** Passkeys anlegen (ein Passkey hängt an der Adresse der Webseite), die Einrichtung nach der Installation, die Suche auf der Startseite.
+- **Nur in der Weboberfläche:** Passkeys anlegen (ein Passkey hängt an der Adresse der Webseite), die Einrichtung nach der Installation.
 - **Kalender:** Die Kalender-App von Google zeigt ohne Google-Konto nichts an; eine andere Kalender-App nehmen. Erinnerungen (VTODO) bleiben in der App, Android hat dafür keine Schnittstelle.
 - **Offline-Kopien** öffnen andere Apps nur zum Lesen; Änderungen gehen nicht zurück aufs NAS.
 - **Ein VPN gleichzeitig:** Mit mehreren NAS gehört der Tunnel dem NAS, auf dem der Zugang angelegt wurde.

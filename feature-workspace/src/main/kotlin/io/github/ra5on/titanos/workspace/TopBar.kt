@@ -173,7 +173,7 @@ private fun MenuBarItems(state: WorkspaceState) {
 private fun SearchButton(modifier: Modifier, onClick: () -> Unit) {
     val c = Titan.colors
     val hint = t("desktop.menu.searchShort")
-    val label = t("palette.shortcut")
+    val label = t("desktop.menu.search") + " (" + t("shortcuts.ctrl") + "+K)"
     Row(
         modifier.clip(RoundedCornerShape(8.dp)).background(c.chip.copy(alpha = .7f))
             .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)

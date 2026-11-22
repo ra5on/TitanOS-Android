@@ -120,8 +120,8 @@ class NvrScreenshotTest {
             captureRoboImage("build/outputs/roborazzi/$name-${if (dark) "dunkel" else "hell"}.png") {
                 TitanTheme(dark = dark) {
                     CompositionLocalProvider(LocalNvrMedia provides FakeMedia) {
-                        val icons = mapOf("live" to TitanIcons.video, "recordings" to TitanIcons.play, "events" to TitanIcons.bell, "cameras" to TitanIcons.grid, "settings" to TitanIcons.gear, "diagnosis" to TitanIcons.info)
-                        val labels = mapOf("live" to "Live", "recordings" to "Aufnahmen", "events" to "Ereignisse", "cameras" to "Kameras", "settings" to "Einstellungen", "diagnosis" to "Diagnose")
+                        val icons = mapOf("live" to TitanIcons.video, "recordings" to TitanIcons.play, "events" to TitanIcons.bell, "cameras" to TitanIcons.grid, "rights" to TitanIcons.user, "settings" to TitanIcons.gear, "diagnosis" to TitanIcons.info)
+                        val labels = mapOf("live" to "Live", "recordings" to "Aufnahmen", "events" to "Ereignisse", "cameras" to "Kameras", "rights" to "Kamerarechte", "settings" to "Einstellungen", "diagnosis" to "Diagnose")
                         ProgramShell("NVR", "nvr", "red", sections.map { Section(it, labels.getValue(it), icons.getValue(it)) }, selected, {}, {}) {
                             Box(Modifier.fillMaxSize()) { content() }
                         }
@@ -153,6 +153,22 @@ class NvrScreenshotTest {
 
     @Test
     fun liveBigFont() = big("nvr-live-schrift-200") { liveView() }
+
+    // Leiste unten mit allen 7 Abschnitten (Auftrag I3): alle Reiter gleich, kleinere Schrift oder „Mehr“, nie ohne Beschriftung.
+    private val seven = listOf("live", "recordings", "events", "cameras", "rights", "settings", "diagnosis")
+
+    @Test
+    fun sevenTabs() = shot("nvr-leiste-7", sections = seven) { liveView() }
+
+    @Test
+    fun sevenTabsBigFont() {
+        org.robolectric.RuntimeEnvironment.setFontScale(2f)
+        try {
+            shot("nvr-leiste-7-schrift-200", sections = seven, selected = "diagnosis") { DiagnosisScreen(diagnosis, null, false) {} }
+        } finally {
+            org.robolectric.RuntimeEnvironment.setFontScale(1f)
+        }
+    }
 
     @Test
     fun liveWithEvents() = shot("nvr-live-ereignisse") { liveView(NvrPrefs(events = true)) }

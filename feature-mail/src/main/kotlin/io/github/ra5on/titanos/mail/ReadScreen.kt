@@ -371,7 +371,7 @@ fun ReadScreen(
                 files.forEachIndexed { i, a ->
                     val name = a.name.ifBlank { stringResource(R.string.mail_attachment_noName) }
                     val dragHint = stringResource(R.string.mailx_drag_hint)
-                    ListRow(name, sub = sizeText(a.size) + if (cached[a.part] != null) " · $dragHint" else "", icon = { RowIcon(MailIcons.clip) }, divider = i > 0,
+                    ListRow(io.github.ra5on.titanos.ui.breakIds(name), sub = sizeText(a.size) + if (cached[a.part] != null) " · $dragHint" else "", icon = { RowIcon(MailIcons.clip) }, divider = i > 0,
                         modifier = Modifier.attachmentDragSource(width.twoPanes && model.prefs.dragDrop, a.type) { cached[a.part] }, bottom = {
                         FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             TitanButton(stringResource(R.string.mailx_open), { act { openPart(ctx, model, account, folder, uid, a, share = false) } }, icon = MailIcons.open, enabled = !busy)
