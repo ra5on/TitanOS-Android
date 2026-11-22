@@ -80,7 +80,19 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
 
     fun show(dark: Boolean, content: @Composable () -> Unit) {
         compose.setContent { TitanTheme(dark = dark) { Box(Modifier.fillMaxSize()) { content() } } }
+        sync()
         settle()
+    }
+
+    /**
+     * Echte Compose-Synchronisierung (Neuzusammensetzen, Layout, Effekte starten). Nur den Looper zu
+     * leeren und die Uhr vorzustellen reichte im vollen Lauf nicht: dann startete der erste
+     * LaunchedEffect einer Seite mitunter nie, und es kam keine Anfrage (Zeit abgelaufen).
+     * Mit angehaltener Uhr (autoAdvance = false, HardwareShotsTest) nicht: dort hinge waitForIdle an
+     * jeder laufenden Animation; diese Tests stellen die Uhr selbst vor.
+     */
+    private fun sync() {
+        if (compose.mainClock.autoAdvance) runCatching { compose.waitForIdle() }
     }
 
     fun settle(ms: Long = 900) {
@@ -97,6 +109,7 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
         val end = System.currentTimeMillis() + timeoutMs
         while (!ok()) {
             check(System.currentTimeMillis() < end) { "Zeit abgelaufen" }
+            sync()
             org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
             compose.mainClock.advanceTimeBy(50)
             Thread.sleep(30)
