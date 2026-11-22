@@ -46,7 +46,8 @@ fun WebPage(session: WebSession, path: String, title: String, onClose: () -> Uni
                 cm.setCookie(origin.origin, WebCookie.session(session.cookieName, session.cookieToken))
                 cm.flush()
                 val proxy = PinnedWebProxy(origin, cookies = WebViewCookies::read, cookieSink = WebViewCookies::write)
-                val client = PinnedWebViewClient(ctx, origin, proxy)
+                // Der Client des Service Workers gilt prozessweit: nur der Application-Kontext, keine Activity festhalten.
+                val client = PinnedWebViewClient(ctx.applicationContext, origin, proxy)
                 // Die Weboberfläche meldet einen Service Worker an; dessen Anfragen gehen nicht über den WebViewClient.
                 client.routeServiceWorkers()
                 WebView(ctx).apply {

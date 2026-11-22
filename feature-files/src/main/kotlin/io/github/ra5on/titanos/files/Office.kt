@@ -233,7 +233,8 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
                             settings.javaScriptCanOpenWindowsAutomatically = false
                             settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
                             addJavascriptInterface(bridge, "TitanOffice")
-                            val client = OfficeClient(ctx, h) { failed = texts.certificate; stopLoading() }
+                            // Der Client des Service Workers gilt prozessweit: nur der Application-Kontext, keine Activity festhalten.
+                            val client = OfficeClient(ctx.applicationContext, h) { failed = texts.certificate; stopLoading() }
                             // Ein Service Worker käme sonst am WebViewClient vorbei; /sw.js ist ohnehin gesperrt.
                             client.routeServiceWorkers()
                             webViewClient = client
