@@ -81,6 +81,17 @@ class WorkspaceState(
         wm.open(key, href, p?.label ?: key, multi)
     }
 
+    /** Der KI-Agent rechts angedockt; ist er schon vorn, verschwindet er wieder (minimiert). */
+    fun agentPanel() {
+        val win = wm.windows.firstOrNull { it.app == "app:agent" }
+        if (win != null && wm.focused == win.id && !win.minimized) {
+            wm.minimize(win.id)
+            return
+        }
+        open("app:agent")
+        wm.windows.firstOrNull { it.app == "app:agent" }?.let { wm.setSnap(it.id, Snap.Right) }
+    }
+
     /** Fenster zu: sein Zurück-Verteiler und seine ViewModels gehen mit. */
     fun close(id: String) {
         wm.close(id)

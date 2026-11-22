@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import io.github.ra5on.titanos.compute.t
 import io.github.ra5on.titanos.ui.Format
 import io.github.ra5on.titanos.ui.theme.Titan
@@ -80,10 +81,11 @@ internal fun TopBar(state: WorkspaceState, onSearchFocus: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         val menuTitle = t("desktop.menu.title")
+        val shortcut = t("desktop.menu.shortcut")
         Row(
             Modifier.clip(RoundedCornerShape(8.dp)).background(if (state.launcher) c.chip else c.surface.copy(alpha = 0f))
                 .clickable(role = Role.Button) { state.launcher = !state.launcher }
-                .semantics(mergeDescendants = true) { contentDescription = menuTitle + " (" + "Strg + Leertaste" + ")" }
+                .semantics(mergeDescendants = true) { contentDescription = "$menuTitle ($shortcut)" }
                 .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -95,6 +97,14 @@ internal fun TopBar(state: WorkspaceState, onSearchFocus: () -> Unit) {
         Box(Modifier.padding(horizontal = 4.dp).width(1.dp).heightIn(min = h * .5f, max = h * .5f).background(c.border))
         MenuBarItems(state)
         Spacer(Modifier.weight(1f))
+        // Der KI-Agent als Leiste rechts (wie die Seitenleiste des Agenten im Web), wenn das Konto ihn hat.
+        state.programOf("app:agent")?.let { agent ->
+            val label = stringResource(R.string.ws_agent_panel)
+            Box(
+                Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button) { state.agentPanel() }
+                    .semantics { contentDescription = label }.padding(6.dp),
+            ) { io.github.ra5on.titanos.ui.components.AppIcon(agent.glyph, agent.gradient, icon + 4.dp) }
+        }
         Status(state)
     }
 }

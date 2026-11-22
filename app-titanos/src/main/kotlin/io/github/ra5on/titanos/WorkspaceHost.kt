@@ -61,7 +61,7 @@ internal val SETTINGS_SLOT = setOf("settings", "account", "security")
 internal fun workspaceFirst(graph: AppGraph): Boolean {
     val pairing = graph.pairing ?: return false
     val context = LocalContext.current
-    val settings = remember { WorkspaceSettings(context) }
+    val settings = remember { WorkspaceSettings.of(context) }
     val width = LocalConfiguration.current.screenWidthDp
     val external = context.display?.displayId?.let { it != Display.DEFAULT_DISPLAY } == true
     val state = remember(pairing) {
@@ -138,6 +138,7 @@ internal fun WorkspaceProgram(graph: AppGraph, win: Win, close: () -> Unit) {
         }
         // E (feat/1.00-settings): nach dem Zusammenführen hier SettingsProgram(graph, id, close) anschließen.
         id in SETTINGS_SLOT -> SettingsSlot(graph, id, close)
+        id == WORKSPACE_SETTINGS -> io.github.ra5on.titanos.workspace.WorkspaceSettingsPage(close)
         else -> Later()
     }
 }

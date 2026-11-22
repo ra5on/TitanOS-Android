@@ -82,6 +82,12 @@ class WorkspaceSettings(context: Context) {
 
     companion object {
         const val PREFS = "titan-workspace"
+
+        @Volatile
+        private var shared: WorkspaceSettings? = null
+
+        /** Eine Instanz je App, damit Menü der Startseite und Arbeitsplatz denselben Zustand sehen. */
+        fun of(context: Context): WorkspaceSettings = shared ?: synchronized(this) { shared ?: WorkspaceSettings(context).also { shared = it } }
     }
 }
 

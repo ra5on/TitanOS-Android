@@ -10,6 +10,9 @@ import io.github.ra5on.titanos.notify.NotifyApi
 /** Die Programme der Startseite, die die App in voller Größe zeigt (der KI-Agent wie im Web, PLAN 116 F1). */
 internal val PROGRAMS = setOf("mail", "calendar", "contacts", "agent")
 
+/** Die Einstellung „Arbeitsplatz“ (Automatisch/Immer/Nie, eigene Einrichtung für Android). */
+internal const val WORKSPACE_SETTINGS = "workspace"
+
 /** Die Seite „Kontakte und Kalender“ (Abgleich mit den Apps des Handys). */
 internal const val PIM_SYNC = "pimsync"
 
@@ -20,6 +23,10 @@ internal const val PIM_SYNC = "pimsync"
 @Composable
 internal fun ProgramHost(graph: AppGraph, id: String, onClose: () -> Unit) {
     val pairing = graph.pairing ?: return
+    if (id == WORKSPACE_SETTINGS) {
+        io.github.ra5on.titanos.workspace.WorkspaceSettingsPage(onClose)
+        return
+    }
     val nas = remember(pairing) { graph.connection() } ?: return
     val stream = remember(pairing) { graph.connection(NotifyApi.streamClient(graph.shared)) } ?: return
     when (id) {

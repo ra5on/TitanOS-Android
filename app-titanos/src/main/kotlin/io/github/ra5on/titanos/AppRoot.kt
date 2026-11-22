@@ -365,6 +365,14 @@ private fun MainShell(graph: AppGraph) {
                             onClick = { menu = false; graph.openVpn = true },
                         )
                         ListRow(
+                            stringResource(io.github.ra5on.titanos.workspace.R.string.ws_title),
+                            sub = stringResource(io.github.ra5on.titanos.workspace.R.string.ws_mode_hint),
+                            icon = { RowIcon(TitanIcons.grid) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; graph.openProgram = WORKSPACE_SETTINGS },
+                        )
+                        ListRow(
                             stringResource(HomeR.string.home_menu_unpair),
                             sub = stringResource(HomeR.string.home_menu_unpair_text),
                             icon = { RowIcon(TitanIcons.x, tint = Titan.colors.dangerInk) },

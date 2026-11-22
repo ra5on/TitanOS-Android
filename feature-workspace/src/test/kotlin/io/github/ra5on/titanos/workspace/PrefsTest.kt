@@ -50,7 +50,8 @@ class PrefsTest {
         val p = sanitizeDesktop(
             parse("""{"wallpaper":{"source":"custom","version":1700000000000},"widgets":[{"id":"g","kind":"gpu","x":0,"y":0,"w":17,"h":17,"hide":["power","nonsense"],"device":"0000:01:00.0"}]}"""),
         )
-        assertEquals(Wallpaper(true, "", 1_700_000_000_000, true), p.wallpaper)
+        // Wie im Web: int(version, 0, 1e12) begrenzt die Kennung (Date.now() ist größer).
+        assertEquals(Wallpaper(true, "", 1_000_000_000_000, true), p.wallpaper)
         assertEquals(listOf("power"), p.widgets.single().hide)
         assertEquals("0000:01:00.0", p.widgets.single().device)
     }
