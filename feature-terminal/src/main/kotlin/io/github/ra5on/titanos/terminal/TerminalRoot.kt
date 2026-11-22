@@ -107,6 +107,11 @@ internal object TermPrefs {
 
     fun setKeyBar(context: Context, on: Boolean) = context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit().putBoolean("keyBar", on).apply()
 
+    /** Mausmeldungen an Programme (Tippen, Wischen, Maus); aus: Wischen blättert immer im Verlauf. */
+    fun mouse(context: Context): Boolean = context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getBoolean("mouse", true)
+
+    fun setMouse(context: Context, on: Boolean) = context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit().putBoolean("mouse", on).apply()
+
     fun fnRow(context: Context): Boolean = context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getBoolean("fnRow", false)
 
     fun setFnRow(context: Context, on: Boolean) = context.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit().putBoolean("fnRow", on).apply()
@@ -186,6 +191,7 @@ internal fun androidx.compose.foundation.layout.ColumnScope.Sessions(env: Comput
     var fontSize by remember { mutableFloatStateOf(TermPrefs.fontSize(context)) }
     var keyBar by remember { mutableStateOf(TermPrefs.keyBar(context)) }
     var fnRow by remember { mutableStateOf(TermPrefs.fnRow(context)) }
+    var mouse by remember { mutableStateOf(TermPrefs.mouse(context)) }
     var ctrl by remember { mutableStateOf(false) }
     var alt by remember { mutableStateOf(false) }
     val viewState = remember(active.id) { TermViewState() }
@@ -257,6 +263,7 @@ internal fun androidx.compose.foundation.layout.ColumnScope.Sessions(env: Comput
             sink,
             onFontSize = { fontSize = it; TermPrefs.setFontSize(context, it) },
             label = t("terminal.title") + " " + active.title,
+            mouseReports = mouse,
         )
         if (active.phase == Phase.Ended) {
             Column(
@@ -285,6 +292,8 @@ internal fun androidx.compose.foundation.layout.ColumnScope.Sessions(env: Comput
         onKeyBar = { keyBar = it; TermPrefs.setKeyBar(context, it) },
         fnRow = fnRow,
         onFnRow = { fnRow = it; TermPrefs.setFnRow(context, it) },
+        mouse = mouse,
+        onMouse = { mouse = it; TermPrefs.setMouse(context, it) },
         hasSelection = viewState.selection != null,
     )
     if (keyBar) KeyBar(ctrl, alt, fnRow, onCtrl = { ctrl = !ctrl }, onAlt = { alt = !alt }, onKey = { sink.key(it) }, onText = { sink.typed(it) })
@@ -390,6 +399,8 @@ private fun Toolbar(
     onKeyBar: (Boolean) -> Unit,
     fnRow: Boolean,
     onFnRow: (Boolean) -> Unit,
+    mouse: Boolean,
+    onMouse: (Boolean) -> Unit,
     hasSelection: Boolean,
 ) {
     val ui = LocalComputeUi.current
@@ -398,6 +409,7 @@ private fun Toolbar(
     val copyAll = stringResource(R.string.term_copy_all)
     val clear = stringResource(R.string.term_clear)
     val keyBarLabel = stringResource(if (keyBar) R.string.term_keybar_hide else R.string.term_keybar_show)
+    val mouseLabel = stringResource(if (mouse) R.string.term_mouse_off else R.string.term_mouse_on)
     val fnLabel = stringResource(if (fnRow) R.string.term_fn_hide else R.string.term_fn_show)
     val smaller = t("terminal.fontSmaller")
     val larger = t("terminal.fontLarger")
@@ -422,6 +434,7 @@ private fun Toolbar(
                     MenuEntry(clear, TitanIcons.trash) { onClear() },
                     MenuEntry(keyBarLabel, TitanIcons.grid) { onKeyBar(!keyBar) },
                     MenuEntry(fnLabel, TitanIcons.grid) { onFnRow(!fnRow) },
+                    MenuEntry(mouseLabel, TitanIcons.grid) { onMouse(!mouse) },
                 ),
             )
         })

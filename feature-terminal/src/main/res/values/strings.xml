@@ -47,4 +47,6 @@
     <string name="term_user_hint">Name, UID oder UID:GID; leer heißt wie das Image.</string>
     <string name="term_open">Öffnen</string>
     <string name="term_no_password">Konsolen öffnen mit der bestehenden Anmeldung, ohne erneute Passwortabfrage.</string>
+    <string name="term_mouse_on">Mausmeldungen an Programme senden</string>
+    <string name="term_mouse_off">Mausmeldungen an Programme abschalten</string>
 </resources>

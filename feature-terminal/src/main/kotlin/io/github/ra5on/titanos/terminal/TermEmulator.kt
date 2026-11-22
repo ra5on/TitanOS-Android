@@ -77,6 +77,9 @@ class TermEmulator(cols: Int, rows: Int, private val scrollbackMax: Int = 5000, 
         private set
     var mouseTracking = 0
         private set
+    /** Mausmeldungen im SGR-Format (DECSET 1006) statt der alten X10-Bytes. */
+    var mouseSgr = false
+        private set
     var title = ""
         private set
     private var autowrap = true
@@ -362,6 +365,7 @@ class TermEmulator(cols: Int, rows: Int, private val scrollbackMax: Int = 5000, 
             7 -> autowrap = on
             25 -> cursorVisible = on
             9, 1000, 1002, 1003 -> mouseTracking = if (on) m else 0
+            1006 -> mouseSgr = on
             47, 1047 -> switchScreen(on, clear = m == 1047 && !on)
             1048 -> if (on) saveCursor() else restoreCursor()
             1049 -> {
@@ -680,6 +684,7 @@ class TermEmulator(cols: Int, rows: Int, private val scrollbackMax: Int = 5000, 
         bracketedPaste = false
         reverseVideo = false
         mouseTracking = 0
+        mouseSgr = false
         newlineMode = false
         tabs = BooleanArray(cols) { it % 8 == 0 && it > 0 }
         cursorX = 0
@@ -691,42 +696,27 @@ class TermEmulator(cols: Int, rows: Int, private val scrollbackMax: Int = 5000, 
     private fun send(s: String) = reply(s.toByteArray(Charsets.UTF_8))
 
     /**
-     * Neue Größe. Beim Verkleinern wandern obere Zeilen in den Verlauf, damit
-     * die Zeile mit dem Cursor sichtbar bleibt; beim Vergrößern kommen sie
-     * zurück (wie xterm.js, ohne Umbruch neu zu berechnen).
+     * Neue Größe. Der Hauptbildschirm und sein Verlauf werden neu umbrochen
+     * wie in xterm.js (Reflow): Zeilen, die am rechten Rand weiterliefen,
+     * bilden eine logische Zeile und laufen in der neuen Breite neu. Der
+     * Cursor bleibt auf seinem Zeichen und sichtbar; beim Verkleinern
+     * wandern obere Zeilen in den Verlauf, beim Vergrößern kommen sie zurück.
+     * Der zweite Bildschirm (vim, less, htop …) wird nicht umbrochen, das
+     * Programm zeichnet ihn nach SIGWINCH selbst neu.
      */
     fun resize(newCols: Int, newRows: Int) {
         val c = newCols.coerceAtLeast(2)
         val r = newRows.coerceAtLeast(2)
         if (c == cols && r == rows) return
-        for (buf in listOf(main, alt)) for (l in buf) l.resize(c, DEFAULT_STYLE)
-        for (l in history) l.resize(c, DEFAULT_STYLE)
-        // Zeilen anpassen.
-        if (r < rows) {
+        reflowMain(c, r)
+        for (l in alt) l.resize(c, DEFAULT_STYLE)
+        if (altScreen) {
             val overflow = (cursorY - (r - 1)).coerceAtLeast(0)
-            repeat(overflow) {
-                val l = main.removeAt(0)
-                if (!altScreen) {
-                    history.addLast(l)
-                    while (history.size > scrollbackMax) history.removeFirst()
-                }
-            }
-            if (altScreen) repeat(overflow) { alt.removeAt(0) }
-            while (main.size > r) main.removeAt(main.size - 1)
-            while (alt.size > r) alt.removeAt(alt.size - 1)
+            repeat(overflow) { alt.removeAt(0) }
             cursorY -= overflow
-        } else if (r > rows) {
-            var add = r - rows
-            if (!altScreen) {
-                while (add > 0 && history.isNotEmpty()) {
-                    main.add(0, history.removeLast())
-                    cursorY++
-                    add--
-                }
-            }
-            while (main.size < r) main.add(Line(c))
-            while (alt.size < r) alt.add(Line(c))
         }
+        while (alt.size > r) alt.removeAt(alt.size - 1)
+        while (alt.size < r) alt.add(Line(c))
         cols = c
         rows = r
         top = 0
@@ -736,6 +726,148 @@ class TermEmulator(cols: Int, rows: Int, private val scrollbackMax: Int = 5000, 
         cursorY = cursorY.coerceIn(0, r - 1)
         pendingWrap = false
         version++
+    }
+
+    private fun blankCell(ch: Int, st: Long) = (ch == ' '.code || ch == WIDE_TAIL) && bgOf(st) == DEFAULT_COLOR && flagsOf(st) and INVERSE == 0L
+
+    /** Umbruch des Hauptbildschirms samt Verlauf auf [c] Spalten und [r] Zeilen. */
+    private fun reflowMain(c: Int, r: Int) {
+        val oldCols = cols
+        val all = ArrayList<Line>(history.size + main.size)
+        all.addAll(history)
+        all.addAll(main)
+        val topOld = history.size
+        val saved = savedMain
+        val curAbsOld: Int
+        val curXOld: Int
+        when {
+            !altScreen -> { curAbsOld = topOld + cursorY; curXOld = cursorX }
+            saved != null -> { curAbsOld = topOld + saved.y.coerceIn(0, main.size - 1); curXOld = saved.x }
+            else -> {
+                curAbsOld = topOld + (main.indexOfLast { l -> (0 until minOf(oldCols, l.chars.size)).any { !blankCell(l.chars[it], l.styles[it]) } }).coerceAtLeast(0)
+                curXOld = 0
+            }
+        }
+        val out = ArrayList<Line>(all.size)
+        var newCurAbs = 0
+        var newCurX = 0
+        var newTop = 0
+        var lastContentOld = curAbsOld
+        var lastContentNew = -1
+        var i = 0
+        while (i < all.size) {
+            val start = i
+            while (i < all.size - 1 && all[i].wrapped) i++
+            val end = i
+            i++
+            // Zellen der logischen Zeile; ein Füllfeld am Rand vor einem breiten Zeichen fällt weg.
+            val cap = (end - start + 1) * oldCols
+            val ch = IntArray(cap) { ' '.code }
+            val st = LongArray(cap) { DEFAULT_STYLE }
+            val offsets = IntArray(end - start + 1)
+            var n = 0
+            for (k in start..end) {
+                val l = all[k]
+                offsets[k - start] = n
+                var m = minOf(oldCols, l.chars.size)
+                if (k < end && m == oldCols && blankCell(l.chars[m - 1], l.styles[m - 1])) {
+                    val next = all[k + 1]
+                    if (next.chars.size > 1 && next.chars[1] == WIDE_TAIL) m--
+                }
+                System.arraycopy(l.chars, 0, ch, n, m)
+                System.arraycopy(l.styles, 0, st, n, m)
+                n += if (k < end) m else oldCols
+            }
+            var len = n
+            while (len > 0 && blankCell(ch[len - 1], st[len - 1])) len--
+            if (len > 0) {
+                var k = end
+                while (k > start && offsets[k - start] >= len) k--
+                lastContentOld = maxOf(lastContentOld, k)
+            }
+            val curOff = if (curAbsOld in start..end) offsets[curAbsOld - start] + curXOld.coerceIn(0, oldCols - 1) else -1
+            val topOff = if (topOld in start..end) offsets[topOld - start] else -1
+            val need = maxOf(len, curOff + 1)
+            if (topOff == 0) newTop = out.size
+            var cur = Line(c)
+            var col = 0
+            var p = 0
+            while (p < need) {
+                val wide = p + 1 < n && ch[p + 1] == WIDE_TAIL && ch[p] != WIDE_TAIL
+                val w = if (wide) 2 else 1
+                if (col + w > c) {
+                    cur.wrapped = true
+                    out.add(cur)
+                    cur = Line(c)
+                    col = 0
+                }
+                if (p == curOff || (wide && p + 1 == curOff)) { newCurAbs = out.size; newCurX = col + (curOff - p) }
+                if (p == topOff || (wide && p + 1 == topOff)) newTop = out.size
+                cur.chars[col] = if (ch[p] == WIDE_TAIL) ' '.code else ch[p]
+                cur.styles[col] = st[p]
+                if (wide) {
+                    cur.chars[col + 1] = WIDE_TAIL
+                    cur.styles[col + 1] = st[p + 1]
+                }
+                col += w
+                p += w
+            }
+            out.add(cur)
+            if (len > 0) lastContentNew = out.size - 1
+        }
+        lastContentNew = maxOf(lastContentNew, newCurAbs)
+        // Breiter geworden: was der Bildschirm an Zeilen verlor, kommt aus dem Verlauf nach.
+        val lost = (lastContentOld - topOld + 1) - (lastContentNew - newTop + 1)
+        if (lost > 0) newTop -= minOf(lost, newTop)
+        // Mehr Zeilen: aus dem Verlauf zurückholen.
+        if (r > rows) newTop -= minOf(r - rows, newTop)
+        // Weniger Zeilen: leere Zeilen unten fallen weg, sonst wandern obere in den Verlauf.
+        if (r < rows) newTop = maxOf(newTop, minOf(newCurAbs, lastContentNew - r + 1))
+        if (newCurAbs >= newTop + r) newTop = newCurAbs - r + 1
+        if (newCurAbs < newTop) newTop = newCurAbs
+        newTop = newTop.coerceIn(0, out.size)
+        history.clear()
+        for (k in maxOf(0, newTop - scrollbackMax) until newTop) history.addLast(out[k])
+        main = ArrayList(out.subList(newTop, minOf(out.size, newTop + r)))
+        while (main.size < r) main.add(Line(c))
+        if (!altScreen) {
+            cursorX = newCurX.coerceIn(0, c - 1)
+            cursorY = newCurAbs - newTop
+        } else if (saved != null) {
+            savedMain = saved.copy(x = newCurX.coerceIn(0, c - 1), y = (newCurAbs - newTop).coerceIn(0, r - 1))
+        }
+    }
+
+    enum class MouseAction { Press, Release, Motion }
+
+    /**
+     * Bytes einer Mausmeldung an das Programm, wenn es Mausmeldungen
+     * eingeschaltet hat (DECSET 9/1000/1002/1003, SGR mit 1006); null sonst.
+     * [button]: 0 links, 1 Mitte, 2 rechts, 3 keine (Bewegung), 64/65 Rad
+     * hoch/runter. [col]/[row] zählen ab 0 auf dem Bildschirm.
+     */
+    fun mouse(button: Int, col: Int, row: Int, action: MouseAction, shift: Boolean = false, alt: Boolean = false, ctrl: Boolean = false): ByteArray? {
+        val mode = mouseTracking
+        if (mode == 0) return null
+        val wheel = button >= 64
+        when (action) {
+            MouseAction.Release -> if (mode == 9 || wheel) return null
+            MouseAction.Motion -> if (mode == 9 || mode == 1000 || (mode == 1002 && button == 3)) return null
+            MouseAction.Press -> {}
+        }
+        var cb = button
+        if (mode != 9) {
+            if (shift) cb += 4
+            if (alt) cb += 8
+            if (ctrl) cb += 16
+        }
+        if (action == MouseAction.Motion) cb += 32
+        val x = col.coerceIn(0, cols - 1) + 1
+        val y = row.coerceIn(0, rows - 1) + 1
+        if (mouseSgr) return "\u001b[<$cb;$x;$y${if (action == MouseAction.Release) 'm' else 'M'}".toByteArray(Charsets.US_ASCII)
+        if (x > 223 || y > 223) return null
+        val b = if (action == MouseAction.Release) 3 or (cb and 0b11100) else cb
+        return byteArrayOf(0x1b, '['.code.toByte(), 'M'.code.toByte(), (32 + b).toByte(), (32 + x).toByte(), (32 + y).toByte())
     }
 
     /** Text der Zeilen [from] bis [to] (einschließlich), Spalten wie markiert; Umbrüche durch Weiterlaufen entfallen. */

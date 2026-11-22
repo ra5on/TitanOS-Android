@@ -31,6 +31,14 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.input.pointer.isAltPressed
+import androidx.compose.ui.input.pointer.isCtrlPressed
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.isShiftPressed
+import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -108,6 +116,7 @@ fun TermView(
     onFontSize: (Float) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
+    mouseReports: Boolean = true,
 ) {
     val context = LocalContext.current
     val view = LocalView.current
@@ -134,6 +143,21 @@ fun TermView(
     val currentFont by rememberUpdatedState(fontSizeSp)
     var pinch by remember { mutableFloatStateOf(1f) }
     val emu = session.emulator
+
+    val reports by rememberUpdatedState(mouseReports)
+
+    /** Das Programm will Mausmeldungen (htop, mc, vim mit mouse=a …) und der Schalter ist an. */
+    fun mouseOn() = reports && emu.mouseTracking != 0
+
+    /** Bildschirmzelle (Spalte, Zeile) für Mausmeldungen. */
+    fun screenCell(x: Float, y: Float): Pair<Int, Int> =
+        floor(x / cellW).toInt().coerceIn(0, emu.cols - 1) to floor(y / cellH).toInt().coerceIn(0, emu.rows - 1)
+
+    fun report(button: Int, x: Float, y: Float, action: TermEmulator.MouseAction, shift: Boolean = false, alt: Boolean = false, ctrl: Boolean = false) {
+        val (col, row) = screenCell(x, y)
+        val bytes = synchronized(emu) { emu.mouse(button, col, row, action, shift, alt, ctrl) } ?: return
+        session.send(bytes)
+    }
 
     fun cellAt(x: Float, y: Float): Pair<Int, Int> {
         val rowOnScreen = floor(y / cellH).toInt().coerceIn(0, emu.rows - 1)
@@ -179,9 +203,54 @@ fun TermView(
                 sink.keyEvent(e.nativeKeyEvent)
             }
             .pointerInput(cellW, cellH) {
-                detectTapGestures(onTap = {
+                // Maus und Touchpad: Tasten, Bewegung und Rad gehen an das Programm, wenn es sie will.
+                awaitPointerEventScope {
+                    var pressed = -1
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val change = event.changes.firstOrNull() ?: continue
+                        if (change.type != PointerType.Mouse || !mouseOn()) continue
+                        val meta = event.keyboardModifiers
+                        val shift = meta.isShiftPressed
+                        if (shift) continue // Umschalt wie in xterm.js: markieren statt melden.
+                        val alt = meta.isAltPressed
+                        val ctrl = meta.isCtrlPressed
+                        val pos = change.position
+                        when (event.type) {
+                            PointerEventType.Press -> {
+                                pressed = when {
+                                    event.buttons.isSecondaryPressed -> 2
+                                    event.buttons.isTertiaryPressed -> 1
+                                    else -> 0
+                                }
+                                report(pressed, pos.x, pos.y, TermEmulator.MouseAction.Press, alt = alt, ctrl = ctrl)
+                            }
+                            PointerEventType.Release -> {
+                                report(pressed.coerceAtLeast(0), pos.x, pos.y, TermEmulator.MouseAction.Release, alt = alt, ctrl = ctrl)
+                                pressed = -1
+                            }
+                            PointerEventType.Move -> report(if (pressed >= 0) pressed else 3, pos.x, pos.y, TermEmulator.MouseAction.Motion, alt = alt, ctrl = ctrl)
+                            PointerEventType.Scroll -> {
+                                val dy = change.scrollDelta.y
+                                if (dy != 0f) report(if (dy < 0) 64 else 65, pos.x, pos.y, TermEmulator.MouseAction.Press, alt = alt, ctrl = ctrl)
+                            }
+                            else -> continue
+                        }
+                        event.changes.forEach { it.consume() }
+                    }
+                }
+            }
+            .pointerInput(cellW, cellH) {
+                detectTapGestures(onTap = { o ->
                     state.selection = null
-                    state.showKeyboard()
+                    if (mouseOn()) {
+                        // Tippen ist ein Klick der linken Taste an dieser Stelle.
+                        report(0, o.x, o.y, TermEmulator.MouseAction.Press)
+                        report(0, o.x, o.y, TermEmulator.MouseAction.Release)
+                        state.focus.requestFocus()
+                    } else {
+                        state.showKeyboard()
+                    }
                 })
             }
             .pointerInput(cellW, cellH) {
@@ -193,7 +262,12 @@ fun TermView(
                     val lines = (acc / cellH).toInt()
                     if (lines != 0) {
                         acc -= lines * cellH
-                        if (emu.altScreen) {
+                        if (mouseOn()) {
+                            // Wischen ist das Mausrad: nach unten wischen blättert nach oben.
+                            repeat(kotlin.math.abs(lines)) {
+                                report(if (lines > 0) 64 else 65, change.position.x, change.position.y, TermEmulator.MouseAction.Press)
+                            }
+                        } else if (emu.altScreen) {
                             // Im zweiten Bildschirm (less, vim …) blättern die Pfeiltasten.
                             val key = if (lines > 0) TermKey.Up else TermKey.Down
                             repeat(kotlin.math.abs(lines)) { sink.key(key) }

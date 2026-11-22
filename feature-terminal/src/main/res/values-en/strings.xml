@@ -47,4 +47,6 @@
     <string name="term_user_hint">Name, UID or UID:GID; empty means as in the image.</string>
     <string name="term_open">Open</string>
     <string name="term_no_password">Consoles open with the existing login, without asking for the password again.</string>
+    <string name="term_mouse_on">Send mouse events to programs</string>
+    <string name="term_mouse_off">Stop sending mouse events to programs</string>
 </resources>

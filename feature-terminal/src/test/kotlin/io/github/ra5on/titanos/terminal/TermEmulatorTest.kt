@@ -182,4 +182,89 @@ class TermEmulatorTest {
         assertArrayEquals("\u001b[200~a\rb\u001b[201~".toByteArray(), TermKeys.paste("a\nb", bracketed = true))
         assertArrayEquals("\u001b[3~".toByteArray(), TermKeys.bytes(TermKey.Delete, false))
     }
+
+    @Test
+    fun reflowJoinsAndRewrapsLikeXterm() {
+        val e = emu(10, 4)
+        e.feed("0123456789abcde\r\n$ ")
+        assertEquals("0123456789", e.row(0))
+        assertEquals("abcde", e.row(1))
+        // Breiter: die weitergelaufene Zeile wird wieder eine.
+        e.resize(20, 4)
+        assertEquals("0123456789abcde", e.row(0))
+        assertEquals("$", e.row(1))
+        assertEquals(1, e.cursorY)
+        assertEquals(2, e.cursorX)
+        // Schmaler: neu umbrochen, der Cursor bleibt hinter dem Prompt.
+        e.resize(6, 4)
+        assertEquals("012345", e.row(0))
+        assertEquals("6789ab", e.row(1))
+        assertEquals("cde", e.row(2))
+        assertEquals("$", e.row(3))
+        assertEquals(3, e.cursorY)
+        assertEquals(2, e.cursorX)
+        assertEquals("0123456789abcde\n$", e.allText())
+    }
+
+    @Test
+    fun reflowPushesToHistoryAndBack() {
+        val e = emu(8, 3)
+        e.feed("aaaaaaaabbbb\r\nc")
+        e.resize(4, 3)
+        // aaaa|aaaa|bbbb|c: eine Zeile wandert in den Verlauf, der Cursor bleibt sichtbar.
+        assertEquals(1, e.historySize)
+        assertEquals("aaaa", e.row(0))
+        assertEquals("c", e.row(2))
+        e.resize(8, 3)
+        assertEquals(0, e.historySize)
+        assertEquals("aaaaaaaa", e.row(0))
+        assertEquals("bbbb", e.row(1))
+        assertEquals("c", e.row(2))
+    }
+
+    @Test
+    fun reflowKeepsWideCharsWhole() {
+        val e = emu(5, 3)
+        e.feed("abcd漢x")
+        // 5 Spalten: das breite Zeichen passt nicht mehr hinter "abcd" und beginnt die nächste Zeile.
+        assertEquals("abcd", e.row(0))
+        assertEquals("漢x", e.row(1))
+        e.resize(6, 3)
+        assertEquals("abcd漢", e.row(0))
+        assertEquals("x", e.row(1))
+    }
+
+    @Test
+    fun altScreenIsNotReflowed() {
+        val e = emu(10, 3)
+        e.feed("0123456789ab\u001b[?1049h\u001b[Hvim")
+        e.resize(20, 3)
+        assertEquals("vim", e.row(0))
+        e.feed("\u001b[?1049l")
+        assertEquals("0123456789ab", e.row(0))
+    }
+
+    @Test
+    fun mouseReportsSgrAndX10() {
+        val e = emu(80, 24)
+        assertEquals(null, e.mouse(0, 1, 1, TermEmulator.MouseAction.Press))
+        e.feed("\u001b[?1000h")
+        assertArrayEquals(byteArrayOf(27, '['.code.toByte(), 'M'.code.toByte(), 32, 34, 35), e.mouse(0, 1, 2, TermEmulator.MouseAction.Press))
+        assertArrayEquals(byteArrayOf(27, '['.code.toByte(), 'M'.code.toByte(), 35, 34, 35), e.mouse(0, 1, 2, TermEmulator.MouseAction.Release))
+        // Bewegung nur mit 1002 (bei gedrückter Taste) oder 1003.
+        assertEquals(null, e.mouse(0, 1, 2, TermEmulator.MouseAction.Motion))
+        e.feed("\u001b[?1006h")
+        assertEquals("\u001b[<0;5;10M", String(e.mouse(0, 4, 9, TermEmulator.MouseAction.Press)!!))
+        assertEquals("\u001b[<0;5;10m", String(e.mouse(0, 4, 9, TermEmulator.MouseAction.Release)!!))
+        assertEquals("\u001b[<64;1;1M", String(e.mouse(64, 0, 0, TermEmulator.MouseAction.Press)!!))
+        assertEquals("\u001b[<65;1;1M", String(e.mouse(65, 0, 0, TermEmulator.MouseAction.Press)!!))
+        assertEquals("\u001b[<16;1;1M", String(e.mouse(0, 0, 0, TermEmulator.MouseAction.Press, ctrl = true)!!))
+        e.feed("\u001b[?1002h")
+        assertEquals("\u001b[<32;3;1M", String(e.mouse(0, 2, 0, TermEmulator.MouseAction.Motion)!!))
+        assertEquals(null, e.mouse(3, 2, 0, TermEmulator.MouseAction.Motion))
+        e.feed("\u001b[?1003h")
+        assertEquals("\u001b[<35;3;1M", String(e.mouse(3, 2, 0, TermEmulator.MouseAction.Motion)!!))
+        e.feed("\u001b[?1003l")
+        assertEquals(null, e.mouse(0, 0, 0, TermEmulator.MouseAction.Press))
+    }
 }
