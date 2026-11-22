@@ -94,12 +94,12 @@ class NvrNav {
 
 /** NVR wie im Web (routes/nvr): Live, Aufnahmen, Ereignisse, Kameras, Einstellungen, Diagnose, Einrichtung. */
 @Composable
-fun NvrRoot(env: ComputeEnv, onBack: () -> Unit) {
+fun NvrRoot(env: ComputeEnv, onBack: () -> Unit, start: String? = null) {
     val api = remember(env.access) { NvrApi(env.access) }
     val model = remember(api) { NvrModel(api) }
     val media = remember(env.access) { NasNvrMedia(env.access) }
     CompositionLocalProvider(LocalNvrMedia provides media) {
-        NvrApp(model, env.admin, env.user, onBack, openDocker = { env.openProgram("docker") })
+        NvrApp(model, env.admin, env.user, onBack, openDocker = { env.openProgram("docker") }, start = start?.substringBefore('?'))
     }
 }
 
@@ -120,8 +120,9 @@ fun nvrSections(admin: Boolean, cameras: List<Camera>): List<String> {
 private const val PREFS = "titanos.nvr"
 
 @Composable
-fun NvrApp(model: NvrModel, admin: Boolean, me: String, onBack: () -> Unit, openDocker: () -> Unit = {}) {
-    var saved by rememberSaveable { mutableStateOf("live") }
+fun NvrApp(model: NvrModel, admin: Boolean, me: String, onBack: () -> Unit, openDocker: () -> Unit = {}, start: String? = null) {
+    // [start]: ein Abschnitt aus der Adresse (`/nvr/rights` aus der Systemsteuerung); unbekannte fallen unten auf den ersten.
+    var saved by rememberSaveable { mutableStateOf(start ?: "live") }
     val nav = remember { NvrNav().apply { section = saved } }
     androidx.compose.runtime.LaunchedEffect(nav.section) { saved = nav.section }
     val section = nav.section

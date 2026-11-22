@@ -24,7 +24,7 @@ val COMPUTE_PROGRAMS = setOf("docker", "vms", "lxc", "nvr", "terminal")
  * sie kam.
  */
 @Composable
-fun ComputeProgram(start: String, graph: AppGraph, onBack: () -> Unit) {
+fun ComputeProgram(start: String, graph: AppGraph, onBack: () -> Unit, link: String? = null) {
     val pairing = graph.pairing ?: return
     val access = remember(pairing) { ComputeAccess.forPairing(graph.shared, pairing, graph.sessions) }
     var program by rememberSaveable(start) { mutableStateOf(start) }
@@ -54,11 +54,13 @@ fun ComputeProgram(start: String, graph: AppGraph, onBack: () -> Unit) {
             onBack()
         }
     }
+    // Eine Adresse wie `/nvr/rights` oder `/docker/apps/<app>` öffnet die Stelle im Programm, mit dem es begann.
+    val page = if (program == start) startPage(link, start) else null
     when (program) {
-        "docker" -> DockerRoot(env, back)
+        "docker" -> DockerRoot(env, back, start = page)
         "vms" -> VmsRoot(env, back)
         "lxc" -> LxcRoot(env, back)
-        "nvr" -> NvrRoot(env, back)
+        "nvr" -> NvrRoot(env, back, start = page)
         else -> TerminalRoot(env, back)
     }
 }

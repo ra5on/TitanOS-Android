@@ -20,7 +20,7 @@
     <string name="home_storage_of">%1$s of %2$s</string>
     <string name="home_storage_sub">%1$s · %2$s</string>
     <string name="home_photos_title">Photo backup</string>
-    <string name="home_photos_later">comes in a later test version</string>
+    <string name="home_photos_later">not available</string>
     <string name="home_loading">Loading status …</string>
     <string name="home_offline">The NAS is not reachable right now.</string>
     <string name="home_not_ready">The NAS is not ready right now. The app tries again shortly.</string>
@@ -31,7 +31,7 @@
     <string name="home_menu_unpair">Remove pairing</string>
     <string name="home_menu_unpair_text">The app signs out and forgets this NAS. On the NAS you end the device under My account › Devices.</string>
     <string name="home_menu_about">About the app</string>
-    <string name="home_about_text">TitanOS for Android %1$s, test version. Fair Source (FSL-1.1-ALv2).</string>
+    <string name="home_about_text">TitanOS for Android %1$s. Fair Source (FSL-1.1-ALv2).</string>
 
     <string name="app_shares">Shares</string>
     <string name="app_storage">Storage</string>

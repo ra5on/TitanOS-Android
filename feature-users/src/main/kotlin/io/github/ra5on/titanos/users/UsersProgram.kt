@@ -497,9 +497,16 @@ private fun AccountDetail(state: UsersState, account: Account, onDialog: (UserDi
                 t("users.twoFactor"),
                 desc = if (account.twoFactor) t("users.twoFactorOn") else t("users.twoFactorOff"),
                 icon = "shield",
-                below = if (account.twoFactor && manageable && !self) ({
-                    Row(Modifier.padding(top = 8.dp)) { ActionButton(t("users.resetTwoFactor"), { onDialog(UserDialog.TwoFactor(account)) }) }
-                }) else null,
+                below = when {
+                    account.twoFactor && manageable && !self -> ({
+                        Row(Modifier.padding(top = 8.dp)) { ActionButton(t("users.resetTwoFactor"), { onDialog(UserDialog.TwoFactor(account)) }) }
+                    })
+                    // Wie im Web (AccountDetail.svelte): das eigene Konto ohne 2FA richtet sie in „Mein Konto“ ein.
+                    self && !account.twoFactor -> ({
+                        Row(Modifier.padding(top = 8.dp)) { ActionButton(t("users.twoFactorSetUp"), { state.env.open("account", null) }) }
+                    })
+                    else -> null
+                },
             )
             SettingRow(
                 t("users.password"),

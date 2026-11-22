@@ -241,7 +241,7 @@ fun ClusterPage(a: PageArgs) {
         for (node in nodes) NodeRow(node, cluster, ways, owner, manages, isAdmin, version, adminNode, run, ::act, onChange = { page.reload() }, onRoute = {
             ov.show { close -> RouteDialog(node, cluster.o("routes").o(node.str("id")), cluster.o("ways"), close) { fill(it) } }
         })
-        if (manages && nodes.any { !it.bool("self") }) Muted(stringResource(R.string.sec_node_web))
+        if (manages && nodes.any { !it.bool("self") }) Muted(stringResource(if (LocalEnv.current.switchNode != null) R.string.sec_node_switch else R.string.sec_node_web))
         Muted(t(if (manages) "cluster.trust" else "cluster.memberHint"))
     }
     RunnerState(run)
@@ -464,6 +464,14 @@ private fun NodeRow(
         if (noticed && readable) NodeNotices(id, self, node.str("name"), onChange)
         if (manages && (!self || (owner && !isAdmin && adminNode != null && !adminNode.bool("online")))) {
             Buttons {
+                // Wie im Web: „Verwalten“ wählt den Knoten (Knotenauswahl), „Aktualisieren“ öffnet danach seine Updates.
+                val switch = env.switchNode
+                if (!self && switch != null) {
+                    SmallButton(t("cluster.manage"), { switch(id, node.str("name"), null) }, icon = WebIcons["tailnet"], enabled = manageable(node))
+                    if (older(node, version) && node.bool("online")) {
+                        SmallButton(t("cluster.update"), { switch(id, node.str("name"), "/settings/updates") }, kind = ButtonKind.Primary, icon = WebIcons["download"])
+                    }
+                }
                 if (!self) SmallButton(t("cluster.routeMenu"), onRoute, icon = WebIcons["globe"])
                 if (owner && isAdmin && !self) {
                     SmallButton(t(if (node.bool("manage")) "cluster.manageRevoke" else "cluster.manageAllow"), {

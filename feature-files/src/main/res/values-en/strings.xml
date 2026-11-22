@@ -32,7 +32,6 @@
     <string name="files_download">Save to Downloads</string>
     <string name="files_rename">Rename</string>
     <string name="files_move">Move or copy</string>
-    <string name="files_move_text">Comes in a later test version.</string>
     <string name="files_to_trash">Move to recycle bin</string>
     <string name="files_delete_forever">Delete permanently</string>
     <string name="files_trash_confirm_title">Move “%1$s” to the recycle bin?</string>
@@ -83,7 +82,7 @@
     <string name="off_wifi_only_text">Off: also sync over mobile data</string>
     <string name="off_sync_now">Sync now</string>
     <string name="off_used">Used on the phone: %1$s of at most %2$s</string>
-    <string name="off_read_only">Other apps open offline copies read-only. Changes on the phone do not go back to the NAS in this test version.</string>
+    <string name="off_read_only">Other apps open offline copies read-only. Changes on the phone do not go back to the NAS in this version.</string>
     <string name="off_remove">Stop keeping “%1$s” offline</string>
     <string name="off_folder_empty">No files kept yet. The sync fetches them as soon as the NAS is reachable.</string>
     <string name="off_folder_toggle">Folder available offline</string>

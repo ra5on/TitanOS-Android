@@ -32,7 +32,6 @@
     <string name="files_download">In Downloads speichern</string>
     <string name="files_rename">Umbenennen</string>
     <string name="files_move">Verschieben oder kopieren</string>
-    <string name="files_move_text">Kommt in einer späteren Testfassung.</string>
     <string name="files_to_trash">In den Papierkorb</string>
     <string name="files_delete_forever">Endgültig löschen</string>
     <string name="files_trash_confirm_title">„%1$s“ in den Papierkorb?</string>
@@ -83,7 +82,7 @@
     <string name="off_wifi_only_text">Aus: auch über mobile Daten abgleichen</string>
     <string name="off_sync_now">Jetzt abgleichen</string>
     <string name="off_used">Belegt auf dem Handy: %1$s von höchstens %2$s</string>
-    <string name="off_read_only">Offline-Kopien öffnen andere Apps nur zum Lesen. Änderungen am Handy gehen in dieser Testfassung nicht zurück aufs NAS.</string>
+    <string name="off_read_only">Offline-Kopien öffnen andere Apps nur zum Lesen. Änderungen am Handy gehen in dieser Version nicht zurück aufs NAS.</string>
     <string name="off_remove">„%1$s“ nicht mehr offline halten</string>
     <string name="off_folder_empty">Noch keine Dateien abgelegt. Der Abgleich holt sie, sobald das NAS erreichbar ist.</string>
     <string name="off_folder_toggle">Ordner offline verfügbar</string>
