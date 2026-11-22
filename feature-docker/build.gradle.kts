@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
@@ -61,5 +63,5 @@ dependencies {
 
 // Ein hängender Bildtest (endlose Animation, Zeichnen) beendet den Lauf, statt einen der zwei Gradle-Plätze der VM zu halten.
 tasks.withType<Test>().configureEach {
-    timeout.set(java.time.Duration.ofMinutes(10))
+    timeout.set(Duration.ofMinutes(10))
 }

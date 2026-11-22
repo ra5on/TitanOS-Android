@@ -46,9 +46,17 @@ class ComposeWebTest {
         }
     }
 
-    /** Baumvergleich mit Reihenfolge der Schlüssel (Zahlen als Double, damit 1 und 1.0 gleich sind). */
+    /**
+     * Baumvergleich mit Reihenfolge der Schlüssel (Zahlen als Double, damit 1 und 1.0 gleich sind).
+     * Schlüssel, die ganze Zahlen sind („8554“), stellt JavaScript in Objekten nach vorn und sortiert
+     * sie; die Datei selbst behält ihre Reihenfolge. Hier dieselbe Ordnung wie in JavaScript.
+     */
     private fun norm(v: Any?): Any? = when (v) {
-        is Map<*, *> -> v.entries.map { (k, x) -> k.toString() to norm(x) }
+        is Map<*, *> -> {
+            val index = Regex("^(0|[1-9][0-9]{0,8})$")
+            val (ints, rest) = v.entries.partition { index.matches(it.key.toString()) }
+            (ints.sortedBy { it.key.toString().toLong() } + rest).map { (k, x) -> k.toString() to norm(x) }
+        }
         is List<*> -> v.map { norm(it) }
         is Number -> v.toDouble()
         else -> v

@@ -79,7 +79,7 @@ fun CameraRightsPage(api: NvrApi, account: String? = null) {
         }
     }
     ScrollPage {
-        Text(t("nvr.rights.title"), style = TitanType.title, color = Titan.colors.text, modifier = Modifier.padding(vertical = 6.dp))
+        Text(androidx.compose.ui.res.stringResource(R.string.nvr_rights_section), style = TitanType.title, color = Titan.colors.text, modifier = Modifier.padding(vertical = 6.dp))
         val list = accounts
         if (account == null) {
             if (list == null && error == null) Text(t("common.loading"), style = TitanType.rowSub, color = Titan.colors.muted)

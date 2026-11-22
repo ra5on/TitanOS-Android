@@ -134,7 +134,7 @@ fun NvrApp(model: NvrModel, admin: Boolean, me: String, onBack: () -> Unit, open
         "live" to TitanIcons.video, "recordings" to TitanIcons.play, "events" to TitanIcons.bell,
         "cameras" to TitanIcons.grid, "rights" to TitanIcons.user, "settings" to TitanIcons.gear, "diagnosis" to TitanIcons.info,
     )
-    val sections = keys.map { Section(it, if (it == "rights") t("nvr.rights.title") else t("nvr.menu.$it"), icons.getValue(it)) }
+    val sections = keys.map { Section(it, if (it == "rights") stringResource(R.string.nvr_rights_section) else t("nvr.menu.$it"), icons.getValue(it)) }
     val scope = rememberCoroutineScope()
     ProgramShell(
         title = t("desktop.app.nvr"),

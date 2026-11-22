@@ -3,4 +3,5 @@
     <string name="nvr_chosen">chosen</string>
     <string name="nvr_not_chosen">not chosen</string>
     <string name="nvr_saved">Saved.</string>
+    <string name="nvr_rights_section">Camera rights</string>
 </resources>

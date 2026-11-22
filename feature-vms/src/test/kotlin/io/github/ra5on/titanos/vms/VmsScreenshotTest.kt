@@ -61,13 +61,15 @@ class VmsScreenshotTest {
        {"name":"ha","displayName":"Home Assistant","description":"","template":"linux","memoryMiB":2048,"vcpus":2,"volume":"Data","disks":[],"iso":"",
         "autostart":true,"network":"bridge","mac":"52:54:00:00:00:02","state":"stopped","available":true,"backupHeld":true,"cpuPercent":0,"memoryBytes":0,"since":""}]}"""
 
+    // Ein laufender Auftrag zeigt einen sich drehenden Kreis; den zeichnet Robolectric beim
+    // Aufnehmen endlos (Lauf hing in nSyncAndDrawFrame). Deshalb hier ein gescheiterter Auftrag.
     private val lxcJson = """{"installed":true,"dev":false,"host":{"cpus":8,"memoryBytes":16000000000},"bridge":true,"networks":[],
       "containers":[
        {"name":"pihole","displayName":"Pi-hole","description":"DNS für das Heimnetz","volume":"Data","distribution":"debian","release":"trixie","arch":"amd64",
         "cpus":1,"memoryMiB":512,"network":"bridge","mac":"00:16:3e:12:34:56","mounts":[{"path":"/mnt/Data/Backup","target":"/srv/backup","readOnly":true}],
         "autostart":true,"privileged":false,"btrfs":true,"created":"2026-11-02T10:00:00Z","state":"running","available":true,"cpuPercent":1.2,"memoryBytes":120000000},
        {"name":"build","volume":"Data","distribution":"ubuntu","release":"24.04","arch":"amd64","network":"none","mac":"","autostart":false,
-        "created":"2026-11-20T10:00:00Z","state":"stopped","available":true,"cpuPercent":0,"memoryBytes":0,"job":{"state":"running","phase":"download","started":"2026-11-21T10:00:00Z"}}]}"""
+        "created":"2026-11-20T10:00:00Z","state":"stopped","available":true,"cpuPercent":0,"memoryBytes":0,"job":{"state":"failed","phase":"download","started":"2026-11-21T10:00:00Z","code":"timeout"}}]}"""
 
     private fun json(body: String) = MockResponse.Builder().addHeader("Content-Type", "application/json").body(body).build()
 

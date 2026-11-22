@@ -192,7 +192,7 @@ class NasNvrMedia(private val access: ComputeAccess) : NvrMedia {
                             main.post {
                                 if (!cont.isActive) return@post
                                 val load = DefaultLoadControl.Builder().setBufferDurationsMs(500, 4000, 100, 100).build()
-                                val p = ExoPlayer.Builder(context).setLoadControl(load).build()
+                                val p = ExoPlayer.Builder(context, renderers(context)).setLoadControl(load).build()
                                 val factory = DataSource.Factory { LiveDataSource(session.feed) }
                                 val extractors = ExtractorsFactory { arrayOf(FragmentedMp4Extractor()) }
                                 p.setMediaSource(ProgressiveMediaSource.Factory(factory, extractors).createMediaSource(MediaItem.fromUri("titanlive://$camera")))
@@ -205,6 +205,7 @@ class NasNvrMedia(private val access: ComputeAccess) : NvrMedia {
                                     }
 
                                     override fun onPlayerError(error: PlaybackException) {
+                                        BrokenDecoders.note(error)
                                         session.fail()
                                     }
 
@@ -295,7 +296,7 @@ class NasNvrMedia(private val access: ComputeAccess) : NvrMedia {
     override fun Video(state: VideoState, description: String, modifier: Modifier) {
         val context = LocalContext.current
         val player = remember {
-            ExoPlayer.Builder(context).build()
+            ExoPlayer.Builder(context, renderers(context)).build()
         }
         DisposableEffect(player) {
             val listener = object : Player.Listener {
@@ -305,6 +306,7 @@ class NasNvrMedia(private val access: ComputeAccess) : NvrMedia {
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
+                    BrokenDecoders.note(error)
                     val unsupported = error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED ||
                         error.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED ||
                         error.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES
@@ -365,4 +367,39 @@ class NasNvrMedia(private val access: ComputeAccess) : NvrMedia {
 @Composable
 fun PictureNote(text: String, modifier: Modifier = Modifier) {
     Text(text, style = TitanType.body, color = Color.White, textAlign = TextAlign.Center, modifier = modifier.padding(16.dp))
+}
+
+
+/**
+ * Dekoder mit Rückfall: scheitert der erste H.264-Dekoder (manche Geräte und
+ * der Emulator mit c2.goldfish), versucht Media3 den nächsten, zuletzt den
+ * Software-Dekoder von Android.
+ */
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+internal fun renderers(context: android.content.Context) =
+    androidx.media3.exoplayer.DefaultRenderersFactory(context)
+        .setEnableDecoderFallback(true)
+        .setMediaCodecSelector { mime, secure, tunneling ->
+            val all = androidx.media3.exoplayer.mediacodec.MediaCodecSelector.DEFAULT.getDecoderInfos(mime, secure, tunneling)
+            // Ein Dekoder, der beim Dekodieren schon einmal scheiterte, kommt ans Ende.
+            all.filter { it.name !in BrokenDecoders.names } + all.filter { it.name in BrokenDecoders.names }
+        }
+
+/** Dekoder, die in diesem Prozess beim Dekodieren scheiterten (z. B. c2.goldfish.h264.decoder im Emulator). */
+internal object BrokenDecoders {
+    val names: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    /** Merkt den Dekoder aus einem Abspielfehler; true, wenn er neu ist (dann lohnt ein neuer Versuch). */
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    fun note(error: PlaybackException): Boolean {
+        var cause: Throwable? = error
+        while (cause != null) {
+            if (cause is androidx.media3.exoplayer.mediacodec.MediaCodecDecoderException) {
+                val name = cause.codecInfo?.name ?: return false
+                return names.add(name)
+            }
+            cause = cause.cause
+        }
+        return false
+    }
 }
