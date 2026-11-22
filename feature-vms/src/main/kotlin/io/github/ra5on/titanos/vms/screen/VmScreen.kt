@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Paint
 import android.os.Environment
@@ -17,6 +18,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +35,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -67,6 +68,7 @@ import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -103,12 +105,12 @@ import io.github.ra5on.titanos.vms.Tool
 import io.github.ra5on.titanos.vms.Vm
 import io.github.ra5on.titanos.vms.VmApi
 import io.github.ra5on.titanos.vms.s
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** Anzeige wie im Web: einpassen, Auflösung der VM anpassen, 100 % mit Verschieben. */
 enum class ScaleMode(val key: String) { Scale("scale"), Remote("remote"), Full("full") }
@@ -221,7 +223,11 @@ fun VmScreen(env: ComputeEnv, api: VmApi, vm: Vm, full: Boolean, onFull: () -> U
         val h = (box.height / density.density * factor).toInt()
         session.rfb?.setDesktopSize(w, h)
     }
-    LaunchedEffect(phase) { if (phase == ScreenPhase.Connected) runCatching { focus.requestFocus() } }
+    // Gleich tippen können nur mit Hardware-Tastatur: der Fokus startet die Eingabe, und ohne sie
+    // schöbe Android die Bildschirmtastatur über das Bild. Sonst öffnet der Knopf „Tastatur“ sie.
+    val config = LocalConfiguration.current
+    val hardKeys = config.keyboard == Configuration.KEYBOARD_QWERTY && config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO
+    LaunchedEffect(phase, hardKeys) { if (phase == ScreenPhase.Connected && hardKeys) runCatching { focus.requestFocus() } }
 
     fun showKeyboard() {
         runCatching { focus.requestFocus() }

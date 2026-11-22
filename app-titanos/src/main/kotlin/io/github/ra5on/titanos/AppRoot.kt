@@ -361,26 +361,36 @@ private fun MainShell(graph: AppGraph) {
         val job = resumeScope.launch { NotifyRuntime.fetch(context) }
         onPauseOrDispose { job.cancel() }
     }
+    // Programme über der Leiste: Ablage und Werkzeuge (Admin.kt) und Rechnen (Compute.kt).
+    var admin by rememberSaveable { mutableStateOf<String?>(null) }
+    var compute by rememberSaveable { mutableStateOf<String?>(null) }
+    // Eine getippte Mitteilung schließt, was offen ist; sonst läge ihr Ziel dahinter.
+    fun closePrograms() {
+        admin = null
+        compute = null
+        graph.openProgram = null
+        graph.programLink = null
+    }
     // Getippte Mitteilung: zur Liste.
     val openList by NotifyRuntime.openList.collectAsStateWithLifecycle()
     LaunchedEffect(openList) {
         if (openList) {
+            closePrograms()
             tab = Tab.Notifications
             NotifyRuntime.listOpened()
         }
     }
-    // Mitteilung mit Link in Mail, Kalender oder Kontakte: das Programm an dieser Stelle öffnen.
+    // Mitteilung mit Link: das Programm an dieser Stelle öffnen, über den Router wie jeder Link (Links.kt).
     val openLink by NotifyRuntime.openLink.collectAsStateWithLifecycle()
     LaunchedEffect(openLink) {
         val link = openLink ?: return@LaunchedEffect
-        graph.programLink = link
-        graph.openProgram = link.removePrefix("/").substringBefore('?').substringBefore('/')
+        closePrograms()
+        openLink(context, graph, link) { tab = Tab.Notifications }
         NotifyRuntime.linkOpened()
     }
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
     if (tab != Tab.Home) BackHandler { tab = Tab.Home }
     // Ablage und Werkzeuge (Speicher, Freigaben, Benutzer, Plugins, Werkzeuge): eigene Seiten über der Leiste (Admin.kt).
-    var admin by rememberSaveable { mutableStateOf<String?>(null) }
     admin?.let { id ->
         AdminProgram(id, graph) { admin = null }
         return
@@ -437,7 +447,6 @@ private fun MainShell(graph: AppGraph) {
         return
     }
     // Rechnen (Docker, VMs, LXC, NVR, Terminal): eigene Seiten über der Leiste (Compute.kt).
-    var compute by rememberSaveable { mutableStateOf<String?>(null) }
     // Kurzbefehl „zuletzt geöffnet“: das Programm wie von der Startseite.
     LaunchedEffect(graph.openShortcut) {
         val id = graph.openShortcut ?: return@LaunchedEffect
@@ -468,6 +477,9 @@ private fun MainShell(graph: AppGraph) {
                             in PROGRAMS -> graph.openProgram = p.id
                             in COMPUTE_PROGRAMS -> compute = p.id
                             in SETTINGS_PROGRAMS -> graph.openProgram = p.id
+                            // Sicherung wie apps.ts: die Sicherungen der Systemsteuerung (wie am Arbeitsplatz).
+                            "backup" -> openLink(context, graph, "/settings/backups", toastLater)
+                            "security" -> openLink(context, graph, "/settings/firewall", toastLater)
                             else -> toastLater()
                         }
                     },

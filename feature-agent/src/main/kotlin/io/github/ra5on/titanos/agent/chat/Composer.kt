@@ -252,11 +252,13 @@ fun Composer(
 @Composable
 private fun PlusButton(disabled: Boolean, onClick: () -> Unit) {
     val c = Titan.colors
+    // TalkBack: „Datei anhängen“ (vorher „+, Datei anhängen“).
+    val attach = t("agent.attach")
     Box(
         Modifier.size(44.dp).clip(CircleShape).background(c.text.copy(alpha = 0.08f)).clickable(enabled = !disabled, role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = "+" }.alpha(if (disabled) 0.5f else 1f),
+            .semantics { contentDescription = attach }.alpha(if (disabled) 0.5f else 1f),
         contentAlignment = Alignment.Center,
-    ) { WIcon("plus", 20.dp, c.text, label = t("agent.attach")) }
+    ) { WIcon("plus", 20.dp, c.text) }
 }
 
 /** Senden: das warme Orange; ohne Text gedämpft. Anhalten: ein heller Kreis mit Quadrat. */

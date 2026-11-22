@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -199,7 +200,7 @@ internal fun UsersProgram(env: AdminEnv, start: String?, onBack: () -> Unit) {
 private fun Avatar(name: String, big: Boolean = false) {
     // Farbe nur als Schmuck; der Name steht daneben.
     val color = Color.hsl(hue(name).toFloat(), 0.55f, 0.42f)
-    Box(Modifier.size(if (big) 56.dp else 38.dp).clip(CircleShape).background(color), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(if (big) 56.dp else 38.dp).clip(CircleShape).background(color).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
         Text(name.take(1).uppercase(), style = if (big) TitanType.title else TitanType.rowTitle, color = Color.White)
     }
 }

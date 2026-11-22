@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,28 +27,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import io.github.ra5on.titanos.compute.t
 import io.github.ra5on.titanos.ui.Format
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
-import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.delay
 
 /** Höhe der oberen Leiste je Größe (barSize im Web: 34/40/48 px). */
 fun barHeight(size: String): Dp = when (size) {
@@ -173,7 +182,13 @@ private fun SearchField(state: WorkspaceState, modifier: Modifier, onFocus: () -
                 singleLine = true,
                 textStyle = TitanType.small.copy(color = c.text),
                 cursorBrush = SolidColor(c.accent),
-                modifier = Modifier.fillMaxWidth().onFocusChanged { if (it.isFocused) onFocus() }
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                keyboardActions = KeyboardActions(onGo = { openFirstHit(state) }),
+                modifier = Modifier.fillMaxWidth().focusRequester(state.searchFocus).onFocusChanged { if (it.isFocused) onFocus() }
+                    // Hardware-Tastatur: Enter öffnet den ersten Treffer wie im Web (Launcher.svelte).
+                    .onPreviewKeyEvent { e ->
+                        if (e.type == KeyEventType.KeyDown && (e.key == Key.Enter || e.key == Key.NumPadEnter)) openFirstHit(state) else false
+                    }
                     .semantics { contentDescription = label },
             )
         }
@@ -203,4 +218,13 @@ private fun Status(state: WorkspaceState, compact: Boolean = false, tiny: Boolea
         if (!tiny) Text(date, style = TitanType.small, color = c.muted)
         Text(time, style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = c.text)
     }
+}
+
+/** Öffnet den ersten Treffer der Suche im Menü; falsch, wenn es keinen gibt. */
+private fun openFirstHit(state: WorkspaceState): Boolean {
+    val first = searchHits(state).firstOrNull() ?: return false
+    state.open(first.key)
+    state.query = ""
+    state.launcher = false
+    return true
 }

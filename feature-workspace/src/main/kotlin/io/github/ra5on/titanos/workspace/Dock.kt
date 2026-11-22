@@ -3,6 +3,7 @@ package io.github.ra5on.titanos.workspace
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -29,8 +30,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerType
@@ -41,6 +48,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -118,8 +127,11 @@ internal fun BoxScope.DockBar(state: WorkspaceState) {
             }
             val windows = wm.windows.filter { it.app == key }
             DockButton(state, key, vertical, scaleOf(key), { centre -> centres[key] = centre }) {
+                var focused by remember(key) { mutableStateOf(false) }
                 Box(
                     Modifier.size(iconDp.dp)
+                        // Tastatur: Rahmen in der Akzentfarbe, solange das Symbol den Fokus hat.
+                        .border(2.dp, if (focused) Titan.colors.accent else Color.Transparent, RoundedCornerShape(12.dp))
                         .pointerInput(key) {
                             awaitEachGesture {
                                 val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -135,11 +147,24 @@ internal fun BoxScope.DockBar(state: WorkspaceState) {
                                 onTap = { dockClick(state, key) },
                             )
                         }
+                        // TalkBack und Tastatur (Tab, Enter) wie ein Knopf.
                         .semantics(mergeDescendants = true) {
                             role = Role.Button
                             contentDescription = p?.label ?: key
                             if (windows.isNotEmpty()) stateDescription = "${windows.size} ●"
-                        },
+                            onClick { dockClick(state, key); true }
+                            onLongClick { state.menu = DeskMenu(0f, 0f, DeskMenu.Kind.Icon, key, dock = true).placed(state, key); true }
+                        }
+                        .onKeyEvent { e ->
+                            if (e.type == KeyEventType.KeyUp && (e.key == Key.Enter || e.key == Key.NumPadEnter || e.key == Key.Spacebar)) {
+                                dockClick(state, key)
+                                true
+                            } else {
+                                false
+                            }
+                        }
+                        .onFocusChanged { focused = it.isFocused }
+                        .focusable(),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (p != null && p.glyph.isNotEmpty()) AppIcon(p.glyph, p.gradient, iconDp.dp) else LetterIcon(p?.letter() ?: "?", p?.gradient ?: "blue", iconDp.dp)

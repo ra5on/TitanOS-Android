@@ -172,7 +172,10 @@
     <string name="cal_confirm_delete">Vor dem Löschen fragen</string>
     <string name="cal_count">Anzahl</string>
     <string name="cal_date">Datum</string>
-    <string name="cal_day_a11y">%1$s, %2$d Einträge</string>
+    <plurals name="cal_day_a11y">
+        <item quantity="one">%1$s, %2$d Eintrag</item>
+        <item quantity="other">%1$s, %2$d Einträge</item>
+    </plurals>
     <string name="cal_delete">Löschen</string>
     <string name="cal_delete_calendar">Kalender löschen</string>
     <string name="cal_delete_calendar_title">„%1$s“ löschen?</string>

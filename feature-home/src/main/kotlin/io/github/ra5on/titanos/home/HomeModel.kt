@@ -40,6 +40,9 @@ val ALL_PROGRAMS = listOf(
     Program("monitor", "monitor", "dark"),
     Program("logs", "logs", "grey"),
     Program("planner", "planner", "teal"),
+    // Wie apps.ts: Sicherheit (Firewall der Systemsteuerung) und Mein Konto.
+    Program("security", "shield", "green"),
+    Program("account", "account", "grey"),
     Program("settings", "settings", "grey"),
 )
 
@@ -50,7 +53,7 @@ val ALL_PROGRAMS = listOf(
  */
 fun visiblePrograms(role: String, services: Map<String, Boolean>): List<Program> {
     val admin = role == "owner" || role == "admin"
-    val adminOnly = setOf("shares", "storage", "docker", "vms", "lxc", "backup", "terminal", "users")
+    val adminOnly = setOf("shares", "storage", "docker", "vms", "lxc", "backup", "terminal", "users", "security")
     val optIn = setOf("mail", "calendar", "contacts", "agent")
     val service = mapOf("docker" to "docker", "vms" to "vms", "lxc" to "lxc")
     return ALL_PROGRAMS.filter { p ->

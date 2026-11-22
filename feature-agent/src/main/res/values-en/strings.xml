@@ -107,7 +107,7 @@
     <string name="agent_err_share">The shared file could not be read.</string>
 
     <string name="agent_off_title">The AI agent is off</string>
-    <string name="agent_off_text">An owner can switch it on in the browser under Settings › AI Agent.</string>
+    <string name="agent_off_text">An owner can switch it on in the settings (TitanOS app or browser) under AI Agent.</string>
     <string name="agent_not_allowed_title">The AI agent is not enabled for your account</string>
     <string name="agent_no_volume_title">No data volume</string>
 

@@ -51,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
@@ -223,7 +224,8 @@ private fun ConTop(title: String, onBack: (() -> Unit)?, backLabel: String = str
 @Composable
 internal fun Avatar(name: String, org: String, photo: ImageBitmap?, size: Dp) {
     val c = Titan.colors
-    Box(Modifier.size(size).clip(CircleShape).background(c.chip), contentAlignment = Alignment.Center) {
+    // Initialen nur als Schmuck: der Name steht daneben, TalkBack liest ihn nicht doppelt.
+    Box(Modifier.size(size).clip(CircleShape).background(c.chip).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
         if (photo != null) Image(photo, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         else Text(initialsOf(name, org), style = if (size > 60.dp) TitanType.big else TitanType.rowTitle, color = c.muted)
     }

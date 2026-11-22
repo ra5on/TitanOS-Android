@@ -67,6 +67,8 @@ fun programLabelRes(id: String): Int = (
         "monitor" -> R.string.app_monitor
         "logs" -> R.string.app_logs
         "planner" -> R.string.app_planner
+        "security" -> R.string.app_security
+        "account" -> R.string.app_account
         else -> R.string.app_settings
     }
 )
