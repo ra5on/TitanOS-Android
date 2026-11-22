@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -261,7 +259,8 @@ private fun clockFormat(): DateTimeFormatter {
     return remember(locale) { DateTimeFormatter.ofPattern(if (locale.language == "de") "dd.MM. HH:mm:ss" else "MM/dd HH:mm:ss", locale).withZone(ZoneId.systemDefault()) }
 }
 
-/** Eine Zeile: Zeit, Quelle, Stufe als Text und die Meldung ganz (waagrecht scrollbar). Harmlose Meldungen leise mit Grund. */
+/** Eine Zeile: Zeit, Quelle, Stufe als Text und die Meldung ganz (umbrochen). Harmlose Meldungen leise mit Grund. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun LogLine(e: LogEntry, selected: Boolean, onClick: () -> Unit) {
     val c = Titan.colors
@@ -278,13 +277,14 @@ private fun LogLine(e: LogEntry, selected: Boolean, onClick: () -> Unit) {
         Modifier.fillMaxWidth().background(if (selected) c.accent.copy(alpha = .12f) else androidx.compose.ui.graphics.Color.Transparent)
             .clickable(role = Role.Button, onClick = onClick).heightIn(min = 44.dp).padding(vertical = 6.dp),
     ) {
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            val mono = TitanType.small.copy(fontFamily = TitanFonts.mono)
-            Text(clock.format(instantOf(e.time) ?: java.time.Instant.EPOCH), style = mono, color = c.muted, softWrap = false)
-            Text(e.source, style = mono, color = c.muted, softWrap = false)
-            if (level.isNotEmpty()) Text(t(if (level == "error") "notify.severity.error" else "notify.severity.warning"), style = mono.copy(fontWeight = FontWeight.Bold), color = color, softWrap = false)
-            Text(e.message.trim().ifEmpty { t("tools.noText") }, style = mono, color = color, softWrap = false)
+        // Wie das Web am Handy (logs/+page.svelte): Zeit, Quelle und Stufe, darunter die Meldung umbrochen.
+        val mono = TitanType.small.copy(fontFamily = TitanFonts.mono)
+        androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(clock.format(instantOf(e.time) ?: java.time.Instant.EPOCH), style = mono, color = c.muted)
+            Text(e.source, style = mono, color = c.muted)
+            if (level.isNotEmpty()) Text(t(if (level == "error") "notify.severity.error" else "notify.severity.warning"), style = mono.copy(fontWeight = FontWeight.Bold), color = color)
         }
+        Text(e.message.trim().ifEmpty { t("tools.noText") }, style = mono, color = color, modifier = Modifier.padding(top = 2.dp))
         if (note != null) Text(t(note), style = TitanType.small, color = c.muted)
         Divider(Modifier.padding(top = 6.dp))
     }

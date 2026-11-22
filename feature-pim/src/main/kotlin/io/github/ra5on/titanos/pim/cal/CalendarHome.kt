@@ -54,6 +54,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -457,7 +458,8 @@ private fun DayCell(model: CalendarModel, d: LocalDate, isToday: Boolean, titles
     val events = model.eventsOn(d)
     val tasks = model.tasksOn(d)
     val weekend = d.dayOfWeek.value >= 6
-    val said = stringResource(R.string.cal_day_a11y, CalDates.longDate(d), events.size + tasks.size)
+    val count = events.size + tasks.size
+    val said = pluralStringResource(R.plurals.cal_day_a11y, count, CalDates.longDate(d), count)
     Column(
         Modifier.fillMaxWidth().clickable(onClickLabel = said) { onDay(d) }
             .onSecondaryClick { onNewAt(d) }

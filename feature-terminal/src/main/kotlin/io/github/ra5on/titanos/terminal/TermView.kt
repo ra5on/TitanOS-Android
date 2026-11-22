@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos.terminal
 
+import android.content.res.Configuration
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.view.KeyEvent
@@ -14,6 +15,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -41,6 +43,7 @@ import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.isTertiaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -172,6 +175,14 @@ fun TermView(
             val imm = context.getSystemService(InputMethodManager::class.java)
             imm?.showSoftInput(view, 0)
         }
+    }
+
+    // Mit Hardware-Tastatur (Desktop-Modus, Tastatur am Tablet) gleich tippen können wie im Web:
+    // sonst ginge Getipptes ins Leere und Enter löste den fokussierten Knopf „Zurück“ aus.
+    val config = LocalConfiguration.current
+    val hardKeys = config.keyboard == Configuration.KEYBOARD_QWERTY && config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO
+    LaunchedEffect(session, hardKeys) {
+        if (hardKeys) runCatching { state.focus.requestFocus() }
     }
 
     val screenText = remember(version) {

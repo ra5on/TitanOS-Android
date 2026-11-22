@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -389,7 +390,8 @@ internal fun Avatar(name: String) {
     var h = 0
     for (ch in name) h = (h * 31 + ch.code) % 360
     val color = Color.hsl(h.toFloat(), 0.45f, 0.38f)
-    Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(color), contentAlignment = Alignment.Center) {
+    // Initialen nur als Schmuck: der Name steht daneben, TalkBack liest ihn nicht doppelt.
+    Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(color).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
         Text(name.take(2).uppercase(), style = TitanType.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = Color.White)
     }
 }

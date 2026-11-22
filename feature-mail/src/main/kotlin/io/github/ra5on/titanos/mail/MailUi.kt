@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -173,7 +174,8 @@ fun avatarColor(addr: String): Color {
 @Composable
 fun SenderAvatar(model: MailModel?, from: Address, size: Dp = 40.dp) {
     val photo = model?.photo(from.addr)
-    Box(Modifier.size(size).clip(CircleShape).background(avatarColor(from.addr)), contentAlignment = Alignment.Center) {
+    // Initialen nur als Schmuck: der Name steht daneben, TalkBack liest ihn nicht doppelt.
+    Box(Modifier.size(size).clip(CircleShape).background(avatarColor(from.addr)).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
         if (photo != null) {
             Image(photo, null, Modifier.size(size), contentScale = ContentScale.Crop)
         } else {
