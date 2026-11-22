@@ -24,7 +24,11 @@ val COMPUTE_PROGRAMS = setOf("docker", "vms", "lxc", "nvr", "terminal")
  * sie kam.
  */
 @Composable
-fun ComputeProgram(start: String, graph: AppGraph, onBack: () -> Unit, link: String? = null) {
+fun ComputeProgram(start: String, graph: AppGraph, onBack: () -> Unit) = ComputeProgramAt(start, graph, null, onBack)
+
+/** Wie [ComputeProgram], an der Stelle aus einer Adresse des Webs ([link], Links.kt). */
+@Composable
+fun ComputeProgramAt(start: String, graph: AppGraph, link: String?, onBack: () -> Unit) {
     val pairing = graph.pairing ?: return
     val access = remember(pairing) { ComputeAccess.forPairing(graph.shared, pairing, graph.sessions) }
     var program by rememberSaveable(start) { mutableStateOf(start) }

@@ -29,7 +29,11 @@ val ADMIN_PROGRAMS = setOf("storage", "shares", "users", "plugins", "monitor", "
  * Werkzeuge › Wartung); Zurück verlässt dann das geöffnete Programm.
  */
 @Composable
-fun AdminProgram(start: String, graph: AppGraph, onBack: () -> Unit, link: String? = null) {
+fun AdminProgram(start: String, graph: AppGraph, onBack: () -> Unit) = AdminProgramAt(start, graph, null, onBack)
+
+/** Wie [AdminProgram], an der Stelle aus einer Adresse des Webs ([link], Links.kt). */
+@Composable
+fun AdminProgramAt(start: String, graph: AppGraph, link: String?, onBack: () -> Unit) {
     val pairing = graph.pairing ?: return
     val context = LocalContext.current
     val webOnly = stringResource(R.string.app_later_toast)

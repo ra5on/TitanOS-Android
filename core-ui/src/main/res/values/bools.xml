@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bauvariante „play“ (Google Play): die Apps überschreiben den Wert in src/play/res. -->
+    <bool name="titan_play">false</bool>
+</resources>

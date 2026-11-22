@@ -118,10 +118,10 @@ internal suspend fun FilesModel.openAt(rootId: String, path: String) {
 internal fun LinkedProgram(graph: AppGraph, id: String, onClose: () -> Unit) {
     val link = graph.programLink
     when (id) {
-        in ADMIN_PROGRAMS -> AdminProgram(id, graph, onClose, link = link)
+        in ADMIN_PROGRAMS -> AdminProgramAt(id, graph, link, onClose)
         in COMPUTE_PROGRAMS -> {
             BackHandler(onBack = onClose)
-            ComputeProgram(id, graph, onClose, link = link)
+            ComputeProgramAt(id, graph, link, onClose)
         }
         else -> {
             val files = graph.files ?: return
