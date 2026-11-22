@@ -87,7 +87,11 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
     val env = rememberEnv(graph) { path -> openWebPath(graph, path) {} }
     state.onPower = if (env != null) { restart -> power = restart } else null
     // Mehrere NAS: Umschalten beginnt MainShell neu (key(nasEpoch)), der Arbeitsplatz lädt die Einrichtung des neuen NAS.
-    state.nasList = graph.profiles.map { it.id to it.name }
+    // Gleiche Namen (zwei NAS „pc“): die Adresse dazu, sonst wäre Umschalten Raten.
+    state.nasList = graph.profiles.map { p ->
+        val twice = graph.profiles.count { it.name == p.name } > 1
+        p.id to (if (twice) p.name + " · " + p.pairing.addresses.firstOrNull()?.server.orEmpty() else p.name)
+    }
     state.activeNas = graph.activeId
     state.onSwitchNas = { id -> graph.switchTo(id) }
     state.onNasList = { state.open("app:naslist") }

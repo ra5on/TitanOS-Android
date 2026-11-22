@@ -157,7 +157,10 @@ private fun CalendarRoute(model: CalendarModel, route: CalRoute, go: (CalRoute) 
 @Composable
 internal fun CalTop(title: String, onBack: (() -> Unit)?, backLabel: String = stringResource(UiR.string.ui_back), actions: @Composable () -> Unit = {}) {
     Box(Modifier.statusBarsPadding()) {
-        io.github.ra5on.titanos.ui.components.TopBar(title, onBack = onBack, backLabel = backLabel) { actions() }
+        io.github.ra5on.titanos.ui.components.TopBar(title, onBack = onBack, backLabel = backLabel) {
+            io.github.ra5on.titanos.agent.panel.AgentPanelButton()
+            actions()
+        }
     }
 }
 
@@ -264,6 +267,7 @@ private fun HomeBar(model: CalendarModel, width: Width, go: (CalRoute) -> Unit, 
             IconButton(listIcon, stringResource(if (model.view == CalView.List) R.string.cal_view_month else R.string.cal_view_list), {
                 model.view = if (model.view == CalView.List) CalView.Month else CalView.List
             })
+            io.github.ra5on.titanos.agent.panel.AgentPanelButton()
             IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), { go(CalRoute.Search) })
             IconButton(TitanIcons.plus, stringResource(R.string.cal_new_event), onNew, tint = c.accent)
         }

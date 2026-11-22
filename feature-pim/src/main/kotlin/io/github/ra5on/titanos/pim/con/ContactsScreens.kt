@@ -211,7 +211,12 @@ internal fun conProblemText(p: ConProblem): String = stringResource(
 
 @Composable
 private fun ConTop(title: String, onBack: (() -> Unit)?, backLabel: String = stringResource(UiR.string.ui_back), actions: @Composable () -> Unit = {}) {
-    Box(Modifier.statusBarsPadding()) { TopBar(title, onBack = onBack, backLabel = backLabel) { actions() } }
+    Box(Modifier.statusBarsPadding()) {
+        TopBar(title, onBack = onBack, backLabel = backLabel) {
+            io.github.ra5on.titanos.agent.panel.AgentPanelButton()
+            actions()
+        }
+    }
 }
 
 /** Rundes Bild: Foto oder Initialen auf Farbe (Avatar.svelte). */

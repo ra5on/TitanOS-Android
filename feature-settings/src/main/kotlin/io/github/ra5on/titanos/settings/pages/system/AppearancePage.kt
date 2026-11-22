@@ -159,6 +159,8 @@ internal class LookState {
     var error by mutableStateOf("")
     var desktop by mutableStateOf<JsonObject?>(null)
     var desktopPending by mutableStateOf<JsonObject?>(null)
+    /** Der Stand beim Laden: geschrieben werden nur die Felder, die hier geändert wurden (der Arbeitsplatz schreibt mit). */
+    var desktopBase by mutableStateOf<JsonObject?>(null)
     var loadError by mutableStateOf<Throwable?>(null)
     var round by mutableIntStateOf(0)
 
@@ -190,7 +192,10 @@ fun AppearancePage(a: PageArgs) {
             val prefs = env.api.obj("preferences")
             val look = prefs["appearance"] as? JsonObject ?: DEFAULT_LOOK
             s.look = look
-            s.desktop = prefs["desktop"] as? JsonObject ?: JsonObject(emptyMap())
+            // Mit „eigene Einrichtung für Android“ (Arbeitsplatz) die Einrichtung, die der Arbeitsplatz zeigt.
+            val kind = desktopKind(context)
+            s.desktop = (prefs[kind] as? JsonObject ?: prefs["desktop"] as? JsonObject) ?: JsonObject(emptyMap())
+            s.desktopBase = s.desktop
             s.loadError = null
             runCatching { TitanAppearance.takeAccount(context, org.json.JSONObject(look.toString())) }
         } catch (e: Exception) {
@@ -226,7 +231,8 @@ fun AppearancePage(a: PageArgs) {
         Guard.require(context, GuardAction.Settings) {
             scope.launch {
                 try {
-                    env.api.put("preferences/desktop", value)
+                    putDesktop(env.api, desktopKind(context), s.desktopBase, value)
+                    s.desktopBase = value
                     if (s.desktopPending == value) s.desktopPending = null
                 } catch (e: Exception) {
                     s.error = tr.t("desktop.toast.prefs", "reason" to tr.errorOf(e))
@@ -241,7 +247,7 @@ fun AppearancePage(a: PageArgs) {
         onDispose {
             if (!Guard.enabled(context, GuardAction.Settings)) {
                 s.pending?.let { v -> Background.launch { runCatching { api.put("preferences/appearance", v) }.onSuccess { runCatching { TitanAppearance.takeAccount(context.applicationContext, org.json.JSONObject(v.toString())) } } } }
-                s.desktopPending?.let { v -> Background.launch { runCatching { api.put("preferences/desktop", v) } } }
+                s.desktopPending?.let { v -> val base = s.desktopBase; val kind = desktopKind(context); Background.launch { runCatching { putDesktop(api, kind, base, v) } } }
             }
         }
     }
@@ -575,4 +581,24 @@ private fun LiquidPreview(look: JsonObject, desktop: JsonObject?, systemDark: Bo
             Text(t("look.liquidSample"), style = TitanType.small, color = p.text.color(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
+}
+
+/**
+ * Welche Einstellung der Arbeitsplatz zeigt: `desktop` wie im Web, mit
+ * „eigene Einrichtung für Android“ `androiddesktop` (Schalter des
+ * Arbeitsplatzes, feature-workspace WorkspaceSettings, Datei „titan-workspace“).
+ */
+internal fun desktopKind(context: android.content.Context): String =
+    if (context.getSharedPreferences("titan-workspace", android.content.Context.MODE_PRIVATE).getBoolean("own", false)) "androiddesktop" else "desktop"
+
+/**
+ * Schreibt nur die Felder, die sich gegenüber [base] geändert haben, in den
+ * Stand am NAS (neu gelesen): Änderungen des Arbeitsplatzes oder des Webs
+ * seit dem Öffnen der Seite bleiben.
+ */
+internal suspend fun putDesktop(api: io.github.ra5on.titanos.settings.common.SettingsApi, kind: String, base: JsonObject?, value: JsonObject) {
+    val changed = value.filter { (k, v) -> base?.get(k) != v }.keys + (base?.keys.orEmpty() - value.keys)
+    val stored = api.obj("preferences")[kind] as? JsonObject ?: (api.obj("preferences")["desktop"] as? JsonObject) ?: JsonObject(emptyMap())
+    val merged = JsonObject(stored.toMutableMap().apply { for (k in changed) { val v = value[k]; if (v != null) put(k, v) else remove(k) } })
+    api.put("preferences/$kind", merged)
 }

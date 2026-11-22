@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelStore
 import io.github.ra5on.titanos.compute.ComputeAccess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /** Ein Kontextmenü des Arbeitsplatzes: wo es aufging (dp in der Fläche) und worum es geht (DeskMenu im Web). */
 data class DeskMenu(val x: Float, val y: Float, val kind: Kind, val key: String = "", val dock: Boolean = false) {
@@ -53,12 +54,12 @@ class WorkspaceState(
     var closing by mutableStateOf<String?>(null)
 
     /** Neustart/Herunterfahren (true: Neustart) und Sperren aus dem Hauptmenü; null: nicht angeboten. */
-    var onPower: ((Boolean) -> Unit)? = null
-    var onLock: (() -> Unit)? = null
+    var onPower by mutableStateOf<((Boolean) -> Unit)?>(null)
+    var onLock by mutableStateOf<(() -> Unit)?>(null)
 
     /** Mehrere NAS (F2): Kennung und Name je NAS, das gewählte, Umschalten und die Seite „NAS und Konten“. */
-    var nasList: List<Pair<String, String>> = emptyList()
-    var activeNas: String = ""
+    var nasList by mutableStateOf<List<Pair<String, String>>>(emptyList())
+    var activeNas by mutableStateOf("")
     var onSwitchNas: ((String) -> Unit)? = null
     var onNasList: (() -> Unit)? = null
 
@@ -92,6 +93,15 @@ class WorkspaceState(
         wm.open(key, href, p?.label ?: key, multi)
     }
 
+    /** Was wartet hinaus, dann die Einrichtung neu vom NAS (Änderungen aus Systemsteuerung oder Web). */
+    fun refresh() {
+        if (access == null) return
+        scope.launch {
+            store.flush()
+            store.load()
+        }
+    }
+
     /** Der KI-Agent rechts angedockt; ist er schon vorn, verschwindet er wieder (minimiert). */
     fun agentPanel() {
         val win = wm.windows.firstOrNull { it.app == "app:agent" }
@@ -105,7 +115,10 @@ class WorkspaceState(
 
     /** Fenster zu: sein Zurück-Verteiler und seine ViewModels gehen mit. */
     fun close(id: String) {
+        // Die Systemsteuerung kann Hintergrund, Dock und Leiste geändert haben: neu lesen.
+        val wasSettings = wm.find(id)?.app == "app:settings"
         wm.close(id)
+        if (wasSettings) refresh()
         backs.remove(id)
         stores.remove(id)?.clear()
         if (closing == id) closing = null

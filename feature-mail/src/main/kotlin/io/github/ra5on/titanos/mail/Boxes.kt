@@ -83,9 +83,13 @@ fun LevelHead(
                     Icon(TitanIcons.back, null, tint = Titan.colors.accent, modifier = Modifier.size(26.dp))
                     if (back != null) Text(back, style = TitanType.button.copy(fontWeight = FontWeight.Normal), color = Titan.colors.accent)
                 }
+                io.github.ra5on.titanos.agent.panel.AgentPanelButton()
                 actions()
             } else {
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) { actions() }
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+                    io.github.ra5on.titanos.agent.panel.AgentPanelButton()
+                    actions()
+                }
             }
         }
         BigTitle(title, Modifier.padding(start = 8.dp))

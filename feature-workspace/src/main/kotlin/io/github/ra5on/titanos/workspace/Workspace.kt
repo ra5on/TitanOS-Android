@@ -22,7 +22,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
@@ -118,6 +120,13 @@ fun Workspace(
                 if ("homeassistant" in kinds) state.data.homeAssistant()
                 delay(15_000)
             }
+        }
+        // Zurück in die App: die Einrichtung neu lesen (im Web oder in der Systemsteuerung geändert).
+        var resumed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        androidx.lifecycle.compose.LifecycleResumeEffect(state) {
+            if (resumed) state.refresh()
+            resumed = true
+            onPauseOrDispose { }
         }
         // Was beim Verlassen noch wartet, geht gleich ans NAS (flushPrefs im Web).
         DisposableEffect(state) { onDispose { state.scope.launch { state.store.flush() } } }
