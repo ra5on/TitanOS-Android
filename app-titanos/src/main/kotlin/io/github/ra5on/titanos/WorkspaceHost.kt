@@ -86,6 +86,11 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
     var power by remember { mutableStateOf<Boolean?>(null) }
     val env = rememberEnv(graph) { path -> openWebPath(graph, path) {} }
     state.onPower = if (env != null) { restart -> power = restart } else null
+    // Mehrere NAS: Umschalten beginnt MainShell neu (key(nasEpoch)), der Arbeitsplatz lädt die Einrichtung des neuen NAS.
+    state.nasList = graph.profiles.map { it.id to it.name }
+    state.activeNas = graph.activeId
+    state.onSwitchNas = { id -> graph.switchTo(id) }
+    state.onNasList = { state.open("app:naslist") }
     state.onLock = if (io.github.ra5on.titanos.ui.guard.Guard.available(context)) { { AppLockNow.requests++ } } else null
     Workspace(
         state,
@@ -181,6 +186,7 @@ internal fun WorkspaceProgram(graph: AppGraph, win: Win, close: () -> Unit) {
         id == "security" -> SettingsProgram(graph, "settings", close, start = win.href.ifEmpty { "/settings/firewall" })
         id == "backup" -> SettingsProgram(graph, "settings", close, start = win.href.ifEmpty { "/settings/backups" })
         id == WORKSPACE_SETTINGS -> io.github.ra5on.titanos.workspace.WorkspaceSettingsPage(close)
+        id == "naslist" -> NasListPage(graph, onBack = close, onAdd = { close(); graph.beginAdd() }, onPhotos = { graph.openPhotos = true })
         else -> Later()
     }
 }

@@ -56,6 +56,12 @@ class WorkspaceState(
     var onPower: ((Boolean) -> Unit)? = null
     var onLock: (() -> Unit)? = null
 
+    /** Mehrere NAS (F2): Kennung und Name je NAS, das gewählte, Umschalten und die Seite „NAS und Konten“. */
+    var nasList: List<Pair<String, String>> = emptyList()
+    var activeNas: String = ""
+    var onSwitchNas: ((String) -> Unit)? = null
+    var onNasList: (() -> Unit)? = null
+
     private val backs = HashMap<String, OnBackPressedDispatcher>()
     private val stores = HashMap<String, ViewModelStore>()
 

@@ -126,4 +126,18 @@ class StoreTest {
         again.load()
         assertFalse(again.prefs.barLoad)
     }
+
+    @Test
+    fun forgettingANasLeavesTheOthers() {
+        val s = settings()
+        s.saveWindows("a/alex", kotlinx.serialization.json.JsonArray(emptyList()))
+        s.saveWindows("b/alex", kotlinx.serialization.json.JsonArray(emptyList()))
+        s.saveRecent("a/alex", listOf("app:files"))
+        s.saveLocalDesktop("a/alex", "{}")
+        s.forgetNas("a")
+        assertEquals(null, s.windows("a/alex"))
+        assertTrue(s.recent("a/alex").isEmpty())
+        assertEquals(null, s.localDesktop("a/alex"))
+        assertEquals(0, s.windows("b/alex")!!.size)
+    }
 }

@@ -16,4 +16,5 @@
     <string name="ws_shortcuts_back">Back: one page back in the front window, otherwise minimise</string>
     <string name="ws_save_failed">The desktop setup could not be saved.</string>
     <string name="ws_agent_panel">AI agent</string>
+    <string name="ws_nas_list">NAS and accounts …</string>
 </resources>

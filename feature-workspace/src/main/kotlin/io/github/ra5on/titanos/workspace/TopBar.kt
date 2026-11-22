@@ -99,7 +99,23 @@ internal fun TopBar(state: WorkspaceState, onSearchFocus: () -> Unit) {
             MenuBarItems(state)
         }
         Spacer(Modifier.weight(1f))
-        // Der KI-Agent als Leiste rechts (wie die Seitenleiste des Agenten im Web), wenn das Konto ihn hat.
+        // Mehrere NAS: das gewählte mit Namen, ein Klick öffnet die Liste zum Umschalten (wie der Umschalter der Startseite).
+        if (state.nasList.size > 1) {
+            var nx by remember { mutableStateOf(0f) }
+            val name = state.nasList.firstOrNull { it.first == state.activeNas }?.second.orEmpty()
+            Row(
+                Modifier.onGloballyPositioned { nx = it.boundsInRoot().left / density.density }
+                    .clip(RoundedCornerShape(8.dp)).background(c.chip.copy(alpha = .7f))
+                    .clickable(role = Role.Button) { state.menu = DeskMenu(nx, 0f, DeskMenu.Kind.Bar, "nas") }
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(TitanIcons.nodes, null, tint = c.muted, modifier = Modifier.size(15.dp))
+                Text(name, style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = c.text)
+            }
+        }
+                // Der KI-Agent als Leiste rechts (wie die Seitenleiste des Agenten im Web), wenn das Konto ihn hat.
         state.programOf("app:agent")?.let { agent ->
             val label = stringResource(R.string.ws_agent_panel)
             Box(

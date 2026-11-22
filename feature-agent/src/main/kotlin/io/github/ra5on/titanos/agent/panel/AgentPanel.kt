@@ -196,64 +196,63 @@ internal fun PanelBody(
         modifier.background(c.surface).semantics { paneTitle = title }
             .then(if (phone) Modifier.fillMaxWidth().height(minOf(600, (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.78f).toInt()).dp) else Modifier.fillMaxSize()),
     ) {
-        FlowRow(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            itemVerticalAlignment = Alignment.CenterVertically,
-        ) {
-            WIcon("sparkle", 18.dp, c.accent)
-            Text(title, style = TitanType.rowTitle, color = c.text, modifier = Modifier.weight(1f).semantics { heading() })
-            PillButton(tr.t("agentpim.panel.new"), { panel.fresh() }, enabled = panel.chat != null && !panel.busy, small = true)
-            val chat = panel.chat
-            if (chat != null && onOpenInApp != null) PillButton(tr.t("agentpim.panel.inApp"), { onOpenInApp(chat.id) }, small = true)
-            val close = tr.t("common.close")
-            Box(
-                Modifier.size(36.dp).clip(RoundedCornerShape(18.dp)).clickable(role = Role.Button, onClick = onClose).semantics { contentDescription = close },
-                contentAlignment = Alignment.Center,
-            ) { WIcon("close", 16.dp, c.text) }
+        // Kopf: Name und Schließen in einer Zeile, die Knöpfe darunter (bei großer Schrift bricht nichts im Wort).
+        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                WIcon("sparkle", 18.dp, c.accent)
+                Text(title, style = TitanType.rowTitle, color = c.text, modifier = Modifier.weight(1f).semantics { heading() })
+                val close = tr.t("common.close")
+                Box(
+                    Modifier.size(36.dp).clip(RoundedCornerShape(18.dp)).clickable(role = Role.Button, onClick = onClose).semantics { contentDescription = close },
+                    contentAlignment = Alignment.Center,
+                ) { WIcon("close", 16.dp, c.text) }
+            }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                PillButton(tr.t("agentpim.panel.new"), { panel.fresh() }, enabled = panel.chat != null && !panel.busy, small = true)
+                val chat = panel.chat
+                if (chat != null && onOpenInApp != null) PillButton(tr.t("agentpim.panel.inApp"), { onOpenInApp(chat.id) }, small = true)
+            }
         }
         Box(Modifier.fillMaxWidth().heightIn(min = 1.dp, max = 1.dp).background(c.border))
-        if (needsNote) {
-            Column(
-                Modifier.padding(12.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.warnBg).border(1.dp, c.warnBorder, RoundedCornerShape(12.dp)).padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(tr.t("agentpim.cloud.title"), style = TitanType.body.copy(fontWeight = FontWeight.SemiBold), color = c.warnText)
-                Text(tr.t("agentpim.cloud.text"), style = TitanType.small, color = c.warnText)
-                PillButton(tr.t("agentpim.cloud.ok"), { panel.noteCloud() }, kind = Btn.Primary, small = true)
-            }
-        }
-        if (actions.isNotEmpty()) {
-            val label = tr.t("agentpim.panel.actions")
-            FlowRow(
-                Modifier.fillMaxWidth().semantics { contentDescription = label }.padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                for (a in actions) {
-                    val enabled = ready && !panel.sending && !panel.busy && !(a.needsContext && context == null)
-                    Text(
-                        a.label,
-                        style = TitanType.small,
-                        color = if (enabled) c.text else c.muted,
-                        modifier = Modifier.heightIn(min = 36.dp).clip(RoundedCornerShape(18.dp))
-                            .background(c.accent.copy(alpha = .08f)).border(1.dp, c.border, RoundedCornerShape(18.dp))
-                            .clickable(enabled = enabled, role = Role.Button) { if (a.fill) text = a.prompt + " " else send(a.prompt) }
-                            .padding(horizontal = 12.dp, vertical = 9.dp),
-                    )
+        // Hinweis, Vorschläge und Gespräch scrollen zusammen (am Handy und bei großer Schrift bleibt das Gespräch erreichbar).
+        Talk(panel, tr, Modifier.weight(1f).fillMaxWidth(), header = {
+            if (needsNote) {
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.warnBg).border(1.dp, c.warnBorder, RoundedCornerShape(12.dp)).padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(tr.t("agentpim.cloud.title"), style = TitanType.body.copy(fontWeight = FontWeight.SemiBold), color = c.warnText)
+                    Text(tr.t("agentpim.cloud.text"), style = TitanType.small, color = c.warnText)
+                    PillButton(tr.t("agentpim.cloud.ok"), { panel.noteCloud() }, kind = Btn.Primary, small = true)
                 }
             }
-            Box(Modifier.fillMaxWidth().heightIn(min = 1.dp, max = 1.dp).background(c.border))
-        }
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            val chat = panel.chat
-            when {
-                chat != null -> Talk(panel, tr)
-                state != null -> Text(tr.t("agentpim.panel.empty", "where" to tr.t("agentpim.panel.where.$app")), style = TitanType.body, color = c.muted, modifier = Modifier.padding(16.dp))
-                panel.error == null -> Text(tr.t("common.loading"), style = TitanType.body, color = c.muted, modifier = Modifier.padding(16.dp).semantics { liveRegion = LiveRegionMode.Polite })
+            if (actions.isNotEmpty()) {
+                val label = tr.t("agentpim.panel.actions")
+                FlowRow(
+                    Modifier.fillMaxWidth().semantics { contentDescription = label },
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    for (a in actions) {
+                        val enabled = ready && !panel.sending && !panel.busy && !(a.needsContext && context == null)
+                        Text(
+                            a.label,
+                            style = TitanType.small,
+                            color = if (enabled) c.text else c.muted,
+                            modifier = Modifier.heightIn(min = 36.dp).clip(RoundedCornerShape(18.dp))
+                                .background(c.accent.copy(alpha = .08f)).border(1.dp, c.border, RoundedCornerShape(18.dp))
+                                .clickable(enabled = enabled, role = Role.Button) { if (a.fill) text = a.prompt + " " else send(a.prompt) }
+                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                        )
+                    }
+                }
             }
-        }
+            when {
+                panel.chat != null -> Unit
+                state != null -> Text(tr.t("agentpim.panel.empty", "where" to tr.t("agentpim.panel.where.$app")), style = TitanType.body, color = c.muted)
+                panel.error == null -> Text(tr.t("common.loading"), style = TitanType.body, color = c.muted, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            }
+        })
         panel.error?.let { e ->
             Text(errorText(tr, e), style = TitanType.small, color = c.dangerInk, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp).semantics { liveRegion = LiveRegionMode.Assertive })
         }
@@ -283,15 +282,16 @@ internal fun PanelBody(
     }
 }
 
-/** Das Gespräch: Fragen, Schritte als kurze Zeilen, Antworten, Freigaben und was gerade hereinströmt. */
+/** Das Gespräch: Fragen, Schritte als kurze Zeilen, Antworten, Freigaben und was gerade hereinströmt; davor [header]. */
 @Composable
-private fun Talk(panel: PanelChat, tr: Tr) {
+private fun Talk(panel: PanelChat, tr: Tr, modifier: Modifier, header: @Composable () -> Unit) {
     val c = Titan.colors
-    val chat = panel.chat ?: return
+    val chat = panel.chat
     val list = rememberLazyListState()
-    val shown = blocks(chat.entries)
-    LaunchedEffect(shown.size, panel.live.content.length) { if (shown.isNotEmpty()) list.animateScrollToItem(shown.size + 1) }
-    LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    val shown = chat?.let { blocks(it.entries) }.orEmpty()
+    LaunchedEffect(shown.size, panel.live.content.length) { if (shown.isNotEmpty()) list.animateScrollToItem(shown.size + 2) }
+    LazyColumn(modifier, state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { header() } }
         items(shown) { b ->
             when (b) {
                 is Block.User -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
@@ -305,7 +305,11 @@ private fun Talk(panel: PanelChat, tr: Tr) {
                 is Block.Steps -> Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     for (s in b.steps) {
                         val word = stepWord(s.tool)
-                        val label = if (word.isNotEmpty()) tr.t("agent.step.$word") else (s.summary ?: s.tool ?: s.note).orEmpty()
+                        val label = when {
+                            word.isNotEmpty() -> tr.t("agent.step.$word")
+                            s.tool != null -> tr.or("agentpim.action." + s.tool.replace('_', '.'), s.summary ?: s.tool)
+                            else -> (s.summary ?: s.note).orEmpty()
+                        }
                         Text((if (s.ok || s.role == "note") "✓ " else "✕ ") + label, style = AgentText.sm, color = c.muted)
                     }
                 }
@@ -319,7 +323,7 @@ private fun Talk(panel: PanelChat, tr: Tr) {
             else if (panel.busy) Text(tr.t(if (live.thinking.isNotEmpty()) "agent.thinking" else "agent.working"), style = AgentText.sm, color = c.muted, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
         }
         item {
-            chat.pending?.let { p -> ApprovalCard(p, panel.deciding) { approve -> panel.decide(p, approve) } }
+            chat?.pending?.let { p -> ApprovalCard(p, panel.deciding) { approve -> panel.decide(p, approve) } }
         }
     }
 }

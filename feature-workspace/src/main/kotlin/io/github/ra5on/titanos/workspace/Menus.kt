@@ -19,6 +19,9 @@ internal fun BoxScope.DeskMenus(state: WorkspaceState, onAppearance: (() -> Unit
         DeskMenu.Kind.Bar -> when (menu.key) {
             "window" -> windowItems(state, wm.focused)
             "help" -> listOf(MenuItem(t("menubar.help.shortcuts"), onClick = { state.dialog = DeskDialog.Shortcuts }))
+            "nas" -> state.nasList.map { (id, name) ->
+                MenuItem(name, mark = if (id == state.activeNas) MenuItem.Mark.RadioOn else MenuItem.Mark.Radio, onClick = { if (id != state.activeNas) state.onSwitchNas?.invoke(id) })
+            } + listOfNotNull(state.onNasList?.let { MenuItem.Separator }, state.onNasList?.let { MenuItem(androidx.compose.ui.res.stringResource(R.string.ws_nas_list), onClick = it) })
             "main" -> if (wm.focused == null) deskItems(state, onAppearance) else programItems(state, wm.find(wm.focused!!)?.app.orEmpty(), false)
             else -> barItems(state)
         }

@@ -146,7 +146,7 @@ class WorkspaceScreenshotTest {
     fun emptyDesktopWithDockLeft() = shot("ws-leer-dock-links", windows = false, prefs = DesktopPrefs(dock = Dock(position = "left"), wallpaper = Wallpaper(false, "aurora", 0, true)))
 
     @Test
-    fun launcherOpen() = shot("ws-menue", windows = false) { launcher = true }
+    fun launcherOpen() = shot("ws-menue", windows = false) { launcher = true; onPower = {}; onLock = {} }
 
     @Test
     fun contextMenu() = shot("ws-kontextmenue", windows = false) { menu = DeskMenu(400f, 200f, DeskMenu.Kind.Desk) }
