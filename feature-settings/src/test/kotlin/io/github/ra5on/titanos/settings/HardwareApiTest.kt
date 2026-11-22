@@ -25,10 +25,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.util.Locale
 
 /** Was die Seiten „Hardware und Energie“ an das NAS schicken: Methode, Pfad, Inhalt (unbekannte Felder bleiben), Fingerabdruck. */
 @RunWith(RobolectricTestRunner::class)
+// Wie die Bildtests: alle Klassen im selben Robolectric-Sandkasten (gemischt hingen sie im vollen Lauf).
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "de-w390dp-h844dp-xxhdpi", sdk = [36])
 class HardwareApiTest {
     @get:Rule

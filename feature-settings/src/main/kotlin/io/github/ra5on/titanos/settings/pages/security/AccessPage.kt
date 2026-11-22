@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import io.github.ra5on.titanos.settings.common.breakIds
 import io.github.ra5on.titanos.settings.common.Fmt
 import io.github.ra5on.titanos.settings.common.LocalEnv
 import io.github.ra5on.titanos.settings.common.Loaded
@@ -293,7 +294,7 @@ private fun CertificateRow(a: PageArgs) {
         SettingSub(t("access.certIssuer"), control = { Value(c.str("issuer").ifEmpty { "–" }) })
         SettingSub(t("access.certUntil"), control = { Value(Fmt.dateTime(tr, c.str("notAfter"))) })
         SettingSub(t("access.certNames"), control = { Value(c.strings("names").joinToString(", "), mono = true) })
-        SettingSub(t("access.certFingerprint"), control = { Value(fingerprint, mono = true) })
+        SettingSub(t("access.certFingerprint"), control = { Value(breakIds(fingerprint), mono = true) })
         if (replacing) {
             Muted(t("access.certFormHint"))
             LabeledField(t("access.certChain"), certPem, { certPem = it }, placeholder = "-----BEGIN CERTIFICATE-----", mono = true, minHeight = 120.dp, enabled = !run.running)

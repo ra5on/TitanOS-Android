@@ -28,10 +28,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.util.Locale
 
 /** Was die Seiten Home Assistant, Sprachdienste und KI-Agent ans NAS schicken. */
 @RunWith(RobolectricTestRunner::class)
+// Wie die Bildtests: alle Klassen im selben Robolectric-Sandkasten (gemischt hingen sie im vollen Lauf).
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "de-w390dp-h844dp-xxhdpi", sdk = [36])
 class SmartHomeApiTest {
     @get:Rule
@@ -51,7 +54,9 @@ class SmartHomeApiTest {
     private fun open(path: String, wait: String): SettingsNav {
         val nav = SettingsNav()
         shots.show(false) { SettingsApp(nas.env(), onClose = {}, nav = nav) }
+        compose.waitForIdle()
         nav.openPath(path)
+        compose.waitForIdle()
         shots.until { nas.requests.any { it.second.startsWith(wait) } }
         shots.settle(1200)
         return nav

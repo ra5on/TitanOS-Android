@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.ra5on.titanos.settings.common.breakIds
 import io.github.ra5on.titanos.settings.common.Fmt
 import io.github.ra5on.titanos.settings.common.LocalEnv
 import io.github.ra5on.titanos.settings.common.bool
@@ -115,7 +116,7 @@ private fun ProbeCard(tr: Tr, p: JsonObject) {
             Text(tr.wayLabel(p.str("way")), style = TitanType.body, color = c.text)
             if (p.bool("used")) Badge(tr.t("cluster.probeUsed"))
         }
-        ValueLine(tr.t("cluster.probeAddress"), p.str("address"), mono = true)
+        ValueLine(tr.t("cluster.probeAddress"), breakIds(p.str("address")), mono = true)
         Buttons {
             StatusChip((if (p.bool("ok")) "✓ " + tr.t("cluster.probeYes") else "✕ " + tr.t("cluster.probeNo")), if (p.bool("ok")) Tone.Ok else Tone.Error)
             Value(if (p.bool("ok")) "${p.long("millis")} ms" else tr.or("cluster.probeProblem.${p.str("problem").ifEmpty { "failed" }}", tr.t("cluster.probeProblem.failed")), mono = true)

@@ -116,6 +116,7 @@ class SmartHomeShotsTest {
         Locale.setDefault(Locale.GERMANY)
         SmartHomeFixtures.install(nas)
         nas.start()
+        shots.isData = { text -> nas.answers.values.any { it.contains("\"$text\"") } }
     }
 
     @After

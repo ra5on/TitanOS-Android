@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import io.github.ra5on.titanos.settings.common.breakIds
 import io.github.ra5on.titanos.settings.common.Fmt
 import io.github.ra5on.titanos.settings.common.LocalEnv
 import io.github.ra5on.titanos.settings.common.a
@@ -196,7 +197,7 @@ internal fun AgentConnectionTab(st: AgentState) {
             val contextDesc = listOfNotNull(
                 if (modelContext > 0) tr.t("agent.contextModel", "tokens" to tokens(modelContext)) else null,
                 if (runningContext > 0) tr.t("agent.contextNow", "tokens" to tokens(runningContext)) else tr.t("agent.contextUnknown"),
-                tr.t("agent.contextHint"),
+                breakIds(tr.t("agent.contextHint")),
                 if (s.long("context") > 65536) tr.t("agent.contextVram") else null,
             ).joinToString(" ")
             SettingRow(t("agent.context"), desc = contextDesc, icon = WebIcons["memory"], control = {

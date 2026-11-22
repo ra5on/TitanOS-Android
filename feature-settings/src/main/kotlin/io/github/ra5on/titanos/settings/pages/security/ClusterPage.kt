@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.ra5on.titanos.settings.R
+import io.github.ra5on.titanos.settings.common.breakIds
 import io.github.ra5on.titanos.settings.common.Fmt
 import io.github.ra5on.titanos.settings.common.LocalEnv
 import io.github.ra5on.titanos.settings.common.Runner
@@ -276,7 +277,7 @@ fun ClusterPage(a: PageArgs) {
                 desc = if (way == "tailscale" && found.any { it.contains(".ts.net") }) t("cluster.tailscaleNameHint") else null,
                 icon = WebIcons[if (way == "home") "home" else "tailnet"],
                 control = {
-                    if (found.isNotEmpty()) Value(found.joinToString(" · "), mono = true)
+                    if (found.isNotEmpty()) Value(breakIds(found.joinToString(" · ")), mono = true)
                     StatusChip(t(if (found.isNotEmpty()) "cluster.wayFound" else "cluster.wayNotFound"), if (found.isNotEmpty()) Tone.Ok else Tone.Inactive)
                 },
             )
@@ -287,7 +288,7 @@ fun ClusterPage(a: PageArgs) {
             desc = if (tv.str("error").isNotEmpty()) tv.str("error") else t("cluster.tunnelHint", "port" to (tv.long("port").takeIf { it != 0L } ?: 51821)),
             icon = WebIcons["shield"],
             control = {
-                if (tunnel && tv.bool("enabled") && tv.str("address").isNotEmpty()) Value(t("cluster.tunnelOn", "address" to tv.str("address")))
+                if (tunnel && tv.bool("enabled") && tv.str("address").isNotEmpty()) Value(t("cluster.tunnelOn", "address" to breakIds(tv.str("address"))))
                 Toggle(tunnel, { tunnel = it; edited = true }, onText(), offText(), enabled = !busy && manages, label = t("cluster.tunnel"))
             },
         )
@@ -425,7 +426,7 @@ private fun NodeRow(
         when {
             self -> add(node.strings("addresses").joinToString(" · "))
             node.bool("online") && node.str("way").isNotEmpty() -> {
-                add(tr.t("cluster.via", "way" to tr.wayLabel(node.str("way"))) + (if (node.long("millis") > 0) " · ${node.long("millis")} ms" else "") + " · " + node.str("address"))
+                add(tr.t("cluster.via", "way" to tr.wayLabel(node.str("way"))) + (if (node.long("millis") > 0) " · ${node.long("millis")} ms" else "") + " · " + breakIds(node.str("address")))
                 if (node.bool("fallback")) add(tr.t(if (ways.int("return") < 0) "cluster.fallbackStays" else "cluster.fallback", "way" to tr.wayLabel(node.str("preferred"))))
             }
             node.str("error").isNotEmpty() -> add(tr.error(node.str("error")) + " · " + node.strings("addresses").joinToString(" · "))

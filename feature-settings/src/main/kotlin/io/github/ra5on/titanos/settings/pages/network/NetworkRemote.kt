@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import io.github.ra5on.titanos.settings.common.breakAtHyphens
 import io.github.ra5on.titanos.settings.common.LocalEnv
 import io.github.ra5on.titanos.settings.common.SettingsApi
 import io.github.ra5on.titanos.settings.common.bool
@@ -280,7 +281,7 @@ private fun TailscaleHttps(https: JsonObject, disabled: Boolean, onUpdate: (Json
         },
     )
     Hint(t("tailscale.httpsNeeds") + "\n• " + t("tailscale.httpsNeedMagicDNS") + "\n• " + t("tailscale.httpsNeedCertificates"))
-    Banner(t("tailscale.httpsPublic"), tone = Tone.Warn)
+    Banner(breakAtHyphens(t("tailscale.httpsPublic")), tone = Tone.Warn)
     Note(error)
     if (enabled) {
         when (https.str("state")) {

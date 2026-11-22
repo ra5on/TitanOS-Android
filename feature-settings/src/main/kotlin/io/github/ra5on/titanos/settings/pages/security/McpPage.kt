@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import io.github.ra5on.titanos.settings.common.breakIds
 import io.github.ra5on.titanos.settings.common.Fmt
 import io.github.ra5on.titanos.settings.common.LocalEnv
 import io.github.ra5on.titanos.settings.common.RunnerState
@@ -161,7 +162,7 @@ fun McpPage(a: PageArgs) {
     }
 
     SettingGroup(t("mcp.connect")) {
-        Segments(tab, listOf("code" to t("mcp.claudeCode"), "remote" to t("mcp.desktopRemote"), "bridge" to t("mcp.desktopBridge")), { tab = it })
+        Segments(tab, listOf("code" to t("mcp.claudeCode"), "remote" to breakIds(t("mcp.desktopRemote")), "bridge" to breakIds(t("mcp.desktopBridge"))), { tab = it })
         val snippet = when (tab) {
             "code" -> claudeCodeCommand(endpoint)
             "remote" -> desktopRemoteConfig(endpoint)

@@ -77,3 +77,11 @@ object Fmt {
  */
 fun breakAtHyphens(text: String): String = text.replace(Regex("(?<=\\p{L})-(?=\\p{L})"), "-\u200B")
 
+/**
+ * Kennungen im Text (Dateinamen wie claude_desktop_config.json, Fingerabdrücke ab:12:cd,
+ * Adressen wie nas.tail1234.ts.net:443, OLLAMA_CONTEXT_LENGTH) dürfen nach „_“, „:“, „.“,
+ * „/“ und „@“ umbrechen, wenn ein Buchstabe oder eine Ziffer folgt: sonst bricht Android
+ * sie mitten im Wort. Ein unsichtbarer Trennpunkt, kein Zeichen mehr.
+ */
+fun breakIds(text: String): String = text.replace(Regex("([_:./@])(?=[\\p{L}\\p{N}])"), "$1\u200B")
+

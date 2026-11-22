@@ -39,10 +39,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.util.Locale
 
 /** Was die Seiten „Sicherheit und Konten“ an das NAS schicken: Methode, Pfad, Inhalt, Fingerabdruck. */
 @RunWith(RobolectricTestRunner::class)
+// Wie die Bildtests: alle Klassen im selben Robolectric-Sandkasten (gemischt hingen sie im vollen Lauf).
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = "de-w390dp-h844dp-xxhdpi", sdk = [36])
 class SecurityApiTest {
     @get:Rule
@@ -73,8 +76,11 @@ class SecurityApiTest {
     private fun page(id: String, wait: String) {
         val nav = SettingsNav()
         compose.setContent { TitanTheme(dark = false) { SettingsApp(nas.env(), onClose = {}, nav = nav) } }
-        shots.settle(300)
+        // Richtig synchronisieren statt nur den Looper zu leeren: kalt lief der erste LaunchedEffect
+        // der Seite sonst nicht an, und im vollen Lauf kam nie eine Anfrage.
+        compose.waitForIdle()
         nav.openPage(id)
+        compose.waitForIdle()
         shots.until { nas.requests.any { it.second.substringBefore('?') == wait } }
         shots.settle(500)
     }

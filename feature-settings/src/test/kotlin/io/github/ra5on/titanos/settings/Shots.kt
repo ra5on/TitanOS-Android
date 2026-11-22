@@ -75,6 +75,9 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
     val problems = mutableListOf<String>()
     var prefix = ""
 
+    /** Stammt der Text wörtlich aus den Antworten des nachgebauten NAS? Dann ist er Daten, kein Textschlüssel. */
+    var isData: (String) -> Boolean = { false }
+
     fun show(dark: Boolean, content: @Composable () -> Unit) {
         compose.setContent { TitanTheme(dark = dark) { Box(Modifier.fillMaxSize()) { content() } } }
         settle()
@@ -122,7 +125,8 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
             get.action?.invoke(out)
             val r = out.firstOrNull() ?: continue
             val text = r.layoutInput.text.text
-            val raw = RAW_KEY.matches(text.trim()) && text.substringBefore('.') in namespaces && !DOMAIN.containsMatchIn(text.trim())
+            // Ein Wert, der wörtlich so vom NAS kommt (z. B. die HA-Entität notify.mobile_app_iphone), ist kein roher Textschlüssel.
+            val raw = RAW_KEY.matches(text.trim()) && text.substringBefore('.') in namespaces && !DOMAIN.containsMatchIn(text.trim()) && !isData(text.trim())
             if (PLACEHOLDER.containsMatchIn(text) || raw || text.startsWith("TODO "))
                 problems += "$prefix$name: Platzhalter „${text.take(80)}“"
             val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
@@ -134,7 +138,10 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
                 if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit() && !unavoidable(r, text, end, node.size.width, rootWidth))
                     problems += "$prefix$name: mitten im Wort umbrochen „${text.substring(maxOf(0, end - 12), minOf(text.length, end + 12))}“"
             }
-            if (widest > node.size.width + 2 || bottom > node.size.height + 2 || dots)
+            // Ein einzeiliges Eingabefeld scrollt waagrecht (erlaubt: „umbrechen, scrollen oder Symbol“);
+            // dort zählt nur, dass nichts mit „…“ abgeschnitten oder unten abgeschnitten ist.
+            val editable = node.config.getOrElseNullable(SemanticsProperties.EditableText) { null } != null
+            if ((!editable && widest > node.size.width + 2) || bottom > node.size.height + 2 || dots)
                 problems += "$prefix$name: „${text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
         }
     }
