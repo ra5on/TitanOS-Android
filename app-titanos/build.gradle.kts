@@ -55,6 +55,13 @@ android {
     lint {
         abortOnError = true
     }
+    // WebRTC (Gegensprechen im NVR) nur für 64-Bit-Geräte: arm64 (Handys, Tablets)
+    // und x86_64 (Chromebooks, Emulator); die 32-Bit-Kopien machten das APK ~10 MB größer.
+    packaging {
+        jniLibs {
+            excludes += listOf("lib/armeabi-v7a/libjingle_peerconnection_so.so", "lib/x86/libjingle_peerconnection_so.so")
+        }
+    }
 }
 
 roborazzi {

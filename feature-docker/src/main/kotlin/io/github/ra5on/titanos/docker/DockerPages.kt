@@ -476,16 +476,7 @@ internal fun CatalogPage(state: DockerState, onInstalled: () -> Unit) {
                         Text(listOf(a.image, s.sources.firstOrNull { it.id == a.source }?.name.orEmpty()).filter { it.isNotEmpty() }.joinToString(" · "), style = TitanType.rowSub, color = Titan.colors.muted)
                         if (a.id in installed) StateMark(t("apps.installed"), StateKind.Ok)
                     }
-                    SmallButton(t("apps.install"), TitanIcons.download, {
-                        ui.run {
-                            val tpl = state.api.template(a.source, a.id)
-                            var name = a.id.lowercase().replace(Regex("[^a-z0-9_-]"), "-").trimStart('-', '_').take(32).ifEmpty { "app" }
-                            val base = name
-                            var n = 2
-                            while (name in installed) { name = "${base.take(29)}-$n"; n++ }
-                            ui.sheet = { InstallSheet(state, a, tpl, name, onInstalled) }
-                        }
-                    })
+                    SmallButton(t("apps.install"), TitanIcons.download, { state.installing = InstallTarget(a.source, a.id, a.name) })
                 }
             }
         }
@@ -495,37 +486,6 @@ internal fun CatalogPage(state: DockerState, onInstalled: () -> Unit) {
 
 @Composable
 private fun tOr(key: String, fallback: String) = io.github.ra5on.titanos.compute.tOr(key, fallback)
-
-/** App aus dem Katalog installieren: Name, Compose-Datei der Vorlage (änderbar), Hinweise der Vorlage. */
-@Composable
-private fun androidx.compose.foundation.layout.ColumnScope.InstallSheet(state: DockerState, app: CatalogApp, tpl: Template, initialName: String, onInstalled: () -> Unit) {
-    val ui = LocalComputeUi.current
-    var name by remember { mutableStateOf(initialName) }
-    var compose by remember { mutableStateOf(tpl.compose) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var busy by remember { mutableStateOf(false) }
-    val nameOk = Regex("^[a-z0-9][a-z0-9_-]{0,31}$").matches(name)
-    val exists = name in state.status?.apps.orEmpty()
-    SheetTitle(app.name)
-    if (tpl.missingDevices.isNotEmpty()) Note(t("apps.missingDevices", "devices" to tpl.missingDevices.joinToString(", ")))
-    if (tpl.cpuMissing.isNotEmpty()) Problem(t("apps.cpuMissing", "list" to tpl.cpuMissing.joinToString(", ")))
-    if (compose.trimStart().startsWith("x-casaos") || compose.contains("x-casaos:")) Note(stringResource(R.string.docker_casaos_note))
-    Field(t("apps.name"), name, { name = it.lowercase() }, hint = t("apps.nameHint", "path" to (tpl.appdata.trimEnd('/') + "/" + name)),
-        error = when { !nameOk -> t("apps.nameInvalid"); exists -> t("apps.nameExists"); else -> null })
-    Text(t("apps.composeNote"), style = TitanType.small, color = Titan.colors.muted, modifier = Modifier.padding(vertical = 6.dp))
-    CodeEditor(compose, { compose = it }, t("apps.asCompose"), minHeight = 260)
-    error?.let { Problem(it) }
-    SheetButtons(t("apps.install"), enabled = nameOk && !exists && compose.isNotBlank() && !busy) {
-        busy = true
-        error = null
-        ui.run(onError = { error = ui.errorOf(it); busy = false }) {
-            state.api.importApp(name, compose)
-            ui.sheet = null
-            state.load()
-            onInstalled()
-        }
-    }
-}
 
 @Composable
 private fun androidx.compose.foundation.layout.ColumnScope.SourcesSheet(state: DockerState, store: AppStore, onStore: (AppStore) -> Unit) {

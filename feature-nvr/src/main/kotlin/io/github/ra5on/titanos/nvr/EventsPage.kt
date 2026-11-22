@@ -234,8 +234,12 @@ fun EventsScreen(
     onOpen: (NvrEvent) -> Unit,
 ) {
     val removedWord = t("nvr.removed.optgroup")
+    // Karten nebeneinander nur so schmal, dass das längste Wort der Titel ganz hineinpasst („Ganze Wörter“).
+    val words = events.map { "${labelName(it.label)} ${nameOf(it.camera)}" }
+    val widest = io.github.ra5on.titanos.ui.rememberWidestWord(words, TitanType.rowTitle.copy(fontSize = TitanType.body.fontSize))
+    val cell = maxOf(220.dp, with(androidx.compose.ui.platform.LocalDensity.current) { widest.toDp() } + 40.dp)
     LazyVerticalGrid(
-        columns = if (filter.list) GridCells.Fixed(1) else GridCells.Adaptive(220.dp),
+        columns = if (filter.list) GridCells.Fixed(1) else GridCells.Adaptive(cell),
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),

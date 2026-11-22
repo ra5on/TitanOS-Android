@@ -94,7 +94,7 @@ internal fun GroupDetail(env: ComputeEnv, state: DockerState, g: DockerGroup, on
         Card {
             g.members.forEachIndexed { i, ct -> ContainerRow(env, state, ct, i > 0) }
         }
-        if (g.app.isNotEmpty()) ComposeEditor(state, g.app)
+        if (g.app.isNotEmpty()) AppEditorSection(env, state, g)
     }
 }
 
@@ -137,49 +137,4 @@ private fun ContainerRow(env: ComputeEnv, state: DockerState, ct: DockerContaine
             IconButton(TitanIcons.more, actions, { ui.menu(actions, entries) })
         }
     }
-}
-
-/** Compose-Datei der App bearbeiten und übernehmen (app-editor.svelte.ts, Ansicht „Compose“). */
-@Composable
-private fun ComposeEditor(state: DockerState, app: String) {
-    val ui = LocalComputeUi.current
-    var original by remember(app) { mutableStateOf<String?>(null) }
-    var text by remember(app) { mutableStateOf("") }
-    var error by remember(app) { mutableStateOf<Throwable?>(null) }
-    var result by remember(app) { mutableStateOf<String?>(null) }
-    var applying by remember(app) { mutableStateOf(false) }
-    LaunchedEffect(app) {
-        try {
-            val compose = state.api.appCompose(app)
-            original = compose
-            text = compose
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            error = e
-        }
-    }
-    Section(t("apps.asCompose"))
-    error?.let { Problem(errorText(it)) }
-    val o = original ?: return
-    Note(stringResource(R.string.docker_compose_note))
-    CodeEditor(text, { text = it; result = null }, t("apps.asCompose"), minHeight = 280)
-    result?.let { Text(it, style = TitanType.body, color = Titan.colors.text, modifier = Modifier.padding(top = 6.dp)) }
-    Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        SmallButton(t("docker.save"), TitanIcons.check, {
-            applying = true
-            ui.run(onError = { e -> result = ui.errorOf(e); applying = false }) {
-                state.api.saveCompose(app, text)
-                original = text
-                result = ui.string(R.string.docker_compose_applied)
-                applying = false
-                state.load()
-            }
-        }, primary = true, enabled = !applying && text != o && text.isNotBlank())
-        SmallButton(stringResource(R.string.docker_compose_reset), TitanIcons.restart, {
-            ui.confirm(Ask(ui.string(R.string.docker_compose_reset), ui.string(R.string.docker_compose_reset_text), ui.string(R.string.docker_compose_reset)) { text = o; result = null })
-        }, enabled = text != o)
-    }
-    if (applying) StateMark(t("docker.jobRunning", "app" to app), StateKind.Busy)
-    InfoRow(t("docker.detail.image"), state.status?.containers?.filter { it.app == app }?.joinToString(", ") { it.image }.orEmpty())
 }

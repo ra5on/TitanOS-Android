@@ -50,8 +50,32 @@ class DockerScreenshotTest {
     @After
     fun font() = RuntimeEnvironment.setFontScale(1f)
 
-    private fun shot(name: String, detail: Boolean) {
-        val state = DockerState(DockerApi(access)).also { it.status = status }
+    private val immichCompose = """
+        # Immich
+        services:
+          server:
+            image: ghcr.io/immich-app/immich-server:v1.120
+            restart: unless-stopped
+            environment:
+              DB_PASSWORD: ${'$'}{DB_PASSWORD}
+              TZ: Europe/Berlin
+            volumes:
+              - ./upload:/usr/src/app/upload
+              - /mnt/Data/Fotos:/fotos:ro
+            ports:
+              - "2283:2283"
+            labels:
+              titanos.webui: "2283"
+          db:
+            image: tensorchord/pgvecto-rs:pg14-v0.2.0
+            volumes:
+              - ./postgres:/var/lib/postgresql/data
+    """.trimIndent() + "\n"
+
+    private fun shot(name: String, detail: Boolean, layout: DockerLayout = DockerLayout(), advanced: Boolean = false) {
+        val state = DockerState(DockerApi(access)).also { it.status = status; it.layout = layout }
+        state.editors["immich"] = AppEditorState(state.api, "immich").apply { original = immichCompose; text = immichCompose; parse() }
+        RuntimeEnvironment.getApplication().getSharedPreferences("docker", 0).edit().putBoolean("advanced", advanced).commit()
         val groups = groupsOf(status.containers)
         for (dark in listOf(true, false)) {
             captureRoboImage("build/outputs/roborazzi/docker-$name-${if (dark) "dunkel" else "hell"}.png") {
@@ -74,6 +98,44 @@ class DockerScreenshotTest {
 
     @Test
     fun app() = shot("app-390", detail = true)
+
+    @Test
+    fun cards() = shot("karten-390", detail = false, layout = DockerLayout(view = "cards"))
+
+    @Test
+    @Config(qualifiers = "de-w1280dp-h800dp-mdpi")
+    fun cardsWide() = shot("karten-1280", detail = false, layout = DockerLayout(view = "cards", size = "s"))
+
+    @Test
+    fun appAdvanced() = shot("app-erweitert-390", detail = true, advanced = true)
+
+    @Test
+    fun appBigFont() {
+        RuntimeEnvironment.setFontScale(2f)
+        shot("app-390-schrift200", detail = true)
+    }
+
+    @Test
+    fun install() {
+        val tpl = io.github.ra5on.titanos.docker.compose.TemplateInfo(
+            immichCompose.replace("# Immich\n", "x-titanos:\n  variables:\n    DB_PASSWORD:\n      secret: generate\n    TZ:\n      help: Zeitzone der App\n  paths:\n    /fotos:\n      suggest: media\n  ports:\n    \"2283\":\n      label: Weboberfläche\n      webui: true\n"),
+            "Europe/Berlin", 1000, 100, "/mnt/Data/appdata", listOf(2283 to "tcp"),
+        )
+        val form = io.github.ra5on.titanos.docker.compose.readTemplate(tpl, "immich-2", listOf(io.github.ra5on.titanos.docker.compose.ShareRef("Fotos", "/mnt/Data/Fotos")), mapOf("2283/tcp" to "immich · server")) { "GEHEIM" }
+        val api = DockerApi(access)
+        for (dark in listOf(true, false)) {
+            captureRoboImage("build/outputs/roborazzi/docker-installieren-${if (dark) "dunkel" else "hell"}.png") {
+                TitanTheme(dark = dark) {
+                    ProgramShell("Docker", "docker", "blue", emptyList(), "catalog", {}, {}) {
+                        io.github.ra5on.titanos.compute.ScrollPage {
+                            val problems = io.github.ra5on.titanos.docker.compose.checkInstall(form, listOf("immich"), mapOf("2283/tcp" to "immich · server"))
+                            InstallFields(api, tpl, form, problems, false, mapOf("2283/tcp" to "immich · server"), emptyList(), mapOf("server" to emptyList(), "db" to emptyList()), {}, { it ?: "System" }) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     @Test
     fun bigFont() {

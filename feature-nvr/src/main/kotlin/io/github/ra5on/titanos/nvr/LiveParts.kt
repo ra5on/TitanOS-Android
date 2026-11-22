@@ -1,5 +1,11 @@
 package io.github.ra5on.titanos.nvr
 
+import androidx.compose.ui.semantics.onClick
+
+import androidx.compose.ui.semantics.liveRegion
+
+import androidx.compose.foundation.focusable
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -103,7 +109,7 @@ fun ToolButton(icon: ImageVector, label: String, onClick: () -> Unit, on: Boolea
 /**
  * Eine Kamera der Live-Ansicht (LiveTile.svelte): Bild, Name im Bild, was sie
  * gerade sieht, der rote Punkt während sie aufnimmt, Knöpfe für Ton,
- * Schwenken und groß. Gegensprechen fehlt (siehe Bericht: kein WebRTC).
+ * Schwenken und groß. Gegensprechen: gedrückt halten (TalkButton, WebRTC wie talk.ts).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -190,6 +196,7 @@ fun LiveTile(
                         on = sound,
                         onWord = if (sound) onWord else offWord,
                     )
+                    if (camera.audio.twoWay && api != null) TalkButton(api, camera)
                     if (camera.ptz) ToolButton(NvrIcons.pan, t("nvr.ptz.of", "name" to camera.name), {
                         if (!ptzOpen && !roomForPad && onPtz != null) onPtz() else ptzOpen = !ptzOpen
                     }, on = ptzOpen, onWord = if (ptzOpen) onWord else offWord)
@@ -371,6 +378,140 @@ fun EventCard(event: NvrEvent, camera: String, onOpen: () -> Unit, modifier: Mod
                 Icon(TitanIcons.pin, null, tint = c.text, modifier = Modifier.size(14.dp))
                 Text(t("nvr.events.keptBadge"), style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = c.text)
             }
+        }
+    }
+}
+
+
+/**
+ * Drücken zum Sprechen (LiveTile.svelte, Gegensprechen): Halten öffnet beim
+ * ersten Mal Mikrofon und Verbindung und schaltet das Mikrofon frei,
+ * Loslassen schaltet es stumm; 30 s nach dem letzten Loslassen endet die
+ * Verbindung. Der Zustand steht in Worten da (nicht nur als Farbe), die
+ * Tastatur (Leertaste/Enter halten) geht auch. Das Mikrofon fragt Android
+ * beim ersten Drücken an.
+ */
+@Composable
+fun TalkButton(api: NvrApi, camera: Camera) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val c = Titan.colors
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var talk by remember(camera.id) { mutableStateOf<Talk?>(null) }
+    var talking by remember(camera.id) { mutableStateOf(false) }
+    var opening by remember(camera.id) { mutableStateOf(false) }
+    var problem by remember(camera.id) { mutableStateOf("") }
+    var held by remember(camera.id) { mutableStateOf(false) }
+    var idle by remember(camera.id) { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    fun end() {
+        idle?.cancel()
+        talk?.close()
+        talk = null
+        talking = false
+        opening = false
+    }
+    androidx.compose.runtime.DisposableEffect(camera.id) { onDispose { end() } }
+    fun press() {
+        held = true
+        problem = ""
+        idle?.cancel()
+        val current = talk
+        if (current != null) {
+            current.speak(true)
+            talking = true
+            return
+        }
+        if (opening) return
+        opening = true
+        scope.launch {
+            try {
+                var opened: Talk? = null
+                opened = Talk.open(context, api.access, camera.id) { p ->
+                    scope.launch {
+                        if (talk === opened) {
+                            talk = null
+                            talking = false
+                            problem = p
+                        }
+                    }
+                }
+                talk = opened
+                opening = false
+                if (held) {
+                    opened.speak(true)
+                    talking = true
+                } else {
+                    idle = scope.launch { kotlinx.coroutines.delay(30_000); end() }
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: TalkProblem) {
+                opening = false
+                problem = e.problem
+            } catch (e: Exception) {
+                opening = false
+                problem = "failed"
+            }
+        }
+    }
+    fun release() {
+        held = false
+        val current = talk ?: return
+        current.speak(false)
+        talking = false
+        idle?.cancel()
+        idle = scope.launch { kotlinx.coroutines.delay(30_000); end() }
+    }
+    val permission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok ->
+        if (!ok) problem = "denied"
+    }
+    fun allowed() = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    val label = t("nvr.talk.hold", "name" to camera.name)
+    val hint = t("nvr.talk.holdHint")
+    val state = when {
+        talking -> t("nvr.talk.speaking")
+        opening -> t("nvr.talk.opening")
+        else -> ""
+    }
+    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (state.isNotEmpty()) PictureNote(state, Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite })
+        if (problem.isNotEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                PictureNote(t("nvr.talk.$problem"), Modifier.semantics { liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Assertive })
+                ToolButton(TitanIcons.x, t("common.close"), { problem = "" })
+            }
+        }
+        Box(
+            Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(if (talking) c.accent else OverlayBg)
+                .pointerInput(camera.id) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false).consume()
+                        if (!allowed()) {
+                            permission.launch(android.Manifest.permission.RECORD_AUDIO)
+                            waitForUpOrCancellation()
+                            return@awaitEachGesture
+                        }
+                        press()
+                        waitForUpOrCancellation()
+                        release()
+                    }
+                }
+                .onKeyEvent { e ->
+                    val key = e.key == androidx.compose.ui.input.key.Key.Spacebar || e.key == androidx.compose.ui.input.key.Key.Enter
+                    if (!key) return@onKeyEvent false
+                    if (e.type == androidx.compose.ui.input.key.KeyEventType.KeyDown && !held) { if (allowed()) press() else permission.launch(android.Manifest.permission.RECORD_AUDIO) }
+                    if (e.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) release()
+                    true
+                }
+                .focusable()
+                .semantics {
+                    contentDescription = label
+                    stateDescription = state.ifEmpty { hint }
+                    role = Role.Button
+                    onClick(label) { if (talk == null) { if (allowed()) { press(); release() } else permission.launch(android.Manifest.permission.RECORD_AUDIO) } else end(); true }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(TitanIcons.mic, null, tint = if (talking) c.onAccent else Color.White, modifier = Modifier.size(20.dp))
         }
     }
 }

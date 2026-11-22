@@ -75,6 +75,24 @@ class DockerState(val api: DockerApi) {
     var status by mutableStateOf<DockerStatus?>(null)
     var error by mutableStateOf<Throwable?>(null)
     var busy by mutableStateOf(setOf<String>())
+    /** Ansicht der Seite für dieses Konto (/preferences/docker). */
+    var layout by mutableStateOf(DockerLayout())
+    var proxy by mutableStateOf<ProxyStatus?>(null)
+    /** Gerade offenes Installationsformular (Katalog-App oder eigener Container). */
+    var installing by mutableStateOf<InstallTarget?>(null)
+    /** Offene Editoren je App (bleiben beim Wechsel der Seite erhalten; Bildtests legen sie vorab an). */
+    val editors = HashMap<String, AppEditorState>()
+    /** App in der Fernansicht (PLAN 63). */
+    var remote by mutableStateOf<String?>(null)
+
+    /** Speichert die Ansicht; der Rest der gespeicherten Einstellung bleibt wie er ist. */
+    fun saveLayout(ui: ComputeUi, next: DockerLayout) {
+        val before = layout
+        layout = next
+        ui.run(onError = { e -> layout = before; ui.toast(ui.text("docker.layout.viewFailed", "error" to ui.errorOf(e))) }) {
+            api.preferencesDocker(next.toJson())
+        }
+    }
 
     suspend fun load() {
         try {
@@ -156,6 +174,14 @@ internal fun DockerProgram(env: ComputeEnv, onBack: () -> Unit) {
             Box(Modifier.padding(16.dp)) { Note(stringResource(io.github.ra5on.titanos.compute.R.string.compute_admin_only)) }
             return@ProgramShell
         }
+        state.remote?.let { app ->
+            RemoteViewPage(env.access, app) { state.remote = null }
+            return@ProgramShell
+        }
+        state.installing?.let { target ->
+            InstallPage(env, state, target, onClose = { state.installing = null }, onDone = { state.installing = null; section = "containers" })
+            return@ProgramShell
+        }
         when (section) {
             "images" -> ImagesPage(state.api)
             "volumes" -> VolumesPage(state.api)
@@ -173,12 +199,7 @@ private fun installMenu(ui: ComputeUi, state: DockerState, toCatalog: () -> Unit
         listOf(
             MenuEntry(ui.text("docker.fromCatalog"), TitanIcons.grid) { toCatalog() },
             MenuEntry(ui.text("docker.import"), TitanIcons.upload) { ui.sheet = { ImportSheet(state, "", "") } },
-            MenuEntry(ui.text("docker.ownContainer"), TitanIcons.plus) {
-                ui.run {
-                    val blank = state.api.blankTemplate()
-                    ui.sheet = { ImportSheet(state, "container", blank.compose) }
-                }
-            },
+            MenuEntry(ui.text("docker.ownContainer"), TitanIcons.plus) { state.installing = InstallTarget("", "", "") },
         ),
     )
 }
@@ -197,6 +218,7 @@ private fun pageMenu(ui: ComputeUi, state: DockerState) {
             } else null,
             MenuEntry(ui.text("autoUpdate.button"), TitanIcons.cal) { ui.sheet = { AutoUpdateSheet(state) } },
             MenuEntry(ui.text("docker.settings"), TitanIcons.gear) { ui.sheet = { SettingsSheet(state) } },
+            MenuEntry(ui.text("docker.layout.edit"), TitanIcons.grid) { layoutMenu(ui, state.layout) { state.saveLayout(ui, it) } },
         ),
     )
 }
@@ -211,6 +233,10 @@ internal fun updateApps(status: DockerStatus?): List<Pair<String, List<String>>>
 @Composable
 private fun ContainersPage(env: ComputeEnv, state: DockerState) {
     Poll(5_000) { state.load() }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        state.layout = state.api.layout()
+        state.proxy = state.api.proxy()
+    }
     var openId by rememberSaveable { mutableStateOf<String?>(null) }
     val status = state.status
     val groups = remember(status) { groupsOf(status?.containers.orEmpty(), status?.jobs.orEmpty()) }
@@ -274,7 +300,7 @@ internal fun ContainerList(env: ComputeEnv, state: DockerState, groups: List<Doc
         )
         Jobs(state, status)
         val q = search.trim().lowercase()
-        val shown = groups.filter { g ->
+        val shown = arrangedGroups(groups, state.layout).filter { g ->
             when (filter) {
                 "running" -> g.on
                 "stopped" -> g.state == RowState.Stopped
@@ -287,8 +313,14 @@ internal fun ContainerList(env: ComputeEnv, state: DockerState, groups: List<Doc
         } else if (shown.isEmpty()) {
             Text(t("docker.noMatch"), style = TitanType.body, color = Titan.colors.muted, modifier = Modifier.padding(16.dp))
         } else {
-            Card(Modifier.padding(top = 8.dp)) {
-                shown.forEachIndexed { i, g -> GroupRow(env, state, g, i > 0, onOpen) }
+            val context = LocalContext.current
+            val menu = { g: DockerGroup -> groupMenu(env, state, g, ui, context, onOpen, shown) }
+            if (state.layout.view == "cards") {
+                GroupCards(env, state, shown, state.layout, menu, onOpen)
+            } else {
+                Card(Modifier.padding(top = 8.dp)) {
+                    shown.forEachIndexed { i, g -> GroupRow(env, state, g, i > 0, onOpen, menu(g)) }
+                }
             }
         }
     }
@@ -355,13 +387,12 @@ internal fun Avatar(name: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun GroupRow(env: ComputeEnv, state: DockerState, g: DockerGroup, divider: Boolean, onOpen: (DockerGroup) -> Unit) {
+private fun GroupRow(env: ComputeEnv, state: DockerState, g: DockerGroup, divider: Boolean, onOpen: (DockerGroup) -> Unit, entries: List<MenuEntry>) {
     val c = Titan.colors
     val ui = LocalComputeUi.current
     val context = LocalContext.current
     val busy = "app:${g.name}" in state.busy
     val actionsTitle = t("docker.actionsFor", "name" to g.name)
-    val entries = groupMenu(env, state, g, ui, context, onOpen)
     Column(Modifier.fillMaxWidth()) {
         if (divider) Divider()
         Row(
@@ -415,16 +446,14 @@ internal fun groupAction(state: DockerState, ui: ComputeUi, g: DockerGroup, acti
 }
 
 /** Das Zeilenmenü wie RowMenu.svelte. */
-internal fun groupMenu(env: ComputeEnv, state: DockerState, g: DockerGroup, ui: ComputeUi, context: android.content.Context, onOpen: (DockerGroup) -> Unit): List<MenuEntry> {
+internal fun groupMenu(env: ComputeEnv, state: DockerState, g: DockerGroup, ui: ComputeUi, context: android.content.Context, onOpen: (DockerGroup) -> Unit, shown: List<DockerGroup> = emptyList()): List<MenuEntry> {
     val host = nasHost(env)
     val out = mutableListOf<MenuEntry>()
-    val primary = g.members.firstOrNull { it.webui.isNotEmpty() && it.running }
+    val chosen = state.layout.primaryServices[g.id]
+    val primary = stackPrimary(g, state.layout.primaryServices)
+    if (chosen != null && primary == null) out += MenuEntry(ui.text("docker.primaryMissing", "service" to chosen), null, enabled = false) {}
     if (primary != null) {
-        val url = appUrl(primary.webui, host)
-        if (url.isNotEmpty()) out += MenuEntry(ui.text("docker.table.open"), TitanIcons.globe) { openUrl(context, url) }
-        for (link in listOf(primary.proxyUrl, primary.tailnetUrl, primary.publicUrl).filter { it.startsWith("http") }) {
-            out += MenuEntry(link, TitanIcons.share) { openUrl(context, link) }
-        }
+        for (link in webLinks(primary, host)) out += MenuEntry(if (link.text == "WebUI") ui.text("docker.table.open") else link.url, if (link.text == "WebUI") TitanIcons.globe else TitanIcons.share) { openUrl(context, link.url) }
     }
     out += MenuEntry(ui.text("docker.restart"), TitanIcons.restart, enabled = g.on) { groupAction(state, ui, g, "restart") }
     if (g.on && g.members.size > 1) out += MenuEntry(ui.text("docker.stopAll"), TitanIcons.stop) { askStopAll(state, ui, g) }
@@ -440,6 +469,18 @@ internal fun groupMenu(env: ComputeEnv, state: DockerState, g: DockerGroup, ui: 
         out += MenuEntry(ui.text("docker.edit"), TitanIcons.edit) { onOpen(g) }
         if (g.update) out += MenuEntry(ui.text("docker.updateNow"), TitanIcons.update) { state.act(ui, "app:${g.app}", g.app) { state.api.updateApp(g.app) } }
     }
+    if (g.app.isNotEmpty()) out += MenuEntry(ui.text("docker.table.openRemote"), TitanIcons.grid) { state.remote = g.app }
+    if (g.members.size > 1) out += MenuEntry(ui.text("docker.stackLinks"), TitanIcons.globe) {
+        ui.sheet = { StackLinksSheet(state, g, state.layout) { next -> state.api.preferencesDocker(next.toJson()); state.layout = next } }
+    }
+    val proxy = state.proxy
+    if (proxy != null && g.app.isNotEmpty()) {
+        val published = inTailnet(proxy.apps.firstOrNull { it.app == g.app })
+        out += MenuEntry(ui.text(if (published) "docker.tailnetUnpublish" else "docker.tailnetPublish"), TitanIcons.globe) {
+            ui.sheet = { TailnetSheet(state.api, g.app, g.members, published) { ui.run { state.proxy = state.api.proxy(); state.load() } } }
+        }
+    }
+    out += moveEntries(ui, g, shown, state.layout) { state.saveLayout(ui, it) }
     out += MenuEntry(ui.text("docker.remove"), TitanIcons.trash, danger = true) {
         if (g.app.isNotEmpty()) ui.sheet = { RemoveAppSheet(state, g.app) } else askRemoveContainer(state, ui, g.members.first())
     }

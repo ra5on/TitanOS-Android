@@ -4,7 +4,7 @@ package io.github.ra5on.titanos.compute
 /** Schlüssel der Weboberfläche (z. B. `docker.start`) → Ressource in core-compute. */
 internal object WebKeys {
     val map: Map<String, Int> by lazy {
-        HashMap<String, Int>(8498).apply {
+        HashMap<String, Int>(8512).apply {
             part0(this)
             part1(this)
             part2(this)
@@ -866,6 +866,9 @@ internal object WebKeys {
         m["editor.jobLost"] = R.string.w_editor_jobLost
         m["editor.location"] = R.string.w_editor_location
         m["editor.network"] = R.string.w_editor_network
+        m["editor.network.bridge"] = R.string.w_editor_network_bridge
+        m["editor.network.host"] = R.string.w_editor_network_host
+        m["editor.network.none"] = R.string.w_editor_network_none
         m["editor.noContainers"] = R.string.w_editor_noContainers
         m["editor.noServices"] = R.string.w_editor_noServices
         m["editor.paths"] = R.string.w_editor_paths
@@ -880,6 +883,10 @@ internal object WebKeys {
         m["editor.readWrite"] = R.string.w_editor_readWrite
         m["editor.remove"] = R.string.w_editor_remove
         m["editor.restart"] = R.string.w_editor_restart
+        m["editor.restart.always"] = R.string.w_editor_restart_always
+        m["editor.restart.no"] = R.string.w_editor_restart_no
+        m["editor.restart.on-failure"] = R.string.w_editor_restart_on_failure
+        m["editor.restart.unless-stopped"] = R.string.w_editor_restart_unless_stopped
         m["editor.service"] = R.string.w_editor_service
         m["editor.title"] = R.string.w_editor_title
         m["editor.unchanged"] = R.string.w_editor_unchanged
@@ -923,6 +930,9 @@ internal object WebKeys {
         m["error.app_session_required"] = R.string.w_error_app_session_required
         m["error.app_unknown"] = R.string.w_error_app_unknown
         m["error.application_backup_running"] = R.string.w_error_application_backup_running
+    }
+
+    private fun part3(m: HashMap<String, Int>) {
         m["error.apps_unavailable"] = R.string.w_error_apps_unavailable
         m["error.attachment_not_text"] = R.string.w_error_attachment_not_text
         m["error.attachment_too_large"] = R.string.w_error_attachment_too_large
@@ -930,9 +940,6 @@ internal object WebKeys {
         m["error.backup_drive_lost"] = R.string.w_error_backup_drive_lost
         m["error.backup_failed"] = R.string.w_error_backup_failed
         m["error.backup_job_exists"] = R.string.w_error_backup_job_exists
-    }
-
-    private fun part3(m: HashMap<String, Int>) {
         m["error.backup_job_failed"] = R.string.w_error_backup_job_failed
         m["error.backup_job_not_found"] = R.string.w_error_backup_job_not_found
         m["error.backup_job_running"] = R.string.w_error_backup_job_running
@@ -1226,6 +1233,9 @@ internal object WebKeys {
         m["error.lan_exists"] = R.string.w_error_lan_exists
         m["error.lan_in_use"] = R.string.w_error_lan_in_use
         m["error.last_active_owner"] = R.string.w_error_last_active_owner
+    }
+
+    private fun part4(m: HashMap<String, Int>) {
         m["error.last_owner"] = R.string.w_error_last_owner
         m["error.length_required"] = R.string.w_error_length_required
         m["error.letsencrypt_busy"] = R.string.w_error_letsencrypt_busy
@@ -1233,9 +1243,6 @@ internal object WebKeys {
         m["error.locked"] = R.string.w_error_locked
         m["error.logs_failed"] = R.string.w_error_logs_failed
         m["error.lxc_busy"] = R.string.w_error_lxc_busy
-    }
-
-    private fun part4(m: HashMap<String, Int>) {
         m["error.lxc_creating"] = R.string.w_error_lxc_creating
         m["error.lxc_exists"] = R.string.w_error_lxc_exists
         m["error.lxc_failed"] = R.string.w_error_lxc_failed
@@ -1529,6 +1536,9 @@ internal object WebKeys {
         m["error.volume_exists"] = R.string.w_error_volume_exists
         m["error.volume_has_docker"] = R.string.w_error_volume_has_docker
         m["error.volume_has_lxc"] = R.string.w_error_volume_has_lxc
+    }
+
+    private fun part5(m: HashMap<String, Int>) {
         m["error.volume_has_maintenance"] = R.string.w_error_volume_has_maintenance
         m["error.volume_has_monitoring"] = R.string.w_error_volume_has_monitoring
         m["error.volume_has_plugins"] = R.string.w_error_volume_has_plugins
@@ -1536,9 +1546,6 @@ internal object WebKeys {
         m["error.volume_has_shares"] = R.string.w_error_volume_has_shares
         m["error.volume_has_vms"] = R.string.w_error_volume_has_vms
         m["error.volume_in_use"] = R.string.w_error_volume_in_use
-    }
-
-    private fun part5(m: HashMap<String, Int>) {
         m["error.volume_last_password"] = R.string.w_error_volume_last_password
         m["error.volume_locked"] = R.string.w_error_volume_locked
         m["error.volume_not_encrypted"] = R.string.w_error_volume_not_encrypted
@@ -1832,6 +1839,9 @@ internal object WebKeys {
         m["media.originalFile"] = R.string.w_media_originalFile
         m["media.pause"] = R.string.w_media_pause
         m["media.phase.cancelled"] = R.string.w_media_phase_cancelled
+    }
+
+    private fun part6(m: HashMap<String, Int>) {
         m["media.phase.done"] = R.string.w_media_phase_done
         m["media.phase.downloading"] = R.string.w_media_phase_downloading
         m["media.phase.extracting"] = R.string.w_media_phase_extracting
@@ -1839,9 +1849,6 @@ internal object WebKeys {
         m["media.phase.paused"] = R.string.w_media_phase_paused
         m["media.phase.pausing"] = R.string.w_media_phase_pausing
         m["media.phase.publishing"] = R.string.w_media_phase_publishing
-    }
-
-    private fun part6(m: HashMap<String, Int>) {
         m["media.phase.review"] = R.string.w_media_phase_review
         m["media.phase.uploading"] = R.string.w_media_phase_uploading
         m["media.phase.verifying"] = R.string.w_media_phase_verifying
@@ -2135,6 +2142,9 @@ internal object WebKeys {
         m["nvr.audio.none"] = R.string.w_nvr_audio_none
         m["nvr.audio.title"] = R.string.w_nvr_audio_title
         m["nvr.audio.twoWay"] = R.string.w_nvr_audio_twoWay
+    }
+
+    private fun part7(m: HashMap<String, Int>) {
         m["nvr.audio.twoWayHint"] = R.string.w_nvr_audio_twoWayHint
         m["nvr.audio.twoWayNeedsSound"] = R.string.w_nvr_audio_twoWayNeedsSound
         m["nvr.camera.checkFirst"] = R.string.w_nvr_camera_checkFirst
@@ -2142,9 +2152,6 @@ internal object WebKeys {
         m["nvr.camera.detection"] = R.string.w_nvr_camera_detection
         m["nvr.camera.enrichAvx"] = R.string.w_nvr_camera_enrichAvx
         m["nvr.camera.enrichMemory"] = R.string.w_nvr_camera_enrichMemory
-    }
-
-    private fun part7(m: HashMap<String, Int>) {
         m["nvr.camera.enrichNo"] = R.string.w_nvr_camera_enrichNo
         m["nvr.camera.host"] = R.string.w_nvr_camera_host
         m["nvr.camera.hostHint"] = R.string.w_nvr_camera_hostHint
@@ -2438,6 +2445,9 @@ internal object WebKeys {
         m["nvr.ha.state.armed_vacation"] = R.string.w_nvr_ha_state_armed_vacation
         m["nvr.ha.state.arming"] = R.string.w_nvr_ha_state_arming
         m["nvr.ha.state.below_horizon"] = R.string.w_nvr_ha_state_below_horizon
+    }
+
+    private fun part8(m: HashMap<String, Int>) {
         m["nvr.ha.state.closed"] = R.string.w_nvr_ha_state_closed
         m["nvr.ha.state.disarmed"] = R.string.w_nvr_ha_state_disarmed
         m["nvr.ha.state.home"] = R.string.w_nvr_ha_state_home
@@ -2445,9 +2455,6 @@ internal object WebKeys {
         m["nvr.ha.state.not_home"] = R.string.w_nvr_ha_state_not_home
         m["nvr.ha.state.off"] = R.string.w_nvr_ha_state_off
         m["nvr.ha.state.on"] = R.string.w_nvr_ha_state_on
-    }
-
-    private fun part8(m: HashMap<String, Int>) {
         m["nvr.ha.state.open"] = R.string.w_nvr_ha_state_open
         m["nvr.ha.state.pending"] = R.string.w_nvr_ha_state_pending
         m["nvr.ha.state.triggered"] = R.string.w_nvr_ha_state_triggered
@@ -2741,6 +2748,9 @@ internal object WebKeys {
         m["nvr.rights.live"] = R.string.w_nvr_rights_live
         m["nvr.rights.liveFor"] = R.string.w_nvr_rights_liveFor
         m["nvr.rights.names"] = R.string.w_nvr_rights_names
+    }
+
+    private fun part9(m: HashMap<String, Int>) {
         m["nvr.rights.namesFor"] = R.string.w_nvr_rights_namesFor
         m["nvr.rights.namesHint"] = R.string.w_nvr_rights_namesHint
         m["nvr.rights.noCameras"] = R.string.w_nvr_rights_noCameras
@@ -2748,9 +2758,6 @@ internal object WebKeys {
         m["nvr.rights.recordingsFor"] = R.string.w_nvr_rights_recordingsFor
         m["nvr.rights.title"] = R.string.w_nvr_rights_title
         m["nvr.rtsp.cameraIdExample"] = R.string.w_nvr_rtsp_cameraIdExample
-    }
-
-    private fun part9(m: HashMap<String, Int>) {
         m["nvr.rtsp.copy"] = R.string.w_nvr_rtsp_copy
         m["nvr.rtsp.hint"] = R.string.w_nvr_rtsp_hint
         m["nvr.rtsp.login"] = R.string.w_nvr_rtsp_login
@@ -3044,6 +3051,9 @@ internal object WebKeys {
         m["ops.selectTooMany"] = R.string.w_ops_selectTooMany
         m["ops.send"] = R.string.w_ops_send
         m["ops.skip"] = R.string.w_ops_skip
+    }
+
+    private fun part10(m: HashMap<String, Int>) {
         m["ops.snapshotBtrfsOnly"] = R.string.w_ops_snapshotBtrfsOnly
         m["ops.snapshotContent"] = R.string.w_ops_snapshotContent
         m["ops.snapshotHint"] = R.string.w_ops_snapshotHint
@@ -3051,9 +3061,6 @@ internal object WebKeys {
         m["ops.started"] = R.string.w_ops_started
         m["ops.state"] = R.string.w_ops_state
         m["ops.stop"] = R.string.w_ops_stop
-    }
-
-    private fun part10(m: HashMap<String, Int>) {
         m["ops.target"] = R.string.w_ops_target
         m["ops.tasks"] = R.string.w_ops_tasks
         m["ops.time"] = R.string.w_ops_time
@@ -3347,6 +3354,9 @@ internal object WebKeys {
         m["schedule.days.6"] = R.string.w_schedule_days_6
         m["schedule.days.workdays"] = R.string.w_schedule_days_workdays
         m["schedule.every"] = R.string.w_schedule_every
+    }
+
+    private fun part11(m: HashMap<String, Int>) {
         m["schedule.invalid"] = R.string.w_schedule_invalid
         m["schedule.kind"] = R.string.w_schedule_kind
         m["schedule.kind.advanced"] = R.string.w_schedule_kind_advanced
@@ -3354,9 +3364,6 @@ internal object WebKeys {
         m["schedule.kind.hourly"] = R.string.w_schedule_kind_hourly
         m["schedule.kind.minutes"] = R.string.w_schedule_kind_minutes
         m["schedule.kind.monthly"] = R.string.w_schedule_kind_monthly
-    }
-
-    private fun part11(m: HashMap<String, Int>) {
         m["schedule.kind.weekdays"] = R.string.w_schedule_kind_weekdays
         m["schedule.lastDay"] = R.string.w_schedule_lastDay
         m["schedule.minute"] = R.string.w_schedule_minute
@@ -3650,6 +3657,9 @@ internal object WebKeys {
         m["ui.taskBackup"] = R.string.w_ui_taskBackup
         m["ui.taskCopy"] = R.string.w_ui_taskCopy
         m["ui.taskUpdate"] = R.string.w_ui_taskUpdate
+    }
+
+    private fun part12(m: HashMap<String, Int>) {
         m["ui.taskUpload"] = R.string.w_ui_taskUpload
         m["ui.taskVM"] = R.string.w_ui_taskVM
         m["ui.taskVolume"] = R.string.w_ui_taskVolume
@@ -3657,9 +3667,6 @@ internal object WebKeys {
         m["ui.tasksBadge"] = R.string.w_ui_tasksBadge
         m["ui.tasksEmpty"] = R.string.w_ui_tasksEmpty
         m["ui.tasksHint"] = R.string.w_ui_tasksHint
-    }
-
-    private fun part12(m: HashMap<String, Int>) {
         m["ui.tasksHintShort"] = R.string.w_ui_tasksHintShort
         m["ui.tasksPartial"] = R.string.w_ui_tasksPartial
         m["ui.vmAccepted"] = R.string.w_ui_vmAccepted
@@ -3953,6 +3960,9 @@ internal object WebKeys {
         m["vms.form.pinNote"] = R.string.w_vms_form_pinNote
         m["vms.form.pinSummary"] = R.string.w_vms_form_pinSummary
         m["vms.form.presetE"] = R.string.w_vms_form_presetE
+    }
+
+    private fun part13(m: HashMap<String, Int>) {
         m["vms.form.presetNone"] = R.string.w_vms_form_presetNone
         m["vms.form.presetP"] = R.string.w_vms_form_presetP
         m["vms.form.requiredCompanions"] = R.string.w_vms_form_requiredCompanions
@@ -3960,9 +3970,6 @@ internal object WebKeys {
         m["vms.form.secure"] = R.string.w_vms_form_secure
         m["vms.form.secureChip"] = R.string.w_vms_form_secureChip
         m["vms.form.secureNote"] = R.string.w_vms_form_secureNote
-    }
-
-    private fun part13(m: HashMap<String, Int>) {
         m["vms.form.sizePresets"] = R.string.w_vms_form_sizePresets
         m["vms.form.step4"] = R.string.w_vms_form_step4
         m["vms.form.step5"] = R.string.w_vms_form_step5
@@ -4256,6 +4263,9 @@ internal object WebKeys {
         m["webapps.migrate.moreText"] = R.string.w_webapps_migrate_moreText
         m["webapps.migrate.never"] = R.string.w_webapps_migrate_never
         m["webapps.migrate.onNode"] = R.string.w_webapps_migrate_onNode
+    }
+
+    private fun part14(m: HashMap<String, Int>) {
         m["webapps.migrate.running"] = R.string.w_webapps_migrate_running
         m["webapps.migrate.title"] = R.string.w_webapps_migrate_title
         m["webapps.migrate.whyText"] = R.string.w_webapps_migrate_whyText
@@ -4263,9 +4273,6 @@ internal object WebKeys {
         m["webapps.office.kind.gridcraft"] = R.string.w_webapps_office_kind_gridcraft
         m["webapps.office.kind.pdfcraft"] = R.string.w_webapps_office_kind_pdfcraft
         m["webapps.office.kind.wordcraft"] = R.string.w_webapps_office_kind_wordcraft
-    }
-
-    private fun part14(m: HashMap<String, Int>) {
         m["webapps.openFailed"] = R.string.w_webapps_openFailed
         m["webapps.openTitle"] = R.string.w_webapps_openTitle
         m["webapps.overwrite"] = R.string.w_webapps_overwrite

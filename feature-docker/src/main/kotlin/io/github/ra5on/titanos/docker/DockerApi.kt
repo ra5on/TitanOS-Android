@@ -238,7 +238,15 @@ data class Template(
     val appdata: String = "",
     val missingDevices: List<String> = emptyList(),
     val cpuMissing: List<String> = emptyList(),
+    val listening: List<Listening> = emptyList(),
 )
+
+@Serializable
+data class Listening(val port: Int = 0, val protocol: String = "tcp")
+
+/** Eigenes Gerät einer Route im Tailnet (0.30.0 und neuer). */
+@Serializable
+data class RouteTailnet(val state: String = "", val url: String = "", val error: String = "")
 
 /** HTTPS-Name einer App (GET /docker/proxy, AppProxyRoute). */
 @Serializable
@@ -246,16 +254,36 @@ data class ProxyRoute(
     val app: String = "",
     val enabled: Boolean = false,
     val name: String = "",
+    val aliases: List<String> = emptyList(),
+    val domains: List<String> = emptyList(),
+    val short: Boolean = false,
+    val host: String = "",
     val port: Int = 0,
     val scheme: String = "http",
+    val verifyTLS: Boolean = false,
     val localOnly: Boolean = false,
+    val networks: List<String> = emptyList(),
+    val tailscale: Boolean = false,
+    val tailscaleName: String = "",
     val tailnetOnly: Boolean = false,
     val urls: List<String> = emptyList(),
     val auto: Boolean = false,
+    val tailnet: RouteTailnet? = null,
 )
 
 @Serializable
-data class ProxyStatus(val apps: List<ProxyRoute> = emptyList(), val off: Boolean = false, val tailnet: TailnetInfo? = null)
+data class ProxyStatus(
+    val domain: String = "",
+    val suffixes: List<String> = emptyList(),
+    val apps: List<ProxyRoute> = emptyList(),
+    val localName: String = "",
+    val defaultLocalName: String = "",
+    val mdns: Boolean = true,
+    val off: Boolean = false,
+    val targets: List<ProxyRoute> = emptyList(),
+    val tailnet: TailnetInfo? = null,
+    val auto: Boolean = false,
+)
 
 @Serializable
 data class TailnetInfo(val available: Boolean = false, val keySet: Boolean = false)

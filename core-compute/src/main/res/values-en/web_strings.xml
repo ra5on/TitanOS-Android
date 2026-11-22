@@ -837,6 +837,9 @@
     <string name="w_editor_jobLost">The apply job is no longer known (TitanOS may have restarted). Whether the change was applied is unknown – please check the state of the app.</string>
     <string name="w_editor_location">Configuration: {path}</string>
     <string name="w_editor_network">Network</string>
+    <string name="w_editor_network_bridge">bridge – ports of its own</string>
+    <string name="w_editor_network_host">host – the network of the NAS</string>
+    <string name="w_editor_network_none">none – no network</string>
     <string name="w_editor_noContainers">No container of this app is running right now.</string>
     <string name="w_editor_noServices">The compose file contains no services.</string>
     <string name="w_editor_paths">Paths</string>
@@ -851,6 +854,10 @@
     <string name="w_editor_readWrite">Read and write</string>
     <string name="w_editor_remove">Remove</string>
     <string name="w_editor_restart">Autostart (restart policy)</string>
+    <string name="w_editor_restart_always">Always</string>
+    <string name="w_editor_restart_no">No – stays stopped after a restart of the NAS</string>
+    <string name="w_editor_restart_on_failure">Only after a failure</string>
+    <string name="w_editor_restart_unless_stopped">Always, unless stopped by hand</string>
     <string name="w_editor_service">Service</string>
     <string name="w_editor_title">Edit {name}</string>
     <string name="w_editor_unchanged">No changes.</string>

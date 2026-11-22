@@ -105,7 +105,7 @@ fun NvrRoot(env: ComputeEnv, onBack: () -> Unit) {
 
 /** Welche Abschnitte ein Konto sieht (side.svelte.ts): Admin-Abschnitte nur für Besitzer und Administratoren. */
 fun nvrSections(admin: Boolean, cameras: List<Camera>): List<String> {
-    if (admin) return listOf("live", "recordings", "events", "cameras", "settings", "diagnosis")
+    if (admin) return listOf("live", "recordings", "events", "cameras", "rights", "settings", "diagnosis")
     val live = cameras.any { it.rights?.live == true }
     val rec = cameras.any { it.rights?.recordings == true }
     return buildList {
@@ -132,9 +132,9 @@ fun NvrApp(model: NvrModel, admin: Boolean, me: String, onBack: () -> Unit, open
     if (section !in keys && model.loaded) nav.go(keys.first())
     val icons = mapOf(
         "live" to TitanIcons.video, "recordings" to TitanIcons.play, "events" to TitanIcons.bell,
-        "cameras" to TitanIcons.grid, "settings" to TitanIcons.gear, "diagnosis" to TitanIcons.info,
+        "cameras" to TitanIcons.grid, "rights" to TitanIcons.user, "settings" to TitanIcons.gear, "diagnosis" to TitanIcons.info,
     )
-    val sections = keys.map { Section(it, t("nvr.menu.$it"), icons.getValue(it)) }
+    val sections = keys.map { Section(it, if (it == "rights") t("nvr.rights.title") else t("nvr.menu.$it"), icons.getValue(it)) }
     val scope = rememberCoroutineScope()
     ProgramShell(
         title = t("desktop.app.nvr"),
@@ -149,7 +149,7 @@ fun NvrApp(model: NvrModel, admin: Boolean, me: String, onBack: () -> Unit, open
         },
     ) {
         val status = model.status
-        val adminPage = section in setOf("cameras", "settings", "diagnosis")
+        val adminPage = section in setOf("cameras", "rights", "settings", "diagnosis")
         when {
             !model.loaded -> Loading()
             status == null || (status.state == "unavailable" && !status.enabled) ->
@@ -182,6 +182,7 @@ fun NvrApp(model: NvrModel, admin: Boolean, me: String, onBack: () -> Unit, open
                         "recordings" -> RecordingsPage(model, admin, nav)
                         "events" -> EventsPage(model, admin, nav)
                         "cameras" -> CamerasPage(model, me, nav)
+                        "rights" -> CameraRightsPage(model.api)
                         "settings" -> SettingsPage(model, nav)
                         else -> DiagnosisPage(model)
                     }

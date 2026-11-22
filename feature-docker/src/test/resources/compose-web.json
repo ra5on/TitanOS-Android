@@ -1,0 +1,1676 @@
+{
+ "scenarios": [
+  {
+   "id": "nextcloud",
+   "input": {
+    "id": "nextcloud",
+    "compose": "# Nextcloud mit Datenbank\nx-titanos:\n  main: app\n  icon: https://example.org/nextcloud.png\n  tips:\n    de: Zuerst die Datenbank starten lassen.\n    en: Let the database start first.\n  variables:\n    MYSQL_PASSWORD:\n      label: { de: Datenbank-Passwort, en: Database password }\n      secret: generate\n    NEXTCLOUD_ADMIN_USER:\n      label: Admin\n      required: true\n      placeholder: admin\n    NEXTCLOUD_ADMIN_PASSWORD:\n      secret: true\n      required: true\n    TZ:\n      help: Zeitzone\n  paths:\n    /var/www/html:\n      label: { de: Programm und Daten, en: App and data }\n    /media:\n      label: Medien\n      suggest: media\n  ports:\n    \"80\":\n      label: Weboberfläche\n      webui: true\nservices:\n  db:\n    image: mariadb:11\n    restart: unless-stopped\n    environment:\n      MYSQL_PASSWORD: \"\"\n      MYSQL_DATABASE: nextcloud\n    volumes:\n      - ./db:/var/lib/mysql # Datenbank\n  app:\n    image: nextcloud:30\n    restart: unless-stopped\n    environment:\n      - MYSQL_PASSWORD=\n      - MYSQL_HOST=db\n      - NEXTCLOUD_ADMIN_USER=\n      - NEXTCLOUD_ADMIN_PASSWORD=\n      - TZ=UTC\n      - PUID=1000\n    volumes:\n      - ./html:/var/www/html\n      - /mnt/Data/Medien:/media:ro\n      - cache:/cache\n    ports:\n      - \"8080:80\"\n      - 3478:3478/udp\n    devices:\n      - /dev/dri:/dev/dri\n      - /dev/ttyUSB0:/dev/ttyUSB0\n    labels:\n      titanos.webui: \"8080\"\nvolumes:\n  cache: {}\n",
+    "name": "nextcloud",
+    "shares": [
+     {
+      "name": "Medien",
+      "path": "/mnt/Data/Medien"
+     },
+     {
+      "name": "Dokumente",
+      "path": "/mnt/Data/Dokumente"
+     }
+    ],
+    "used": {
+     "8080/tcp": "",
+     "8081/tcp": "jellyfin"
+    },
+    "installed": [
+     "jellyfin"
+    ],
+    "edits": {
+     "vars": {
+      "NEXTCLOUD_ADMIN_USER": "chef",
+      "NEXTCLOUD_ADMIN_PASSWORD": "geheim!"
+     },
+     "paths": [
+      {
+       "i": 0,
+       "host": "/mnt/Data/nc"
+      }
+     ],
+     "own": {
+      "vars": [
+       {
+        "name": "TZ",
+        "value": "Europe/Vienna"
+       },
+       {
+        "name": "EXTRA",
+        "value": "1"
+       }
+      ],
+      "paths": [
+       {
+        "host": "/mnt/Data/x",
+        "container": "/x"
+       }
+      ],
+      "ports": [
+       {
+        "host": "9000",
+        "container": "9000",
+        "protocol": "tcp"
+       }
+      ],
+      "labels": [
+       {
+        "name": "a.b",
+        "value": "c"
+       }
+      ],
+      "devices": [
+       "/dev/net/tun"
+      ]
+     },
+     "cpuset": "0-1",
+     "memLimit": "2g",
+     "publicUrl": "https://cloud.example.org",
+     "hardware": {
+      "app": [
+       "intel-gpu"
+      ]
+     }
+    }
+   },
+   "casaCompose": null,
+   "read": {
+    "images": [
+     {
+      "service": "db",
+      "image": "mariadb:11"
+     },
+     {
+      "service": "app",
+      "image": "nextcloud:30"
+     }
+    ],
+    "publicUrl": "",
+    "name": "nextcloud",
+    "tips": {
+     "de": "Zuerst die Datenbank starten lassen.",
+     "en": "Let the database start first."
+    },
+    "risks": [],
+    "missingDevices": [
+     "/dev/ttyUSB0"
+    ],
+    "main": "app",
+    "vars": [
+     {
+      "service": "db",
+      "name": "MYSQL_PASSWORD",
+      "label": {
+       "de": "Datenbank-Passwort",
+       "en": "Database password"
+      },
+      "placeholder": "",
+      "value": "GEN_MYSQL_PASSWORD",
+      "origin": "generated",
+      "secret": true,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "db",
+      "name": "MYSQL_DATABASE",
+      "placeholder": "",
+      "value": "nextcloud",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "app",
+      "name": "MYSQL_HOST",
+      "placeholder": "",
+      "value": "db",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "app",
+      "name": "NEXTCLOUD_ADMIN_USER",
+      "label": "Admin",
+      "placeholder": "admin",
+      "value": "",
+      "origin": "required",
+      "secret": false,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "app",
+      "name": "NEXTCLOUD_ADMIN_PASSWORD",
+      "placeholder": "",
+      "value": "",
+      "origin": "required",
+      "secret": true,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "app",
+      "name": "TZ",
+      "help": "Zeitzone",
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "app",
+      "name": "PUID",
+      "placeholder": "",
+      "value": "1000",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "uid"
+     }
+    ],
+    "paths": [
+     {
+      "service": "db",
+      "index": 0,
+      "container": "/var/lib/mysql",
+      "template": "./db",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/nextcloud/db",
+      "touched": false
+     },
+     {
+      "service": "app",
+      "index": 0,
+      "container": "/var/www/html",
+      "label": {
+       "de": "Programm und Daten",
+       "en": "App and data"
+      },
+      "template": "./html",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/nextcloud/html",
+      "touched": false
+     },
+     {
+      "service": "app",
+      "index": 1,
+      "container": "/media",
+      "label": "Medien",
+      "template": "/mnt/Data/Medien",
+      "share": {
+       "name": "Medien",
+       "path": "/mnt/Data/Medien"
+      },
+      "wanted": true,
+      "host": "/mnt/Data/Medien",
+      "touched": false
+     }
+    ],
+    "ports": [
+     {
+      "service": "app",
+      "index": 0,
+      "container": "80",
+      "protocol": "tcp",
+      "label": "Weboberfläche",
+      "webui": true,
+      "templateHost": "8080",
+      "blockedBy": "",
+      "host": "8082"
+     },
+     {
+      "service": "app",
+      "index": 1,
+      "container": "3478",
+      "protocol": "udp",
+      "webui": false,
+      "templateHost": "3478",
+      "blockedBy": null,
+      "host": "3478"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "own": {
+     "vars": [],
+     "paths": [],
+     "ports": [],
+     "labels": [],
+     "devices": []
+    }
+   },
+   "problems": {
+    "images": [
+     false,
+     false
+    ],
+    "name": "",
+    "vars": [
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "paths": [
+     "",
+     "",
+     ""
+    ],
+    "ports": [
+     "",
+     ""
+    ],
+    "ownVars": [
+     "replaces",
+     ""
+    ],
+    "ownPaths": [
+     ""
+    ],
+    "ownPorts": [
+     ""
+    ],
+    "ownDevices": [
+     ""
+    ],
+    "cpuset": false,
+    "memLimit": false,
+    "missing": 0,
+    "blocking": false
+   },
+   "compose": "# Nextcloud mit Datenbank\nx-titanos:\n  main: app\n  icon: https://example.org/nextcloud.png\n  tips:\n    de: Zuerst die Datenbank starten lassen.\n    en: Let the database start first.\n  variables:\n    MYSQL_PASSWORD:\n      label: { de: Datenbank-Passwort, en: Database password }\n      secret: generate\n    NEXTCLOUD_ADMIN_USER:\n      label: Admin\n      required: true\n      placeholder: admin\n    NEXTCLOUD_ADMIN_PASSWORD:\n      secret: true\n      required: true\n    TZ:\n      help: Zeitzone\n  paths:\n    /var/www/html:\n      label: { de: Programm und Daten, en: App and data }\n    /media:\n      label: Medien\n      suggest: media\n  ports:\n    \"80\":\n      label: Weboberfläche\n      webui: true\nservices:\n  db:\n    image: mariadb:11\n    restart: unless-stopped\n    environment:\n      MYSQL_PASSWORD: ${MYSQL_PASSWORD}\n      MYSQL_DATABASE: nextcloud\n    volumes:\n      - \"/mnt/Data/nc:/var/lib/mysql\"\n  app:\n    image: nextcloud:30\n    restart: unless-stopped\n    environment:\n      MYSQL_PASSWORD: ${MYSQL_PASSWORD}\n      MYSQL_HOST: db\n      NEXTCLOUD_ADMIN_USER: chef\n      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}\n      TZ: Europe/Vienna\n      PUID: \"1000\"\n      EXTRA: \"1\"\n    volumes:\n      - \"./html:/var/www/html\"\n      - \"/mnt/Data/Medien:/media:ro\"\n      - cache:/cache\n      - \"/mnt/Data/x:/x\"\n    ports:\n      - \"8082:80\"\n      - \"3478:3478/udp\"\n      - \"9000:9000\"\n    devices:\n      - /dev/dri:/dev/dri\n      - /dev/net/tun\n    labels:\n      titanos.icon: https://example.org/nextcloud.png\n      a.b: c\n      titanos.webui: \"8082\"\n      titanos.public-url: https://cloud.example.org\n    cpuset: 0-1\n    mem_limit: 2g\n    x-titanos-hardware:\n      - intel-gpu\nvolumes:\n  cache: {}\n",
+   "env": {
+    "MYSQL_PASSWORD": "GEN_MYSQL_PASSWORD",
+    "NEXTCLOUD_ADMIN_PASSWORD": "geheim!"
+   },
+   "plain": {
+    "x-titanos": {
+     "main": "app",
+     "icon": "https://example.org/nextcloud.png",
+     "tips": {
+      "de": "Zuerst die Datenbank starten lassen.",
+      "en": "Let the database start first."
+     },
+     "variables": {
+      "MYSQL_PASSWORD": {
+       "label": {
+        "de": "Datenbank-Passwort",
+        "en": "Database password"
+       },
+       "secret": "generate"
+      },
+      "NEXTCLOUD_ADMIN_USER": {
+       "label": "Admin",
+       "required": true,
+       "placeholder": "admin"
+      },
+      "NEXTCLOUD_ADMIN_PASSWORD": {
+       "secret": true,
+       "required": true
+      },
+      "TZ": {
+       "help": "Zeitzone"
+      }
+     },
+     "paths": {
+      "/var/www/html": {
+       "label": {
+        "de": "Programm und Daten",
+        "en": "App and data"
+       }
+      },
+      "/media": {
+       "label": "Medien",
+       "suggest": "media"
+      }
+     },
+     "ports": {
+      "80": {
+       "label": "Weboberfläche",
+       "webui": true
+      }
+     }
+    },
+    "services": {
+     "db": {
+      "image": "mariadb:11",
+      "restart": "unless-stopped",
+      "environment": {
+       "MYSQL_PASSWORD": "${MYSQL_PASSWORD}",
+       "MYSQL_DATABASE": "nextcloud"
+      },
+      "volumes": [
+       "/mnt/Data/nc:/var/lib/mysql"
+      ]
+     },
+     "app": {
+      "image": "nextcloud:30",
+      "restart": "unless-stopped",
+      "environment": {
+       "MYSQL_PASSWORD": "${MYSQL_PASSWORD}",
+       "MYSQL_HOST": "db",
+       "NEXTCLOUD_ADMIN_USER": "chef",
+       "NEXTCLOUD_ADMIN_PASSWORD": "${NEXTCLOUD_ADMIN_PASSWORD}",
+       "TZ": "Europe/Vienna",
+       "PUID": "1000",
+       "EXTRA": "1"
+      },
+      "volumes": [
+       "./html:/var/www/html",
+       "/mnt/Data/Medien:/media:ro",
+       "cache:/cache",
+       "/mnt/Data/x:/x"
+      ],
+      "ports": [
+       "8082:80",
+       "3478:3478/udp",
+       "9000:9000"
+      ],
+      "devices": [
+       "/dev/dri:/dev/dri",
+       "/dev/net/tun"
+      ],
+      "labels": {
+       "titanos.icon": "https://example.org/nextcloud.png",
+       "a.b": "c",
+       "titanos.webui": "8082",
+       "titanos.public-url": "https://cloud.example.org"
+      },
+      "cpuset": "0-1",
+      "mem_limit": "2g",
+      "x-titanos-hardware": [
+       "intel-gpu"
+      ]
+     }
+    },
+    "volumes": {
+     "cache": {}
+    }
+   },
+   "casaPlain": null,
+   "hardware": {
+    "app": [
+     "intel-gpu"
+    ],
+    "db": []
+   }
+  },
+  {
+   "id": "anchors",
+   "input": {
+    "id": "anchors",
+    "compose": "x-common: &common\n  restart: always\n  environment: &env\n    TZ: Europe/Berlin\n    LOG: info\nservices:\n  web:\n    <<: *common\n    image: nginx:1.27\n    ports:\n      - target: 80\n        published: 8081\n        protocol: tcp\n    volumes:\n      - type: bind\n        source: ./site\n        target: /usr/share/nginx/html\n        read_only: true\n  worker:\n    <<: *common\n    image: busybox\n    environment: *env\n    command: [\"sh\", \"-c\", \"sleep infinity\"]\n",
+    "name": "web",
+    "shares": [],
+    "used": {},
+    "installed": [],
+    "edits": {
+     "images": {
+      "web": "nginx:1.28"
+     }
+    }
+   },
+   "casaCompose": null,
+   "read": {
+    "images": [
+     {
+      "service": "web",
+      "image": "nginx:1.27"
+     },
+     {
+      "service": "worker",
+      "image": "busybox"
+     }
+    ],
+    "publicUrl": "",
+    "name": "web",
+    "risks": [],
+    "missingDevices": [],
+    "main": "web",
+    "vars": [
+     {
+      "service": "web",
+      "name": "TZ",
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "web",
+      "name": "LOG",
+      "placeholder": "",
+      "value": "info",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "worker",
+      "name": "TZ",
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "worker",
+      "name": "LOG",
+      "placeholder": "",
+      "value": "info",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     }
+    ],
+    "paths": [
+     {
+      "service": "web",
+      "index": 0,
+      "container": "/usr/share/nginx/html",
+      "template": "./site",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/web/site",
+      "touched": false
+     }
+    ],
+    "ports": [
+     {
+      "service": "web",
+      "index": 0,
+      "container": "80",
+      "protocol": "tcp",
+      "webui": false,
+      "templateHost": "8081",
+      "blockedBy": null,
+      "host": "8081"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "own": {
+     "vars": [],
+     "paths": [],
+     "ports": [],
+     "labels": [],
+     "devices": []
+    }
+   },
+   "problems": {
+    "images": [
+     false,
+     false
+    ],
+    "name": "",
+    "vars": [
+     "",
+     "",
+     "",
+     ""
+    ],
+    "paths": [
+     ""
+    ],
+    "ports": [
+     ""
+    ],
+    "ownVars": [],
+    "ownPaths": [],
+    "ownPorts": [],
+    "ownDevices": [],
+    "cpuset": false,
+    "memLimit": false,
+    "missing": 0,
+    "blocking": false
+   },
+   "compose": "x-common: &common\n  restart: always\n  environment: &env\n    TZ: Europe/Berlin\n    LOG: info\nservices:\n  web:\n    <<: *common\n    image: nginx:1.28\n    ports:\n      - target: 80\n        published: 8081\n        protocol: tcp\n    volumes:\n      - type: bind\n        source: ./site\n        target: /usr/share/nginx/html\n        read_only: true\n  worker:\n    <<: *common\n    image: busybox\n    environment: *env\n    command: [ \"sh\", \"-c\", \"sleep infinity\" ]\n",
+   "env": {},
+   "plain": {
+    "x-common": {
+     "restart": "always",
+     "environment": {
+      "TZ": "Europe/Berlin",
+      "LOG": "info"
+     }
+    },
+    "services": {
+     "web": {
+      "restart": "always",
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "LOG": "info"
+      },
+      "image": "nginx:1.28",
+      "ports": [
+       {
+        "target": 80,
+        "published": 8081,
+        "protocol": "tcp"
+       }
+      ],
+      "volumes": [
+       {
+        "type": "bind",
+        "source": "./site",
+        "target": "/usr/share/nginx/html",
+        "read_only": true
+       }
+      ]
+     },
+     "worker": {
+      "restart": "always",
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "LOG": "info"
+      },
+      "image": "busybox",
+      "command": [
+       "sh",
+       "-c",
+       "sleep infinity"
+      ]
+     }
+    }
+   },
+   "casaPlain": null,
+   "hardware": {
+    "web": [],
+    "worker": []
+   }
+  },
+  {
+   "id": "casa",
+   "input": {
+    "id": "casa",
+    "compose": "name: big-bear-example\nservices:\n  app:\n    image: example/app:1\n    environment:\n      PUID: $PUID\n      PGID: ${PGID}\n      TZ: $TZ\n      TOKEN: \"[EUFY_USERNAME]\"\n      KEY: ${KEY:?Bitte den Schlüssel eintragen}\n      URL: http://[CASAOS_IP]:8000\n    volumes:\n      - /DATA/AppData/$AppID/data:/data\n      - /DATA/Media/Movies:/movies\n      - /DATA/Downloads:/downloads\n    ports:\n      - \"8000:8000\"\n      - 5353:5353/udp\n    x-casaos:\n      envs:\n        - container: TOKEN\n          description:\n            en_US: Your Eufy user name\n            de_DE: Dein Eufy-Benutzername\n        - container: TZ\n          description:\n            en_US: Container Variable TZ\n      volumes:\n        - container: /data\n          description:\n            en_US: App data\n      ports:\n        - container: \"8000\"\n          description:\n            en_US: Web UI\nx-casaos:\n  architectures: [amd64, arm64]\n  main: app\n  category: Networking\n  icon: https://example.org/icon.png\n  index: /admin\n  port_map: \"8000\"\n  tips:\n    before_install:\n      en_US: Read the docs first.\n  description:\n    en_US: |\n      A long text\n      over several lines.\n  title:\n    en_US: Example\n",
+    "casa": {
+     "appId": "example",
+     "ctx": {
+      "timezone": "Europe/Berlin",
+      "uid": 1000,
+      "gid": 100,
+      "host": "192.168.1.5"
+     }
+    },
+    "name": "example",
+    "shares": [
+     {
+      "name": "Medien",
+      "path": "/mnt/Data/Medien"
+     },
+     {
+      "name": "Dokumente",
+      "path": "/mnt/Data/Dokumente"
+     }
+    ],
+    "used": {
+     "8000/tcp": "other"
+    },
+    "installed": [],
+    "edits": {
+     "vars": {
+      "TOKEN": "me",
+      "KEY": "k"
+     }
+    }
+   },
+   "casaCompose": "name: big-bear-example\nservices:\n  app:\n    image: example/app:1\n    environment:\n      PUID: \"1000\"\n      PGID: \"100\"\n      TZ: Europe/Berlin\n      TOKEN: \"\"\n      KEY: \"\"\n      URL: http://192.168.1.5:8000\n    volumes:\n      - \"./data:/data\"\n      - \"./media/Movies:/movies\"\n      - \"./downloads:/downloads\"\n    ports:\n      - \"8000:8000\"\n      - 5353:5353/udp\n    labels:\n      titanos.webui: 8000/admin\nx-titanos:\n  icon: https://example.org/icon.png\n  main: app\n  tips:\n    en: Read the docs first.\n  variables:\n    TOKEN:\n      label:\n        en: Your Eufy user name\n        de: Dein Eufy-Benutzername\n      required: true\n      placeholder: \"[EUFY_USERNAME]\"\n    KEY:\n      required: true\n      placeholder: Bitte den Schlüssel eintragen\n  paths:\n    /data:\n      label:\n        en: App data\n    /movies:\n      suggest: media\n    /downloads:\n      suggest: share\n  ports:\n    \"8000\":\n      label:\n        en: Web UI\n      webui: true\n",
+   "read": {
+    "images": [
+     {
+      "service": "app",
+      "image": "example/app:1"
+     }
+    ],
+    "publicUrl": "",
+    "name": "example",
+    "tips": {
+     "en": "Read the docs first."
+    },
+    "risks": [],
+    "missingDevices": [],
+    "main": "app",
+    "vars": [
+     {
+      "service": "app",
+      "name": "PUID",
+      "placeholder": "",
+      "value": "1000",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "uid"
+     },
+     {
+      "service": "app",
+      "name": "PGID",
+      "placeholder": "",
+      "value": "100",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "gid"
+     },
+     {
+      "service": "app",
+      "name": "TZ",
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "app",
+      "name": "TOKEN",
+      "label": {
+       "en": "Your Eufy user name",
+       "de": "Dein Eufy-Benutzername"
+      },
+      "placeholder": "[EUFY_USERNAME]",
+      "value": "",
+      "origin": "required",
+      "secret": false,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "app",
+      "name": "KEY",
+      "placeholder": "Bitte den Schlüssel eintragen",
+      "value": "",
+      "origin": "required",
+      "secret": false,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "app",
+      "name": "URL",
+      "placeholder": "",
+      "value": "http://192.168.1.5:8000",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     }
+    ],
+    "paths": [
+     {
+      "service": "app",
+      "index": 0,
+      "container": "/data",
+      "label": {
+       "en": "App data"
+      },
+      "template": "./data",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/example/data",
+      "touched": false
+     },
+     {
+      "service": "app",
+      "index": 1,
+      "container": "/movies",
+      "template": "./media/Movies",
+      "share": {
+       "name": "Medien",
+       "path": "/mnt/Data/Medien"
+      },
+      "wanted": true,
+      "host": "/mnt/Data/Medien",
+      "touched": false
+     },
+     {
+      "service": "app",
+      "index": 2,
+      "container": "/downloads",
+      "template": "./downloads",
+      "share": null,
+      "wanted": true,
+      "host": "/mnt/Data/appdata/example/downloads",
+      "touched": false
+     }
+    ],
+    "ports": [
+     {
+      "service": "app",
+      "index": 0,
+      "container": "8000",
+      "protocol": "tcp",
+      "label": {
+       "en": "Web UI"
+      },
+      "webui": true,
+      "templateHost": "8000",
+      "blockedBy": "other",
+      "host": "8001"
+     },
+     {
+      "service": "app",
+      "index": 1,
+      "container": "5353",
+      "protocol": "udp",
+      "webui": false,
+      "templateHost": "5353",
+      "blockedBy": null,
+      "host": "5353"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "own": {
+     "vars": [],
+     "paths": [],
+     "ports": [],
+     "labels": [],
+     "devices": []
+    }
+   },
+   "problems": {
+    "images": [
+     false
+    ],
+    "name": "",
+    "vars": [
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "paths": [
+     "",
+     "",
+     ""
+    ],
+    "ports": [
+     "",
+     ""
+    ],
+    "ownVars": [],
+    "ownPaths": [],
+    "ownPorts": [],
+    "ownDevices": [],
+    "cpuset": false,
+    "memLimit": false,
+    "missing": 0,
+    "blocking": false
+   },
+   "compose": "name: big-bear-example\nservices:\n  app:\n    image: example/app:1\n    environment:\n      PUID: \"1000\"\n      PGID: \"100\"\n      TZ: Europe/Berlin\n      TOKEN: me\n      KEY: k\n      URL: http://192.168.1.5:8000\n    volumes:\n      - \"./data:/data\"\n      - \"/mnt/Data/Medien:/movies\"\n      - \"./downloads:/downloads\"\n    ports:\n      - \"8001:8000\"\n      - \"5353:5353/udp\"\n    labels:\n      titanos.icon: https://example.org/icon.png\n      titanos.webui: 8001/admin\nx-titanos:\n  icon: https://example.org/icon.png\n  main: app\n  tips:\n    en: Read the docs first.\n  variables:\n    TOKEN:\n      label:\n        en: Your Eufy user name\n        de: Dein Eufy-Benutzername\n      required: true\n      placeholder: \"[EUFY_USERNAME]\"\n    KEY:\n      required: true\n      placeholder: Bitte den Schlüssel eintragen\n  paths:\n    /data:\n      label:\n        en: App data\n    /movies:\n      suggest: media\n    /downloads:\n      suggest: share\n  ports:\n    \"8000\":\n      label:\n        en: Web UI\n      webui: true\n",
+   "env": {},
+   "plain": {
+    "name": "big-bear-example",
+    "services": {
+     "app": {
+      "image": "example/app:1",
+      "environment": {
+       "PUID": "1000",
+       "PGID": "100",
+       "TZ": "Europe/Berlin",
+       "TOKEN": "me",
+       "KEY": "k",
+       "URL": "http://192.168.1.5:8000"
+      },
+      "volumes": [
+       "./data:/data",
+       "/mnt/Data/Medien:/movies",
+       "./downloads:/downloads"
+      ],
+      "ports": [
+       "8001:8000",
+       "5353:5353/udp"
+      ],
+      "labels": {
+       "titanos.icon": "https://example.org/icon.png",
+       "titanos.webui": "8001/admin"
+      }
+     }
+    },
+    "x-titanos": {
+     "icon": "https://example.org/icon.png",
+     "main": "app",
+     "tips": {
+      "en": "Read the docs first."
+     },
+     "variables": {
+      "TOKEN": {
+       "label": {
+        "en": "Your Eufy user name",
+        "de": "Dein Eufy-Benutzername"
+       },
+       "required": true,
+       "placeholder": "[EUFY_USERNAME]"
+      },
+      "KEY": {
+       "required": true,
+       "placeholder": "Bitte den Schlüssel eintragen"
+      }
+     },
+     "paths": {
+      "/data": {
+       "label": {
+        "en": "App data"
+       }
+      },
+      "/movies": {
+       "suggest": "media"
+      },
+      "/downloads": {
+       "suggest": "share"
+      }
+     },
+     "ports": {
+      "8000": {
+       "label": {
+        "en": "Web UI"
+       },
+       "webui": true
+      }
+     }
+    }
+   },
+   "casaPlain": {
+    "name": "big-bear-example",
+    "services": {
+     "app": {
+      "image": "example/app:1",
+      "environment": {
+       "PUID": "1000",
+       "PGID": "100",
+       "TZ": "Europe/Berlin",
+       "TOKEN": "",
+       "KEY": "",
+       "URL": "http://192.168.1.5:8000"
+      },
+      "volumes": [
+       "./data:/data",
+       "./media/Movies:/movies",
+       "./downloads:/downloads"
+      ],
+      "ports": [
+       "8000:8000",
+       "5353:5353/udp"
+      ],
+      "labels": {
+       "titanos.webui": "8000/admin"
+      }
+     }
+    },
+    "x-titanos": {
+     "icon": "https://example.org/icon.png",
+     "main": "app",
+     "tips": {
+      "en": "Read the docs first."
+     },
+     "variables": {
+      "TOKEN": {
+       "label": {
+        "en": "Your Eufy user name",
+        "de": "Dein Eufy-Benutzername"
+       },
+       "required": true,
+       "placeholder": "[EUFY_USERNAME]"
+      },
+      "KEY": {
+       "required": true,
+       "placeholder": "Bitte den Schlüssel eintragen"
+      }
+     },
+     "paths": {
+      "/data": {
+       "label": {
+        "en": "App data"
+       }
+      },
+      "/movies": {
+       "suggest": "media"
+      },
+      "/downloads": {
+       "suggest": "share"
+      }
+     },
+     "ports": {
+      "8000": {
+       "label": {
+        "en": "Web UI"
+       },
+       "webui": true
+      }
+     }
+    }
+   },
+   "hardware": {
+    "app": []
+   }
+  },
+  {
+   "id": "plain",
+   "input": {
+    "id": "plain",
+    "compose": "services:\n  web:\n    image: traefik/whoami\n    ports:\n      - \"8080:80\"\n",
+    "name": "whoami",
+    "shares": [],
+    "used": {
+     "8080/tcp": ""
+    },
+    "installed": [
+     "whoami"
+    ],
+    "edits": {}
+   },
+   "casaCompose": null,
+   "read": {
+    "images": [
+     {
+      "service": "web",
+      "image": "traefik/whoami"
+     }
+    ],
+    "publicUrl": "",
+    "name": "whoami",
+    "risks": [],
+    "missingDevices": [],
+    "main": "web",
+    "vars": [],
+    "paths": [],
+    "ports": [
+     {
+      "service": "web",
+      "index": 0,
+      "container": "80",
+      "protocol": "tcp",
+      "webui": false,
+      "templateHost": "8080",
+      "blockedBy": "",
+      "host": "8081"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "own": {
+     "vars": [],
+     "paths": [],
+     "ports": [],
+     "labels": [],
+     "devices": []
+    }
+   },
+   "problems": {
+    "images": [
+     false
+    ],
+    "name": "exists",
+    "vars": [],
+    "paths": [],
+    "ports": [
+     ""
+    ],
+    "ownVars": [],
+    "ownPaths": [],
+    "ownPorts": [],
+    "ownDevices": [],
+    "cpuset": false,
+    "memLimit": false,
+    "missing": 0,
+    "blocking": true
+   },
+   "compose": "services:\n  web:\n    image: traefik/whoami\n    ports:\n      - \"8081:80\"\n",
+   "env": {},
+   "plain": {
+    "services": {
+     "web": {
+      "image": "traefik/whoami",
+      "ports": [
+       "8081:80"
+      ]
+     }
+    }
+   },
+   "casaPlain": null,
+   "hardware": {
+    "web": []
+   }
+  }
+ ],
+ "edits": [
+  {
+   "id": "anchors-web",
+   "input": "x-common: &common\n  restart: always\n  environment: &env\n    TZ: Europe/Berlin\n    LOG: info\nservices:\n  web:\n    <<: *common\n    image: nginx:1.27\n    ports:\n      - target: 80\n        published: 8081\n        protocol: tcp\n    volumes:\n      - type: bind\n        source: ./site\n        target: /usr/share/nginx/html\n        read_only: true\n  worker:\n    <<: *common\n    image: busybox\n    environment: *env\n    command: [\"sh\", \"-c\", \"sleep infinity\"]\n",
+   "service": "web",
+   "before": {
+    "image": "nginx:1.27",
+    "restart": "always",
+    "network": "bridge",
+    "privileged": false,
+    "hardware": [],
+    "webui": "",
+    "publicUrl": "",
+    "labels": [],
+    "env": [
+     {
+      "name": "TZ",
+      "value": "Europe/Berlin"
+     },
+     {
+      "name": "LOG",
+      "value": "info"
+     }
+    ],
+    "devices": [],
+    "cpuset": "",
+    "memLimit": "",
+    "paths": [
+     {
+      "host": "./site",
+      "container": "/usr/share/nginx/html",
+      "readOnly": true
+     }
+    ],
+    "ports": [
+     {
+      "host": "8081",
+      "container": "80",
+      "protocol": "tcp"
+     }
+    ]
+   },
+   "after": {
+    "image": "nginx:1.27",
+    "restart": "unless-stopped",
+    "network": "bridge",
+    "privileged": false,
+    "hardware": [],
+    "webui": "",
+    "publicUrl": "",
+    "labels": [],
+    "env": [
+     {
+      "name": "TZ",
+      "value": "Europe/Berlin"
+     },
+     {
+      "name": "LOG",
+      "value": "info"
+     },
+     {
+      "name": "NEW",
+      "value": "x"
+     }
+    ],
+    "devices": [],
+    "cpuset": "",
+    "memLimit": "",
+    "paths": [
+     {
+      "host": "./site",
+      "container": "/usr/share/nginx/html",
+      "readOnly": true
+     }
+    ],
+    "ports": [
+     {
+      "host": "9090",
+      "container": "80",
+      "protocol": "tcp"
+     }
+    ]
+   },
+   "compose": "x-common: &common\n  restart: always\n  environment: &env\n    TZ: Europe/Berlin\n    LOG: info\nservices:\n  web:\n    <<: *common\n    image: nginx:1.27\n    ports:\n      - \"9090:80\"\n    volumes:\n      - type: bind\n        source: ./site\n        target: /usr/share/nginx/html\n        read_only: true\n    restart: unless-stopped\n    environment:\n      TZ: Europe/Berlin\n      LOG: info\n      NEW: x\n  worker:\n    <<: *common\n    image: busybox\n    environment: *env\n    command: [ \"sh\", \"-c\", \"sleep infinity\" ]\n",
+   "plain": {
+    "x-common": {
+     "restart": "always",
+     "environment": {
+      "TZ": "Europe/Berlin",
+      "LOG": "info"
+     }
+    },
+    "services": {
+     "web": {
+      "restart": "unless-stopped",
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "LOG": "info",
+       "NEW": "x"
+      },
+      "image": "nginx:1.27",
+      "ports": [
+       "9090:80"
+      ],
+      "volumes": [
+       {
+        "type": "bind",
+        "source": "./site",
+        "target": "/usr/share/nginx/html",
+        "read_only": true
+       }
+      ]
+     },
+     "worker": {
+      "restart": "always",
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "LOG": "info"
+      },
+      "image": "busybox",
+      "command": [
+       "sh",
+       "-c",
+       "sleep infinity"
+      ]
+     }
+    }
+   },
+   "services": [
+    "web",
+    "worker"
+   ]
+  },
+  {
+   "id": "anchors-worker",
+   "input": "x-common: &common\n  restart: always\n  environment: &env\n    TZ: Europe/Berlin\n    LOG: info\nservices:\n  web:\n    <<: *common\n    image: nginx:1.27\n    ports:\n      - target: 80\n        published: 8081\n        protocol: tcp\n    volumes:\n      - type: bind\n        source: ./site\n        target: /usr/share/nginx/html\n        read_only: true\n  worker:\n    <<: *common\n    image: busybox\n    environment: *env\n    command: [\"sh\", \"-c\", \"sleep infinity\"]\n",
+   "service": "worker",
+   "before": {
+    "image": "busybox",
+    "restart": "always",
+    "network": "bridge",
+    "privileged": false,
+    "hardware": [],
+    "webui": "",
+    "publicUrl": "",
+    "labels": [],
+    "env": [
+     {
+      "name": "TZ",
+      "value": "Europe/Berlin"
+     },
+     {
+      "name": "LOG",
+      "value": "info"
+     }
+    ],
+    "devices": [],
+    "cpuset": "",
+    "memLimit": "",
+    "paths": [],
+    "ports": []
+   },
+   "after": {
+    "image": "busybox",
+    "restart": "always",
+    "network": "host",
+    "privileged": true,
+    "hardware": [],
+    "webui": "",
+    "publicUrl": "",
+    "labels": [],
+    "env": [
+     {
+      "name": "TZ",
+      "value": "Europe/Berlin"
+     }
+    ],
+    "devices": [],
+    "cpuset": "",
+    "memLimit": "",
+    "paths": [],
+    "ports": []
+   },
+   "compose": "x-common: &common\n  restart: always\n  environment: &env\n    TZ: Europe/Berlin\n    LOG: info\nservices:\n  web:\n    <<: *common\n    image: nginx:1.27\n    ports:\n      - target: 80\n        published: 8081\n        protocol: tcp\n    volumes:\n      - type: bind\n        source: ./site\n        target: /usr/share/nginx/html\n        read_only: true\n  worker:\n    <<: *common\n    image: busybox\n    environment:\n      TZ: Europe/Berlin\n    command: [ \"sh\", \"-c\", \"sleep infinity\" ]\n    network_mode: host\n    privileged: true\n",
+   "plain": {
+    "x-common": {
+     "restart": "always",
+     "environment": {
+      "TZ": "Europe/Berlin",
+      "LOG": "info"
+     }
+    },
+    "services": {
+     "web": {
+      "restart": "always",
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "LOG": "info"
+      },
+      "image": "nginx:1.27",
+      "ports": [
+       {
+        "target": 80,
+        "published": 8081,
+        "protocol": "tcp"
+       }
+      ],
+      "volumes": [
+       {
+        "type": "bind",
+        "source": "./site",
+        "target": "/usr/share/nginx/html",
+        "read_only": true
+       }
+      ]
+     },
+     "worker": {
+      "restart": "always",
+      "environment": {
+       "TZ": "Europe/Berlin"
+      },
+      "image": "busybox",
+      "command": [
+       "sh",
+       "-c",
+       "sleep infinity"
+      ],
+      "network_mode": "host",
+      "privileged": true
+     }
+    }
+   },
+   "services": [
+    "web",
+    "worker"
+   ]
+  },
+  {
+   "id": "nextcloud-app",
+   "input": "# Nextcloud mit Datenbank\nx-titanos:\n  main: app\n  icon: https://example.org/nextcloud.png\n  tips:\n    de: Zuerst die Datenbank starten lassen.\n    en: Let the database start first.\n  variables:\n    MYSQL_PASSWORD:\n      label: { de: Datenbank-Passwort, en: Database password }\n      secret: generate\n    NEXTCLOUD_ADMIN_USER:\n      label: Admin\n      required: true\n      placeholder: admin\n    NEXTCLOUD_ADMIN_PASSWORD:\n      secret: true\n      required: true\n    TZ:\n      help: Zeitzone\n  paths:\n    /var/www/html:\n      label: { de: Programm und Daten, en: App and data }\n    /media:\n      label: Medien\n      suggest: media\n  ports:\n    \"80\":\n      label: Weboberfläche\n      webui: true\nservices:\n  db:\n    image: mariadb:11\n    restart: unless-stopped\n    environment:\n      MYSQL_PASSWORD: \"\"\n      MYSQL_DATABASE: nextcloud\n    volumes:\n      - ./db:/var/lib/mysql # Datenbank\n  app:\n    image: nextcloud:30\n    restart: unless-stopped\n    environment:\n      - MYSQL_PASSWORD=\n      - MYSQL_HOST=db\n      - NEXTCLOUD_ADMIN_USER=\n      - NEXTCLOUD_ADMIN_PASSWORD=\n      - TZ=UTC\n      - PUID=1000\n    volumes:\n      - ./html:/var/www/html\n      - /mnt/Data/Medien:/media:ro\n      - cache:/cache\n    ports:\n      - \"8080:80\"\n      - 3478:3478/udp\n    devices:\n      - /dev/dri:/dev/dri\n      - /dev/ttyUSB0:/dev/ttyUSB0\n    labels:\n      titanos.webui: \"8080\"\nvolumes:\n  cache: {}\n",
+   "service": "app",
+   "before": {
+    "image": "nextcloud:30",
+    "restart": "unless-stopped",
+    "network": "bridge",
+    "privileged": false,
+    "hardware": [],
+    "webui": "8080",
+    "publicUrl": "",
+    "labels": [],
+    "env": [
+     {
+      "name": "MYSQL_PASSWORD",
+      "value": ""
+     },
+     {
+      "name": "MYSQL_HOST",
+      "value": "db"
+     },
+     {
+      "name": "NEXTCLOUD_ADMIN_USER",
+      "value": ""
+     },
+     {
+      "name": "NEXTCLOUD_ADMIN_PASSWORD",
+      "value": ""
+     },
+     {
+      "name": "TZ",
+      "value": "UTC"
+     },
+     {
+      "name": "PUID",
+      "value": "1000"
+     }
+    ],
+    "devices": [
+     {
+      "value": "/dev/dri:/dev/dri"
+     },
+     {
+      "value": "/dev/ttyUSB0:/dev/ttyUSB0"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "paths": [
+     {
+      "host": "./html",
+      "container": "/var/www/html",
+      "readOnly": false
+     },
+     {
+      "host": "/mnt/Data/Medien",
+      "container": "/media",
+      "readOnly": true
+     },
+     {
+      "host": "",
+      "container": "",
+      "readOnly": false,
+      "raw": "cache:/cache"
+     }
+    ],
+    "ports": [
+     {
+      "host": "8080",
+      "container": "80",
+      "protocol": "tcp"
+     },
+     {
+      "host": "3478",
+      "container": "3478",
+      "protocol": "udp"
+     }
+    ]
+   },
+   "after": {
+    "image": "nextcloud:30",
+    "restart": "unless-stopped",
+    "network": "bridge",
+    "privileged": false,
+    "hardware": [],
+    "webui": "8080/login",
+    "publicUrl": "",
+    "labels": [
+     {
+      "name": "x",
+      "value": "y"
+     }
+    ],
+    "env": [
+     {
+      "name": "MYSQL_PASSWORD",
+      "value": ""
+     },
+     {
+      "name": "MYSQL_HOST",
+      "value": "db"
+     },
+     {
+      "name": "NEXTCLOUD_ADMIN_USER",
+      "value": ""
+     },
+     {
+      "name": "NEXTCLOUD_ADMIN_PASSWORD",
+      "value": ""
+     },
+     {
+      "name": "TZ",
+      "value": "UTC"
+     },
+     {
+      "name": "PUID",
+      "value": "1000"
+     }
+    ],
+    "devices": [
+     {
+      "value": "/dev/dri:/dev/dri"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "1g",
+    "paths": [
+     {
+      "host": "./html",
+      "container": "/var/www/html",
+      "readOnly": false
+     },
+     {
+      "host": "/mnt/Data/Medien",
+      "container": "/media",
+      "readOnly": false
+     },
+     {
+      "host": "",
+      "container": "",
+      "readOnly": false,
+      "raw": "cache:/cache"
+     }
+    ],
+    "ports": [
+     {
+      "host": "8080",
+      "container": "80",
+      "protocol": "tcp"
+     },
+     {
+      "host": "3478",
+      "container": "3478",
+      "protocol": "udp"
+     }
+    ]
+   },
+   "compose": "# Nextcloud mit Datenbank\nx-titanos:\n  main: app\n  icon: https://example.org/nextcloud.png\n  tips:\n    de: Zuerst die Datenbank starten lassen.\n    en: Let the database start first.\n  variables:\n    MYSQL_PASSWORD:\n      label: { de: Datenbank-Passwort, en: Database password }\n      secret: generate\n    NEXTCLOUD_ADMIN_USER:\n      label: Admin\n      required: true\n      placeholder: admin\n    NEXTCLOUD_ADMIN_PASSWORD:\n      secret: true\n      required: true\n    TZ:\n      help: Zeitzone\n  paths:\n    /var/www/html:\n      label: { de: Programm und Daten, en: App and data }\n    /media:\n      label: Medien\n      suggest: media\n  ports:\n    \"80\":\n      label: Weboberfläche\n      webui: true\nservices:\n  db:\n    image: mariadb:11\n    restart: unless-stopped\n    environment:\n      MYSQL_PASSWORD: \"\"\n      MYSQL_DATABASE: nextcloud\n    volumes:\n      - ./db:/var/lib/mysql # Datenbank\n  app:\n    image: nextcloud:30\n    restart: unless-stopped\n    environment:\n      - MYSQL_PASSWORD=\n      - MYSQL_HOST=db\n      - NEXTCLOUD_ADMIN_USER=\n      - NEXTCLOUD_ADMIN_PASSWORD=\n      - TZ=UTC\n      - PUID=1000\n    volumes:\n      - \"./html:/var/www/html\"\n      - \"/mnt/Data/Medien:/media\"\n      - cache:/cache\n    ports:\n      - \"8080:80\"\n      - 3478:3478/udp\n    devices:\n      - /dev/dri:/dev/dri\n    labels:\n      x: y\n      titanos.webui: 8080/login\n    mem_limit: 1g\nvolumes:\n  cache: {}\n",
+   "plain": {
+    "x-titanos": {
+     "main": "app",
+     "icon": "https://example.org/nextcloud.png",
+     "tips": {
+      "de": "Zuerst die Datenbank starten lassen.",
+      "en": "Let the database start first."
+     },
+     "variables": {
+      "MYSQL_PASSWORD": {
+       "label": {
+        "de": "Datenbank-Passwort",
+        "en": "Database password"
+       },
+       "secret": "generate"
+      },
+      "NEXTCLOUD_ADMIN_USER": {
+       "label": "Admin",
+       "required": true,
+       "placeholder": "admin"
+      },
+      "NEXTCLOUD_ADMIN_PASSWORD": {
+       "secret": true,
+       "required": true
+      },
+      "TZ": {
+       "help": "Zeitzone"
+      }
+     },
+     "paths": {
+      "/var/www/html": {
+       "label": {
+        "de": "Programm und Daten",
+        "en": "App and data"
+       }
+      },
+      "/media": {
+       "label": "Medien",
+       "suggest": "media"
+      }
+     },
+     "ports": {
+      "80": {
+       "label": "Weboberfläche",
+       "webui": true
+      }
+     }
+    },
+    "services": {
+     "db": {
+      "image": "mariadb:11",
+      "restart": "unless-stopped",
+      "environment": {
+       "MYSQL_PASSWORD": "",
+       "MYSQL_DATABASE": "nextcloud"
+      },
+      "volumes": [
+       "./db:/var/lib/mysql"
+      ]
+     },
+     "app": {
+      "image": "nextcloud:30",
+      "restart": "unless-stopped",
+      "environment": [
+       "MYSQL_PASSWORD=",
+       "MYSQL_HOST=db",
+       "NEXTCLOUD_ADMIN_USER=",
+       "NEXTCLOUD_ADMIN_PASSWORD=",
+       "TZ=UTC",
+       "PUID=1000"
+      ],
+      "volumes": [
+       "./html:/var/www/html",
+       "/mnt/Data/Medien:/media",
+       "cache:/cache"
+      ],
+      "ports": [
+       "8080:80",
+       "3478:3478/udp"
+      ],
+      "devices": [
+       "/dev/dri:/dev/dri"
+      ],
+      "labels": {
+       "x": "y",
+       "titanos.webui": "8080/login"
+      },
+      "mem_limit": "1g"
+     }
+    },
+    "volumes": {
+     "cache": {}
+    }
+   },
+   "services": [
+    "db",
+    "app"
+   ]
+  },
+  {
+   "id": "plain-web",
+   "input": "services:\n  web:\n    image: traefik/whoami\n    ports:\n      - \"8080:80\"\n",
+   "service": "web",
+   "before": {
+    "image": "traefik/whoami",
+    "restart": "no",
+    "network": "bridge",
+    "privileged": false,
+    "hardware": [],
+    "webui": "",
+    "publicUrl": "",
+    "labels": [],
+    "env": [],
+    "devices": [],
+    "cpuset": "",
+    "memLimit": "",
+    "paths": [],
+    "ports": [
+     {
+      "host": "8080",
+      "container": "80",
+      "protocol": "tcp"
+     }
+    ]
+   },
+   "after": {
+    "image": "traefik/whoami",
+    "restart": "no",
+    "network": "bridge",
+    "privileged": false,
+    "hardware": [],
+    "webui": "",
+    "publicUrl": "",
+    "labels": [],
+    "env": [],
+    "devices": [],
+    "cpuset": "",
+    "memLimit": "",
+    "paths": [
+     {
+      "host": "./data",
+      "container": "/data",
+      "readOnly": true
+     }
+    ],
+    "ports": [
+     {
+      "host": "8080",
+      "container": "80",
+      "protocol": "tcp"
+     },
+     {
+      "host": "",
+      "container": "443",
+      "protocol": "tcp"
+     }
+    ]
+   },
+   "compose": "services:\n  web:\n    image: traefik/whoami\n    ports:\n      - \"8080:80\"\n      - \"443\"\n    volumes:\n      - \"./data:/data:ro\"\n",
+   "plain": {
+    "services": {
+     "web": {
+      "image": "traefik/whoami",
+      "ports": [
+       "8080:80",
+       "443"
+      ],
+      "volumes": [
+       "./data:/data:ro"
+      ]
+     }
+    }
+   },
+   "services": [
+    "web"
+   ]
+  }
+ ],
+ "lan": {
+  "input": "services:\n  app:\n    image: x\n    networks: [backend]\nnetworks:\n  backend: {}\n",
+  "out": {
+   "services": {
+    "app": {
+     "image": "x",
+     "networks": {
+      "backend": null,
+      "titanos_lan_home_lan": {
+       "ipv4_address": "192.168.1.50"
+      }
+     }
+    }
+   },
+   "networks": {
+    "backend": {},
+    "titanos_lan_home_lan": {
+     "external": true,
+     "name": "titanos-lan-home-lan"
+    }
+   }
+  },
+  "back": {
+   "services": {
+    "app": {
+     "image": "x",
+     "networks": {
+      "backend": null
+     }
+    }
+   },
+   "networks": {
+    "backend": {}
+   }
+  },
+  "assignment": {
+   "network": "home-lan",
+   "address": "192.168.1.50"
+  }
+ }
+}

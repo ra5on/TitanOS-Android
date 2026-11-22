@@ -837,6 +837,9 @@
     <string name="w_editor_jobLost">Der Auftrag zum Übernehmen ist nicht mehr bekannt (TitanOS wurde womöglich neu gestartet). Ob die Änderung angewendet wurde, ist offen – bitte den Zustand der App prüfen.</string>
     <string name="w_editor_location">Konfiguration: {path}</string>
     <string name="w_editor_network">Netzwerk</string>
+    <string name="w_editor_network_bridge">bridge – eigene Ports</string>
+    <string name="w_editor_network_host">host – Netzwerk des NAS</string>
+    <string name="w_editor_network_none">none – kein Netzwerk</string>
     <string name="w_editor_noContainers">Zu dieser App läuft gerade kein Container.</string>
     <string name="w_editor_noServices">Die Compose-Datei enthält keine Dienste.</string>
     <string name="w_editor_paths">Pfade</string>
@@ -851,6 +854,10 @@
     <string name="w_editor_readWrite">Lesen und schreiben</string>
     <string name="w_editor_remove">Entfernen</string>
     <string name="w_editor_restart">Autostart (Neustart-Richtlinie)</string>
+    <string name="w_editor_restart_always">Immer</string>
+    <string name="w_editor_restart_no">Nein – bleibt nach einem Neustart des NAS gestoppt</string>
+    <string name="w_editor_restart_on_failure">Nur nach einem Fehler</string>
+    <string name="w_editor_restart_unless_stopped">Immer, außer von Hand gestoppt</string>
     <string name="w_editor_service">Dienst</string>
     <string name="w_editor_title">{name} bearbeiten</string>
     <string name="w_editor_unchanged">Keine Änderungen.</string>
