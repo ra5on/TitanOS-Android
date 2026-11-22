@@ -90,15 +90,13 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
 @Composable
 private fun WorkspaceRoutes(graph: AppGraph, state: WorkspaceState) {
     val context = LocalContext.current
+    val labels = mapOf(
+        "vpn" to stringResource(io.github.ra5on.titanos.vpn.R.string.vpn_title),
+        "about" to stringResource(io.github.ra5on.titanos.home.R.string.home_menu_about),
+        PIM_SYNC to stringResource(io.github.ra5on.titanos.pim.R.string.sync_title),
+    )
     LaunchedEffect(state.programs) {
-        val extra = EXTRA.map { (id, glyph, gradient) ->
-            val label = when (id) {
-                "vpn" -> context.getString(io.github.ra5on.titanos.vpn.R.string.vpn_title)
-                "about" -> context.getString(io.github.ra5on.titanos.home.R.string.home_menu_about)
-                else -> context.getString(io.github.ra5on.titanos.pim.R.string.sync_title)
-            }
-            Program("app:$id", label, glyph, gradient, "android")
-        }
+        val extra = EXTRA.map { (id, glyph, gradient) -> Program("app:$id", labels.getValue(id), glyph, gradient, "android") }
         if (state.programs.isNotEmpty() && state.programs.none { it.key == "app:vpn" }) state.programs = state.programs + extra
     }
     LaunchedEffect(graph.openProgram) {

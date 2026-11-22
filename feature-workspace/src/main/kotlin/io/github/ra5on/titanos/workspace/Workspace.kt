@@ -86,6 +86,8 @@ fun Workspace(
     val prefs = state.store.prefs
     val focus = remember { FocusRequester() }
 
+    val photosLabel = androidx.compose.ui.res.stringResource(io.github.ra5on.titanos.ui.R.string.ui_nav_photos)
+    val notificationsLabel = androidx.compose.ui.res.stringResource(io.github.ra5on.titanos.ui.R.string.ui_nav_notifications)
     if (live) {
         LaunchedEffect(state) {
             state.store.load()
@@ -93,8 +95,8 @@ fun Workspace(
             if (recent.isNotEmpty()) state.store.change { it.copy(recent = recent) }
             val label = { id: String ->
                 when (id) {
-                    "photos" -> context.getString(io.github.ra5on.titanos.ui.R.string.ui_nav_photos)
-                    "notifications" -> context.getString(io.github.ra5on.titanos.ui.R.string.ui_nav_notifications)
+                    "photos" -> photosLabel
+                    "notifications" -> notificationsLabel
                     else -> context.webText("desktop.app.$id").replace("­", "")
                 }
             }

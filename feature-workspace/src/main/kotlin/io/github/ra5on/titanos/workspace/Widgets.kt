@@ -58,7 +58,6 @@ import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /** Zelle des Widget-Rasters (CELL im Web: 20 px). */
@@ -240,7 +239,7 @@ private fun ListRowButton(label: String, running: Boolean, onClick: () -> Unit) 
 internal fun WidgetBody(state: WorkspaceState, w: Widget) {
     val data = state.data
     val c = Titan.colors
-    val locale = Locale.getDefault()
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val scroll = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
     when (w.kind) {
         "status" -> Column(scroll) {

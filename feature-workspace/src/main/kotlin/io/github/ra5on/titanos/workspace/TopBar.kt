@@ -47,7 +47,6 @@ import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 
 /** Höhe der oberen Leiste je Größe (barSize im Web: 34/40/48 px). */
 fun barHeight(size: String): Dp = when (size) {
@@ -176,7 +175,7 @@ private fun Status(state: WorkspaceState, compact: Boolean = false, tiny: Boolea
             delay(15_000)
         }
     }
-    val locale = Locale.getDefault()
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     if (state.store.prefs.barLoad && data.cpu != null && !compact) {
         val cpu = Format.percent((data.cpu ?: 0.0) / 100.0)
         val ram = Format.percent(data.memFraction)
