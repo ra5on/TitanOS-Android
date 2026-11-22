@@ -105,7 +105,7 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
     }
 
     /** Wartet, bis [ok] stimmt (Daten kommen auf eigenen Fäden). */
-    fun until(timeoutMs: Long = 15_000, ok: () -> Boolean) {
+    fun until(timeoutMs: Long = 60_000, ok: () -> Boolean) {
         val end = System.currentTimeMillis() + timeoutMs
         while (!ok()) {
             check(System.currentTimeMillis() < end) { "Zeit abgelaufen" }

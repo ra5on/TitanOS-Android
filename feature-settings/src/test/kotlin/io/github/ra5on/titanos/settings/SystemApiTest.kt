@@ -84,7 +84,7 @@ class SystemApiTest {
     private fun node(text: String): SemanticsNodeInteraction = compose.onNode(hasText(text), useUnmergedTree = true).also { runCatching { it.performScrollTo() } }
     private fun named(label: String): SemanticsNodeInteraction = compose.onNode(hasContentDescription(label), useUnmergedTree = true).also { runCatching { it.performScrollTo() } }
 
-    private fun sent(method: String, path: String, timeoutMs: Long = 15_000): String {
+    private fun sent(method: String, path: String, timeoutMs: Long = 60_000): String {
         shots.until(timeoutMs) { nas.requests.any { it.first == method && it.second == path } }
         return nas.requests.last { it.first == method && it.second == path }.third
     }

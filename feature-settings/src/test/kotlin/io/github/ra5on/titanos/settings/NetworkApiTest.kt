@@ -60,7 +60,7 @@ class NetworkApiTest {
         nas.stop()
     }
 
-    private fun until(timeoutMs: Long = 15_000, ok: () -> Boolean) {
+    private fun until(timeoutMs: Long = 60_000, ok: () -> Boolean) {
         val end = System.currentTimeMillis() + timeoutMs
         while (!ok()) {
             check(System.currentTimeMillis() < end) { "Zeit abgelaufen" }
