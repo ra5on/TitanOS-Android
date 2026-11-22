@@ -73,30 +73,31 @@ class StatusTileService : TileService() {
                 )
                 .build()
 
+        /** Eine Zeile der Kachel: Text, Größe (sp), Farbe, fett. */
+        data class Line(val text: String, val size: Float, val color: Int, val bold: Boolean = false)
+
+        /** Was die Kachel zeigt, Zeile für Zeile; Zustand mit Zeichen und Wort, nie nur Farbe. */
+        fun lines(context: Context, s: WatchStatus?, paired: Boolean, stale: Boolean): List<Line> {
+            val white = 0xFFE6E9ED.toInt()
+            val muted = 0xFFB4BCC5.toInt()
+            val name = context.getString(R.string.w_app_name)
+            return when {
+                !paired -> listOf(Line(name, 16f, white, true), Line(context.getString(R.string.w_tile_unpaired), 13f, muted))
+                s == null -> listOf(Line(name, 16f, white, true), Line(context.getString(R.string.w_err_reach), 13f, muted))
+                else -> buildList {
+                    add(Line(s.hostname.ifBlank { name }, 16f, white, true))
+                    add(Line((if (s.ok) "✓ " else "! ") + context.getString(statusWord(s)), 14f, if (s.ok) 0xFF9BE3BE.toInt() else 0xFFF6D79A.toInt()))
+                    s.usedPercent?.let { add(Line(context.getString(R.string.w_tile_storage, it, Format.bytes(s.freeBytes)), 13f, white)) }
+                    if (s.newMessages > 0) add(Line(context.resources.getQuantityString(R.plurals.w_new_messages, s.newMessages, s.newMessages), 13f, white))
+                    if (stale) add(Line(context.getString(R.string.w_stale, time(s.at)), 11f, muted))
+                }
+            }
+        }
+
         /** Der Inhalt der Kachel; tippen öffnet die App. */
         fun layout(context: Context, s: WatchStatus?, paired: Boolean, stale: Boolean): LayoutElementBuilders.LayoutElement {
             val col = LayoutElementBuilders.Column.Builder().setWidth(expand()).setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
-            val white = 0xFFE6E9ED.toInt()
-            val muted = 0xFFB4BCC5.toInt()
-            when {
-                !paired -> {
-                    col.addContent(text(context.getString(R.string.w_app_name), 16f, white, bold = true))
-                    col.addContent(text(context.getString(R.string.w_tile_unpaired), 13f, muted))
-                }
-                s == null -> {
-                    col.addContent(text(context.getString(R.string.w_app_name), 16f, white, bold = true))
-                    col.addContent(text(context.getString(R.string.w_err_reach), 13f, muted))
-                }
-                else -> {
-                    col.addContent(text(s.hostname.ifBlank { context.getString(R.string.w_app_name) }, 16f, white, bold = true))
-                    // Zeichen und Wort, nie nur Farbe.
-                    val mark = if (s.ok) "✓ " else "! "
-                    col.addContent(text(mark + context.getString(statusWord(s)), 14f, if (s.ok) 0xFF9BE3BE.toInt() else 0xFFF6D79A.toInt()))
-                    s.usedPercent?.let { col.addContent(text(context.getString(R.string.w_tile_storage, it, Format.bytes(s.freeBytes)), 13f, white)) }
-                    if (s.newMessages > 0) col.addContent(text(context.resources.getQuantityString(R.plurals.w_new_messages, s.newMessages, s.newMessages), 13f, white))
-                    if (stale) col.addContent(text(context.getString(R.string.w_stale, time(s.at)), 11f, muted))
-                }
-            }
+            for (l in lines(context, s, paired, stale)) col.addContent(text(l.text, l.size, l.color, l.bold))
             val open = ActionBuilders.LaunchAction.Builder()
                 .setAndroidActivity(ActionBuilders.AndroidActivity.Builder().setPackageName(context.packageName).setClassName(MainActivity::class.java.name).build())
                 .build()

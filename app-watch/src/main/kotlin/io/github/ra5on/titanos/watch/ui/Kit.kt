@@ -1,7 +1,6 @@
 package io.github.ra5on.titanos.watch.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,11 +10,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -92,44 +95,56 @@ fun WText(
     center: Boolean = false,
 ) {
     val base = style.copy(hyphens = Hyphens.None, lineBreak = LineBreak.Paragraph)
-    BoxWithConstraints(modifier) {
-        // Ganze Wörter: passt das längste Wort bei großer Schrift nicht in die
-        // Breite, wird nur dieser Text so weit kleiner, dass es passt – statt
-        // es mitten im Wort zu trennen.
-        val measurer = rememberTextMeasurer()
-        val width = constraints.maxWidth
-        val fitted = remember(text, base, width) {
-            if (!constraints.hasBoundedWidth || !base.fontSize.isSp) {
-                base
-            } else {
-                val widest = text.split(wordGaps).filter { it.isNotEmpty() }
-                    .maxOfOrNull { measurer.measure(it, base, softWrap = false).size.width } ?: 0
-                if (widest <= width) {
-                    base
-                } else {
-                    val f = width.toFloat() / widest * 0.97f
-                    base.copy(
-                        fontSize = base.fontSize * f,
-                        lineHeight = if (base.lineHeight.isSp) base.lineHeight * f else base.lineHeight,
-                        letterSpacing = if (base.letterSpacing.isSp) base.letterSpacing * f else base.letterSpacing,
-                    )
-                }
-            }
-        }
-        CompositionLocalProvider(LocalTextConfiguration provides if (center) unlimitedCentered else unlimited) {
-            Text(
-                text,
-                modifier = if (center) Modifier.fillMaxWidth() else Modifier,
-                color = color,
-                style = fitted,
-                textAlign = if (center) TextAlign.Center else TextAlign.Start,
+    // Ganze Wörter: passt das längste Wort bei großer Schrift nicht in die
+    // Breite, wird nur dieser Text so weit kleiner, dass es passt – statt es
+    // mitten im Wort zu trennen. Die Breite kommt aus dem Layout (Wear-Knöpfe
+    // messen ihren Inhalt vorab, BoxWithConstraints geht dort nicht).
+    var avail by remember { mutableIntStateOf(0) }
+    val measurer = rememberTextMeasurer()
+    val fitted = remember(text, base, avail) {
+        if (avail <= 0 || !base.fontSize.isSp) {
+            base
+        } else {
+            val words = text.split(wordGaps).filter { it.isNotEmpty() }
+            fun scaled(f: Float) = base.copy(
+                fontSize = base.fontSize * f,
+                lineHeight = if (base.lineHeight.isSp) base.lineHeight * f else base.lineHeight,
+                letterSpacing = if (base.letterSpacing.isSp) base.letterSpacing * f else base.letterSpacing,
             )
+            fun widest(st: TextStyle) = words.maxOfOrNull { measurer.measure(it, st, softWrap = false).size.width } ?: 0
+            // Große Schrift wächst nicht linear (Android 14+): schrittweise kleiner, bis das Wort passt.
+            var f = 1f
+            var w = widest(base)
+            var tries = 0
+            while (w > avail && tries < 12) {
+                f *= (avail.toFloat() / w) * 0.97f
+                w = widest(scaled(f))
+                tries++
+            }
+            if (f == 1f) base else scaled(f)
         }
+    }
+    CompositionLocalProvider(LocalTextConfiguration provides if (center) unlimitedCentered else unlimited) {
+        Text(
+            text,
+            modifier = modifier
+                .layout { measurable, constraints ->
+                    // Nur kleiner werden: misst ein Baustein zweimal mit verschiedener Breite,
+                    // pendelt der Text sonst endlos hin und her. Es gilt die engste.
+                    if (constraints.hasBoundedWidth && (avail == 0 || constraints.maxWidth < avail)) avail = constraints.maxWidth
+                    val placeable = measurable.measure(constraints)
+                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                }
+                .then(if (center) Modifier.fillMaxWidth() else Modifier),
+            color = color,
+            style = fitted,
+            textAlign = if (center) TextAlign.Center else TextAlign.Start,
+        )
     }
 }
 
-/** Wo eine Zeile umbrechen darf: Leerzeichen, Zeilenende, nach einem Bindestrich. */
-private val wordGaps = Regex("""\s+|(?<=-)""")
+/** Wo eine Zeile umbrechen darf: Leerzeichen und Zeilenende (Wörter mit Bindestrich bleiben ganz). */
+private val wordGaps = Regex("""\s+""")
 
 /** Eine Seite der Uhr: rund oder eckig, scrollt, alles untereinander. */
 @Composable

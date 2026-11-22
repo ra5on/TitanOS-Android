@@ -78,4 +78,17 @@ class StatusTest {
         val e = runCatching { api().haEntities() }.exceptionOrNull()
         assertTrue(e?.isHidden() == true)
     }
+
+    @Test
+    @org.robolectric.annotation.Config(qualifiers = "de")
+    fun tileShowsStateInWordsAndSign() {
+        val ctx = RuntimeEnvironment.getApplication()
+        val status = WatchStatus("titanos", "1.19", 1, listOf(VolumeProblem("Daten", "degraded")), 610, 1000, 2, 1, "Platte fehlt", 0)
+        val text = io.github.ra5on.titanos.watch.tile.StatusTileService.lines(ctx, status, paired = true, stale = true).joinToString("|") { it.text }.also { io.github.ra5on.titanos.watch.tile.StatusTileService.layout(ctx, status, true, true) }
+        assertTrue(text, text.contains("! Speicher braucht Hilfe"))
+        assertTrue(text, text.contains("2 neue Meldungen"))
+        assertTrue(text, text.contains("Stand"))
+        val unpaired = io.github.ra5on.titanos.watch.tile.StatusTileService.lines(ctx, null, paired = false, stale = true).joinToString("|") { it.text }
+        assertTrue(unpaired, unpaired.contains("Noch nicht gekoppelt"))
+    }
 }
