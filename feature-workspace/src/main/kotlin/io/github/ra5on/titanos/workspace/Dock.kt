@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
@@ -126,8 +127,11 @@ internal fun BoxScope.DockBar(state: WorkspaceState) {
             }
             val windows = wm.windows.filter { it.app == key }
             DockButton(state, key, vertical, scaleOf(key), { centre -> centres[key] = centre }) {
+                var focused by remember(key) { mutableStateOf(false) }
                 Box(
                     Modifier.size(iconDp.dp)
+                        // Tastatur: Rahmen in der Akzentfarbe, solange das Symbol den Fokus hat.
+                        .border(2.dp, if (focused) Titan.colors.accent else Color.Transparent, RoundedCornerShape(12.dp))
                         .pointerInput(key) {
                             awaitEachGesture {
                                 val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -159,6 +163,7 @@ internal fun BoxScope.DockBar(state: WorkspaceState) {
                                 false
                             }
                         }
+                        .onFocusChanged { focused = it.isFocused }
                         .focusable(),
                     contentAlignment = Alignment.Center,
                 ) {
