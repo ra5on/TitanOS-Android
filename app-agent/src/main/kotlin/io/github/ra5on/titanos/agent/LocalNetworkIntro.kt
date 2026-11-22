@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -49,6 +51,8 @@ object LocalNetworkIntro {
     }
 }
 
+private val MAX = 600.dp
+
 @Composable
 fun LocalNetworkIntroScreen(onDone: (granted: Boolean) -> Unit) {
     val context = LocalContext.current
@@ -61,7 +65,7 @@ fun LocalNetworkIntroScreen(onDone: (granted: Boolean) -> Unit) {
         topBar = { Box(Modifier.statusBarsPadding()) },
         bottomBar = {
             Column(
-                Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+                Modifier.fillMaxWidth().wrapContentWidth().widthIn(max = MAX).navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 TitanButton(stringResource(PairR.string.pair_local_network_allow), { ask.launch(LOCAL_NETWORK) }, Modifier.fillMaxWidth(), ButtonKind.Primary)
@@ -72,11 +76,14 @@ fun LocalNetworkIntroScreen(onDone: (granted: Boolean) -> Unit) {
             }
         },
     ) {
-        Column(Modifier.fillMaxWidth().padding(top = 32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            AppIcon("shares", "yellow", 72.dp)
-            BigTitle(stringResource(PairR.string.perm_local))
+        // Am Tablet und Monitor eine lesbare Spalte statt über die ganze Breite.
+        Column(Modifier.fillMaxWidth().wrapContentWidth().widthIn(max = MAX)) {
+            Column(Modifier.fillMaxWidth().padding(top = 32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                AppIcon("shares", "yellow", 72.dp)
+                BigTitle(stringResource(PairR.string.perm_local))
+            }
+            Text(stringResource(R.string.agent_local_text), style = TitanType.body, color = c.text, modifier = Modifier.padding(top = 8.dp))
+            Note(stringResource(R.string.agent_local_note), Modifier.padding(top = 14.dp))
         }
-        Text(stringResource(R.string.agent_local_text), style = TitanType.body, color = c.text, modifier = Modifier.padding(top = 8.dp))
-        Note(stringResource(R.string.agent_local_note), Modifier.padding(top = 14.dp))
     }
 }
