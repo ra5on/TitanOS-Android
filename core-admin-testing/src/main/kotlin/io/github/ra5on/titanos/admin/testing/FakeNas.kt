@@ -26,6 +26,19 @@ data class Seen(val method: String, val path: String, val body: String)
  * und ohne eigene Regel mit `{}` beantwortet.
  */
 class FakeNas : AutoCloseable {
+    companion object {
+        /** Die zuletzt ausgelieferten Antworten (aller nachgebauten NAS des Tests); sie sind Daten, keine Textschlüssel. */
+        private val served: MutableList<String> = Collections.synchronizedList(mutableListOf())
+
+        internal fun remember(body: String) = synchronized(served) {
+            served.add(body)
+            while (served.size > 400) served.removeAt(0)
+        }
+
+        /** Steht [text] wörtlich (als JSON-Text) in einer ausgelieferten Antwort? ([ScreenAudit]) */
+        fun served(text: String): Boolean = synchronized(served) { served.any { it.contains("\"$text\"") } }
+    }
+
     val server = MockWebServer()
     val seen: MutableList<Seen> = Collections.synchronizedList(mutableListOf())
     private val rules = Collections.synchronizedList(mutableListOf<Rule>())
@@ -59,7 +72,10 @@ class FakeNas : AutoCloseable {
                 val path = request.url.encodedPath.removePrefix("/api/v1/")
                 val method = request.method
                 if (method != "GET") seen += Seen(method, full, request.body?.utf8() ?: "")
-                fun ok(status: Int, body: String) = MockResponse.Builder().code(status).addHeader("Content-Type", "application/json").body(body).build()
+                fun ok(status: Int, body: String): MockResponse {
+                    if (status in 200..299) remember(body)
+                    return MockResponse.Builder().code(status).addHeader("Content-Type", "application/json").body(body).build()
+                }
                 val rule = synchronized(rules) {
                     rules.firstOrNull { r -> r.method == method && (if (r.prefix) full.startsWith(r.path) else full == r.path || path == r.path) }
                 }

@@ -186,7 +186,9 @@ class WatchScreenshotTest {
             val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
             val bottom = if (r.lineCount > 0) r.getLineBottom(r.lineCount - 1) else 0f
             val dots = (0 until r.lineCount).any { r.isLineEllipsized(it) }
-            if (widest > node.size.width + 2 || bottom > node.size.height + 2 || dots) {
+            // Ein einzeiliges Eingabefeld scrollt waagrecht (Prüfregel aller Module, Abschluss I1).
+            val editable = node.config.getOrElseNullable(SemanticsProperties.EditableText) { null } != null
+            if ((!editable && widest > node.size.width + 2) || bottom > node.size.height + 2 || dots) {
                 cut += "$prefix-$screen: „${text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
             }
             // Ganze Wörter: ein Zeilenende mitten zwischen zwei Buchstaben heißt, das Wort wurde getrennt.

@@ -18,6 +18,10 @@ import androidx.compose.ui.text.TextLayoutResult
  * - Bedienelemente ohne Namen für TalkBack (weder Text noch Beschreibung),
  * - Umbrüche mitten im Wort (Prüfung aus feature-storage übernommen).
  *
+ * Prüfregel für alle Module (Abschluss I1, wie E sie ausgelegt hat): einzeilige
+ * Eingabefelder dürfen waagrecht scrollen, und Werte, die wörtlich vom
+ * nachgebauten NAS kommen ([FakeNas.served]), gelten nicht als roher Schlüssel.
+ *
  * Funde sammeln sich in [found]; der Test schlägt am Ende mit allen fehl.
  */
 class ScreenAudit {
@@ -37,7 +41,8 @@ class ScreenAudit {
             get.action?.invoke(out)
             val r = out.firstOrNull() ?: continue
             val text = r.layoutInput.text.text
-            if (PLACEHOLDER.containsMatchIn(text) || RAW_KEY.matches(text.trim())) found += "$name: Platzhalter „${text.take(80)}“"
+            // Ein Wert, der wörtlich so vom NAS kommt (Name einer Freigabe, Kennung), ist kein roher Textschlüssel.
+            if (PLACEHOLDER.containsMatchIn(text) || (RAW_KEY.matches(text.trim()) && !FakeNas.served(text.trim()))) found += "$name: Platzhalter „${text.take(80)}“"
             // Nur zwischen ganzen Wörtern umbrechen (Vorgabe des Inhabers 21.11.2026); Maschinenwerte in
             // Monoschrift und Kennungen (Ziffern, / _ :) dürfen überall brechen.
             if (r.layoutInput.style.fontFamily != io.github.ra5on.titanos.ui.generated.TitanFonts.mono) {
@@ -51,7 +56,10 @@ class ScreenAudit {
             val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
             val bottom = if (r.lineCount > 0) r.getLineBottom(r.lineCount - 1) else 0f
             val dots = (0 until r.lineCount).any { r.isLineEllipsized(it) }
-            if (widest > node.size.width + 2 || bottom > node.size.height + 2 || dots) {
+            // Ein einzeiliges Eingabefeld scrollt waagrecht (erlaubt: „umbrechen, scrollen oder Symbol“);
+            // dort zählt nur, dass nichts mit „…“ abgeschnitten oder unten abgeschnitten ist.
+            val editable = node.config.getOrNull(SemanticsProperties.EditableText) != null
+            if ((!editable && widest > node.size.width + 2) || bottom > node.size.height + 2 || dots) {
                 found += "$name: „${text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
             }
         }
