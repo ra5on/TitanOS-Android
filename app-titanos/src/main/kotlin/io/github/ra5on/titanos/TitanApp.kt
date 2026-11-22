@@ -259,6 +259,8 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         openProgram = null
         agent?.second?.forget()
         agent = null
+        // Fenster, „Zuletzt“ und die eigene Einrichtung des Arbeitsplatzes gehören zur Kopplung.
+        io.github.ra5on.titanos.workspace.WorkspaceSettings.of(app).clear()
         unpairedByNas = byNas
     }
 }

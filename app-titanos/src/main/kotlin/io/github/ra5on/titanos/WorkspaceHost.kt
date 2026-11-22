@@ -35,6 +35,7 @@ import io.github.ra5on.titanos.workspace.WorkspaceSettings
 import io.github.ra5on.titanos.workspace.WorkspaceState
 import io.github.ra5on.titanos.workspace.showWorkspace
 import java.io.File
+import kotlinx.coroutines.launch
 
 /*
  * Arbeitsplatz wie im Web in der TitanOS-App (PLAN 116 F1): Einstellung
@@ -118,6 +119,13 @@ private fun WorkspaceRoutes(graph: AppGraph, state: WorkspaceState) {
         NotifyRuntime.linkOpened()
     }
     PimLive(graph)
+    // Wie MainShell: beim Öffnen der App neue Mitteilungen holen und die Dauerverbindung prüfen.
+    val resumeScope = androidx.compose.runtime.rememberCoroutineScope()
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        io.github.ra5on.titanos.notify.NotifyScheduler.arm(context)
+        val job = resumeScope.launch { NotifyRuntime.fetch(context) }
+        onPauseOrDispose { job.cancel() }
+    }
 }
 
 /** Der Inhalt eines Fensters: das Programm der App zu [Win.app]. */
