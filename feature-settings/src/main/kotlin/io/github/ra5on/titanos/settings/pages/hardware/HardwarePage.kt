@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import io.github.ra5on.titanos.settings.common.breakAtHyphens
 import io.github.ra5on.titanos.settings.common.LocalEnv
 import io.github.ra5on.titanos.settings.common.RunnerState
 import io.github.ra5on.titanos.settings.common.a
@@ -346,12 +347,12 @@ private fun IntelGuc() {
                 t("intelGuc.setting"),
                 id = "intel-setting",
                 icon = WebIcons["chip"],
-                desc = t("intelGuc.intro"),
+                desc = breakAtHyphens(t("intelGuc.intro")),
                 summary = t("intelGuc.mode.${s.str("mode")}"),
                 startOpen = true,
             ) {
                 Block {
-                    RadioList(mode, GUC_MODES.map { Triple(it, t("intelGuc.mode.$it"), t("intelGuc.mode.$it.hint")) }, { mode = it }, enabled = writable && !run.running)
+                    RadioList(mode, GUC_MODES.map { Triple(it, t("intelGuc.mode.$it"), breakAtHyphens(t("intelGuc.mode.$it.hint"))) }, { mode = it }, enabled = writable && !run.running)
                     if (mode == "guc") Banner(if (applicable.any { it.bool("submission") }) t("intelGuc.gucWarn") else t("intelGuc.gucWarnGen9"), tone = Tone.Warn)
                     if (applicable.any { !it.o("huc").bool("present") } && mode != "auto") Banner(t("intelGuc.missingFirmware"), tone = Tone.Warn)
                     if (!writable) Muted(t("intelGuc.notWritable"))

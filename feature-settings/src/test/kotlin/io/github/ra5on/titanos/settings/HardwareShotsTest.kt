@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos.settings
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
@@ -173,7 +174,13 @@ class HardwareShotsTest {
     private fun click(text: String) {
         val exact = compose.onAllNodes(hasText(text), useUnmergedTree = true)
         val node = if (exact.fetchSemanticsNodes().isNotEmpty()) exact.onFirst() else compose.onAllNodes(hasText(text, substring = true), useUnmergedTree = true).onFirst()
-        node.apply { runCatching { performScrollTo() } }.performClick()
+        // performScrollTo scrollt animiert; mit angehaltener Uhr (autoAdvance = false) endet die
+        // Animation nie und jedes Warten auf Ruhe hängt. Darum nur für das Scrollen die Uhr laufen lassen.
+        if (runCatching { node.assertIsDisplayed() }.isFailure) {
+            compose.mainClock.autoAdvance = true
+            try { runCatching { node.performScrollTo() } } finally { compose.mainClock.autoAdvance = false }
+        }
+        node.performClick()
         shots.settle(900)
     }
 
@@ -206,13 +213,14 @@ class HardwareShotsTest {
     /** Dialoge: Plattenruhe, Neustart, GuC-Rückfrage, Index entfernen. */
     private fun dialogs(dark: Boolean) {
         val nav = app(dark)
-        open(nav, "energy", "storage/disk-sleep"); click("Ruhemodus einstellen …"); shots.capture("31-plattenruhe", dark); click("Schließen")
         nav.openPage("hardware"); shots.until { nas.requests.count { it.second == "hardware/intel-gpu" } >= 1 }; shots.settle(1200)
         click("Jetzt neu starten"); shots.capture("12-neustart", dark)
         click("Abbrechen")
         click("GuC-Submission und HuC"); click("Speichern"); shots.capture("13-guc-rueckfrage", dark)
         click("Abbrechen")
         open(nav, "files", "files/index"); click("Index löschen"); shots.capture("81-index-entfernen", dark)
+        click("Abbrechen")
+        open(nav, "energy", "storage/disk-sleep"); click("Ruhemodus einstellen …"); shots.capture("31-plattenruhe", dark)
     }
 
     @Test fun hellA() = partA(false)
@@ -260,7 +268,7 @@ class HardwareShotsTest {
     }
 
     @Test
-    @Config(qualifiers = "de-w390dp-h2000dp-mdpi")
+    @Config(qualifiers = "de-w390dp-h4000dp-mdpi")
     fun schrift200Dialoge() {
         org.robolectric.RuntimeEnvironment.setFontScale(2f)
         shots.prefix = "schrift200-"

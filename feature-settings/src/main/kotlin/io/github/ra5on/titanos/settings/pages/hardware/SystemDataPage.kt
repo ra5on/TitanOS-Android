@@ -227,7 +227,7 @@ fun SystemDataPage(a: PageArgs) {
         val fn = t("sysdata.fn.${f.str("id")}")
         val folder = if (f.str("id") == "config") "backups" else f.str("id")
         Banner(
-            t("sysdata.aside.text") + "\n" + aside.joinToString("\n") { "/mnt/${f.str("volume")}/.titanos/$folder/$it" },
+            t("sysdata.aside.text") + "\n" + aside.joinToString("\n") { io.github.ra5on.titanos.settings.pages.backups.breakable("/mnt/${f.str("volume")}/.titanos/$folder/$it") },
             tone = Tone.Warn,
             title = if (aside.size == 1) t("sysdata.aside.one", "function" to fn) else t("sysdata.aside.many", "function" to fn, "count" to aside.size),
         )

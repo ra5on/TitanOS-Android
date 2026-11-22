@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
@@ -24,8 +26,9 @@ android {
             all {
                 it.maxHeapSize = "2g"
                 it.maxParallelForks = 1
-                // Ein hängender Bildtest darf keinen der zwei Gradle-Plätze der VM blockieren (RAHMEN.md).
-                it.timeout.set(java.time.Duration.ofMinutes(10))
+                // Ein hängender Bildtest darf keinen der zwei Gradle-Plätze der VM blockieren (RAHMEN.md);
+                // 30 statt 10 Minuten, weil die ganze Suite mehrere hundert Aufnahmen prüft.
+                it.timeout.set(Duration.ofMinutes(30))
             }
         }
     }

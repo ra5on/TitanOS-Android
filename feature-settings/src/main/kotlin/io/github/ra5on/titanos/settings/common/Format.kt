@@ -69,3 +69,11 @@ object Fmt {
         return if (major == "0") "0.$minor" else "${major.toInt()}.${minor.padStart(2, '0')}"
     }
 }
+
+/**
+ * Bindestrich-Wörter im Fließtext („Low-Power-Encodierung“) dürfen am Bindestrich
+ * umbrechen: Android bricht sie sonst mitten im Wort (ganze Wörter, Inhaber 21.11.2026).
+ * Setzt nach „-“ zwischen zwei Buchstaben einen unsichtbaren Trennpunkt.
+ */
+fun breakAtHyphens(text: String): String = text.replace(Regex("(?<=\\p{L})-(?=\\p{L})"), "-\u200B")
+

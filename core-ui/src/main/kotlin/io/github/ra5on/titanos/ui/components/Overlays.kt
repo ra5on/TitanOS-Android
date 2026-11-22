@@ -64,9 +64,12 @@ fun Modifier.wallpaper(dark: Boolean): Modifier = drawBehind {
 fun BoxScope.Sheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     BackHandler(onBack = onDismiss)
     val c = Titan.colors
+    // Wie beim Bestätigungsdialog: die abgedunkelte Fläche schließt und hat dafür einen Namen.
+    val closeLabel = androidx.compose.ui.res.stringResource(R.string.ui_close)
     Box(
         Modifier.matchParentSize().background(Color.Black.copy(alpha = .5f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
+            .semantics { contentDescription = closeLabel },
     )
     val shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
     Column(

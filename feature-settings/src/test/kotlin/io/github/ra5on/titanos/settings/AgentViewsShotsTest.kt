@@ -73,13 +73,13 @@ object AgentViewFixtures {
                   {"id":"r0","account":"kim","reason":"Test","created":"2026-10-01T10:00:00Z","due":"2026-10-04T10:00:00Z","state":"canceled","shares":["daten"]}]}"""
     const val advisor = """{"settings":{"enabled":true,"predict":true,"bottlenecks":true,"prices":true,"monthly":false,"at":"03:30"},"running":false,"web":true,
       "saved":{"lastRun":"2026-11-22T03:30:00Z","history":true,"report":{"at":"2026-11-22T03:30:00Z","findings":[
-        {"area":"disk","subject":"sdb","level":"fail","code":"realloc","from":8,"to":64,"weeks":3,"hours":38000},
-        {"area":"memory","subject":"RAM","level":"tight","code":"swap","percent":82,"suggestBytes":17179869184},
-        {"area":"volume","subject":"daten","level":"watch","code":"fullIn","days":120},
-        {"area":"disk","subject":"sda","level":"ok","code":"healthy","hours":12000}]},
+        {"area":"disk","subject":"sdb","level":"fail","code":"sectorsRising","from":8,"to":64,"weeks":3,"hours":38000},
+        {"area":"memory","subject":"RAM","level":"tight","code":"memorySwap","percent":82,"suggestBytes":17179869184},
+        {"area":"volume","subject":"daten","level":"watch","code":"volumeFilling","days":120},
+        {"area":"disk","subject":"sda","level":"ok","code":"diskOK","hours":12000}]},
         "offers":{"sdb":[{"title":"WD Red Plus 4 TB","url":"https://example.org/wd","price":"109,90"}]}}}"""
     const val whatIf = """{"scenario":{"kind":"disk","disk":"sdb","volume":"daten"},"volume":"daten","level":"raid1","filesystem":"btrfs","disks":2,"disk":"sdb","serial":"ZDH0XYZ","outcome":"redundant","dataAtRiskBytes":0,
-      "rebuild":{"seconds":30600,"bytes":2400000000000,"bps":160000000,"measured":true},"risk":{"level":"elevated","reasons":[{"code":"sameAge","disk":"sda","value":38000}]},
+      "rebuild":{"seconds":30600,"bytes":2400000000000,"bps":160000000,"measured":true},"risk":{"level":"elevated","reasons":[{"code":"aging","disk":"sda","value":38000}]},
       "gaps":[{"share":"medien","days":9,"bytes":52000000000}],"safe":[{"share":"daten","job":"j1","at":"2026-11-22T02:00:00Z"}],
       "advice":[{"code":"startBackup","share":"medien","job":"j2"},{"code":"replacement","kind":"hdd","bytes":4000000000000},{"code":"addSpare"}]}"""
     const val buddy = """{"settings":{"enabled":true,"address":"nas-alex.tail1234.ts.net","volume":"daten","protectDays":30},"name":"titan","code":null,"volumes":["daten"],"shares":["daten","fotos"],"listening":["tailscale"],"problem":"",
