@@ -30,7 +30,7 @@ class MailWindowActivity : ComponentActivity() {
             finish()
             return
         }
-        start = MailStart.fromIntent(intent)
+        start = MailStart.fromIntent(intent, MailRuntime.fromApp(intent))
         setContent {
             TitanTheme {
                 androidx.compose.runtime.key(generation) {
@@ -42,7 +42,7 @@ class MailWindowActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        start = MailStart.fromIntent(intent)
+        start = MailStart.fromIntent(intent, MailRuntime.fromApp(intent))
         generation++
     }
 }

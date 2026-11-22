@@ -55,12 +55,19 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
-        <!-- mailto: aus anderen Apps öffnet Verfassen in Mail (feature-mail, eigenes Fenster). -->
+        <!--
+            mailto: aus anderen Apps öffnet Verfassen in Mail (feature-mail, eigenes Fenster).
+            MailWindowActivity selbst bleibt nicht exportiert (ihre Extras sind nur für die App);
+            fremde Apps kommen über den Alias, und dort zählen nur mailto: und die EXTRA_*.
+            Das Ziel muss vor dem Alias stehen, deshalb hier noch einmal (ohne Änderung).
+        -->
         <activity
             android:name="io.github.ra5on.titanos.mail.MailWindowActivity"
-            android:exported="true"
-            tools:node="merge"
-            tools:replace="android:exported">
+            tools:node="merge" />
+        <activity-alias
+            android:name="io.github.ra5on.titanos.mail.MailtoActivity"
+            android:targetActivity="io.github.ra5on.titanos.mail.MailWindowActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -72,7 +79,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="mailto" />
             </intent-filter>
-        </activity>
+        </activity-alias>
         <!-- Ziel der Kurzbefehle, ohne eigene Oberfläche (Shortcuts.kt). -->
         <activity
             android:name=".ShortcutActivity"

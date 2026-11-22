@@ -84,8 +84,14 @@ sealed interface MailStart {
             }
         }
 
-        /** Der Start einer Intent: Extras von [toIntent], `mailto:` (VIEW/SENDTO) oder ein Link `/mail…`. */
-        fun fromIntent(intent: Intent?): MailStart {
+        /**
+         * Der Start einer Intent: Extras von [toIntent], `mailto:` (VIEW/SENDTO)
+         * oder ein Link `/mail…`. Von fremden Apps ([trusted] false, über den
+         * Alias [MailRuntime.MAILTO_ALIAS]) zählen nur `mailto:` und die
+         * Standard-Extras; Antworten, Weiterleiten oder eine Nachricht öffnen
+         * kann nur die App selbst.
+         */
+        fun fromIntent(intent: Intent?, trusted: Boolean): MailStart {
             intent ?: return Boxes
             val data = intent.dataString
             if (data != null && data.startsWith("mailto:", ignoreCase = true)) {
@@ -98,6 +104,7 @@ sealed interface MailStart {
                     to = c.to + intent.getStringArrayExtra(Intent.EXTRA_EMAIL).orEmpty(),
                 )
             }
+            if (!trusted) return Boxes
             if (data != null && data.startsWith("/mail")) return fromLink(data)
             val a = intent.getStringExtra("$EXTRA.a").orEmpty()
             val f = intent.getStringExtra("$EXTRA.f").orEmpty()
@@ -122,6 +129,15 @@ sealed interface MailStart {
  * Verbindungen zum gekoppelten NAS. Gesetzt in TitanApp; null ohne Kopplung.
  */
 object MailRuntime {
+    /** Der exportierte Eingang für `mailto:` (activity-alias in app-titanos) auf [MailWindowActivity]. */
+    const val MAILTO_ALIAS = "io.github.ra5on.titanos.mail.MailtoActivity"
+
+    /**
+     * [MailWindowActivity] ist nicht exportiert; fremde Apps erreichen sie nur
+     * über den Alias [MAILTO_ALIAS]. Nur ein Start ohne Alias kommt aus der App.
+     */
+    fun fromApp(intent: Intent?): Boolean = intent?.component?.className == MailWindowActivity::class.java.name
+
     @Volatile
     var nas: () -> NasConnection? = { null }
 

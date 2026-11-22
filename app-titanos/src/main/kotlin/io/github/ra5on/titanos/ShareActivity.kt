@@ -14,6 +14,7 @@ import androidx.core.content.IntentCompat
 import io.github.ra5on.titanos.files.R as FilesR
 import io.github.ra5on.titanos.files.ShareModel
 import io.github.ra5on.titanos.files.ShareTargetScreen
+import io.github.ra5on.titanos.net.IncomingUri
 import io.github.ra5on.titanos.ui.theme.TitanTheme
 import kotlinx.coroutines.launch
 
@@ -58,9 +59,10 @@ class ShareActivity : ComponentActivity() {
         }
     }
 
+    /** Nur content:// fremder Apps: file:// und die eigenen Anbieter läse die App mit ihren eigenen Rechten. */
     private fun incoming(intent: Intent?): List<Uri> = when (intent?.action) {
         Intent.ACTION_SEND -> listOfNotNull(IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java))
         Intent.ACTION_SEND_MULTIPLE -> IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
         else -> emptyList()
-    }
+    }.filter { IncomingUri.accepts(this, it) }
 }

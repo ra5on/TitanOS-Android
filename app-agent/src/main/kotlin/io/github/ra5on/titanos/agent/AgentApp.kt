@@ -35,11 +35,12 @@ class AgentApp : Application(), SiblingHost, io.github.ra5on.titanos.agent.syste
         graph.pendingOpen = chatId ?: ""
         context.startActivity(android.content.Intent(context, MainActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
     }
-    override fun webSession(): io.github.ra5on.titanos.agent.ui.WebSession? {
-        val p = graph.pairing ?: return null
-        val cookie = graph.sessions.current() ?: return null
-        val base = p.addresses.firstNotNullOfOrNull { it.address }?.baseUrl()?.toString() ?: return null
-        return io.github.ra5on.titanos.agent.ui.WebSession(base, cookie.name, cookie.token, p.addresses.map { it.spki }.filter { it.isNotEmpty() })
+    override suspend fun webSession(): io.github.ra5on.titanos.agent.ui.WebSession? = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        val p = graph.pairing ?: return@withContext null
+        // Die erste Adresse, die über die gepinnte Verbindung antwortet (wie Office in der TitanOS-App).
+        val origin = io.github.ra5on.titanos.net.PinnedOrigin.resolve(graph.shared, p) ?: return@withContext null
+        val cookie = graph.sessions.current() ?: runCatching { graph.sessions.refresh(null, origin.client, origin.base) }.getOrNull() ?: return@withContext null
+        io.github.ra5on.titanos.agent.ui.WebSession(origin, cookie.name, cookie.token)
     }
 
     // Eine Kopplung für beide Apps (feature-pairing Sibling.kt).

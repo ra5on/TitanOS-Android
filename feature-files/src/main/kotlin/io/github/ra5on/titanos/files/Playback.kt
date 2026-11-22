@@ -2,6 +2,7 @@ package io.github.ra5on.titanos.files
 
 import android.content.ComponentName
 import android.content.Context
+import android.os.Process
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -40,10 +41,33 @@ class NasPlaybackService : MediaSessionService() {
             .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
             .setHandleAudioBecomingNoisy(true)
             .build()
-        session = MediaSession.Builder(this, player).build()
+        session = MediaSession.Builder(this, player).setCallback(ControllerGate).build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
+
+    /**
+     * Wer die Wiedergabe steuern und sehen darf: die App selbst, das System
+     * (Mitteilung, Sperrbildschirm, Bluetooth, Medientasten – vertrauenswürdig
+     * nach Android: Systemkennung, MEDIA_CONTENT_CONTROL oder ein erlaubter
+     * Mitteilungszugriff) und Android Auto/Automotive. Andere Apps nicht: Titel
+     * und Ordner der Wiedergabeliste kommen vom NAS.
+     */
+    private object ControllerGate : MediaSession.Callback {
+        override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult =
+            if (PlaybackControllers.allowed(
+                    uid = controller.uid,
+                    ownUid = Process.myUid(),
+                    trusted = controller.isTrusted,
+                    notification = session.isMediaNotificationController(controller),
+                    auto = session.isAutomotiveController(controller) || session.isAutoCompanionController(controller),
+                )
+            ) {
+                super.onConnect(session, controller)
+            } else {
+                MediaSession.ConnectionResult.reject()
+            }
+    }
 
     override fun onTaskRemoved(rootIntent: android.content.Intent?) {
         val p = session?.player
@@ -58,6 +82,13 @@ class NasPlaybackService : MediaSessionService() {
         session = null
         super.onDestroy()
     }
+}
+
+/** Welche Controller sich mit [NasPlaybackService] verbinden dürfen. */
+object PlaybackControllers {
+    /** Nach der Kennung (uid), nicht nach dem Paketnamen: den nennen ältere Controller ungeprüft. */
+    fun allowed(uid: Int, ownUid: Int, trusted: Boolean, notification: Boolean, auto: Boolean): Boolean =
+        uid == ownUid || uid == Process.SYSTEM_UID || trusted || notification || auto
 }
 
 object Playback {

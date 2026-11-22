@@ -6,8 +6,12 @@ name: Release
 # des Inhabers. Der Schlüssel liegt dort als Secret und nur für die Dauer
 # des Jobs auf dem Runner.
 #
+# Gradle baut unsigniert; signiert wird in einem eigenen Schritt nur mit
+# apksigner, damit der Schlüssel nie im Gradle-Build liegt.
+#
 # Probelauf: „Run workflow“ auf einem Tag mit dry_run=true baut und
-# signiert, legt die APK als Artefakt ab und veröffentlicht nichts.
+# signiert mit einem Wegwerfschlüssel aus dem Lauf (nie mit dem
+# Produktionsschlüssel), legt die APK als Artefakt ab und veröffentlicht nichts.
 
 on:
   push:
@@ -93,16 +97,43 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;37.0.0"
-      - name: Bauen und signieren
+      # Gradle baut unsigniert und sieht den Schlüssel nie; signiert wird danach nur mit apksigner.
+      - name: Bauen (unsigniert)
+        run: ./gradlew --no-daemon :app-titanos:assembleRelease :app-agent:assembleRelease :app-watch:assembleRelease
+      # Probelauf: nie der Produktionsschlüssel, sondern ein Wegwerfschlüssel aus diesem Lauf.
+      - name: Signieren
         env:
-          KEYSTORE_BASE64: ${{ secrets.TITANOS_KEYSTORE_BASE64 }}
-          TITANOS_KEYSTORE_PASSWORD: ${{ secrets.TITANOS_KEYSTORE_PASSWORD }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          # Im Probelauf leer: der Produktionsschlüssel kommt gar nicht erst in den Schritt.
+          KEYSTORE_BASE64: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) && secrets.TITANOS_KEYSTORE_BASE64 || '' }}
+          KEYSTORE_PASSWORD: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) && secrets.TITANOS_KEYSTORE_PASSWORD || '' }}
         run: |
           umask 077
-          export TITANOS_KEYSTORE="$RUNNER_TEMP/titanos-release.p12"
-          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$TITANOS_KEYSTORE"
-          trap 'rm -f "$TITANOS_KEYSTORE"' EXIT
-          ./gradlew --no-daemon :app-titanos:assembleRelease :app-agent:assembleRelease :app-watch:assembleRelease
+          bt="$ANDROID_HOME/build-tools/37.0.0"
+          ks="$RUNNER_TEMP/titanos-sign.p12"
+          trap 'rm -f "$ks"' EXIT
+          if [ "$DRY_RUN" = true ]; then
+            KEYSTORE_PASSWORD=$(openssl rand -hex 24)
+            keytool -genkeypair -keystore "$ks" -storetype PKCS12 -storepass "$KEYSTORE_PASSWORD" -alias titanos-release \
+              -keyalg RSA -keysize 3072 -validity 2 -dname "CN=TitanOS Probelauf (Wegwerfschluessel)" > /dev/null
+            # Die Prüfung unten vergleicht dann mit dem Wegwerfzertifikat.
+            digest=$(keytool -exportcert -keystore "$ks" -storepass "$KEYSTORE_PASSWORD" -alias titanos-release | sha256sum | cut -d' ' -f1)
+            echo "PROBE_CERT_SHA256=$digest" >> "$GITHUB_ENV"
+            echo "::notice::Probelauf: signiert mit einem Wegwerfschlüssel, nicht installierbar als Update"
+          else
+            [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] || { echo "::error::Schlüssel fehlt"; exit 1; }
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$ks"
+          fi
+          for module in app-titanos app-agent app-watch; do
+            dir=$module/build/outputs/apk/release
+            [ -f "$dir/$module-release-unsigned.apk" ] || continue
+            # Wie die signingConfig in Gradle: v2 und v3 (ab Android 13 kein v1).
+            "$bt/apksigner" sign --ks "$ks" --ks-type PKCS12 --ks-key-alias titanos-release \
+              --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD \
+              --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true \
+              --out "$dir/$module-release.apk" "$dir/$module-release-unsigned.apk"
+            "$bt/zipalign" -c -P 16 4 "$dir/$module-release.apk"
+          done
       - name: Signatur und Version prüfen
         run: |
           bt="$ANDROID_HOME/build-tools/37.0.0"
@@ -114,7 +145,7 @@ jobs:
             # Die Agent-App ist erst ab 0.03 dabei; fehlt sie, bleibt es bei der TitanOS-App.
             [ -f "$apk" ] || { [ "$module" = app-agent ] && continue; echo "::error::$apk fehlt"; exit 1; }
             "$bt/apksigner" verify --print-certs "$apk" | tee signer.txt
-            grep -q "certificate SHA-256 digest: $CERT_SHA256" signer.txt || { echo "::error::falsches Signaturzertifikat ($module)"; exit 1; }
+            grep -q "certificate SHA-256 digest: ${PROBE_CERT_SHA256:-$CERT_SHA256}" signer.txt || { echo "::error::falsches Signaturzertifikat ($module)"; exit 1; }
             name=$("$bt/aapt2" dump badging "$apk" | sed -nE "s/.*versionName='([^']+)'.*/\1/p")
             cp "$apk" "out/$prefix-$name.apk"
             [ "$module" = app-titanos ] && echo "NAME=$name" >> "$GITHUB_ENV"

@@ -176,7 +176,8 @@ class TransferWorker(context: Context, params: WorkerParameters) : CoroutineWork
     private suspend fun upload(store: TransferStore, api: TitanApi, t: Transfer) {
         val source = Uri.parse(t.source ?: throw IOException("no source"))
         val open: () -> InputStream = {
-            if (source.scheme == "file") FileInputStream(File(source.path!!))
+            // file:// nur für die eigenen Kopien im Ausgang (Outbox); alles andere über den ContentResolver.
+            if (source.scheme == "file") FileInputStream(Outbox.own(applicationContext, source) ?: throw IOException("not in outbox"))
             else applicationContext.contentResolver.openInputStream(source) ?: throw IOException("cannot read")
         }
         val total = if (t.total > 0) t.total else open().use { it.skip(Long.MAX_VALUE) }
