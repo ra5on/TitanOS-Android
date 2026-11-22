@@ -48,13 +48,15 @@ class TerminalScreenshotTest {
         Consoles.closeAll()
     }
 
-    private fun shot(name: String) {
+    private fun shot(name: String, fold: io.github.ra5on.titanos.ui.Fold? = null) {
         for (dark in listOf(true, false)) {
             captureRoboImage("build/outputs/roborazzi/terminal-$name-${if (dark) "dunkel" else "hell"}.png") {
                 TitanTheme(dark = dark) {
+                  androidx.compose.runtime.CompositionLocalProvider(io.github.ra5on.titanos.ui.LocalFoldOverride provides fold) {
                     ProgramShell("Terminal", "terminal", "dark", emptyList(), "", {}, {}) {
                         Column(Modifier.fillMaxSize()) { Sessions(env, TerminalInfo(enabled = true, nasShell = true, idleMinutes = 15)) }
                     }
+                  }
                 }
             }
         }
@@ -72,4 +74,9 @@ class TerminalScreenshotTest {
     @Test
     @Config(qualifiers = "de-w1280dp-h800dp-mdpi")
     fun wide() = shot("1280")
+
+    /** Faltbares in Tischhaltung (Falz waagerecht in der Mitte): oben die Konsole, unten Leiste und Tasten. */
+    @Test
+    @Config(qualifiers = "de-w841dp-h701dp-mdpi")
+    fun tabletop() = shot("tisch", io.github.ra5on.titanos.ui.Fold(io.github.ra5on.titanos.ui.Posture.Tabletop, androidx.compose.ui.unit.IntRect(0, 340, 841, 360)))
 }

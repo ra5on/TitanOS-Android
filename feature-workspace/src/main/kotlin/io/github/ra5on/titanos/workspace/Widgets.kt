@@ -111,6 +111,8 @@ internal fun BoxScope.DeskWidgets(state: WorkspaceState) {
     val wm = state.wm
     val columns = maxOf(10, wm.area.w / CELL)
     val density = LocalDensity.current
+    // Große Schrift: Widgets wachsen in der Höhe mit, damit nichts abgeschnitten wird.
+    val tall = density.fontScale.coerceIn(1f, 2f)
     for (w in prefs.widgets) {
         var live by remember(w.id) { mutableStateOf<Widget?>(null) }
         val shown = live ?: w
@@ -118,8 +120,8 @@ internal fun BoxScope.DeskWidgets(state: WorkspaceState) {
         val shape = RoundedCornerShape(14.dp)
         Box(
             Modifier
-                .offset { IntOffset((left * density.density).roundToInt(), (shown.y * CELL * density.density).roundToInt()) }
-                .size((shown.w * CELL - 10).dp, (shown.h * CELL - 10).dp)
+                .offset { IntOffset((left * density.density).roundToInt(), (shown.y * CELL * tall * density.density).roundToInt()) }
+                .size((shown.w * CELL - 10).dp, (shown.h * CELL * tall - 10).dp)
                 .glass(Titan.colors.surface, shape, alpha = .82f)
                 .onSecondaryClickAt { _, _ -> state.menu = DeskMenu(left + 20f, shown.y * CELL + 20f, DeskMenu.Kind.Widget, w.id) }
                 .then(

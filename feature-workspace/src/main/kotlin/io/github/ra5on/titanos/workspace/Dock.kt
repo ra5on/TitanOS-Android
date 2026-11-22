@@ -75,17 +75,21 @@ internal fun BoxScope.DockBar(state: WorkspaceState) {
     val running = wm.windows.map { it.app }.distinct().filter { it !in pinned }
     val vertical = dock.position != "bottom"
     val density = LocalDensity.current
+    // Passen nicht alle Symbole an den Rand (Handy, schmales Fenster), werden sie kleiner statt abgeschnitten.
+    val count = pinned.size + running.size + 1
+    val edge = if (vertical) state.wm.area.h else state.wm.area.w
+    val iconDp = minOf(dock.size, maxOf(28, (edge - 52) / count - 6 - (if (running.isNotEmpty() && pinned.isNotEmpty()) 2 else 0)))
     var pointer by remember { mutableStateOf<Float?>(null) }
     val centres = remember { HashMap<String, Float>() }
     val plate = Titan.colors.surface.copy(alpha = dock.opacity / 100f)
-    val shape = RoundedCornerShape((dock.size * 0.36f + 9).dp)
+    val shape = RoundedCornerShape((iconDp * 0.36f + 9).dp)
     val align = when (dock.position) {
         "left" -> Alignment.CenterStart
         "right" -> Alignment.CenterEnd
         else -> Alignment.BottomCenter
     }
     val k = if (dock.magnify == 2) 0.75f else 0.38f
-    val reach = dock.size * 2.4f
+    val reach = iconDp * 2.4f
     fun scaleOf(key: String): Float {
         val p = pointer ?: return 1f
         if (dock.magnify == 0 || state.editDock) return 1f
@@ -98,24 +102,24 @@ internal fun BoxScope.DockBar(state: WorkspaceState) {
     val content: @Composable () -> Unit = {
         DockButton(state, "launcher", vertical, 1f, { _ -> }) {
             Box(
-                Modifier.size(dock.size.dp).clip(RoundedCornerShape(percent = 23)).background(Titan.colors.chip)
+                Modifier.size(iconDp.dp).clip(RoundedCornerShape(percent = 23)).background(Titan.colors.chip)
                     .clickable(role = Role.Button) { state.launcher = !state.launcher }
                     .semantics { contentDescription = menuLabel },
                 contentAlignment = Alignment.Center,
-            ) { Icon(TitanIcons.grid, null, tint = Titan.colors.text, modifier = Modifier.size((dock.size * .48f).dp)) }
+            ) { Icon(TitanIcons.grid, null, tint = Titan.colors.text, modifier = Modifier.size((iconDp * .48f).dp)) }
         }
         for (key in pinned + running) {
             val p = state.programOf(key)
             if (key == running.firstOrNull() && pinned.isNotEmpty()) {
                 Box(
-                    if (vertical) Modifier.padding(vertical = 4.dp).height(1.dp).width(dock.size.dp * .7f).background(Titan.colors.border)
-                    else Modifier.padding(horizontal = 4.dp).width(1.dp).height(dock.size.dp * .7f).background(Titan.colors.border),
+                    if (vertical) Modifier.padding(vertical = 4.dp).height(1.dp).width(iconDp.dp * .7f).background(Titan.colors.border)
+                    else Modifier.padding(horizontal = 4.dp).width(1.dp).height(iconDp.dp * .7f).background(Titan.colors.border),
                 )
             }
             val windows = wm.windows.filter { it.app == key }
             DockButton(state, key, vertical, scaleOf(key), { centre -> centres[key] = centre }) {
                 Box(
-                    Modifier.size(dock.size.dp)
+                    Modifier.size(iconDp.dp)
                         .pointerInput(key) {
                             awaitEachGesture {
                                 val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
@@ -138,7 +142,7 @@ internal fun BoxScope.DockBar(state: WorkspaceState) {
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (p != null && p.glyph.isNotEmpty()) AppIcon(p.glyph, p.gradient, dock.size.dp) else LetterIcon(p?.letter() ?: "?", p?.gradient ?: "blue", dock.size.dp)
+                    if (p != null && p.glyph.isNotEmpty()) AppIcon(p.glyph, p.gradient, iconDp.dp) else LetterIcon(p?.letter() ?: "?", p?.gradient ?: "blue", iconDp.dp)
                 }
                 // Offene Fenster: ein Punkt darunter (bzw. daneben).
                 Box(Modifier.padding(2.dp).size(5.dp).clip(CircleShape).background(if (windows.isNotEmpty()) Titan.colors.text.copy(alpha = .85f) else Color.Transparent))

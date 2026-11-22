@@ -28,6 +28,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.dp
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import androidx.window.layout.WindowLayoutInfo
@@ -111,8 +112,10 @@ fun FoldPanes(
     val secondNow by rememberUpdatedState(second)
     val a = remember { movableContentOf { firstNow() } }
     val b = remember { movableContentOf { secondNow() } }
-    var area by remember { mutableStateOf<Rect?>(null) }
     val density = LocalDensity.current
+    // Bis die Lage bekannt ist: das ganze Fenster (der häufigste Fall), damit das erste Bild schon stimmt.
+    val config = androidx.compose.ui.platform.LocalConfiguration.current
+    var area by remember { mutableStateOf<Rect?>(with(density) { Rect(0f, 0f, config.screenWidthDp.dp.toPx(), config.screenHeightDp.dp.toPx()) }) }
     Box(modifier.onGloballyPositioned { area = it.boundsInWindow() }) {
         val box = area
         val hinge = fold.hinge

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -99,6 +100,13 @@ class WorkspaceScreenshotTest {
         }
     }
 
+    /** Die volle Größe des Bildschirms (captureRoboImage misst sonst ohne Höhe). */
+    @Composable
+    private fun Screen(content: @Composable () -> Unit) {
+        val cfg = androidx.compose.ui.platform.LocalConfiguration.current
+        Box(Modifier.size(cfg.screenWidthDp.dp, cfg.screenHeightDp.dp)) { content() }
+    }
+
     /** Ein Programm im Fenster: zeigt, welche Breitenstufe es sieht (das Fenster, nicht der Bildschirm). */
     @Composable
     private fun FakeProgram(win: Win) {
@@ -121,7 +129,7 @@ class WorkspaceScreenshotTest {
             val st = state(windows, area, prefs).apply(setup)
             captureRoboImage("build/outputs/roborazzi/$name-${if (dark) "dunkel" else "hell"}.png") {
                 TitanTheme(dark = dark) {
-                    Workspace(st, program = { win, _ -> FakeProgram(win) }, live = false)
+                    Screen { Workspace(st, program = { win, _ -> FakeProgram(win) }, live = false) }
                 }
             }
         }
@@ -197,7 +205,7 @@ class WorkspaceScreenshotTest {
 
     private fun foldShot(name: String, fold: Fold) {
         for (dark in listOf(true, false)) {
-            captureRoboImage("build/outputs/roborazzi/$name-${if (dark) "dunkel" else "hell"}.png") { TitanTheme(dark = dark) { FoldSample(fold) } }
+            captureRoboImage("build/outputs/roborazzi/$name-${if (dark) "dunkel" else "hell"}.png") { TitanTheme(dark = dark) { Screen { FoldSample(fold) } } }
         }
     }
 

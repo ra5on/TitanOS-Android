@@ -90,6 +90,22 @@ fun WallpaperFill(w: Wallpaper, light: Boolean, access: ComputeAccess?, modifier
                 // Ein heller Schein oben rechts wie die gezeichneten Hintergründe des Webs.
                 drawRect(Brush.radialGradient(listOf(colors[3].copy(alpha = .55f), Color.Transparent), Offset(size.width * .78f, size.height * .12f), size.maxDimension * .7f))
                 drawRect(Brush.radialGradient(listOf(colors[2].copy(alpha = .45f), Color.Transparent), Offset(size.width * .15f, size.height * .95f), size.maxDimension * .6f))
+                // „Welle“ wie im Web: zwei weite Bögen über die ganze Fläche.
+                if (!w.custom && w.id == "wave") {
+                    val W = size.width
+                    val H = size.height
+                    for ((k, a) in listOf(0.0f to .55f, 0.18f to .35f)) {
+                        val p = androidx.compose.ui.graphics.Path().apply {
+                            moveTo(0f, H * (0.75f + k))
+                            cubicTo(W * .3f, H * (0.35f + k), W * .55f, H * (0.15f + k), W, H * (0.3f + k))
+                            lineTo(W, H)
+                            lineTo(0f, H)
+                            close()
+                        }
+                        drawPath(p, colors[2].copy(alpha = .18f * a))
+                        drawPath(p, colors[3].copy(alpha = a * .6f), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5f * density))
+                    }
+                }
             },
     ) {
         image?.let { Image(it, null, Modifier.matchParentSize(), contentScale = ContentScale.Crop) }

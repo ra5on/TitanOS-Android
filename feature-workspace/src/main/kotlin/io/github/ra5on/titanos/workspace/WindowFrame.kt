@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -44,7 +43,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isSecondaryPressed
@@ -67,7 +65,6 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import io.github.ra5on.titanos.compute.t
 import io.github.ra5on.titanos.ui.components.AppIcon
 import io.github.ra5on.titanos.ui.theme.Titan
-import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
 import kotlin.math.roundToInt
 
@@ -222,22 +219,41 @@ private fun TitleBar(
             color = if (focused) c.text else c.muted,
             modifier = Modifier.weight(1f).padding(vertical = 6.dp).semantics { heading() },
         )
-        Ctl(TitanIcons.down, t("desktop.window.minimize")) { wm.minimize(win.id) }
-        Ctl(if (win.snap == Snap.Max) TitanIcons.grid else TitanIcons.box, t(if (win.snap == Snap.Max) "desktop.window.restore" else "desktop.window.maximize")) { wm.toggleMax(win.id) }
-        Ctl(TitanIcons.x, t("desktop.window.close"), close = true) { state.requestClose(win.id) }
+        Ctl(CtlKind.Min, t("desktop.window.minimize")) { wm.minimize(win.id) }
+        Ctl(if (win.snap == Snap.Max) CtlKind.Restore else CtlKind.Max, t(if (win.snap == Snap.Max) "desktop.window.restore" else "desktop.window.maximize")) { wm.toggleMax(win.id) }
+        Ctl(CtlKind.Close, t("desktop.window.close")) { state.requestClose(win.id) }
     }
 }
 
+private enum class CtlKind { Min, Max, Restore, Close }
+
+/** Knopf der Titelleiste mit den Zeichen des Webs: Strich, Quadrat, zwei Quadrate, Kreuz. */
 @Composable
-private fun Ctl(icon: ImageVector, label: String, close: Boolean = false, onClick: () -> Unit) {
-    val c = Titan.colors
+private fun Ctl(kind: CtlKind, label: String, onClick: () -> Unit) {
+    val ink = Titan.colors.muted
     Box(
         Modifier.size(34.dp).clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, tint = if (close) c.muted else c.muted, modifier = Modifier.size(16.dp))
+        androidx.compose.foundation.Canvas(Modifier.size(12.dp)) {
+            val w = size.width
+            val stroke = 1.6.dp.toPx()
+            val style = androidx.compose.ui.graphics.drawscope.Stroke(stroke)
+            when (kind) {
+                CtlKind.Min -> drawLine(ink, Offset(0f, w * .85f), Offset(w, w * .85f), stroke)
+                CtlKind.Max -> drawRoundRect(ink, Offset(stroke / 2, stroke / 2), androidx.compose.ui.geometry.Size(w - stroke, w - stroke), androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()), style = style)
+                CtlKind.Restore -> {
+                    drawRoundRect(ink, Offset(w * .3f, stroke / 2), androidx.compose.ui.geometry.Size(w * .7f - stroke / 2, w * .7f - stroke / 2), androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()), style = style)
+                    drawRoundRect(ink, Offset(stroke / 2, w * .3f), androidx.compose.ui.geometry.Size(w * .7f - stroke / 2, w * .7f - stroke / 2), androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()), style = style)
+                }
+                CtlKind.Close -> {
+                    drawLine(ink, Offset(0f, 0f), Offset(w, w), stroke)
+                    drawLine(ink, Offset(w, 0f), Offset(0f, w), stroke)
+                }
+            }
+        }
     }
 }
 

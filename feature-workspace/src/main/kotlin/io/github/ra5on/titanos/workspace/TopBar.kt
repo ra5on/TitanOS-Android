@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -93,9 +92,13 @@ internal fun TopBar(state: WorkspaceState, onSearchFocus: () -> Unit) {
             Icon(TitanIcons.grid, null, tint = c.text, modifier = Modifier.size(icon))
             Text(menuTitle, style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = c.text)
         }
-        SearchField(state, Modifier.widthIn(min = 120.dp, max = 220.dp), onSearchFocus)
-        Box(Modifier.padding(horizontal = 4.dp).width(1.dp).heightIn(min = h * .5f, max = h * .5f).background(c.border))
-        MenuBarItems(state)
+        // Schmal (Handy, geteilter Bildschirm, große Schrift): erst die Suche, dann die Menüleiste weglassen, nie Wörter zerreißen.
+        val room = state.wm.area.w / androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)
+        if (room >= 900) SearchField(state, Modifier.widthIn(min = 120.dp, max = 220.dp), onSearchFocus)
+        if (room >= 640) {
+            Box(Modifier.padding(horizontal = 4.dp).width(1.dp).heightIn(min = h * .5f, max = h * .5f).background(c.border))
+            MenuBarItems(state)
+        }
         Spacer(Modifier.weight(1f))
         // Der KI-Agent als Leiste rechts (wie die Seitenleiste des Agenten im Web), wenn das Konto ihn hat.
         state.programOf("app:agent")?.let { agent ->
@@ -105,7 +108,7 @@ internal fun TopBar(state: WorkspaceState, onSearchFocus: () -> Unit) {
                     .semantics { contentDescription = label }.padding(6.dp),
             ) { io.github.ra5on.titanos.ui.components.AppIcon(agent.glyph, agent.gradient, icon + 4.dp) }
         }
-        Status(state)
+        Status(state, compact = room < 900, tiny = room < 640)
     }
 }
 
@@ -163,7 +166,7 @@ private fun SearchField(state: WorkspaceState, modifier: Modifier, onFocus: () -
 }
 
 @Composable
-private fun Status(state: WorkspaceState) {
+private fun Status(state: WorkspaceState, compact: Boolean = false, tiny: Boolean = false) {
     val c = Titan.colors
     val data = state.data
     var now by remember { mutableStateOf(LocalDateTime.now()) }
@@ -174,15 +177,15 @@ private fun Status(state: WorkspaceState) {
         }
     }
     val locale = Locale.getDefault()
-    if (state.store.prefs.barLoad && data.cpu != null) {
+    if (state.store.prefs.barLoad && data.cpu != null && !compact) {
         val cpu = Format.percent((data.cpu ?: 0.0) / 100.0)
         val ram = Format.percent(data.memFraction)
         Text(t("menubar.load", "cpu" to cpu, "ram" to ram), style = TitanType.small, color = c.muted, modifier = Modifier.padding(horizontal = 6.dp))
     }
     val date = now.format(DateTimeFormatter.ofPattern(if (locale.language == "de") "EEE d. MMM" else "EEE d MMM", locale))
     val time = now.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale))
-    Row(Modifier.fillMaxHeight().padding(end = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(date, style = TitanType.small, color = c.muted)
+    Row(Modifier.padding(end = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (!tiny) Text(date, style = TitanType.small, color = c.muted)
         Text(time, style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = c.text)
     }
 }
