@@ -68,7 +68,7 @@ import kotlinx.coroutines.launch
 
 /** Virtuelle Maschinen wie im Web (routes/vms). */
 @Composable
-fun VmsRoot(env: ComputeEnv, onBack: () -> Unit, select: String? = null) {
+fun VmsRoot(env: ComputeEnv, select: String? = null, onBack: () -> Unit) {
     val api = remember(env.access) { VmApi(env.access) }
     // `/vms?vm=<name>` (Befehlspalette, Links): diese VM gleich offen.
     val state = remember(api) { VmsState(api).apply { if (!select.isNullOrEmpty()) { selected = select; detailOpen = true } } }

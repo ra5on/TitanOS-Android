@@ -62,8 +62,8 @@ fun ComputeProgramAt(start: String, graph: AppGraph, link: String?, onBack: () -
     val page = if (program == start) startPage(link, start) else null
     when (program) {
         "docker" -> DockerRoot(env, back, start = page)
-        "vms" -> VmsRoot(env, back, select = if (program == start) link?.let { queryValue(it, "vm") } else null)
-        "lxc" -> LxcRoot(env, back, select = if (program == start) link?.let { queryValue(it, "ct") } else null)
+        "vms" -> VmsRoot(env, onBack = back, select = if (program == start) link?.let { queryValue(it, "vm") } else null)
+        "lxc" -> LxcRoot(env, onBack = back, select = if (program == start) link?.let { queryValue(it, "ct") } else null)
         "nvr" -> NvrRoot(env, back, start = page)
         else -> TerminalRoot(env, back)
     }

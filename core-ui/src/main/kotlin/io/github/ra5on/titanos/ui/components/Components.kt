@@ -43,6 +43,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.selected
@@ -328,13 +334,24 @@ fun TextInput(
 ) {
     val c = Titan.colors
     val shape = RoundedCornerShape(12.dp)
+    val focus = androidx.compose.ui.platform.LocalFocusManager.current
     BasicTextField(
         value = value,
         onValueChange = onChange,
         textStyle = style.copy(color = c.text),
         cursorBrush = SolidColor(c.accent),
         keyboardOptions = keyboard,
-        modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
+        modifier = modifier.fillMaxWidth()
+            // Tab führt mit der Tastatur zum nächsten Bedienelement, statt ein Tabzeichen einzufügen.
+            .onPreviewKeyEvent { e ->
+                if (e.key == androidx.compose.ui.input.key.Key.Tab && !e.isCtrlPressed && !e.isAltPressed) {
+                    if (e.type == androidx.compose.ui.input.key.KeyEventType.KeyDown) {
+                        focus.moveFocus(if (e.isShiftPressed) androidx.compose.ui.focus.FocusDirection.Previous else androidx.compose.ui.focus.FocusDirection.Next)
+                    }
+                    true
+                } else false
+            }
+            .semantics { contentDescription = label },
         decorationBox = { inner ->
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(shape).background(c.surface).border(1.dp, c.border, shape)
