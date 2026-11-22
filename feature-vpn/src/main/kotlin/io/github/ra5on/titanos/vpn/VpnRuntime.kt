@@ -89,9 +89,24 @@ object VpnRuntime {
     private val watchers = AtomicInteger(0)
 
     private val backend: GoBackend by lazy { GoBackend(app) }
+
+    /** Ein eigener Auf- oder Abbau läuft gerade (setState ruft onStateChange auf demselben Faden). */
+    @Volatile
+    private var ownChange = false
+
+    private fun setBackend(state: Tunnel.State, config: Config?) {
+        ownChange = true
+        try {
+            backend.setState(tunnel, state, config)
+        } finally {
+            ownChange = false
+        }
+    }
     private val tunnel = object : Tunnel {
         override fun getName(): String = TUNNEL
         override fun onStateChange(newState: Tunnel.State) {
+            // GoBackend meldet auch die eigenen Wechsel (am Ende von setState): die zählen hier nicht.
+            if (ownChange) return
             // Ging von außen zu (anderes VPN, in Android getrennt): nicht gleich wieder aufbauen.
             if (newState == Tunnel.State.DOWN && _state.value.status == TunnelStatus.On) {
                 scope.launch {
@@ -224,7 +239,7 @@ object VpnRuntime {
         } ?: return problem(VpnProblem.Start, why)
         _state.update { it.copy(status = TunnelStatus.Connecting, why = why, problem = VpnProblem.None) }
         try {
-            backend.setState(tunnel, Tunnel.State.UP, config)
+            setBackend(Tunnel.State.UP, config)
         } catch (e: BackendException) {
             return problem(
                 when (e.reason) {
@@ -259,7 +274,7 @@ object VpnRuntime {
     }
 
     private suspend fun disconnectNow(why: Why) {
-        runCatching { backend.setState(tunnel, Tunnel.State.DOWN, null) }
+        runCatching { setBackend(Tunnel.State.DOWN, null) }
         stopped(why)
     }
 

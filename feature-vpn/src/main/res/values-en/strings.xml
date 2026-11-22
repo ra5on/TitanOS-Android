@@ -30,6 +30,8 @@
     <string name="vpn_why_no_network">The phone has no network right now.</string>
     <string name="vpn_why_home">In a home Wi-Fi: the tunnel is not needed.</string>
     <string name="vpn_why_away">Away: the tunnel is on.</string>
+    <string name="vpn_why_no_access">Not set up yet: create the access below.</string>
+    <string name="vpn_why_should">Away: the tunnel should be on but is not.</string>
     <string name="vpn_why_always">Set to “Always”.</string>
     <string name="vpn_why_manual">Switched by hand.</string>
     <string name="vpn_why_manual_until">Switched by hand, until the network changes.</string>

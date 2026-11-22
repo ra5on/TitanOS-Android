@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.ra5on.titanos.net.ApiException
@@ -64,6 +65,7 @@ fun VpnPage(onBack: () -> Unit) {
     var perms by remember { mutableStateOf(permsOf(context)) }
     var ssid by remember { mutableStateOf(NetworkWatch.currentSsid(context)) }
     var connectAfterConsent by remember { mutableStateOf(false) }
+    val tileLabel = stringResource(R.string.vpn_tile_label)
 
     fun reread() {
         perms = permsOf(context)
@@ -202,7 +204,7 @@ fun VpnPage(onBack: () -> Unit) {
                 runCatching {
                     sbm?.requestAddTileService(
                         ComponentName(context, VpnTileService::class.java),
-                        context.getString(R.string.vpn_tile_label),
+                        tileLabel,
                         Icon.createWithResource(context, R.drawable.ic_vpn_shield),
                         context.mainExecutor,
                     ) { }

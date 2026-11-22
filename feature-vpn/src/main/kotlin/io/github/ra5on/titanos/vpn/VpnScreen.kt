@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -113,7 +114,12 @@ fun VpnScreen(ui: VpnUi, actions: VpnActions, expanded: Boolean = false) {
     var confirmRemove by remember { mutableStateOf(false) }
     var confirmRenew by remember { mutableStateOf(false) }
     Page(
-        topBar = { TopBar(stringResource(R.string.vpn_title), onBack = actions.back, backLabel = stringResource(UiR.string.ui_back), icon = { RowIcon(TitanIcons.shield, tint = Titan.colors.accent) }) },
+        topBar = {
+            // Die Seite liegt über der Leiste der App: die Statusleiste von Android freilassen (wie AboutScreen).
+            Box(Modifier.statusBarsPadding()) {
+                TopBar(stringResource(R.string.vpn_title), onBack = actions.back, backLabel = stringResource(UiR.string.ui_back), icon = { RowIcon(TitanIcons.shield, tint = Titan.colors.accent) })
+            }
+        },
         overlay = {
             if (confirmRemove) {
                 ConfirmDialog(
@@ -168,8 +174,17 @@ fun VpnScreen(ui: VpnUi, actions: VpnActions, expanded: Boolean = false) {
 }
 
 @Composable
-private fun whyText(live: VpnLive): String = stringResource(
-    when (live.why) {
+private fun whyText(live: VpnLive, hasAccess: Boolean): String = stringResource(
+    when {
+        // Ohne Zugang sagt die Zeile das, nicht was die Automatik täte.
+        !hasAccess -> R.string.vpn_why_no_access
+        // Sollte laufen, läuft aber nicht (das Problem steht darunter).
+        live.status != TunnelStatus.On && live.why in setOf(Why.Away, Why.AlwaysMode, Why.AlwaysOnAndroid) -> R.string.vpn_why_should
+        else -> whyRes(live.why)
+    },
+)
+
+private fun whyRes(why: Why): Int = when (why) {
         Why.Off -> R.string.vpn_why_off
         Why.NoNetwork -> R.string.vpn_why_no_network
         Why.AtHome -> R.string.vpn_why_home
@@ -180,8 +195,7 @@ private fun whyText(live: VpnLive): String = stringResource(
         Why.NeverMode -> R.string.vpn_why_never
         Why.OtherVpn -> R.string.vpn_why_other_vpn
         Why.AlwaysOnAndroid -> R.string.vpn_why_always_on
-    },
-)
+}
 
 @Composable
 private fun netText(net: NetState): String = when {
@@ -212,7 +226,7 @@ private fun StatusCard(ui: VpnUi, actions: VpnActions) {
             Icon(if (on) TitanIcons.lock else TitanIcons.shield, contentDescription = null, tint = if (on) c.okInk else c.muted, modifier = Modifier.size(34.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stateText, style = TitanType.title, color = if (on) c.okInk else c.text, modifier = Modifier.semantics { heading() })
-                Text(whyText(live), style = TitanType.body, color = c.text)
+                Text(whyText(live, ui.profile != null), style = TitanType.body, color = c.text)
                 Text(netText(live.net), style = TitanType.rowSub, color = c.muted)
                 if (on) {
                     Text(stringResource(R.string.vpn_traffic, Format.bytes(live.rx), Format.bytes(live.tx)), style = TitanType.rowSub, color = c.muted)

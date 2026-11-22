@@ -30,6 +30,8 @@
     <string name="vpn_why_no_network">Das Handy hat gerade kein Netz.</string>
     <string name="vpn_why_home">Im Heim-WLAN: der Tunnel ist nicht nötig.</string>
     <string name="vpn_why_away">Unterwegs: der Tunnel ist an.</string>
+    <string name="vpn_why_no_access">Noch nicht eingerichtet: unten den Zugang anlegen.</string>
+    <string name="vpn_why_should">Unterwegs: Der Tunnel sollte laufen, läuft aber nicht.</string>
     <string name="vpn_why_always">Eingestellt auf „Immer“.</string>
     <string name="vpn_why_manual">Von Hand geschaltet.</string>
     <string name="vpn_why_manual_until">Von Hand geschaltet, gilt bis zum nächsten Netzwechsel.</string>

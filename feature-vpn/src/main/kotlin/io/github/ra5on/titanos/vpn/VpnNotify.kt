@@ -174,13 +174,21 @@ class VpnTileService : TileService() {
         val live = VpnRuntime.state.value
         if (!live.hasAccess || !VpnRuntime.isPrepared(this)) {
             // Einrichten und die Frage von Android gehen nur in der App.
-            val pi = VpnNotify.openApp(this) ?: return
-            if (android.os.Build.VERSION.SDK_INT >= 34) startActivityAndCollapse(pi) else @Suppress("DEPRECATION") startActivityAndCollapse(
-                VpnRuntime.host?.openVpnIntent(this)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) ?: return,
-            )
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                startActivityAndCollapse(VpnNotify.openApp(this) ?: return)
+            } else {
+                openBefore34()
+            }
             return
         }
         VpnRuntime.userSet(live.status != TunnelStatus.On)
+    }
+
+    /** Android 13 kennt nur die Fassung mit Intent (ab 14 die mit PendingIntent, oben). */
+    @android.annotation.SuppressLint("StartActivityAndCollapseDeprecated")
+    @Suppress("DEPRECATION")
+    private fun openBefore34() {
+        startActivityAndCollapse(VpnRuntime.host?.openVpnIntent(this)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) ?: return)
     }
 
     companion object {
