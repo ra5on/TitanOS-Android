@@ -354,6 +354,8 @@ internal fun PaletteContent(
     val list = rememberLazyListState()
     val field = remember { FocusRequester() }
     if (focus) LaunchedEffect(Unit) { runCatching { field.requestFocus() } }
+    // Neue Suche: wieder oben anfangen (sonst hielte die Liste den alten ersten Treffer fest, der jetzt weiter unten steht).
+    LaunchedEffect(query) { runCatching { list.scrollToItem(0) } }
     LaunchedEffect(current) { if (entries.isNotEmpty()) runCatching { list.animateScrollToItem(current.coerceIn(0, entries.size - 1)) } }
     val shape = RoundedCornerShape(16.dp)
     val closeLabel = stringResource(io.github.ra5on.titanos.ui.R.string.ui_close)
