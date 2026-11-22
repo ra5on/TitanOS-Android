@@ -4,19 +4,15 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.net.http.SslError
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Base64
-import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
-import android.webkit.SslErrorHandler
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,10 +39,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import io.github.ra5on.titanos.net.AddressKind
-import io.github.ra5on.titanos.net.Endpoint
-import io.github.ra5on.titanos.net.PinnedAddress
-import io.github.ra5on.titanos.net.Spki
+import io.github.ra5on.titanos.net.PinnedOrigin
+import io.github.ra5on.titanos.net.PinnedWebProxy
+import io.github.ra5on.titanos.net.PinnedWebViewClient
+import io.github.ra5on.titanos.net.SessionInterceptor
+import io.github.ra5on.titanos.net.intercept
 import io.github.ra5on.titanos.ui.R as UiR
 import io.github.ra5on.titanos.ui.components.ButtonKind
 import io.github.ra5on.titanos.ui.components.ConfirmDialog
@@ -71,10 +68,11 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.put
-import okhttp3.HttpUrl
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayInputStream
-import java.security.cert.X509Certificate
 
 /** Welches Office-Programm eine Datei öffnet (wie chosenApp in protocol.ts). */
 object OfficeChoice {
@@ -96,30 +94,22 @@ object OfficeChoice {
         chosen(name, apps, prefs, titanosShows = false)
 }
 
-/** Wo die WebView das NAS erreicht: Adresse, ihr Pin und ob ein öffentliches Zertifikat gilt. */
-data class OfficeHost(val base: HttpUrl, val spki: String, val allowPublic: Boolean) {
-    val origin: String get() = base.toString().trimEnd('/')
-
-    fun accepts(cert: X509Certificate?): Boolean = cert != null && Spki.matches(cert, spki)
+/**
+ * Wo die WebView das NAS erreicht: der über die gepinnte Verbindung gewählte
+ * Ursprung und ein Client mit Pin und Sitzung der App. Alles, was die WebView
+ * vom NAS braucht, holt die App über diesen Client (GET über den Proxy, das
+ * Speichern über die Brücke); die WebView selbst verbindet sich nicht mit dem
+ * NAS und bekommt keinen Sitzungs-Cookie.
+ */
+class OfficeHost(val pinned: PinnedOrigin, val client: OkHttpClient) {
+    val origin: String get() = pinned.origin
 
     companion object {
-        /** Die erste Adresse, die antwortet; das Heimnetz zuerst (wie NasConnection). */
+        /** Die erste Adresse, die über die gepinnte Verbindung antwortet; Tunnel, dann Heimnetz zuerst (wie NasConnection). */
         suspend fun resolve(access: FilesAccess): OfficeHost? = withContext(Dispatchers.IO) {
-            // Das NAS im eigenen Tunnel nur, solange er läuft, dann zuerst (wie NasConnection).
-            val up = io.github.ra5on.titanos.net.VpnRoute.isUp()
-            val ordered = access.pairing.addresses.filter { up || !it.isVpn }
-                .sortedBy { if (it.isVpn) -1 else if (it.address?.kind == AddressKind.LAN) 0 else 1 }
-            for (pa in ordered) {
-                val endpoint = Endpoint.pinned(access.shared, pa) ?: continue
-                val ok = runCatching {
-                    endpoint.client.newCall(Request.Builder().url(endpoint.base.newBuilder().encodedPath("/api/v1/session").build()).build()).execute().use { it.isSuccessful }
-                }.getOrDefault(false)
-                if (ok) return@withContext host(endpoint.base, pa)
-            }
-            null
+            val pinned = PinnedOrigin.resolve(access.shared, access.pairing) ?: return@withContext null
+            OfficeHost(pinned, pinned.client.newBuilder().addInterceptor(SessionInterceptor(access.sessions, pinned.client, pinned.base)).build())
         }
-
-        fun host(base: HttpUrl, pa: PinnedAddress) = OfficeHost(base, pa.spki, pa.publicCert || pa.address?.hasPublicName == true)
     }
 }
 
@@ -214,7 +204,9 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
                             if (l == null || !l.writable) "readonly"
                             else runCatching { context.contentResolver.openOutputStream(l.uri, "wt")!!.use { it.write(Base64.decode(b64, Base64.DEFAULT)) } }.fold({ "ok" }, { "error" })
                         },
-                        renew = { runBlocking { runCatching { model.files?.webapps() } }; setCookie(access, h) },
+                        // Die Sitzung setzt der Client der App selbst (und erneuert sie bei 401); hier nur auffrischen.
+                        renew = { runBlocking { runCatching { model.files?.webapps() } } },
+                        put = { target, b64 -> officePut(h, target, b64) },
                         onAsk = { a -> main.post { askName = a.name; ask = a } },
                         onDirty = { d -> main.post { dirty = d } },
                         onError = { kind, code -> main.post { notice = String.format(errorText, kind, code) } },
@@ -228,7 +220,6 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
                 }
                 AndroidView(
                     factory = { ctx ->
-                        setCookie(access, h)
                         if ((ctx.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) WebView.setWebContentsDebuggingEnabled(true)
                         WebView(ctx).apply {
                             // Ohne volle Höhe misst die WebView den Inhalt (wrap_content): die Seite wäre 0 px hoch.
@@ -242,7 +233,10 @@ fun OfficeScreen(model: FilesModel, app: WebApp, location: Location, name: Strin
                             settings.javaScriptCanOpenWindowsAutomatically = false
                             settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
                             addJavascriptInterface(bridge, "TitanOffice")
-                            webViewClient = OfficeClient(ctx, h) { failed = texts.certificate; stopLoading() }
+                            val client = OfficeClient(ctx, h) { failed = texts.certificate; stopLoading() }
+                            // Ein Service Worker käme sonst am WebViewClient vorbei; /sw.js ist ohnehin gesperrt.
+                            client.routeServiceWorkers()
+                            webViewClient = client
                             webChromeClient = object : android.webkit.WebChromeClient() {
                                 override fun onConsoleMessage(m: android.webkit.ConsoleMessage): Boolean {
                                     // Nur in Testfassungen: Meldungen der Programme können Inhalte nennen.
@@ -356,13 +350,30 @@ internal fun officeConfig(app: WebApp, location: Location, name: String?, author
     }.toString()
 }
 
-private fun setCookie(access: FilesAccess, host: OfficeHost) {
-    val c = access.sessions.current() ?: return
-    val cm = CookieManager.getInstance()
-    cm.setAcceptCookie(true)
-    cm.setCookie(host.origin, "${c.name}=${c.token}; Path=/; Secure; HttpOnly; SameSite=Strict")
-    cm.flush()
+/**
+ * Speichern aus der Rahmenseite (`PUT /api/v1/files/content?…`) über den
+ * gepinnten Client der App: `WebResourceRequest` gibt den Inhalt einer
+ * Anfrage nicht heraus, über die WebView ginge das Dokument samt Sitzung an
+ * jedes Gerät mit einem öffentlich gültigen Zertifikat für den Namen.
+ * Liefert `{"status":…,"body":"…"}` für die Rahmenseite.
+ */
+internal fun officePut(host: OfficeHost, target: String, b64: String): String {
+    val url = host.pinned.base.resolve(target)
+    if (url == null || !host.pinned.owns(url) || url.encodedPath != PUT_PATH) return putResult(403, "")
+    return try {
+        val bytes = Base64.decode(b64, Base64.DEFAULT)
+        val request = Request.Builder().url(url).put(bytes.toRequestBody("application/octet-stream".toMediaType())).build()
+        host.client.newCall(request).execute().use { r -> putResult(r.code, r.body.string()) }
+    } catch (e: java.io.IOException) {
+        putResult(503, "{\"error\":{\"code\":\"unreachable\"}}")
+    } catch (e: IllegalArgumentException) {
+        putResult(400, "")
+    }
 }
+
+internal fun putResult(status: Int, body: String): String = buildJsonObject { put("status", status); put("body", body) }.toString()
+
+private const val PUT_PATH = "/api/v1/files/content"
 
 /** Die Schnittstelle der Rahmenseite; nichts davon gibt die Sitzung heraus. */
 private class OfficeBridge(
@@ -370,6 +381,7 @@ private class OfficeBridge(
     private val readLocal: () -> String,
     private val writeLocal: (String) -> String,
     private val renew: () -> Unit,
+    private val put: (String, String) -> String,
     private val onAsk: (OfficeAsk) -> Unit,
     private val onDirty: (Boolean) -> Unit,
     private val onError: (String, String) -> Unit,
@@ -383,6 +395,7 @@ private class OfficeBridge(
     @JavascriptInterface fun ready() = Unit
     @JavascriptInterface fun opened(@Suppress("UNUSED_PARAMETER") size: Long) = Unit
     @JavascriptInterface fun renew(): Boolean = runCatching { renew.invoke() }.isSuccess
+    @JavascriptInterface fun put(target: String, data: String): String = runCatching { put.invoke(target, data) }.getOrDefault(putResult(503, ""))
     @JavascriptInterface fun ask(kind: String, json: String, id: Int) {
         val name = runCatching { (Json.parseToJsonElement(json) as JsonObject)["name"]?.let { (it as JsonPrimitive).contentOrNull } }.getOrNull().orEmpty()
         onAsk(OfficeAsk(kind, name, id))
@@ -395,41 +408,31 @@ private class OfficeBridge(
     @JavascriptInterface fun keepOnPhone(name: String, data: String) = onKeep(name, data)
 }
 
-/** Nur das NAS: Rahmenseite aus der App, /webapps/ und die nötigen Routen; alles andere bleibt zu. */
-private class OfficeClient(private val context: Context, private val host: OfficeHost, private val onBadCert: () -> Unit) : WebViewClient() {
-    private fun own(uri: Uri): Boolean = uri.scheme == "https" && uri.host == host.base.host && (uri.port.takeIf { it > 0 } ?: 443) == host.base.port
+/**
+ * Nur das NAS: Rahmenseite aus der App, /webapps/ und die nötigen Routen, alle
+ * über den gepinnten Client (GET); Anfragen mit Inhalt sperrt die WebView, das
+ * Speichern geht über die Brücke ([officePut]). Fremde Seiten öffnet sie nicht.
+ */
+private class OfficeClient(context: Context, private val host: OfficeHost, onBadCert: () -> Unit) :
+    PinnedWebViewClient(context, host.pinned, PinnedWebProxy(host.pinned, host.client), onBadCert) {
 
-    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = !own(request.url)
+    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = !origin.owns(request.url.toString())
 
-    override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+    override fun route(request: WebResourceRequest): WebResourceResponse? {
         val uri = request.url
-        if (!own(uri)) return blocked()
+        if (!origin.owns(uri.toString())) return blocked()
         val path = uri.path.orEmpty()
         if (path == HOST_PATH) {
             return WebResourceResponse("text/html", "utf-8", context.assets.open("titanos-office.html")).apply {
                 responseHeaders = mapOf("Cache-Control" to "no-store", "Content-Security-Policy" to "frame-ancestors 'none'; object-src 'none'")
             }
         }
-        if (path.startsWith("/webapps/") || ALLOWED_API.any { path.startsWith(it) } || path == "/favicon.ico") return null
-        return blocked()
+        val allowed = path.startsWith("/webapps/") || ALLOWED_API.any { path.startsWith(it) } || path == "/favicon.ico"
+        if (!allowed) return blocked()
+        return proxy.intercept(request) ?: blocked()
     }
 
     private fun blocked() = WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", emptyMap(), ByteArrayInputStream(ByteArray(0)))
-
-    @SuppressLint("WebViewClientOnReceivedSslError")
-    override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
-        // Selbst signiertes Zertifikat des NAS: gilt, wenn der Pin aus der Kopplung passt.
-        val cert = error.certificate?.x509Certificate
-        val ok = own(Uri.parse(error.url)) && host.accepts(cert)
-        if (ok) handler.proceed() else { handler.cancel(); onBadCert() }
-    }
-
-    // Hinweis: Die Rahmenseite selbst kommt aus der App (kein TLS). Geschützt wird die Verbindung
-    // durch die Prüfung der Adresse mit dem gepinnten Client vorab (OfficeHost.resolve) und
-    // onReceivedSslError oben: ein selbst signiertes Zertifikat gilt nur mit passendem Pin. Offen
-    // bleibt: ein öffentlich gültiges Zertifikat ruft onReceivedSslError nicht auf, die WebView prüft
-    // es dann nicht gegen den Pin. Für IP-Adressen und .local gibt es solche Zertifikate nicht; bei
-    // DNS-Namen ohne „öffentliches Zertifikat“ in der Kopplung ist das eine bekannte Grenze.
 }
 
 private fun acceptTypes(accept: String): Array<String> {

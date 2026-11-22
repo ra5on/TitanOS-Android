@@ -40,8 +40,11 @@ interface AgentHost {
     fun agentModel(): AgentModel?
     /** Öffnet die App bei einem Chat (null: neuer Chat). */
     fun openAgent(context: Context, chatId: String?)
-    /** Adresse und Sitzung für Seiten der Weboberfläche in der App (Office ohne TitanOS-App). */
-    fun webSession(): io.github.ra5on.titanos.agent.ui.WebSession? = null
+    /**
+     * Adresse und Sitzung für Seiten der Weboberfläche in der App (Office ohne
+     * TitanOS-App); die Adresse wählt die gepinnte Verbindung. Nicht im Hauptthread.
+     */
+    suspend fun webSession(): io.github.ra5on.titanos.agent.ui.WebSession? = null
 }
 
 fun Context.agentHost(): AgentHost? = applicationContext as? AgentHost

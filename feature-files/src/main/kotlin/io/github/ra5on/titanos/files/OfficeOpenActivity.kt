@@ -1,6 +1,7 @@
 package io.github.ra5on.titanos.files
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
@@ -21,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import io.github.ra5on.titanos.model.FileRoot
+import io.github.ra5on.titanos.net.IncomingUri
 import io.github.ra5on.titanos.ui.R as UiR
 import io.github.ra5on.titanos.ui.components.Page
 import io.github.ra5on.titanos.ui.components.Problem
@@ -40,7 +42,8 @@ class OfficeOpenActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val uri = intent?.data
+        // Nur content:// fremder Apps: file:// und die eigenen Anbieter läse (und überschriebe) die App mit eigenen Rechten.
+        val uri = intent?.data?.takeIf { IncomingUri.accepts(this, it) }
         val api = FilesRuntime.api()
         val store = FilesRuntime.store
         val offline = FilesRuntime.offline
@@ -48,7 +51,8 @@ class OfficeOpenActivity : ComponentActivity() {
             runCatching { contentResolver.query(u, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null } }.getOrNull()
                 ?: u.lastPathSegment?.substringAfterLast('/')
         } ?: "Dokument"
-        val writable = intent?.action == Intent.ACTION_EDIT || (intent?.flags ?: 0) and Intent.FLAG_GRANT_WRITE_URI_PERMISSION != 0
+        // Zurückschreiben nur, wenn die andere App das Schreiben für diese Datei wirklich erlaubt hat (nicht schon wegen ACTION_EDIT).
+        val writable = uri != null && checkCallingOrSelfUriPermission(uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION) == PackageManager.PERMISSION_GRANTED
         val model = if (api != null && store != null && offline != null) FilesModel(applicationContext, api, store, lifecycleScope, offline) else null
         setContent {
             TitanTheme {
