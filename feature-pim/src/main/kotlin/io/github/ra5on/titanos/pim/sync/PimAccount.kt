@@ -16,7 +16,12 @@ object PimAccount {
 
     fun all(context: Context): List<Account> = AccountManager.get(context).getAccountsByType(TYPE).toList()
 
-    fun current(context: Context): Account? = all(context).firstOrNull()
+    /** Name des Kontos des in der App gewählten NAS (mehrere NAS); null: das erste. Gesetzt in TitanApp. */
+    @Volatile
+    var currentName: () -> String? = { null }
+
+    /** Das Konto des gewählten NAS (Seite „Kontakte und Kalender“, Live-Abgleich), sonst das erste. */
+    fun current(context: Context): Account? = all(context).let { list -> list.firstOrNull { it.name == currentName() } ?: list.firstOrNull() }
 
     /**
      * Legt das Konto der Kopplung an, falls es fehlt. Konten, deren Kopplung es

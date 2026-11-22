@@ -42,6 +42,8 @@ import io.github.ra5on.titanos.ui.components.AppIcon
 import io.github.ra5on.titanos.ui.rememberWidestWord
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanType
+import io.github.ra5on.titanos.ui.theme.TitanIcons
+import androidx.compose.foundation.layout.size
 
 /**
  * Das Hauptmenü (Launcher.svelte): alle Programme in der eigenen Reihenfolge
@@ -113,7 +115,23 @@ internal fun BoxScope.Launcher(state: WorkspaceState) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         AppIcon(p.glyph, p.gradient, 20.dp)
-                        Text(if (key == "app:account") state.user else p.label, style = TitanType.small, color = c.text)
+                        Text(if (key == "app:account") state.user.substringAfterLast('/') else p.label, style = TitanType.small, color = c.text)
+                    }
+                }
+                // Wie im Web: Sperren, Neustart, Herunterfahren (beides nur für Besitzer und Admins, mit Rückfrage und Fingerabdruck).
+                val power = listOfNotNull(
+                    state.onLock?.let { Triple(t("desktop.menu.lock"), TitanIcons.lock) { state.launcher = false; it() } },
+                    state.onPower?.takeIf { state.admin }?.let { Triple(t("desktop.menu.restartShort"), TitanIcons.restart) { state.launcher = false; it(true) } },
+                    state.onPower?.takeIf { state.admin }?.let { Triple(t("desktop.menu.shutdownShort"), TitanIcons.bolt) { state.launcher = false; it(false) } },
+                )
+                for ((label, icon, run) in power) {
+                    Row(
+                        Modifier.clip(RoundedCornerShape(10.dp)).background(c.chip).clickable(role = Role.Button, onClick = run).padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        androidx.compose.material3.Icon(icon, null, tint = c.muted, modifier = Modifier.size(18.dp))
+                        Text(label, style = TitanType.small, color = c.text)
                     }
                 }
             }

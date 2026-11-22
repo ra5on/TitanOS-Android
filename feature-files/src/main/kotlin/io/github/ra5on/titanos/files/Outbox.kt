@@ -13,6 +13,16 @@ import java.io.IOException
 object Outbox {
     fun dir(context: Context) = File(context.filesDir, "outbox").apply { mkdirs() }
 
+    /** Die Datei hinter [uri], wenn sie eine eigene Kopie im Ausgang ist (`file://`, unter [dir]); sonst null. */
+    fun own(context: Context, uri: Uri): File? = inside(dir(context), uri.takeIf { it.scheme == "file" }?.path)
+
+    internal fun inside(dir: File, path: String?): File? {
+        path ?: return null
+        val root = dir.canonicalFile
+        val f = File(path).canonicalFile
+        return f.takeIf { it.path.startsWith(root.path + File.separator) }
+    }
+
     @Throws(IOException::class)
     fun copy(context: Context, uri: Uri, name: String): File {
         val folder = File(dir(context), System.nanoTime().toString()).apply { mkdirs() }

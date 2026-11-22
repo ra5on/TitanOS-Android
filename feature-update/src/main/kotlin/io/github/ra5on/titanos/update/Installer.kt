@@ -48,7 +48,7 @@ object UpdateState {
 /** Einstellungen des Selbst-Updates. Testfassungen ab Werk, solange die App selbst eine ist. */
 class UpdateSettings(context: Context) {
     private val prefs = context.getSharedPreferences("update", Context.MODE_PRIVATE)
-    private val installedCode = Installer.versionCode(context, AppKind.TitanOS)
+    private val installedCode = Installer.versionCode(context, AppKind.own(context.packageName))
 
     var autoCheck: Boolean
         get() = prefs.getBoolean("auto", true)
@@ -117,7 +117,7 @@ class Installer(private val context: Context, private val client: OkHttpClient) 
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
-    /** Paketname, höhere Version und dasselbe Signaturzertifikat wie die installierte TitanOS-App. */
+    /** Paketname, höhere Version und dasselbe Signaturzertifikat wie diese App. */
     private fun verifyArchive(apk: File, kind: AppKind, code: Int) {
         val pm = context.packageManager
         val info = pm.getPackageArchiveInfo(apk.path, PackageManager.PackageInfoFlags.of(PackageManager.GET_SIGNING_CERTIFICATES.toLong()))
@@ -132,7 +132,8 @@ class Installer(private val context: Context, private val client: OkHttpClient) 
         val installer = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
             setAppPackageName(kind.packageName)
-            if (kind == AppKind.TitanOS) setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+            // Die eigene App ohne Rückfrage, wenn Android es zulässt (Handy oder Uhr).
+            if (kind.packageName == context.packageName) setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
             setSize(apk.length())
         }
         val id = installer.createSession(params)

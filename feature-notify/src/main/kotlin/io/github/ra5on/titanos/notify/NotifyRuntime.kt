@@ -7,29 +7,60 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import io.github.ra5on.titanos.net.NasNames
+import io.github.ra5on.titanos.net.NasRegistry
 import java.io.File
 
 /** Zustand der Dauerverbindung, für Entwurf 72. */
 enum class LiveState { Off, Connecting, Connected, Waiting }
 
+/** Ein gekoppeltes NAS für die Mitteilungen: Kennung und Name (für Kanal und Gruppe). */
+data class NotifyNas(val id: String, val name: String)
+
 /**
  * Was Auftrag, Dienst und Empfänger ohne Activity brauchen. Die App setzt
- * [api] beim Start (TitanApp); ohne Kopplung ist es null.
+ * [api], [nasList] und [active] beim Start (TitanApp); ohne Kopplung ist die Liste leer.
+ *
+ * Mitteilungen kommen von allen gekoppelten NAS ([nasList]), je NAS
+ * abschaltbar ([nasOn]); die Liste in der App zeigt das gewählte NAS ([active]).
  */
 object NotifyRuntime {
     @Volatile
-    var api: () -> NotifyApi? = { null }
+    var api: (nas: String) -> NotifyApi? = { null }
+
+    @Volatile
+    var nasList: () -> List<NotifyNas> = { emptyList() }
+
+    /** Das in der App gewählte NAS. */
+    @Volatile
+    var active: () -> String = { NasRegistry.LEGACY_ID }
 
     /** Abruf, Strom und Öffnen der App gleichen nacheinander ab, nie zugleich. */
     val lock = Mutex()
 
-    @Volatile
-    private var store: InboxStore? = null
+    private val stores = HashMap<String, InboxStore>()
 
-    fun inbox(context: Context): InboxStore =
-        store ?: synchronized(this) {
-            store ?: InboxStore(File(context.applicationContext.filesDir, "notifications.json")).also { store = it }
-        }
+    /** Stand der Mitteilungen eines NAS; die alte Kopplung behält `notifications.json`. */
+    fun inbox(context: Context, nas: String = active()): InboxStore = synchronized(stores) {
+        stores.getOrPut(nas) { InboxStore(File(context.applicationContext.filesDir, "notifications" + NasNames.suffix(nas) + ".json")) }
+    }
+
+    /** Mitteilungen dieses NAS an? (je NAS abschaltbar, ab Werk an) */
+    fun nasOn(context: Context, nas: String): Boolean =
+        context.getSharedPreferences(NAS_PREFS, Context.MODE_PRIVATE).getBoolean("on-$nas", true)
+
+    fun setNasOn(context: Context, nas: String, on: Boolean) {
+        context.getSharedPreferences(NAS_PREFS, Context.MODE_PRIVATE).edit().putBoolean("on-$nas", on).apply()
+        if (!on) Poster.cancelAll(context, nas)
+        NotifyScheduler.arm(context)
+    }
+
+    /** Die NAS, deren Mitteilungen ankommen sollen. */
+    fun wanted(context: Context): List<NotifyNas> = nasList().filter { nasOn(context, it.id) }
+
+    fun nameOf(nas: String): String = nasList().firstOrNull { it.id == nas }?.name.orEmpty()
+
+    private const val NAS_PREFS = "notify-nas"
 
     private val _changes = MutableStateFlow(0L)
 
@@ -41,10 +72,29 @@ object NotifyRuntime {
     }
 
     private val _live = MutableStateFlow(LiveState.Off)
-    val live: StateFlow<LiveState> = _live
 
-    internal fun setLive(s: LiveState) {
-        _live.value = s
+    /** Zustand der Dauerverbindung zum gewählten NAS. */
+    val live: StateFlow<LiveState> = _live
+    private val lives = java.util.concurrent.ConcurrentHashMap<String, LiveState>()
+
+    internal fun setLive(nas: String, s: LiveState) {
+        lives[nas] = s
+        if (nas == active()) _live.value = s
+    }
+
+    internal fun allOff() {
+        lives.clear()
+        _live.value = LiveState.Off
+    }
+
+    /** Fehlt der Strom eines NAS, dessen Mitteilungen an sind? (Android hat den Dienst beendet) */
+    fun someStreamOff(context: Context): Boolean = wanted(context).any { (lives[it.id] ?: LiveState.Off) == LiveState.Off }
+
+    /** Das gewählte NAS hat gewechselt: Liste und Zustand neu. */
+    fun activeChanged() {
+        _live.value = lives[active()] ?: LiveState.Off
+        _offline.value = false
+        changed()
     }
 
     private val _openList = MutableStateFlow(false)
@@ -72,12 +122,17 @@ object NotifyRuntime {
         _openLink.value = null
     }
 
+    /** Das NAS einer angetippten Mitteilung (die App wechselt dorthin, bevor sie [take] ruft); null: keine Angabe. */
+    fun nasOf(intent: android.content.Intent?): String? =
+        intent?.takeIf { it.getBooleanExtra(Poster.EXTRA_OPEN, false) }?.getStringExtra(Poster.EXTRA_NAS)
+
     /** Aus dem Intent der Activity (Tippen auf eine Mitteilung, „Ansehen“). */
     fun take(intent: android.content.Intent?) {
         if (intent?.getBooleanExtra(Poster.EXTRA_OPEN, false) == true) {
             intent.removeExtra(Poster.EXTRA_OPEN)
             val link = intent.getStringExtra(Poster.EXTRA_LINK)
             intent.removeExtra(Poster.EXTRA_LINK)
+            intent.removeExtra(Poster.EXTRA_NAS)
             if (!requestOpen(link)) _openList.value = true
         }
     }
@@ -94,41 +149,63 @@ object NotifyRuntime {
      * Holt, was seit der Marke kam, nimmt es in den Stand und zeigt Neues
      * als Android-Mitteilung. Falsch, wenn das NAS nicht erreichbar war.
      */
-    suspend fun fetch(context: Context): Boolean {
-        val api = api() ?: return false
+    /** Holt bei allen NAS, deren Mitteilungen an sind; falsch, wenn eines nicht erreichbar war. */
+    suspend fun fetchAll(context: Context): Boolean {
+        var ok = true
+        for (n in wanted(context)) if (!fetch(context, n.id)) ok = false
+        return ok
+    }
+
+    suspend fun fetch(context: Context): Boolean = fetchAll(context)
+
+    suspend fun fetch(context: Context, nas: String): Boolean {
+        val api = api(nas) ?: return false
         return lock.withLock {
-            val inbox = inbox(context)
+            val inbox = inbox(context, nas)
             val since = inbox.snapshot().marker
             val list = try {
                 api.list(since)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                _offline.value = true
+                if (nas == active()) _offline.value = true
                 return@withLock false
             }
-            _offline.value = false
-            take(context, list.items, list.latest, quiet = list.reset)
+            if (nas == active()) _offline.value = false
+            take(context, nas, list.items, list.latest, quiet = list.reset)
             true
         }
     }
 
-    /** Nimmt Mitteilungen auf (Abruf oder Strom) und zeigt die neuen an; mit [lock]. */
-    internal fun take(context: Context, items: List<Note>, latest: String, quiet: Boolean) {
-        val fresh = inbox(context).update { state ->
+    /** Nimmt Mitteilungen eines NAS auf (Abruf oder Strom) und zeigt die neuen an; mit [lock]. */
+    internal fun take(context: Context, nas: String, items: List<Note>, latest: String, quiet: Boolean) {
+        val fresh = inbox(context, nas).update { state ->
             val m = Inbox.merge(state, items, latest, quiet, System.currentTimeMillis())
             m.state to m.fresh
         }
         if (items.isNotEmpty()) changed()
-        Poster.post(context, fresh, NotifySettingsStore(context).load())
+        if (nasOn(context, nas)) Poster.post(context, NotifyNas(nas, nameOf(nas)), fresh, NotifySettingsStore(context).load())
     }
 
-    /** Kopplung aufgehoben: Stand, Einstellungen, Aufträge und Dienst weg. */
-    fun forget(context: Context) {
-        NotifyScheduler.cancel(context)
-        LiveService.stop(context)
-        inbox(context).clear()
-        NotifySettingsStore(context).clear()
-        Poster.cancelAll(context)
+    /**
+     * Kopplung eines NAS aufgehoben: sein Stand, sein Schalter, seine
+     * Mitteilungen und Kanäle weg. Die Einstellungen der Mitteilungen gelten
+     * für alle NAS und gehen erst mit der letzten Kopplung.
+     */
+    fun forget(context: Context, nas: String) {
+        inbox(context, nas).clear()
+        synchronized(stores) { stores.remove(nas) }
+        context.getSharedPreferences(NAS_PREFS, Context.MODE_PRIVATE).edit().remove("on-$nas").apply()
+        Poster.cancelAll(context, nas)
+        Poster.removeChannels(context, nas)
+        lives.remove(nas)
+        if (nasList().none { it.id != nas }) {
+            NotifyScheduler.cancel(context)
+            LiveService.stop(context)
+            NotifySettingsStore(context).clear()
+            allOff()
+        } else {
+            NotifyScheduler.arm(context)
+        }
         changed()
     }
 

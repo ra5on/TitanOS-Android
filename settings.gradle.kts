@@ -46,7 +46,10 @@ include(
     ":feature-vpn",
     // Arbeitsplatz wie im Web: Fenster, Dock, Widgets (PLAN 116 F1).
     ":feature-workspace",
+    ":feature-settings",
+    ":feature-account",
     ":app-titanos",
     ":app-agent",
+    ":app-watch",
     ":lint-rules",
 )

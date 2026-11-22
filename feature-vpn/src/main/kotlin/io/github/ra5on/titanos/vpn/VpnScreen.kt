@@ -74,6 +74,13 @@ data class VpnPerms(
 
 /** Alles, was die Seite zeigt (ohne Schlüssel). */
 data class VpnUi(
+    /**
+     * Mit mehreren NAS: der Name des NAS, dem das VPN gehört, wenn es nicht
+     * das gewählte ist (Android erlaubt nur ein VPN gleichzeitig). Leer: das gewählte.
+     */
+    val ownerNas: String = "",
+    /** Mit mehreren NAS: der Name des NAS, zu dem das VPN gehört bzw. bei dem es angelegt würde. */
+    val forNas: String = "",
     val live: VpnLive = VpnLive(),
     val settings: VpnSettings = VpnSettings(),
     val profile: VpnProfile? = null,
@@ -146,6 +153,11 @@ fun VpnScreen(ui: VpnUi, actions: VpnActions, expanded: Boolean = false) {
         },
     ) {
         val left: @Composable ColumnScope.() -> Unit = {
+            if (ui.ownerNas.isNotEmpty()) {
+                Note(stringResource(R.string.vpn_other_nas, ui.ownerNas), icon = TitanIcons.info)
+            } else if (ui.forNas.isNotEmpty()) {
+                Note(stringResource(R.string.vpn_for_nas, ui.forNas), icon = TitanIcons.info)
+            }
             StatusCard(ui, actions)
             AccessCard(ui, actions, onRemove = { confirmRemove = true }, onRenew = { confirmRenew = true })
             if (ui.profile != null) WhenGroup(ui, actions)

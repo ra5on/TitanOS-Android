@@ -52,4 +52,5 @@
     <string name="app_logs">Protokolle</string>
     <string name="app_planner">Aufgabenplaner</string>
     <string name="app_settings">System­steuerung</string>
+    <string name="home_switch_nas">NAS und Konten</string>
 </resources>

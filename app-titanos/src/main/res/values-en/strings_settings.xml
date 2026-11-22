@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="set_link_photos">Photo backup</string>
+    <string name="set_link_files">Files (app)</string>
+    <string name="set_link_notify">Notifications (app)</string>
+    <string name="app_locked_title">TitanOS is locked</string>
+    <string name="app_locked_text">Confirm with your fingerprint or the phone\'s PIN.</string>
+    <string name="app_unlock">Unlock</string>
+</resources>

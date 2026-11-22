@@ -132,4 +132,6 @@
         <item quantity="one">%s backed up</item>
         <item quantity="other">%s backed up</item>
     </plurals>
+    <string name="photos_paused">Photo backup is paused (quick setting). Nothing is backed up to any NAS until you resume.</string>
+    <string name="photos_resume">Resume</string>
 </resources>

@@ -3,6 +3,7 @@ package io.github.ra5on.titanos.agent.chat
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import io.github.ra5on.titanos.net.IncomingUri
 import java.io.File
 
 /** Höchstens so groß nimmt das NAS einen Anhang (maxAttachment, 20 MB). */
@@ -11,9 +12,12 @@ const val MAX_ATTACHMENT = 20L * 1024 * 1024
 /**
  * Kopiert eine geteilte oder gewählte Datei sofort in den Cache der App:
  * Die Leseerlaubnis für fremde content://-Adressen endet mit der Activity
- * (TECHNIK §6). null, wenn sie nicht lesbar oder zu groß ist.
+ * (TECHNIK §6). null, wenn sie nicht lesbar oder zu groß ist – und für
+ * file:// und die eigenen Anbieter: die läse die App mit ihren eigenen
+ * Rechten (Teilen, Ziehen und Wählen kommen von anderen Apps).
  */
 fun copyToCache(context: Context, uri: Uri, mime: String? = null): Attachment? {
+    if (!IncomingUri.accepts(context, uri)) return null
     val resolver = context.contentResolver
     var name = "Datei"
     var size = -1L

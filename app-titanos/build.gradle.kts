@@ -1,7 +1,10 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 // Release-Signatur nur über Umgebungsvariablen (der Inhaber signiert selbst).
@@ -105,6 +108,8 @@ dependencies {
     // Arbeitsplatz wie im Web und der KI-Agent in der TitanOS-App (PLAN 116 F1).
     implementation(project(":feature-workspace"))
     implementation(project(":feature-agent"))
+    implementation(project(":feature-settings"))
+    implementation(project(":feature-account"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.zxing.embedded)
     implementation(libs.androidx.activity.compose)
@@ -112,9 +117,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.work)
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.rule)
@@ -124,4 +132,9 @@ dependencies {
     androidTestImplementation(libs.androidx.test.uiautomator)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
+}
+
+// Ein hängender Bildtest beendet den Lauf, statt einen der zwei Gradle-Plätze der VM zu halten (viele Bildtests: 30 Minuten).
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(30))
 }

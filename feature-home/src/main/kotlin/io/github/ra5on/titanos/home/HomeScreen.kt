@@ -45,7 +45,10 @@ import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
 
 @Composable
-fun programLabel(id: String): String = stringResource(
+fun programLabel(id: String): String = stringResource(programLabelRes(id))
+
+/** Text-Ressource des Programmnamens (auch ohne Compose, z. B. für Kurzbefehle am App-Symbol). */
+fun programLabelRes(id: String): Int = (
     when (id) {
         "shares" -> R.string.app_shares
         "storage" -> R.string.app_storage
@@ -65,7 +68,7 @@ fun programLabel(id: String): String = stringResource(
         "logs" -> R.string.app_logs
         "planner" -> R.string.app_planner
         else -> R.string.app_settings
-    },
+    }
 )
 
 /** Start (Entwurf 10/11): Suche, Zustandskarte, Programme im Raster. Die Leiste unten zeichnet die App. */
@@ -80,6 +83,8 @@ fun HomeScreen(
     /** Stand der Foto-Sicherung in Worten für die Kachel; null: kommt später. */
     photos: String? = null,
     onPhotos: (() -> Unit)? = null,
+    /** Mehrere NAS: Umschalter oben (Liste der NAS und Konten); null ohne. */
+    onSwitchNas: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     Column(modifier.fillMaxSize().wallpaper(c.dark)) {
@@ -89,6 +94,7 @@ fun HomeScreen(
                 flat = true,
                 icon = { AppIcon("storage", "dark", 30.dp) },
                 actions = {
+                    if (onSwitchNas != null) IconButton(TitanIcons.nodes, stringResource(R.string.home_switch_nas), onSwitchNas)
                     IconButton(TitanIcons.bell, stringResource(R.string.home_notifications), onNotifications)
                     IconButton(TitanIcons.more, stringResource(R.string.home_menu), onMenu)
                 },

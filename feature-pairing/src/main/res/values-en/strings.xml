@@ -77,4 +77,21 @@
     <string name="pair_sibling_permission">Pair the TitanOS apps with each other</string>
     <string name="pair_err_local_network">Android does not allow the app to reach devices on the local network. Without this permission it cannot reach the NAS at home.</string>
     <string name="pair_local_network_allow">Allow local network</string>
+    <string name="pair_watch_title">Pair watch</string>
+    <string name="pair_watch_back">Back</string>
+    <string name="pair_watch_intro">For a Wear OS watch, without Google. Install the “TitanOS” watch app there and open it.</string>
+    <string name="pair_watch_step1">1. Type this address on the watch</string>
+    <string name="pair_watch_step2">2. Enter the number from the watch here</string>
+    <string name="pair_watch_code_label">Number from the watch</string>
+    <string name="pair_watch_confirm">Pair watch</string>
+    <string name="pair_watch_busy">Pairing …</string>
+    <string name="pair_watch_hint">The watch gets its own access with your account’s rights. You can end it on its own on the web under My account › Devices.</string>
+    <string name="pair_watch_done">“%1$s” is paired. The watch carries on by itself.</string>
+    <string name="pair_watch_close">Done</string>
+    <string name="pair_watch_err_code">No watch shows this number. Check the number on the watch; after 5 minutes it needs a new one.</string>
+    <string name="pair_watch_err_limit">Too many wrong numbers. Please wait a moment.</string>
+    <string name="pair_watch_err_old_nas">The NAS cannot pair watches yet. It needs TitanOS 1.19.</string>
+    <string name="pair_watch_err_app_limit">20 apps are paired already. End one first under My account › Devices.</string>
+    <string name="pair_watch_err_reach">The NAS cannot be reached right now.</string>
+    <string name="pair_watch_err_other">That did not work. Please try again.</string>
 </resources>

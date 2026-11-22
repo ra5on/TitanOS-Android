@@ -35,6 +35,7 @@ import io.github.ra5on.titanos.workspace.WorkspaceSettings
 import io.github.ra5on.titanos.workspace.WorkspaceState
 import io.github.ra5on.titanos.workspace.showWorkspace
 import java.io.File
+import io.github.ra5on.titanos.settings.pages.hardware.NasPowerDialog
 import kotlinx.coroutines.launch
 
 /*
@@ -49,9 +50,6 @@ private val EXTRA = listOf(
     Triple("about", "overview", "grey"),
     Triple(PIM_SYNC, "calendar", "teal"),
 )
-
-/** Systemsteuerung, Mein Konto und Sicherheit kommen von Helfer E (feat/1.00-settings). */
-internal val SETTINGS_SLOT = setOf("settings", "account", "security")
 
 /**
  * Zeigt den Arbeitsplatz, wenn er erscheinen soll, und sagt es zurück; sonst
@@ -69,7 +67,9 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
         WorkspaceState(
             ComputeAccess.forPairing(graph.shared, pairing, graph.sessions),
             settings,
-            pairing.user,
+            // Fenster, „Zuletzt“ und eigene Einrichtung je NAS: ein anderes NAS hat andere Programme
+            // (beim Umschalten beginnt MainShell neu und lädt die Einrichtung des neuen NAS).
+            graph.activeId + "/" + pairing.user,
             { graph.sessions.user?.role ?: "user" },
             graph.scope,
         )
@@ -82,7 +82,26 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
     }
     shown = true
     WorkspaceRoutes(graph, state)
-    Workspace(state, program = { win, close -> WorkspaceProgram(graph, win, close) })
+    // Hauptmenü wie im Web: Sperren (die App, mit Fingerabdruck oder Geräte-PIN), Neustart und Herunterfahren des NAS.
+    var power by remember { mutableStateOf<Boolean?>(null) }
+    val env = rememberEnv(graph) { path -> openWebPath(graph, path) {} }
+    state.onPower = if (env != null) { restart -> power = restart } else null
+    state.onLock = if (io.github.ra5on.titanos.ui.guard.Guard.available(context)) { { AppLockNow.requests++ } } else null
+    Workspace(
+        state,
+        program = { win, close ->
+            val first = state.wm.windows.firstOrNull { it.app == "app:files" }?.id
+            androidx.compose.runtime.CompositionLocalProvider(
+                LocalFirstFilesWindow provides first,
+                io.github.ra5on.titanos.agent.panel.LocalAgentOpener provides agentOpener(graph),
+            ) { WorkspaceProgram(graph, win, close) }
+        },
+        onAppearance = { state.open("app:settings", "/settings/appearance") },
+        overlay = {
+            val restart = power
+            if (restart != null && env != null) NasPowerDialog(env, restart) { power = null }
+        },
+    )
     return true
 }
 
@@ -104,6 +123,15 @@ private fun WorkspaceRoutes(graph: AppGraph, state: WorkspaceState) {
         state.open("app:$id", graph.programLink.orEmpty())
         graph.openProgram = null
         graph.programLink = null
+    }
+    // Reiter aus der Systemsteuerung (Dateien › Einstellungen, Mitteilungen): hier als Fenster.
+    LaunchedEffect(graph.openTab) {
+        when (graph.openTab) {
+            "files" -> { state.open("app:files"); graph.files?.push(io.github.ra5on.titanos.files.FilesRoute.Settings) }
+            "notifications" -> state.open("app:notifications")
+            null -> return@LaunchedEffect
+        }
+        graph.openTab = null
     }
     LaunchedEffect(graph.openPhotos) { if (graph.openPhotos) { state.open("app:photos"); graph.openPhotos = false } }
     LaunchedEffect(graph.openAbout) { if (graph.openAbout) { state.open("app:about"); graph.openAbout = false } }
@@ -134,7 +162,7 @@ internal fun WorkspaceProgram(graph: AppGraph, win: Win, close: () -> Unit) {
         // Docker-Apps öffnen das Programm Docker (die App zeigt keine Seiten fremder Apps in Fenstern).
         win.app.startsWith("docker:") -> ComputeProgram("docker", graph, close)
         win.app.startsWith("webapp:") -> Later()
-        id == "files" -> graph.files?.let { io.github.ra5on.titanos.files.FilesTab(it, nav = {}) }
+        id == "files" -> FilesWindow(graph, win)
         id == "photos" -> graph.photos?.let { io.github.ra5on.titanos.photos.PhotosTab(it, {}, graph.files) }
         id == "notifications" -> io.github.ra5on.titanos.notify.NotifyTab(nav = {})
         id == "agent" -> AgentWindow(graph, win.href)
@@ -148,16 +176,14 @@ internal fun WorkspaceProgram(graph: AppGraph, win: Win, close: () -> Unit) {
             LaunchedEffect(Unit) { nasVersion = runCatching { graph.api?.system()?.version }.getOrNull()?.takeIf { it.isNotBlank() } }
             io.github.ra5on.titanos.update.AboutScreen(nasVersion, onBack = close)
         }
-        // E (feat/1.00-settings): nach dem Zusammenführen hier SettingsProgram(graph, id, close) anschließen.
-        id in SETTINGS_SLOT -> SettingsSlot(graph, id, close)
+        // Systemsteuerung und Konto (E); Sicherheit und Sicherung sind Seiten der Systemsteuerung wie im Web.
+        id in SETTINGS_PROGRAMS -> SettingsProgram(graph, id, close, start = win.href.ifEmpty { null })
+        id == "security" -> SettingsProgram(graph, "settings", close, start = win.href.ifEmpty { "/settings/firewall" })
+        id == "backup" -> SettingsProgram(graph, "settings", close, start = win.href.ifEmpty { "/settings/backups" })
         id == WORKSPACE_SETTINGS -> io.github.ra5on.titanos.workspace.WorkspaceSettingsPage(close)
         else -> Later()
     }
 }
-
-/** Platzhalter für Systemsteuerung, Konto und Sicherheit, bis E zusammengeführt ist. */
-@Composable
-private fun SettingsSlot(@Suppress("UNUSED_PARAMETER") graph: AppGraph, @Suppress("UNUSED_PARAMETER") id: String, @Suppress("UNUSED_PARAMETER") close: () -> Unit) = Later()
 
 @Composable
 private fun Later() {
@@ -165,6 +191,26 @@ private fun Later() {
         EmptyState(stringResource(io.github.ra5on.titanos.workspace.R.string.ws_title), stringResource(R.string.app_later_toast))
     }
 }
+
+/**
+ * Dateien in einem Fenster. Das erste Dateien-Fenster nimmt das Modell der App
+ * (Systemsteuerung › Dateien, Teilen, Widgets führen dorthin); jedes weitere
+ * hat ein eigenes Modell mit eigenem Ordner und eigener Auswahl.
+ */
+@Composable
+private fun FilesWindow(graph: AppGraph, win: Win) {
+    val context = LocalContext.current
+    val workspaceFirstFiles = LocalFirstFilesWindow.current
+    val shared = graph.files ?: return
+    val api = graph.api ?: return
+    val model = if (workspaceFirstFiles == win.id) shared else remember(win.id, api) {
+        io.github.ra5on.titanos.files.FilesModel(context.applicationContext, api, graph.transfers, graph.scope, graph.offline)
+    }
+    io.github.ra5on.titanos.files.FilesTab(model, nav = {})
+}
+
+/** Kennung des ersten (ältesten) Dateien-Fensters. */
+internal val LocalFirstFilesWindow = androidx.compose.runtime.staticCompositionLocalOf<String?> { null }
 
 /** Mail, Kalender, Kontakte und der Abgleich in einem Fenster; [href] ist die Stelle (`/mail?…`). */
 @Composable
@@ -181,11 +227,11 @@ private fun PimWindow(graph: AppGraph, id: String, href: String, close: () -> Un
 }
 
 /** Das Modell des Agenten für eine Kopplung (AppGraph.agentModel). */
-internal fun agentModelFor(app: android.app.Application, pairing: io.github.ra5on.titanos.net.Pairing, shared: okhttp3.OkHttpClient, sessions: io.github.ra5on.titanos.net.SessionManager, scope: kotlinx.coroutines.CoroutineScope): AgentModel {
+internal fun agentModelFor(app: android.app.Application, nasId: String, pairing: io.github.ra5on.titanos.net.Pairing, shared: okhttp3.OkHttpClient, sessions: io.github.ra5on.titanos.net.SessionManager, scope: kotlinx.coroutines.CoroutineScope): AgentModel {
     val stream = AgentApi.streamClient(shared)
     return AgentModel(
         AgentApi(NasConnection.forPairing(shared, pairing, sessions), NasConnection.forPairing(stream, pairing, sessions)),
-        ChatCache(File(app.filesDir, "agent-titanos.json")),
+        ChatCache(File(app.filesDir, "agent-titanos-$nasId.json")),
         scope,
         prefs = SharedDevicePrefs(app),
     )

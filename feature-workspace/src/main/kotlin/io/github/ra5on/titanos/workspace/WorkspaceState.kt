@@ -24,11 +24,12 @@ enum class DeskDialog { Wallpaper, Settings, Gallery, Layouts, Shortcuts, NewFol
 class WorkspaceState(
     val access: ComputeAccess?,
     val settings: WorkspaceSettings,
+    /** NAS und Konto (`<nas-id>/<konto>`): Fenster und „Zuletzt“ gehören zu diesem NAS. */
     val user: String,
     private val roleOf: () -> String,
     val scope: CoroutineScope,
 ) {
-    val store = DesktopStore(access ?: ComputeAccess(emptyList(), null), settings, scope)
+    val store = DesktopStore(access ?: ComputeAccess(emptyList(), null), settings, scope, user)
     val wm = Wm()
     val data = DeskData(access)
 
@@ -50,6 +51,10 @@ class WorkspaceState(
 
     /** Ein Fenster mit ungesicherter Arbeit fragt vor dem Schließen (Kennung). */
     var closing by mutableStateOf<String?>(null)
+
+    /** Neustart/Herunterfahren (true: Neustart) und Sperren aus dem Hauptmenü; null: nicht angeboten. */
+    var onPower: ((Boolean) -> Unit)? = null
+    var onLock: (() -> Unit)? = null
 
     private val backs = HashMap<String, OnBackPressedDispatcher>()
     private val stores = HashMap<String, ViewModelStore>()

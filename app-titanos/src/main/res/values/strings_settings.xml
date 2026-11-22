@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="set_link_photos">Fotos sichern</string>
+    <string name="set_link_files">Dateien (App)</string>
+    <string name="set_link_notify">Mitteilungen (App)</string>
+    <string name="app_locked_title">TitanOS ist gesperrt</string>
+    <string name="app_locked_text">Bestätige mit Fingerabdruck oder der PIN des Handys.</string>
+    <string name="app_unlock">Entsperren</string>
+</resources>

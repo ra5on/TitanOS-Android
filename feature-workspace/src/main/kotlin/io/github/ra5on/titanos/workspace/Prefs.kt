@@ -62,7 +62,7 @@ data class Dock(
 
 val DOCK_DEFAULT_PINNED = listOf("app:files", "app:docker", "app:vms", "app:agent", "app:monitor", "app:settings")
 
-val WALLPAPERS = listOf("wave", "aurora", "dunes", "peaks", "grid", "calm", "nordlicht", "bergsee", "kueste", "nebelwald", "wueste", "weltraum")
+val WALLPAPERS = io.github.ra5on.titanos.ui.components.DeskWallpapers.IDS
 
 fun defaultWidgets() = listOf(
     Widget("w-status", "status", -17, 0, 17, 9),

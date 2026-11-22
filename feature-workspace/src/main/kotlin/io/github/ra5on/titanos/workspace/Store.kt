@@ -60,12 +60,16 @@ class WorkspaceSettings(context: Context) {
         p.edit().putBoolean("own", next).apply()
     }
 
-    /** Die eigene Einrichtung, wenn das NAS die Einstellung „androiddesktop“ noch nicht kennt. */
-    var localDesktop: String?
-        get() = p.getString("desktop", null)
-        set(value) {
-            p.edit().putString("desktop", value).apply()
-        }
+    /** Die eigene Einrichtung je NAS ([key]), wenn das NAS die Einstellung „androiddesktop“ noch nicht kennt. */
+    fun localDesktop(key: String): String? = p.getString("desktop.$key", null)
+    fun saveLocalDesktop(key: String, value: String) = p.edit().putString("desktop.$key", value).apply()
+
+    /** Ein NAS ist entkoppelt: seine Fenster, „Zuletzt“ und die eigene Einrichtung weg (Schlüssel beginnen mit `<id>/`). */
+    fun forgetNas(id: String) {
+        val e = p.edit()
+        for (k in p.all.keys) if (k.startsWith("windows.$id/") || k.startsWith("recent.$id/") || k.startsWith("desktop.$id/")) e.remove(k)
+        e.apply()
+    }
 
     fun windows(user: String): JsonArray? = p.getString("windows.$user", null)?.let { runCatching { Json.parseToJsonElement(it) as? JsonArray }.getOrNull() }
     fun saveWindows(user: String, value: JsonArray) = p.edit().putString("windows.$user", value.toString()).apply()
@@ -105,6 +109,8 @@ class DesktopStore(
     private val access: ComputeAccess,
     private val settings: WorkspaceSettings,
     private val scope: CoroutineScope,
+    /** NAS und Konto (`<nas-id>/<konto>`), für die Einrichtung auf dem Gerät. */
+    private val key: String = "",
 ) {
     var prefs by mutableStateOf(DesktopPrefs())
         private set
@@ -131,7 +137,7 @@ class DesktopStore(
             kind = if (settings.own) "androiddesktop" else "desktop"
             prefs = if (settings.own) {
                 val stored = all?.get("androiddesktop")?.takeIf { it is JsonObject }
-                    ?: settings.localDesktop?.let { runCatching { Json.parseToJsonElement(it) }.getOrNull() }
+                    ?: settings.localDesktop(key)?.let { runCatching { Json.parseToJsonElement(it) }.getOrNull() }
                 // Noch nichts Eigenes: die Einrichtung des Webs als Anfang.
                 sanitizeDesktop(stored ?: all?.get("desktop"))
             } else {
@@ -170,7 +176,7 @@ class DesktopStore(
                     access.tree("PUT", "/preferences/androiddesktop", merged)
                 } catch (e: ApiException) {
                     // Ein NAS vor 1.19 kennt die Einstellung nicht: auf dem Gerät behalten.
-                    if (e.status == 404) settings.localDesktop = merged.toString() else throw e
+                    if (e.status == 404) settings.saveLocalDesktop(key, merged.toString()) else throw e
                 }
             } else {
                 val all = access.tree("GET", "/preferences") as? JsonObject

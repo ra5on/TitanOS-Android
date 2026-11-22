@@ -670,7 +670,7 @@ private val OFFICE = setOf("docx", "doc", "xlsx", "xls", "pptx", "odt", "ods", "
 
 /** Eine Freigabe (ApprovalCard.svelte): Ring „Wartet auf deine Freigabe“, Karte mit Titel, Stufe, Zeit, Knöpfen und Details. */
 @Composable
-private fun ApprovalCard(p: Pending, deciding: Boolean, onEdit: (() -> Unit)? = null, onDecide: (Boolean) -> Unit) {
+internal fun ApprovalCard(p: Pending, deciding: Boolean, onEdit: (() -> Unit)? = null, onDecide: (Boolean) -> Unit) {
     val c = Titan.colors
     val tr = tr()
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

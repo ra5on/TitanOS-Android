@@ -106,7 +106,13 @@ fun MailApp(
         if (model.access == true) lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { model.watch() }
     }
     val open = newWindow ?: { s: MailStart -> MailRuntime.openWindow(context, s) }
-    MailHost(model, titan, stack, onClose, open)
+    // Agent-Panel wie im Web: die offene Mail geht als Bezug mit jeder Nachricht mit.
+    val agent = remember(nas) { io.github.ra5on.titanos.agent.chat.AgentApi(nas, stream) }
+    val read = stack.lastOrNull { it is MailRoute.Read } as MailRoute.Read?
+    val agentContext = read?.let { io.github.ra5on.titanos.agent.panel.PanelContext.mail(it.account, it.folder, it.uid) }
+    io.github.ra5on.titanos.agent.panel.AgentPanelFrame(agent, "mail", agentContext) {
+        MailHost(model, titan, stack, onClose, open)
+    }
 }
 
 /**

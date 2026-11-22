@@ -161,4 +161,6 @@
     <string name="vpn_tailscale">Tailscale stays possible, but Android allows only one VPN at a time.</string>
     <string name="vpn_loading">Asking the NAS</string>
     <string name="vpn_menu_sub">Tunnel to the NAS when away</string>
+    <string name="vpn_other_nas">The VPN belongs to the NAS “%1$s”. Android allows only one VPN at a time. For another NAS, remove the access here and then create it on the other NAS.</string>
+    <string name="vpn_for_nas">The VPN connects to the NAS “%1$s”. Android allows only one VPN at a time, so it is for one NAS.</string>
 </resources>

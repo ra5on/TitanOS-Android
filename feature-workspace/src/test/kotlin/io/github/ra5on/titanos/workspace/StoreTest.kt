@@ -119,7 +119,7 @@ class StoreTest {
         st.change("barLoad") { it.copy(barLoad = false) }
         st.flush()
         assertTrue(puts.isEmpty())
-        val local = Json.parseToJsonElement(s.localDesktop!!).jsonObject
+        val local = Json.parseToJsonElement(s.localDesktop("")!!).jsonObject
         assertEquals("false", local["barLoad"]!!.jsonPrimitive.content)
         // Beim nächsten Mal liest sie die App vom Gerät.
         val again = store(this, s)

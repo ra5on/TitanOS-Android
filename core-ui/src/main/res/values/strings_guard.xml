@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guard_title">Fingerabdruck verlangen</string>
+    <string name="guard_intro">Vor diesen Aktionen fragt die App nach dem Fingerabdruck. Ohne Fingerabdruck geht auch die PIN, das Muster oder das Passwort des Handys. Das NAS prüft die Rechte trotzdem selbst.</string>
+    <string name="guard_consoles">Konsolen (NAS-Shell, Docker, VMs) öffnen nie mit einer zweiten Abfrage.</string>
+    <string name="guard_unavailable">Dieses Handy hat keine Displaysperre. Ohne sie kann die App nicht fragen; die Aktionen laufen dann ohne Abfrage. Richte in den Android-Einstellungen eine Displaysperre ein.</string>
+    <string name="guard_prompt_title">Bestätigen</string>
+    <string name="guard_grace">Gilt danach</string>
+    <string name="guard_grace_hint">Wie lange eine Bestätigung auch für weitere Aktionen reicht</string>
+    <string name="guard_grace_0">Jedes Mal fragen</string>
+    <string name="guard_grace_seconds">%1$d Sekunden</string>
+    <string name="guard_grace_minutes">%1$d Minuten</string>
+    <string name="guard_reset">Vorbelegung wiederherstellen</string>
+    <string name="guard_app_open">Beim Öffnen der App</string>
+    <string name="guard_app_open_hint">Jedes Mal, wenn die App in den Vordergrund kommt</string>
+    <string name="guard_volume_delete">Volumes löschen</string>
+    <string name="guard_volume_delete_hint">Volumes, Platten löschen oder formatieren</string>
+    <string name="guard_share_delete">Freigaben löschen</string>
+    <string name="guard_share_delete_hint">Freigaben samt Daten entfernen</string>
+    <string name="guard_users">Benutzer ändern</string>
+    <string name="guard_users_hint">Konten anlegen, löschen, sperren, Rollen und Passwörter anderer</string>
+    <string name="guard_account_security">Eigenes Passwort und Zugänge</string>
+    <string name="guard_account_security_hint">Passwort, 2FA, Passkeys, SSH-Schlüssel, WebDAV, API-Tokens, Geräte</string>
+    <string name="guard_network">Netzwerk und Firewall</string>
+    <string name="guard_network_hint">Netzwerk ändern, Firewall, WireGuard, DNS</string>
+    <string name="guard_access">Zugang</string>
+    <string name="guard_access_hint">SSH, Zertifikat, Angemeldet bleiben, Konsolen-Einstellungen</string>
+    <string name="guard_updates">Updates installieren</string>
+    <string name="guard_updates_hint">System- und App-Updates, Version wählen, Rückwechsel</string>
+    <string name="guard_power">Ausschalten und Neustart</string>
+    <string name="guard_power_hint">NAS herunterfahren oder neu starten</string>
+    <string name="guard_backups">Sicherungen</string>
+    <string name="guard_backups_hint">Wiederherstellen, Aufträge und Sicherungsstände löschen</string>
+    <string name="guard_cluster">Cluster</string>
+    <string name="guard_cluster_hint">Cluster anlegen, beitreten, verlassen, Knoten entfernen</string>
+    <string name="guard_compute_delete">VMs und Container löschen</string>
+    <string name="guard_compute_delete_hint">Docker-Apps, VMs und LXC samt Daten entfernen</string>
+    <string name="guard_plugins">Plugins</string>
+    <string name="guard_plugins_hint">Plugins installieren und entfernen</string>
+    <string name="guard_settings">Andere Einstellungen speichern</string>
+    <string name="guard_settings_hint">Jede übrige Änderung in der Systemsteuerung</string>
+</resources>

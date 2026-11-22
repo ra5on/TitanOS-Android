@@ -13,6 +13,14 @@ object VpnRoute {
     @Volatile
     var onHome: (() -> Unit)? = null
 
+    /**
+     * Gehört das VPN zu dieser Kopplung? Mit mehreren NAS lernt nur das NAS
+     * des VPN die Heim-WLANs; ein zweites NAS im WLAN eines Freundes darf
+     * dessen Netz nicht zum „Heim“ machen. Ohne Angabe: ja (eine Kopplung).
+     */
+    @Volatile
+    var owns: (Pairing) -> Boolean = { true }
+
     internal fun reachedAtHome() {
         try {
             onHome?.invoke()

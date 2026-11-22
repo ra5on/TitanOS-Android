@@ -22,4 +22,5 @@
         <item quantity="one">%1$d Volume braucht Aufmerksamkeit</item>
         <item quantity="other">%1$d Volumes brauchen Aufmerksamkeit</item>
     </plurals>
+    <string name="w_photos_nas">Fotos · %1$s</string>
 </resources>

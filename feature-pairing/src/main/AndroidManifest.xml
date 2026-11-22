@@ -23,6 +23,7 @@
                 <action android:name="io.github.ra5on.titanos.sibling.REQUEST" />
                 <action android:name="io.github.ra5on.titanos.sibling.OFFER" />
                 <action android:name="io.github.ra5on.titanos.sibling.PAIRED" />
+                <action android:name="io.github.ra5on.titanos.sibling.SELECT" />
             </intent-filter>
         </receiver>
     </application>

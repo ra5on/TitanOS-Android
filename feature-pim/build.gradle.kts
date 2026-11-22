@@ -38,6 +38,8 @@ roborazzi {
 dependencies {
     lintChecks(project(":lint-rules"))
     implementation(project(":core-ui"))
+    // Agent-Panel wie im Web (KI-Agent in den Programmen, TitanOS 1.13).
+    implementation(project(":feature-agent"))
     implementation(project(":core-net"))
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.kotlinx.coroutines.android)

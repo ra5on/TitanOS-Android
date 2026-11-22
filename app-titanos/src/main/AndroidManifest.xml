@@ -25,6 +25,8 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Kurzbefehle am App-Symbol (Agent fragen, Hochladen, Fotos sichern). -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
             <!-- „Auf diesem Handy öffnen“: titanos://pair?v=1&c=…&a=…  (docs/ANDROID-APP.md). -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -53,12 +55,19 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
-        <!-- mailto: aus anderen Apps öffnet Verfassen in Mail (feature-mail, eigenes Fenster). -->
+        <!--
+            mailto: aus anderen Apps öffnet Verfassen in Mail (feature-mail, eigenes Fenster).
+            MailWindowActivity selbst bleibt nicht exportiert (ihre Extras sind nur für die App);
+            fremde Apps kommen über den Alias, und dort zählen nur mailto: und die EXTRA_*.
+            Das Ziel muss vor dem Alias stehen, deshalb hier noch einmal (ohne Änderung).
+        -->
         <activity
             android:name="io.github.ra5on.titanos.mail.MailWindowActivity"
-            android:exported="true"
-            tools:node="merge"
-            tools:replace="android:exported">
+            tools:node="merge" />
+        <activity-alias
+            android:name="io.github.ra5on.titanos.mail.MailtoActivity"
+            android:targetActivity="io.github.ra5on.titanos.mail.MailWindowActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -70,7 +79,71 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="mailto" />
             </intent-filter>
+        </activity-alias>
+        <!-- Ziel der Kurzbefehle, ohne eigene Oberfläche (Shortcuts.kt). -->
+        <activity
+            android:name=".ShortcutActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="false"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="io.github.ra5on.titanos.SHORTCUT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
+        <!-- Welches NAS ein Widget zeigt (android:configure der Widgets NAS-Zustand und Fotos). -->
+        <activity
+            android:name=".WidgetNasActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity="">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <!-- Schnelleinstellungen: Foto-Sicherung, NAS-Zustand, Agent fragen (QuickTiles.kt). -->
+        <service
+            android:name=".PhotoTile"
+            android:exported="true"
+            android:icon="@drawable/ic_sc_photo"
+            android:label="@string/tile_photos"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".NasTile"
+            android:exported="true"
+            android:icon="@drawable/ic_sc_nas"
+            android:label="@string/tile_nas"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".AgentTile"
+            android:exported="true"
+            android:icon="@drawable/ic_sc_agent"
+            android:label="@string/tile_agent"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <!-- Gerätesteuerung: Container, VMs und Home Assistant aller gekoppelten NAS (Controls.kt). -->
+        <service
+            android:name=".TitanControlsService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_CONTROLS">
+            <intent-filter>
+                <action android:name="android.service.controls.ControlsProviderService" />
+            </intent-filter>
+        </service>
         <!-- WorkManager mit eigener Konfiguration (TitanApp.workManagerConfiguration). -->
         <provider
             android:name="androidx.startup.InitializationProvider"
@@ -83,5 +156,15 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+
+        <!-- KI-Agent aus feature-agent: der Assistent gilt in beiden Apps; Notizen-Rolle und
+             Android Auto nur in der Agent-App (Entscheidung 22.11.2026). ReplyReceiver bleibt:
+             Antworten des Agenten in dieser App kommen als Mitteilung mit Antworten/Gelesen. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            tools:node="remove" />
+        <activity
+            android:name="io.github.ra5on.titanos.agent.system.NotesActivity"
+            tools:node="remove" />
     </application>
 </manifest>

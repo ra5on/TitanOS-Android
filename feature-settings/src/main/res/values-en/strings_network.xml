@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Texts of the group "network" the web has none for (the app's own situation: paired addresses, clipboard). -->
+<resources>
+    <string name="net_trial_address">If the address of the NAS changes, the app does not know the new one: it reaches the NAS only at the addresses it is paired with. Open the new address in the browser, sign in and confirm there.</string>
+    <string name="net_trial_retrying">The NAS is not answering right now. That is normal during a trial; the app keeps asking.</string>
+    <string name="net_trial_over">The trial time is over. Without confirmation the NAS restores the previous setting; the app keeps asking.</string>
+    <string name="net_confirm_elsewhere">The app does not reach the NAS at the new management address – it only knows the paired addresses. Open the new address in the browser, sign in there and confirm the change.</string>
+    <string name="net_copy">Copy</string>
+    <string name="net_copied">Copied</string>
+    <string name="net_more">More actions</string>
+</resources>

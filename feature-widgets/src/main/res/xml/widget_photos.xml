@@ -5,7 +5,9 @@
     android:targetCellWidth="2"
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen"
+    android:widgetCategory="home_screen|keyguard"
     android:updatePeriodMillis="0"
+    android:configure="io.github.ra5on.titanos.WidgetNasActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:description="@string/w_photos_desc" />

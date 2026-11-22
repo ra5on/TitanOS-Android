@@ -87,8 +87,12 @@ iframe { border: 0; width: 100%; height: 100%; display: block; }
     if (!r.ok) throw new Error(await errorCode(r));
     return r.json();
   }
+  // Speichern über die App (gepinnter Client mit Sitzung); die WebView sendet keine Anfragen mit Inhalt.
   async function put(path, expect, bytes) {
-    return call(url('files/content', { root: cfg.root, path, expect }), { method: 'PUT', headers: { 'Content-Type': 'application/octet-stream' }, body: bytes });
+    let res;
+    try { res = JSON.parse(B.put(url('files/content', { root: cfg.root, path, expect }), toB64(bytes))); } catch (e) { res = { status: 503, body: '' }; }
+    const status = res.status >= 200 && res.status <= 599 ? res.status : 503;
+    return new Response([204, 205, 304].includes(status) ? null : (res.body || ''), { status, headers: { 'Content-Type': 'application/json' } });
   }
   async function mtimeOf(r) {
     try { const j = await r.json(); return j.mtime ? String(j.mtime) : mtimeNs(j.modified); } catch (e) { return null; }

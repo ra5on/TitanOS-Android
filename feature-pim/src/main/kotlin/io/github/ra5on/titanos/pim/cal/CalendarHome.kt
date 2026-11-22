@@ -132,6 +132,15 @@ fun CalendarScreen(
     }
     var route by remember { mutableStateOf(startRoute) }
     val go: (CalRoute) -> Unit = { route = it }
+    // Agent-Panel wie im Web: der Tag und ein offener Termin gehen als Bezug mit.
+    val agent = remember(nas) { io.github.ra5on.titanos.agent.chat.AgentApi(nas, stream) }
+    val ev = (route as? CalRoute.Detail)?.event?.takeIf { it.kind == "event" }
+    val agentContext = io.github.ra5on.titanos.agent.panel.PanelContext.calendar(model.anchor.toString(), ev?.calendar, ev?.id, ev?.occurrence?.ifEmpty { null })
+    io.github.ra5on.titanos.agent.panel.AgentPanelFrame(agent, "calendar", agentContext) { CalendarRoute(model, route, go, onClose, onSyncSettings) }
+}
+
+@Composable
+private fun CalendarRoute(model: CalendarModel, route: CalRoute, go: (CalRoute) -> Unit, onClose: () -> Unit, onSyncSettings: () -> Unit) {
     when (val r = route) {
         CalRoute.Home -> CalendarHome(model, go, onClose)
         is CalRoute.Detail -> EventDetail(model, r.event, onBack = { go(CalRoute.Home) }, onEdit = { go(CalRoute.Edit(it)) })

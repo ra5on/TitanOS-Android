@@ -1,6 +1,8 @@
 package io.github.ra5on.titanos.photos
 
 import android.content.Context
+import io.github.ra5on.titanos.net.NasNames
+import io.github.ra5on.titanos.net.NasRegistry
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -84,11 +86,11 @@ class BackupStore(private val file: File) {
     }
 
     companion object {
-        @Volatile
-        private var instance: BackupStore? = null
+        private val instances = HashMap<String, BackupStore>()
 
-        fun get(context: Context): BackupStore = instance ?: synchronized(this) {
-            instance ?: BackupStore(File(context.applicationContext.filesDir, "photos-state.json")).also { instance = it }
+        /** Stand der Sicherung an ein NAS ([nas]); die alte Kopplung behält `photos-state.json`. */
+        fun get(context: Context, nas: String = NasRegistry.LEGACY_ID): BackupStore = synchronized(instances) {
+            instances.getOrPut(nas) { BackupStore(File(context.applicationContext.filesDir, "photos-state" + NasNames.suffix(nas) + ".json")) }
         }
     }
 }

@@ -27,6 +27,12 @@ class Endpoint(val base: HttpUrl, val client: OkHttpClient, val kind: AddressKin
                 .build()
             return Endpoint(address.baseUrl(), client, if (pinned.isVpn) AddressKind.VPN else address.kind)
         }
+
+        /** Alle Adressen einer Kopplung; mit gewähltem Cluster-Knoten ([Pairing.node]) über [ClusterRoute]. */
+        fun forPairing(shared: OkHttpClient, pairing: Pairing): List<Endpoint> {
+            val client = if (pairing.node.isEmpty()) shared else shared.newBuilder().addInterceptor(ClusterRoute(pairing.node)).build()
+            return pairing.addresses.mapNotNull { pinned(client, it) }
+        }
     }
 }
 
@@ -39,7 +45,12 @@ class Endpoint(val base: HttpUrl, val client: OkHttpClient, val kind: AddressKin
  * nirgends, kommt die [CertificateChangedException] erst, wenn keine Adresse
  * geklappt hat.
  */
-class NasConnection(endpoints: List<Endpoint>, private val sessions: SessionManager?) {
+class NasConnection(
+    endpoints: List<Endpoint>,
+    private val sessions: SessionManager?,
+    /** Darf eine Antwort im Heimnetz dem VPN als „zu Hause“ gelten? Nur beim NAS des VPN ([VpnRoute.owns]). */
+    private val reportsHome: () -> Boolean = { true },
+) {
     private val ordered = endpoints.sortedBy { if (it.kind == AddressKind.LAN) 0 else 1 }
     private val authed: List<Pair<Endpoint, OkHttpClient>> = ordered.map { e ->
         e to (sessions?.let { s -> e.client.newBuilder().addInterceptor(SessionInterceptor(s, e.client, e.base)).build() } ?: e.client)
@@ -77,7 +88,7 @@ class NasConnection(endpoints: List<Endpoint>, private val sessions: SessionMana
             try {
                 val response = client.newCall(build(endpoint.base)).execute()
                 active = index
-                if (endpoint.kind == AddressKind.LAN && !VpnRoute.isUp()) VpnRoute.reachedAtHome()
+                if (endpoint.kind == AddressKind.LAN && !VpnRoute.isUp() && reportsHome()) VpnRoute.reachedAtHome()
                 return response
             } catch (e: IOException) {
                 val cert = e.certificateChange()
@@ -106,8 +117,9 @@ class NasConnection(endpoints: List<Endpoint>, private val sessions: SessionMana
             }
             .build()
 
+        /** Mit gewähltem Cluster-Knoten ([Pairing.node]) gehen die Anfragen über dieses NAS an ihn. */
         fun forPairing(shared: OkHttpClient, pairing: Pairing, sessions: SessionManager): NasConnection =
-            NasConnection(pairing.addresses.mapNotNull { Endpoint.pinned(shared, it) }, sessions)
+            NasConnection(Endpoint.forPairing(shared, pairing), sessions) { VpnRoute.owns(pairing) }
 
         const val USER_AGENT = "TitanOS-Android/0.01"
     }

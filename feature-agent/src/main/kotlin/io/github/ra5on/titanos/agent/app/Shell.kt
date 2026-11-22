@@ -42,6 +42,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -772,10 +773,19 @@ private fun BoxScope.Layers(
     SlidePage(layer == Layer.Nas, close) { NasPicker(model, onClose = close, onPick = { refs -> close(); refs.forEach { model.addAttachment(Attachment(it.substringAfter(':').substringAfterLast('/'), null, null, ref = it)) } }) }
     val web = rememberLast(layer as? Layer.Web)
     val hostCtx = LocalContext.current
-    val session = remember(web) { hostCtx.agentHost()?.webSession() }
+    // Adresse über die gepinnte Verbindung wählen (Netz, nicht im Hauptthread); bis dahin „Lädt …“.
+    val session by produceState<Result<io.github.ra5on.titanos.agent.ui.WebSession?>?>(null, web) {
+        value = if (web == null) null else runCatching { hostCtx.agentHost()?.webSession() }
+    }
     SlidePage(layer is Layer.Web, close) {
-        if (web != null && session != null) io.github.ra5on.titanos.agent.ui.WebPage(session, web.path, web.title, close)
-        else if (web != null) Column(Modifier.fillMaxSize().statusBarsPadding()) { io.github.ra5on.titanos.agent.ui.PageHead(web.title, close); Notice(tr.t("error.internal"), tone = "warn", modifier = Modifier.padding(12.dp)) }
+        val s = session
+        val ready = s?.getOrNull()
+        if (web != null && ready != null) io.github.ra5on.titanos.agent.ui.WebPage(ready, web.path, web.title, close)
+        else if (web != null) Column(Modifier.fillMaxSize().statusBarsPadding()) {
+            io.github.ra5on.titanos.agent.ui.PageHead(web.title, close)
+            if (s == null) Notice(tr.t("common.loading"), modifier = Modifier.padding(12.dp))
+            else Notice(tr.t("error.internal"), tone = "warn", modifier = Modifier.padding(12.dp))
+        }
     }
     if (layer == Layer.Talk) VoiceMode(model, speech, onClose = close)
 }

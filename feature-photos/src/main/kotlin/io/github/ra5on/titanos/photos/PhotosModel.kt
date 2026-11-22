@@ -28,9 +28,11 @@ class PhotosModel(
     private val titan: TitanApi,
     private val photos: PhotosApi,
     private val scope: CoroutineScope,
+    /** Das NAS dieser Seite; jedes hat eigene Einstellungen und einen eigenen Stand. */
+    val nas: String = io.github.ra5on.titanos.net.NasRegistry.LEGACY_ID,
 ) {
-    private val settingsStore = SettingsStore(app)
-    private val store = BackupStore.get(app)
+    private val settingsStore = SettingsStore(app, nas)
+    private val store = BackupStore.get(app, nas)
     private val scanner = MediaScanner(app)
     private var items: List<MediaItem> = emptyList()
     private var trash: List<Uri> = emptyList()
@@ -93,8 +95,9 @@ class PhotosModel(
                 pending = pending,
                 waits = waits,
                 tiles = tiles,
-                progress = PhotosRuntime.progress.value,
+                progress = PhotosRuntime.progress.value.takeIf { it.nas == nas || it.nas.isEmpty() } ?: Progress(),
                 loading = false,
+                paused = PhotosRuntime.paused(app),
             )
         }
     }
@@ -105,13 +108,13 @@ class PhotosModel(
         if (settings.sameName == SameName.Skip && next.sameName != SameName.Skip) store.update { it.copy(skipped = emptyMap()) }
         settingsStore.save(next)
         settings = next
-        PhotoScheduler.arm(app, settingsChanged = true)
+        PhotoScheduler.arm(app, nas, settingsChanged = true)
         refresh()
     }
 
     /** Medien-Zugriff ist geklärt: Aufträge (neu) einplanen und neu lesen. */
     fun accessChanged() {
-        PhotoScheduler.arm(app)
+        PhotoScheduler.armAll(app)
         refresh()
     }
 
@@ -128,11 +131,17 @@ class PhotosModel(
         }
     }
 
+    /** Nach „Pausieren“ (Schnelleinstellung) fortsetzen. */
+    fun resume() {
+        PhotoScheduler.resume(app)
+        refresh()
+    }
+
     /** „Jetzt sichern“, solange die App sichtbar ist. */
     fun backupNow() {
         val s = settingsStore.load()
         val bytes = selectForUpload(items.map { it.media }, store.snapshot().handled(), s, Kind.entries.toSet()).sumOf { it.size }
-        message = if (PhotoScheduler.backupNow(app, bytes)) R.string.photos_now_started else R.string.photos_now_refused
+        message = if (PhotoScheduler.backupNow(app, listOf(nas), bytes)) R.string.photos_now_started else R.string.photos_now_refused
     }
 
     /** Speicher freigeben: nur, was das NAS jetzt bestätigt, nie automatisch. */

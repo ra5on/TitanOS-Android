@@ -3,6 +3,8 @@ package io.github.ra5on.titanos.photos
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import io.github.ra5on.titanos.net.NasNames
+import io.github.ra5on.titanos.net.NasRegistry
 
 /** Einstellungen der Foto-Sicherung (Entwurf 31). Ab Werk aus, bis man sie einschaltet. */
 data class PhotoSettings(
@@ -61,9 +63,12 @@ data class PhotoSettings(
     }
 }
 
-/** Hält die Einstellungen in den SharedPreferences der App (nur auf dem Handy). */
-class SettingsStore(context: Context) {
-    private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences("photos", Context.MODE_PRIVATE)
+/**
+ * Hält die Einstellungen in den SharedPreferences der App (nur auf dem Handy),
+ * je NAS eigene ([nas], Einstellungen `photos` bzw. `photos-<nas>`).
+ */
+class SettingsStore(context: Context, nas: String = NasRegistry.LEGACY_ID) {
+    private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences("photos" + NasNames.suffix(nas), Context.MODE_PRIVATE)
 
     fun load(): PhotoSettings = read(
         { k, d -> prefs.getBoolean(k, d) },

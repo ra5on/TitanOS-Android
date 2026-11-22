@@ -158,13 +158,33 @@ fun ContactsScreen(nas: NasConnection, stream: NasConnection?, onClose: () -> Un
     }
     var route by remember { mutableStateOf(startRoute) }
     var group by rememberSaveable { mutableStateOf<String?>(null) }
-    val width = currentWidth()
     val go: (ConRoute) -> Unit = { route = it }
+    // Agent-Panel wie im Web: der offene Kontakt geht als Bezug mit.
+    val agent = remember(nas) { io.github.ra5on.titanos.agent.chat.AgentApi(nas, stream ?: nas) }
+    val openId = (route as? ConRoute.Detail)?.id
+    val agentContext = openId?.let { id -> io.github.ra5on.titanos.agent.panel.PanelContext.contact(model.items.firstOrNull { it.id == id }?.book ?: BOOK, id) }
+    io.github.ra5on.titanos.agent.panel.AgentPanelFrame(agent, "contacts", agentContext) { ContactsRoute(model, route, group, go, { group = it }, nas, stream, onClose, onSyncSettings) }
+}
+
+@Composable
+private fun ContactsRoute(
+    model: ContactsModel,
+    route: ConRoute,
+    group: String?,
+    go: (ConRoute) -> Unit,
+    setGroup: (String?) -> Unit,
+    nas: NasConnection,
+    stream: NasConnection?,
+    onClose: () -> Unit,
+    onSyncSettings: () -> Unit,
+) {
+    // Die Breite, die die Kontakte haben (neben einem offenen Agent-Panel weniger).
+    val width = currentWidth()
     when (val r = route) {
-        ConRoute.Home -> ContactsHome(model, width, group, null, go, onClose) { group = it }
-        is ConRoute.Detail -> if (width.twoPanes) ContactsHome(model, width, group, r.id, go, onClose) { group = it } else ContactDetail(model, r.id, go, onBack = { go(ConRoute.Home) })
+        ConRoute.Home -> ContactsHome(model, width, group, null, go, onClose, setGroup)
+        is ConRoute.Detail -> if (width.twoPanes) ContactsHome(model, width, group, r.id, go, onClose, setGroup) else ContactDetail(model, r.id, go, onBack = { go(ConRoute.Home) })
         is ConRoute.Edit -> ContactEditor(model, r.id, onDone = { id -> model.reload(); go(if (id != null) ConRoute.Detail(id) else ConRoute.Home) })
-        ConRoute.Lists -> ListsPage(model, group, onPick = { group = it; go(ConRoute.Home) }, go, onBack = { go(ConRoute.Home) })
+        ConRoute.Lists -> ListsPage(model, group, onPick = { setGroup(it); go(ConRoute.Home) }, go, onBack = { go(ConRoute.Home) })
         ConRoute.Duplicates -> DuplicatesPage(model, go, onBack = { go(ConRoute.Lists) })
         is ConRoute.Merge -> MergePage(model, r.set, onDone = { model.reload(); go(ConRoute.Duplicates) })
         ConRoute.Suggestions -> SuggestionsPage(model, onBack = { go(ConRoute.Lists) }, onOpen = { go(ConRoute.Detail(it)) })

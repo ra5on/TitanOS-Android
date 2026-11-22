@@ -131,7 +131,7 @@ class ComputeAccess(endpoints: List<Endpoint>, sessions: SessionManager?) {
         fun jsonOf(text: String): RequestBody = text.toRequestBody(JSON)
 
         fun forPairing(shared: OkHttpClient, pairing: Pairing, sessions: SessionManager): ComputeAccess =
-            ComputeAccess(pairing.addresses.mapNotNull { Endpoint.pinned(shared, it) }, sessions)
+            ComputeAccess(Endpoint.forPairing(shared, pairing), sessions)
 
         /** Ein Pfadabschnitt wie encodeURIComponent im Web. */
         fun seg(value: String): String = URLEncoder.encode(value, "UTF-8").replace("+", "%20")

@@ -22,6 +22,7 @@ internal const val PIM_SYNC = "pimsync"
  */
 @Composable
 internal fun ProgramHost(graph: AppGraph, id: String, onClose: () -> Unit) {
+    if (id in SETTINGS_PROGRAMS) return SettingsProgram(graph, id, onClose)
     val pairing = graph.pairing ?: return
     if (id == WORKSPACE_SETTINGS) {
         io.github.ra5on.titanos.workspace.WorkspaceSettingsPage(onClose)
@@ -29,6 +30,18 @@ internal fun ProgramHost(graph: AppGraph, id: String, onClose: () -> Unit) {
     }
     val nas = remember(pairing) { graph.connection() } ?: return
     val stream = remember(pairing) { graph.connection(NotifyApi.streamClient(graph.shared)) } ?: return
+    // „In der KI-Agent-App öffnen“ im Agent-Panel: der Agent dieser App bei dem Chat.
+    androidx.compose.runtime.CompositionLocalProvider(io.github.ra5on.titanos.agent.panel.LocalAgentOpener provides agentOpener(graph)) { ProgramBody(graph, id, nas, stream, onClose) }
+}
+
+/** Öffnet den KI-Agenten dieser App bei einem Chat (Agent-Panel, Assistent). */
+internal fun agentOpener(graph: AppGraph): (String) -> Unit = { chat ->
+    graph.programLink = "/agent?chat=$chat"
+    graph.openProgram = "agent"
+}
+
+@Composable
+private fun ProgramBody(graph: AppGraph, id: String, nas: io.github.ra5on.titanos.net.NasConnection, stream: io.github.ra5on.titanos.net.NasConnection, onClose: () -> Unit) {
     when (id) {
         "mail" -> MailApp(nas, stream, onClose, start = graph.programLink?.let { io.github.ra5on.titanos.mail.MailStart.fromLink(it) } ?: io.github.ra5on.titanos.mail.MailStart.Boxes)
         "calendar" -> CalendarApp(nas, stream, onClose)

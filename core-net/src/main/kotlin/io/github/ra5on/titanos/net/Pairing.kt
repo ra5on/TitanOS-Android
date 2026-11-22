@@ -21,13 +21,21 @@ data class PinnedAddress(val server: String, val spki: String = "", val publicCe
     }
 }
 
-/** Was nach der Kopplung bleibt. user und device kommen zusammen aus `pair/wait`. */
+/**
+ * Was nach der Kopplung bleibt. user und device kommen zusammen aus `pair/wait`.
+ *
+ * [node] ist der gewählte andere Knoten eines Clusters (wie `titanos.cluster.node`
+ * im Web, lib/cluster-node.ts); leer: dieses NAS. Die Anfragen gehen dann über
+ * dieses NAS an den Knoten ([ClusterRoute]).
+ */
 @Serializable
 data class Pairing(
     val user: String,
     val device: String,
     val addresses: List<PinnedAddress>,
     val hostname: String = "",
+    val node: String = "",
+    val nodeName: String = "",
 )
 
 interface PairingStore {

@@ -38,6 +38,10 @@ object FilesRuntime {
     @Volatile var onUploaded: ((root: String, dir: String) -> Unit)? = null
     /** Kopplung und Sitzung für die weiteren Dateirouten und die eingebetteten Office-Programme. */
     @Volatile var access: () -> FilesAccess? = { null }
+    /** Das gewählte NAS (mehrere NAS); eine Übertragung bleibt bei dem NAS, bei dem sie angelegt wurde. */
+    @Volatile var activeNas: () -> String = { "" }
+    /** Die Verbindung zu einem bestimmten NAS (leer: die alte Kopplung); null ohne diese Kopplung. */
+    @Volatile var apiFor: (String) -> TitanApi? = { api() }
 }
 
 /** Uploads und „In Downloads speichern“ als WorkManager-Aufträge. */
@@ -64,7 +68,7 @@ object TransferQueue {
     ): Long {
         val store = FilesRuntime.store ?: error("FilesRuntime.store not set")
         val t = store.add(
-            Transfer(0, name, Direction.Upload, place, root, dir, total = maxOf(size, 0), source = source.toString(), conflict = conflict, ownCopy = ownCopy),
+            Transfer(0, name, Direction.Upload, place, root, dir, total = maxOf(size, 0), source = source.toString(), conflict = conflict, ownCopy = ownCopy, nas = FilesRuntime.activeNas()),
         )
         schedule(context, t.id, userInitiated)
         return t.id
@@ -72,7 +76,7 @@ object TransferQueue {
 
     fun enqueueDownload(context: Context, root: String, dir: String, place: String, name: String, size: Long): Long {
         val store = FilesRuntime.store ?: error("FilesRuntime.store not set")
-        val t = store.add(Transfer(0, name, Direction.Download, place, root, dir, total = size))
+        val t = store.add(Transfer(0, name, Direction.Download, place, root, dir, total = size, nas = FilesRuntime.activeNas()))
         schedule(context, t.id, userInitiated = true)
         return t.id
     }
@@ -91,6 +95,8 @@ object TransferQueue {
         WorkManager.getInstance(context).cancelUniqueWork(unique(id))
         if (t.ownCopy) t.source?.let { runCatching { File(Uri.parse(it).path!!).delete() } }
         val upload = t.uploadId
+        // Am NAS der Übertragung aufräumen, nicht beim gerade gewählten.
+        @Suppress("NAME_SHADOWING") val api = if (t.nas == FilesRuntime.activeNas()) api else FilesRuntime.apiFor(t.nas)
         if (upload != null && api != null) {
             // Am NAS aufräumen; scheitert es, räumt das NAS liegengebliebene Uploads selbst ab.
             Thread { runCatching { kotlinx.coroutines.runBlocking { api.uploadAbort(upload) } } }.start()
@@ -121,7 +127,7 @@ class TransferWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val store = FilesRuntime.store ?: return Result.retry()
         val t = store.get(id) ?: return Result.failure()
         if (t.state == TransferState.Cancelled || t.state == TransferState.Done) return Result.success()
-        val api = FilesRuntime.api() ?: run {
+        val api = FilesRuntime.apiFor(t.nas) ?: run {
             fail(store, id, "not paired", offline = false)
             return Result.failure()
         }
@@ -170,7 +176,8 @@ class TransferWorker(context: Context, params: WorkerParameters) : CoroutineWork
     private suspend fun upload(store: TransferStore, api: TitanApi, t: Transfer) {
         val source = Uri.parse(t.source ?: throw IOException("no source"))
         val open: () -> InputStream = {
-            if (source.scheme == "file") FileInputStream(File(source.path!!))
+            // file:// nur für die eigenen Kopien im Ausgang (Outbox); alles andere über den ContentResolver.
+            if (source.scheme == "file") FileInputStream(Outbox.own(applicationContext, source) ?: throw IOException("not in outbox"))
             else applicationContext.contentResolver.openInputStream(source) ?: throw IOException("cannot read")
         }
         val total = if (t.total > 0) t.total else open().use { it.skip(Long.MAX_VALUE) }

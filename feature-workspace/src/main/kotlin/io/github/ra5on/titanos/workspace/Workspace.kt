@@ -80,6 +80,8 @@ fun Workspace(
     modifier: Modifier = Modifier,
     onAppearance: (() -> Unit)? = null,
     live: Boolean = true,
+    /** Was der Gastgeber über allem zeigt (z. B. den Dialog zum Neustart des NAS). */
+    overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val context = LocalContext.current
     val wm = state.wm
@@ -190,6 +192,7 @@ fun Workspace(
                     FolderPop(state)
                     DeskMenus(state, onAppearance)
                     DeskDialogs(state)
+                    overlay()
                 }
             }
         }
