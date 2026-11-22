@@ -314,7 +314,7 @@ private fun Hits(index: SettingsIndex, env: SettingsEnv, nav: SettingsNav) {
 @Composable
 private fun AppGroup(appLinks: List<AppLink>, nav: SettingsNav) {
     SettingGroup(stringResource(R.string.set_this_app)) {
-        SettingRow(stringResource(R.string.set_app_look), desc = stringResource(R.string.set_app_look_desc), icon = WebIcons["palette"], onClick = { nav.openPage("app/look") })
+        SettingRow(stringResource(R.string.set_app_look), desc = stringResource(R.string.set_app_look_desc), icon = WebIcons["device"], onClick = { nav.openPage("app/look") })
         SettingRow(stringResource(io.github.ra5on.titanos.ui.R.string.guard_title), desc = stringResource(R.string.set_app_guard_desc), icon = WebIcons["lock"], onClick = { nav.openPage("app/guard") })
         for (l in appLinks) SettingRow(l.title, desc = l.desc, icon = l.icon, onClick = l.onClick)
     }
@@ -361,7 +361,7 @@ private fun WideLayout(env: SettingsEnv, index: SettingsIndex, nav: SettingsNav,
                     }
                     Divider(Modifier.padding(vertical = 6.dp))
                     Text(stringResource(R.string.set_this_app), style = TitanType.section, color = c.muted, modifier = Modifier.padding(start = 10.dp, top = 6.dp, bottom = 4.dp))
-                    SideItem(stringResource(R.string.set_app_look), WebIcons["palette"], nav.page == "app/look") { nav.openPage("app/look") }
+                    SideItem(stringResource(R.string.set_app_look), WebIcons["device"], nav.page == "app/look") { nav.openPage("app/look") }
                     SideItem(stringResource(io.github.ra5on.titanos.ui.R.string.guard_title), WebIcons["lock"], nav.page == "app/guard") { nav.openPage("app/guard") }
                     for (l in appLinks) SideItem(l.title, l.icon, false, onClick = l.onClick)
                 }

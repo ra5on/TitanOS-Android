@@ -395,6 +395,8 @@
     <string name="con_import_replace">Import .vcf, replace existing</string>
     <string name="con_import_skip">Import .vcf, keep existing</string>
     <string name="con_last">Last name</string>
+    <string name="con_index_label">Index A to Z</string>
+    <string name="con_index_jump">Jump to “%1$s”</string>
     <string name="con_lists">Lists</string>
     <string name="con_mail">Mail</string>
     <string name="con_me_hint">You set “My card” on a contact\'s card.</string>

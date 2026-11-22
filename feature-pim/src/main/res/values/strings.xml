@@ -395,6 +395,8 @@
     <string name="con_import_replace">.vcf importieren, vorhandene ersetzen</string>
     <string name="con_import_skip">.vcf importieren, vorhandene behalten</string>
     <string name="con_last">Nachname</string>
+    <string name="con_index_label">Register von A bis Z</string>
+    <string name="con_index_jump">Zu „%1$s“ springen</string>
     <string name="con_lists">Listen</string>
     <string name="con_mail">E-Mail</string>
     <string name="con_me_hint">„Meine Karte“ legst du in der Karte eines Kontakts fest.</string>

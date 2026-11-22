@@ -6,6 +6,8 @@
     <string name="app_unpair_do">Remove pairing</string>
     <string name="app_share_label">Save to TitanOS</string>
     <!-- Several NAS and accounts -->
+    <!-- Befehlspalette: Bereich der Seiten, die es nur in der App gibt (VPN, NAS und Konten …). -->
+    <string name="palette_app">In the app</string>
     <string name="nas_title">NAS and accounts</string>
     <string name="nas_add">Add NAS</string>
     <string name="nas_add_sub">Pair another NAS or another account</string>

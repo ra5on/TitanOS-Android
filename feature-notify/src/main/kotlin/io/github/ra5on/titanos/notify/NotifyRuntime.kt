@@ -136,15 +136,29 @@ object NotifyRuntime {
     fun nasOf(intent: android.content.Intent?): String? =
         intent?.takeIf { it.getBooleanExtra(Poster.EXTRA_OPEN, false) }?.getStringExtra(Poster.EXTRA_NAS)
 
-    /** Aus dem Intent der Activity (Tippen auf eine Mitteilung, „Ansehen“). */
-    fun take(intent: android.content.Intent?) {
+    /**
+     * Aus dem Intent der Activity (Tippen auf eine Mitteilung, „Ansehen“). Die
+     * angetippte Mitteilung gilt danach in der Liste als gelesen (wie „Gelesen“).
+     */
+    fun take(intent: android.content.Intent?, context: Context? = null) {
         if (intent?.getBooleanExtra(Poster.EXTRA_OPEN, false) == true) {
             intent.removeExtra(Poster.EXTRA_OPEN)
             val link = intent.getStringExtra(Poster.EXTRA_LINK)
+            val id = intent.getStringExtra(Poster.EXTRA_ID)
+            val nas = intent.getStringExtra(Poster.EXTRA_NAS) ?: NasRegistry.LEGACY_ID
             intent.removeExtra(Poster.EXTRA_LINK)
+            intent.removeExtra(Poster.EXTRA_ID)
             intent.removeExtra(Poster.EXTRA_NAS)
+            if (id != null && context != null) markRead(context, nas, id)
             if (!requestOpen(link)) _openList.value = true
         }
+    }
+
+    /** Eine Mitteilung des NAS [nas] in der Liste als gelesen merken und aus der Leiste nehmen. */
+    fun markRead(context: Context, nas: String, id: String) {
+        val note = inbox(context, nas).update { s -> Inbox.markRead(s, listOf(id)) to s.items.firstOrNull { it.id == id } }
+        note?.let { Poster.cancel(context, Poster.tagOf(nas, it)) }
+        changed()
     }
 
     fun listOpened() {
@@ -186,14 +200,41 @@ object NotifyRuntime {
         }
     }
 
+    /**
+     * Mitteilungen, die gerade nicht klingeln, weil man das Ziel schon vor sich
+     * hat: die Antwort des KI-Agenten in einem Chat, der in der App offen und zu
+     * sehen ist (gleiche Regel wie das NAS und das Web, TitanOS 0.86). Sie stehen
+     * gleich als gelesen in der Liste. Die TitanOS-App setzt die Regel.
+     */
+    @Volatile
+    var onScreen: (Note) -> Boolean = { false }
+
     /** Nimmt Mitteilungen eines NAS auf (Abruf oder Strom) und zeigt die neuen an; mit [lock]. */
     internal fun take(context: Context, nas: String, items: List<Note>, latest: String, quiet: Boolean) {
         val fresh = inbox(context, nas).update { state ->
             val m = Inbox.merge(state, items, latest, quiet, System.currentTimeMillis())
-            m.state to m.fresh
+            val seen = m.fresh.filter { runCatching { onScreen(it) }.getOrDefault(false) }
+            (if (seen.isEmpty()) m.state else Inbox.markRead(m.state, seen.map { it.id })) to (m.fresh - seen.toSet())
         }
         if (items.isNotEmpty()) changed()
         if (nasOn(context, nas)) Poster.post(context, NotifyNas(nas, nameOf(nas)), fresh, NotifySettingsStore(context).load())
+    }
+
+    /**
+     * Alle Mitteilungen aller NAS, auf die [match] zutrifft, als gelesen merken
+     * und aus der Leiste nehmen (z. B. ein Chat des KI-Agenten erscheint).
+     */
+    fun readWhere(context: Context, match: (Note) -> Boolean) {
+        var any = false
+        for (n in nasList()) {
+            val hit = inbox(context, n.id).update { s ->
+                val ids = s.items.filter { it.id !in s.read && runCatching { match(it) }.getOrDefault(false) }
+                (if (ids.isEmpty()) s else Inbox.markRead(s, ids.map { it.id })) to ids
+            }
+            for (note in hit) Poster.cancel(context, Poster.tagOf(n.id, note))
+            if (hit.isNotEmpty()) any = true
+        }
+        if (any) changed()
     }
 
     /**

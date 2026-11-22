@@ -218,9 +218,15 @@ fun MemoryPage(model: AgentModel, query: String, draft: String, onOpenChat: (Str
             error?.let { item { Notice(it, tone = "error") } }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Field(q, { q = it }, Modifier.weight(1f), placeholder = tr.t("agent.mem.search"), leading = "search")
+                    // Große Schrift: Suchfeld und Knopf untereinander, sonst bräche der Hinweis im Feld mitten im Wort.
+                    if (androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f) {
+                        Field(q, { q = it }, Modifier.fillMaxWidth(), placeholder = tr.t("agent.mem.search"), leading = "search")
                         PillButton(tr.t("agent.mem.add"), { editing = Editing("new", "", "") }, icon = "plus")
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Field(q, { q = it }, Modifier.weight(1f), placeholder = tr.t("agent.mem.search"), leading = "search")
+                            PillButton(tr.t("agent.mem.add"), { editing = Editing("new", "", "") }, icon = "plus")
+                        }
                     }
                     Segments(listOf("topic", "used", "newest").map { it to tr.t("agent.mem.order.$it") }, order, { order = it }, compact = true, fill = true)
                 }

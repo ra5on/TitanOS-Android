@@ -162,7 +162,7 @@ fun FeaturesPanel(model: AgentModel, onFeature: (String) -> Unit) {
                 SRow(tr.t("agent.f.docs.memory"), desc = tr.t("agent.f.docs.memorySub"), icon = "fileText", control = { nasSwitch("docs") }) {
                     if (!p.bool("docs")) Text(tr.t("agent.f.notThere"), style = AgentText.sm, color = c.muted) else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(tr.t("agent.f.docs.memory"), style = AgentText.md, color = c.text, modifier = Modifier.weight(1f))
+                            Text(io.github.ra5on.titanos.ui.breakAtHyphens(tr.t("agent.f.docs.memory")), style = AgentText.md, color = c.text, modifier = Modifier.weight(1f))
                             Switch(docs.bool("on"), { mine(m.sub("docs", "on", it)) }, label = tr.t("agent.f.docs.memory"))
                         }
                         Text(tr.t("agent.f.docs.nightly", "at" to n.o("docs").str("at", "03:00")), style = AgentText.sm, color = c.muted)

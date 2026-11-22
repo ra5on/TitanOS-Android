@@ -120,6 +120,13 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.r
         NotifyRuntime.api = { id -> graph.link(id)?.notifyApi() }
         NotifyRuntime.nasList = { graph.registry.profiles.map { NotifyNas(it.id, it.name) } }
         NotifyRuntime.active = { graph.activeId }
+        // Keine Mitteilung für die Antwort in einem Chat des KI-Agenten, der gerade offen und zu sehen ist
+        // (gleiche Regel wie Agent-App, NAS und Web); erscheint ein Chat, gehen seine Mitteilungen aus der Leiste.
+        val agentNote = { n: io.github.ra5on.titanos.notify.Note -> n.app == "agent" || n.kind == io.github.ra5on.titanos.notify.Category.Agent }
+        NotifyRuntime.onScreen = { n -> agentNote(n) && io.github.ra5on.titanos.agent.app.AgentVisible.shows(n.link) }
+        io.github.ra5on.titanos.agent.app.AgentVisible.onShown = { id ->
+            NotifyRuntime.readWhere(this) { n -> agentNote(n) && io.github.ra5on.titanos.agent.app.AgentVisible.chatOf(n.link) == id }
+        }
         if (graph.pairing != null) NotifyScheduler.arm(this)
         // Kontakte und Kalender des Handys: ein Konto je Kopplung; der SyncAdapter holt sich die Verbindung seines NAS.
         io.github.ra5on.titanos.pim.sync.PimRuntime.nas = { account ->
@@ -232,6 +239,15 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
 
     /** Seite „NAS und Konten“ offen. */
     var openNasList by mutableStateOf(false)
+
+    /** „Schnell finden“ (Befehlspalette wie im Web, Strg/⌘+K oder das Suchfeld) offen. */
+    var openPalette by mutableStateOf(false)
+
+    /** Ein Treffer der Befehlspalette, den die Oberfläche (Handy oder Arbeitsplatz) öffnen soll (Palette.kt). */
+    var paletteLink by mutableStateOf<String?>(null)
+
+    /** Die Programme der Startseite für dieses Konto (Kennungen), für die Befehlspalette. */
+    var paletteProgramIds by mutableStateOf<List<String>>(emptyList())
 
     /** Ein NAS hat die Kopplung beendet, es gibt aber noch andere: sein Name für einen Hinweis. */
     var endedByNas by mutableStateOf<String?>(null)

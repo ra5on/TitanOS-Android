@@ -243,6 +243,18 @@ class AgentScreenshotTest {
             val r = out.firstOrNull() ?: continue
             // Nicht gefüllte Platzhalter oder rohe Schlüssel.
             val text = r.layoutInput.text.text
+            // Keine Silbentrennung (Inhaber 21.11.2026 „Ganze Wörter“): automatische Trennung ist ein Fund, auch wenn sie hier nicht greift.
+            if (r.layoutInput.style.hyphens == androidx.compose.ui.text.style.Hyphens.Auto) cut += "$prefix$name: Silbentrennung eingeschaltet „${text.take(60)}“"
+            // Nur zwischen ganzen Wörtern umbrechen; Kennungen (Ziffern, / _ : @ .) und Monoschrift dürfen überall brechen,
+            // ebenso ein Wort, das allein breiter ist als ein fast bildschirmbreites Feld.
+            if (r.layoutInput.style.fontFamily != io.github.ra5on.titanos.ui.generated.TitanFonts.mono) {
+                val rootWidth = compose.onRoot().fetchSemanticsNode().size.width
+                for (line in 0 until r.lineCount - 1) {
+                    val end = r.getLineEnd(line, visibleEnd = false)
+                    if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit() && !identifier(text, end) && !tooWide(r, text, end, node.size.width, rootWidth))
+                        cut += "$prefix$name: mitten im Wort umbrochen „${text.substring(maxOf(0, end - 12), minOf(text.length, end + 12))}“"
+                }
+            }
             val fromNas = synchronized(served) { served.any { it.contains("\"${text.trim()}\"") } }
             if (Regex("\\{[a-zA-Z]+\\}").containsMatchIn(text) || (!fromNas && Regex("^(agent|agentpim|common)\\.[a-zA-Z.]+$").matches(text.trim())) || Regex("\\bagent\\.f\\.[a-z]").containsMatchIn(text))
                 cut += "$prefix$name: Platzhalter „${text.take(80)}“"
@@ -255,6 +267,23 @@ class AgentScreenshotTest {
             if ((!editable && widest > node.size.width + 2) || bottom > node.size.height + 2 || dots)
                 cut += "$prefix$name: „${r.layoutInput.text.text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
         }
+    }
+
+    private fun identifier(text: String, at: Int): Boolean {
+        var a = at
+        var b = at
+        while (a > 0 && !text[a - 1].isWhitespace()) a--
+        while (b < text.length && !text[b].isWhitespace()) b++
+        return text.substring(a, b).any { it.isDigit() || it in "/_:@." }
+    }
+
+    private fun tooWide(r: androidx.compose.ui.text.TextLayoutResult, text: String, end: Int, width: Int, rootWidth: Int): Boolean {
+        if (width < rootWidth * 0.6f) return false
+        var a = end
+        while (a > 0 && text[a - 1].isLetterOrDigit()) a--
+        var b = end
+        while (b < text.length && text[b].isLetterOrDigit()) b++
+        return (a until b).sumOf { r.getBoundingBox(it).width.toDouble() } > width
     }
 
     private fun screens(dark: Boolean) {

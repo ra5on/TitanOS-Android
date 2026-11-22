@@ -577,12 +577,12 @@ private fun Entry(
             if (prefs.avatars) SenderAvatar(model, r.from)
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.Top) {
-                    Text(name, style = TitanType.rowTitle.copy(fontWeight = if (unread) FontWeight.Bold else FontWeight.SemiBold, hyphens = androidx.compose.ui.text.style.Hyphens.Auto), color = c.text, modifier = Modifier.weight(1f))
+                    Text(io.github.ra5on.titanos.ui.breakWords(name), style = TitanType.rowTitle.copy(fontWeight = if (unread) FontWeight.Bold else FontWeight.SemiBold), color = c.text, modifier = Modifier.weight(1f))
                     Text(listDate(r.date, locale, zone, now), style = TitanType.rowSub, color = c.muted, modifier = Modifier.padding(start = 8.dp))
                     if (!editing) Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                 }
                 Row(verticalAlignment = Alignment.Top) {
-                    Text(subject, style = TitanType.body.copy(fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal, hyphens = androidx.compose.ui.text.style.Hyphens.Auto), color = c.text, modifier = Modifier.weight(1f))
+                    Text(io.github.ra5on.titanos.ui.breakWords(subject), style = TitanType.body.copy(fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Normal), color = c.text, modifier = Modifier.weight(1f))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(start = 6.dp)) {
                         if (attachment) Mark(MailIcons.clip, stringResource(R.string.mail_mark_attachment), c.muted)
                         if (flagged) Mark(MailIcons.flag, stringResource(R.string.mail_mark_flagged), c.warnInk)

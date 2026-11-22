@@ -41,6 +41,8 @@ class ScreenAudit {
             get.action?.invoke(out)
             val r = out.firstOrNull() ?: continue
             val text = r.layoutInput.text.text
+            // Keine Silbentrennung (Inhaber 21.11.2026 „Ganze Wörter“): automatische Trennung ist ein Fund, auch wenn sie hier nicht greift.
+            if (r.layoutInput.style.hyphens == androidx.compose.ui.text.style.Hyphens.Auto) found += "$name: Silbentrennung eingeschaltet „${text.take(60)}“"
             // Ein Wert, der wörtlich so vom NAS kommt (Name einer Freigabe, Kennung), ist kein roher Textschlüssel.
             if (PLACEHOLDER.containsMatchIn(text) || (RAW_KEY.matches(text.trim()) && !FakeNas.served(text.trim()))) found += "$name: Platzhalter „${text.take(80)}“"
             // Nur zwischen ganzen Wörtern umbrechen (Vorgabe des Inhabers 21.11.2026); Maschinenwerte in

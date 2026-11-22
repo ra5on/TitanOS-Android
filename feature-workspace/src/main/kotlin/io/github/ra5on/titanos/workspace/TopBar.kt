@@ -102,7 +102,12 @@ internal fun TopBar(state: WorkspaceState, onSearchFocus: () -> Unit) {
         }
         // Schmal (Handy, geteilter Bildschirm, große Schrift): erst die Suche, dann die Menüleiste weglassen, nie Wörter zerreißen.
         val room = state.wm.area.w / androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)
-        if (room >= 900) SearchField(state, Modifier.widthIn(min = 120.dp, max = 220.dp), onSearchFocus)
+        val search = state.onSearch
+        if (search != null) {
+            // Eine Suche für alles (Programme, Seiten, Einstellungen): die Befehlspalette der App.
+            if (room >= 900) SearchButton(Modifier.widthIn(min = 120.dp, max = 220.dp), search)
+            else io.github.ra5on.titanos.ui.components.IconButton(TitanIcons.search, t("desktop.menu.search"), search, size = 18.dp)
+        } else if (room >= 900) SearchField(state, Modifier.widthIn(min = 120.dp, max = 220.dp), onSearchFocus)
         if (room >= 640) {
             Box(Modifier.padding(horizontal = 4.dp).width(1.dp).heightIn(min = h * .5f, max = h * .5f).background(c.border))
             MenuBarItems(state)
@@ -160,6 +165,25 @@ private fun MenuBarItems(state: WorkspaceState) {
                 .then(if (id == "main") Modifier.semantics { heading() } else Modifier)
                 .padding(horizontal = 9.dp, vertical = 6.dp),
         )
+    }
+}
+
+/** Das Suchfeld als Knopf: öffnet „Schnell finden“ (Strg/⌘+K). */
+@Composable
+private fun SearchButton(modifier: Modifier, onClick: () -> Unit) {
+    val c = Titan.colors
+    val hint = t("desktop.menu.searchShort")
+    val label = t("palette.shortcut")
+    Row(
+        modifier.clip(RoundedCornerShape(8.dp)).background(c.chip.copy(alpha = .7f))
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = label }
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(TitanIcons.search, null, tint = c.muted, modifier = Modifier.size(15.dp))
+        Text(hint, style = TitanType.small, color = c.muted)
     }
 }
 

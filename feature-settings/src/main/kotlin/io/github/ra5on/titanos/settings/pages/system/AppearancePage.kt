@@ -256,7 +256,7 @@ fun AppearancePage(a: PageArgs) {
         SettingRow(
             stringResource(R.string.set_app_look),
             desc = stringResource(R.string.set_app_look_desc),
-            icon = WebIcons["phone"],
+            icon = WebIcons["device"],
             onClick = { a.openPage("app/look") },
         )
     }

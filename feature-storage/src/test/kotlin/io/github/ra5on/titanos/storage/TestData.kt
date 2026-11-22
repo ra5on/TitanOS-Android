@@ -46,6 +46,8 @@ internal fun wordBreaks(compose: androidx.compose.ui.test.SemanticsNodeInteracti
         val r = out.firstOrNull() ?: continue
         if (r.layoutInput.style.fontFamily == io.github.ra5on.titanos.ui.generated.TitanFonts.mono) continue
         val text = r.layoutInput.text.text
+        // Keine Silbentrennung (Inhaber 21.11.2026 „Ganze Wörter“): automatische Trennung ist ein Fund, auch wenn sie hier nicht greift.
+        if (r.layoutInput.style.hyphens == androidx.compose.ui.text.style.Hyphens.Auto) found += "$name: Silbentrennung eingeschaltet „${text.take(60)}“"
         for (i in 0 until r.lineCount - 1) {
             val end = r.getLineEnd(i)
             if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit() && !identifier(text, end)) {

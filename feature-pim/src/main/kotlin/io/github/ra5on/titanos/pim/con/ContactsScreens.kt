@@ -28,6 +28,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -78,6 +82,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
@@ -305,6 +312,7 @@ private fun ContactList(
     val list = model.sorted(results?.first ?: base)
     val state = rememberLazyListState()
     val letters = list.map { model.letter(it) }
+    val present = letters.toSet()
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.statusBarsPadding())
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -324,7 +332,7 @@ private fun ContactList(
             leading = TitanIcons.search, placeholder = stringResource(UiR.string.ui_search))
         model.problem?.let { Problem(conProblemText(it), Modifier.padding(horizontal = 16.dp)) }
         Box(Modifier.weight(1f)) {
-            LazyColumn(state = state, modifier = Modifier.fillMaxSize().padding(end = if (model.prefs.index) 22.dp else 0.dp)) {
+            LazyColumn(state = state, modifier = Modifier.fillMaxSize().padding(end = if (model.prefs.index && results == null && present.size >= 2) 30.dp else 0.dp)) {
                 if (results == null && g == null) {
                     model.me?.let { meId -> model.item(meId) }?.let { me ->
                         item(key = "me") {
@@ -379,27 +387,129 @@ private fun ContactList(
                 item { Text(pluralStringResource(R.plurals.con_count, list.size, list.size), style = TitanType.body, color = c.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(16.dp)) }
                 item { Box(Modifier.navigationBarsPadding()) }
             }
-            if (model.prefs.index && results == null && list.size > 12) {
-                // Register am Rand (ContactRail.svelte): Tippen springt zum Buchstaben.
-                Column(Modifier.align(Alignment.CenterEnd).width(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    for (letter in ('A'..'Z').map { it.toString() } + "#") {
-                        val has = letter in letters
-                        Text(letter, style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = if (has) c.accent else c.muted.copy(alpha = .5f),
-                            modifier = Modifier.clickable(enabled = has) {
-                                scope.launch {
-                                    val idx = state.layoutInfo.totalItemsCount.let { _ ->
-                                        var i = 0; var found = -1
-                                        // Index der Überschrift: Kopfzeilen vor der Liste mitzählen.
-                                        val offset = (if (model.me != null && model.item(model.me!!) != null && g == null) 1 else 0) + (if (model.birthdaysSoon().isNotEmpty() && g == null) 1 else 0)
-                                        var lastL = ""
-                                        for (it in list) { val ll = model.letter(it); if (ll != lastL) { if (ll == letter) { found = i; break }; i++; lastL = ll }; i++ }
-                                        if (found >= 0) found + offset else -1
-                                    }
-                                    if (idx >= 0) state.scrollToItem(idx)
-                                }
-                            }.padding(vertical = 1.dp).semantics { contentDescription = letter })
-                    }
+            if (model.prefs.index && results == null && present.size >= 2) {
+                // Register A–Z am Rand wie im Web (ContactList.svelte): ein Streifen zum Tippen und Ziehen,
+                // jeder Buchstabe auch ein Knopf für Tastatur und TalkBack.
+                LetterIndex(present, Modifier.align(Alignment.CenterEnd).fillMaxHeight()) { letter ->
+                    // Index der Überschrift: Kopfzeilen vor der Liste mitzählen.
+                    val offset = (if (g == null && model.me?.let { model.item(it) } != null) 1 else 0) + (if (g == null && model.birthdaysSoon().isNotEmpty()) 1 else 0)
+                    val at = headerIndex(letters, letter)
+                    if (at >= 0) scope.launch { state.scrollToItem(at + offset) }
                 }
+            }
+        }
+    }
+}
+
+/** Die Stelle der Überschrift von [letter] in der Liste (Überschrift und Zeilen gezählt); -1 ohne. */
+internal fun headerIndex(letters: List<String>, letter: String): Int {
+    var i = 0
+    var last = ""
+    for (l in letters) {
+        if (l != last) {
+            if (l == letter) return i
+            i++
+            last = l
+        }
+        i++
+    }
+    return -1
+}
+
+/** Die Buchstaben des Registers in fester Folge, „#“ zuletzt (INDEX_LETTERS im Web). */
+internal val INDEX_LETTERS = ('A'..'Z').map { it.toString() } + "#"
+
+/** Ein Buchstabe ohne Kontakte springt zum nächsten mit Kontakten (sonst zum letzten), wie im Web. */
+internal fun indexTarget(letter: String, present: Set<String>): String? {
+    val at = INDEX_LETTERS.indexOf(letter).coerceAtLeast(0)
+    return INDEX_LETTERS.drop(at).firstOrNull { it in present } ?: INDEX_LETTERS.lastOrNull { it in present }
+}
+
+/**
+ * Welche Buchstaben das Register zeigt: alle, wenn die Höhe für jeden reicht;
+ * sonst nur die mit Kontakten; reicht es auch dafür nicht, keines (wie im Web).
+ */
+internal fun indexLetters(height: Float, letterHeight: Float, present: Set<String>): List<String> = when {
+    height >= INDEX_LETTERS.size * letterHeight -> INDEX_LETTERS
+    height >= present.size * letterHeight -> INDEX_LETTERS.filter { it in present }
+    else -> emptyList()
+}
+
+/**
+ * Register A–Z rechts (ContactList.svelte): ein 44 dp breiter Streifen, den
+ * man antippt oder entlangzieht; die Buchstaben stehen in seiner Mitte.
+ * Jeder Buchstabe ist zugleich ein Knopf für Tastatur und TalkBack
+ * („Zu „M“ springen“). Ein Buchstabe ohne Kontakte springt zum nächsten.
+ * Die Höhe je Buchstabe folgt der Schriftgröße (200 % zeigt weniger).
+ */
+@Composable
+private fun LetterIndex(present: Set<String>, modifier: Modifier, onJump: (String) -> Unit) {
+    val c = Titan.colors
+    val style = TitanType.small.copy(fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val letterHeight = with(density) { style.lineHeight.toDp() } + 2.dp
+    val label = stringResource(R.string.con_index_label)
+    var current by remember { mutableStateOf("") }
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier.width(44.dp)) {
+        val letters = indexLetters(maxHeight.value, letterHeight.value, present)
+        if (letters.isEmpty()) return@BoxWithConstraints
+        val stripPx = constraints.maxHeight.toFloat()
+        val letterPx = with(density) { letterHeight.toPx() }
+        fun jump(l: String) {
+            val target = indexTarget(l, present) ?: return
+            current = target
+            onJump(target)
+        }
+        fun letterAt(y: Float): String {
+            val top = (stripPx - letters.size * letterPx) / 2f
+            return letters[((y - top) / letterPx).toInt().coerceIn(0, letters.size - 1)]
+        }
+        Column(
+            Modifier.fillMaxSize()
+                .semantics { contentDescription = label; isTraversalGroup = true }
+                // Tippen und Ziehen gehören dem Streifen (ein Ziel von 44 dp statt 27 winziger).
+                .pointerInput(letters) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                        down.consume()
+                        var last = letterAt(down.position.y)
+                        jump(last)
+                        while (true) {
+                            val e = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                            val ch = e.changes.firstOrNull { it.id == down.id } ?: break
+                            if (!ch.pressed) break
+                            ch.consume()
+                            val l = letterAt(ch.position.y)
+                            if (l != last) { last = l; jump(l) }
+                        }
+                        current = ""
+                    }
+                },
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            for (l in letters) {
+                val jumpText = stringResource(R.string.con_index_jump, l)
+                var focused by remember { mutableStateOf(false) }
+                val on = current == l || focused
+                Text(
+                    l,
+                    style = style,
+                    color = if (on) c.onAccent else if (l in present) c.accent else c.muted,
+                    modifier = Modifier.height(letterHeight).width(28.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (on) c.accent else Color.Transparent)
+                        .onFocusChanged { focused = it.isFocused }
+                        .onPreviewKeyEvent { e ->
+                            if (e.type == KeyEventType.KeyDown && (e.key == Key.Enter || e.key == Key.NumPadEnter || e.key == Key.Spacebar)) { jump(l); true } else false
+                        }
+                        .focusable()
+                        .semantics {
+                            contentDescription = jumpText
+                            role = Role.Button
+                            onClick { jump(l); true }
+                        },
+                )
             }
         }
     }

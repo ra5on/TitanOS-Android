@@ -60,6 +60,13 @@ class WorkspaceState(
     var onPower by mutableStateOf<((Boolean) -> Unit)?>(null)
     var onLock by mutableStateOf<(() -> Unit)?>(null)
 
+    /**
+     * „Schnell finden“ der App (Befehlspalette wie im Web): das Suchfeld der oberen
+     * Leiste öffnet sie statt einer eigenen Suche im Hauptmenü (eine Suche, nicht zwei).
+     * null: das Suchfeld filtert das Hauptmenü wie bisher.
+     */
+    var onSearch by mutableStateOf<(() -> Unit)?>(null)
+
     /** Mehrere NAS (F2): Kennung und Name je NAS, das gewählte, Umschalten und die Seite „NAS und Konten“. */
     var nasList by mutableStateOf<List<Pair<String, String>>>(emptyList())
     var activeNas by mutableStateOf("")

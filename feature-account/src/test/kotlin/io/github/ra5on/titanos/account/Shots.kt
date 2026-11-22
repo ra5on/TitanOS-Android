@@ -149,6 +149,8 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
             get.action?.invoke(out)
             val r = out.firstOrNull() ?: continue
             val text = r.layoutInput.text.text
+            // Keine Silbentrennung (Inhaber 21.11.2026 „Ganze Wörter“): automatische Trennung ist ein Fund, auch wenn sie hier nicht greift.
+            if (r.layoutInput.style.hyphens == androidx.compose.ui.text.style.Hyphens.Auto) problems += "$prefix$name: Silbentrennung eingeschaltet „${text.take(60)}“"
             // Ein Wert, der wörtlich so vom NAS kommt (z. B. die HA-Entität notify.mobile_app_iphone), ist kein roher Textschlüssel.
             val raw = RAW_KEY.matches(text.trim()) && text.substringBefore('.') in namespaces && !DOMAIN.containsMatchIn(text.trim()) && !isData(text.trim())
             if (PLACEHOLDER.containsMatchIn(text) || raw || text.startsWith("TODO "))

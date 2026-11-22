@@ -182,6 +182,8 @@ class WatchScreenshotTest {
             get.action?.invoke(out)
             val r = out.firstOrNull() ?: continue
             val text = r.layoutInput.text.text
+            // Keine Silbentrennung (Inhaber 21.11.2026 „Ganze Wörter“): automatische Trennung ist ein Fund, auch wenn sie hier nicht greift.
+            if (r.layoutInput.style.hyphens == androidx.compose.ui.text.style.Hyphens.Auto) cut += "$prefix-$screen: Silbentrennung eingeschaltet „${text.take(60)}“"
             if (Regex("%\\d?\\$?[sd]|\\{[a-zA-Z]+\\}").containsMatchIn(text)) cut += "$prefix-$screen: Platzhalter „${text.take(60)}“"
             val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
             val bottom = if (r.lineCount > 0) r.getLineBottom(r.lineCount - 1) else 0f

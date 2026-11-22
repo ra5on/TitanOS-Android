@@ -138,6 +138,7 @@ import io.github.ra5on.titanos.ui.theme.Titan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -255,13 +256,26 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
             quiet = if (model.checkRuns()) 0 else quiet + 1
         }
     }
-    // Der offene Chat ist zu sehen: alle 15 s sagt die App es dem NAS.
+    // Der offene Chat ist zu sehen (wie das Web, agent-page.svelte.ts): sofort beim Öffnen und dann
+    // alle 15 s sagt die App es dem NAS. Das NAS schickt für einen sichtbaren Chat keine Mitteilung
+    // (TitanOS 0.86); vorher kam die erste Meldung erst nach 15 s, und eine schnelle Antwort ging
+    // trotzdem als Mitteilung hinaus. Im Hintergrund meldet die App eine Antwort selbst (AgentRoot).
     val openId = model.current?.id
     LaunchedEffect(openId, model.author) {
         if (openId == null || model.author != null) return@LaunchedEffect
         try {
-            while (isActive) { delay(15_000); model.seen(openId, true) }
+            while (isActive) { model.seen(openId, true); delay(15_000) }
         } finally { model.seen(openId, false) }
+    }
+    // Welcher Chat gerade vorne zu sehen ist (nur solange die App vorne ist): die TitanOS-App zeigt
+    // für ihn keine Mitteilung des NAS und nimmt vorhandene aus der Leiste (wie das Web).
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(openId, model.author) {
+        if (openId == null || model.author != null) return@LaunchedEffect
+        lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            AgentVisible.show(openId)
+            try { kotlinx.coroutines.awaitCancellation() } finally { AgentVisible.hide(openId) }
+        }
     }
     // Eine neue Antwort vorlesen, wenn gewünscht (Darstellung).
     LaunchedEffect(Unit) {

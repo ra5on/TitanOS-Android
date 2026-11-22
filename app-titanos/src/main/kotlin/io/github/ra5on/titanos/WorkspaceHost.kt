@@ -96,6 +96,8 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
     state.onSwitchNas = { id -> graph.switchTo(id) }
     state.onNasList = { state.open("app:naslist") }
     state.onLock = if (io.github.ra5on.titanos.ui.guard.Guard.available(context)) { { AppLockNow.requests++ } } else null
+    // Eine Suche für alles: das Suchfeld der oberen Leiste öffnet „Schnell finden“ (Palette.kt) wie Strg/⌘+K.
+    state.onSearch = { graph.openPalette = true }
     Workspace(
         state,
         program = { win, close ->
@@ -126,6 +128,16 @@ private fun WorkspaceRoutes(graph: AppGraph, state: WorkspaceState) {
     LaunchedEffect(state.programs) {
         val extra = EXTRA.map { (id, glyph, gradient) -> Program("app:$id", labels.getValue(id), glyph, gradient, "android") }
         if (state.programs.isNotEmpty() && state.programs.none { it.key == "app:vpn" }) state.programs = state.programs + extra
+    }
+    // „Schnell finden“: die Programme der Startseite, die es hier gibt, und ein Treffer öffnet sein Fenster.
+    LaunchedEffect(state.programs) {
+        val home = io.github.ra5on.titanos.home.ALL_PROGRAMS.map { it.id }.toSet()
+        graph.paletteProgramIds = state.programs.map { it.key.removePrefix("app:") }.filter { it in home }
+    }
+    LaunchedEffect(graph.paletteLink) {
+        val link = graph.paletteLink ?: return@LaunchedEffect
+        graph.paletteLink = null
+        openPaletteEntry(context, graph, link, home = {}, later = {})
     }
     LaunchedEffect(graph.openProgram) {
         val id = graph.openProgram ?: return@LaunchedEffect

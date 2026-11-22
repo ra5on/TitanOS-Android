@@ -142,6 +142,8 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
         else -> AppLock {
             Box(Modifier.fillMaxSize()) {
                 androidx.compose.runtime.key(graph.nasEpoch) { MainShell(graph) }
+                // „Schnell finden“ (Palette.kt): über der Startseite wie über dem Arbeitsplatz.
+                if (graph.openPalette) CommandPalette(graph) { graph.openPalette = false }
                 askLink?.let { l ->
                     ConfirmDialog(
                         title = stringResource(R.string.nas_link_title),
@@ -388,6 +390,18 @@ private fun MainShell(graph: AppGraph) {
         openLink(context, graph, link) { tab = Tab.Notifications }
         NotifyRuntime.linkOpened()
     }
+    // Ein Treffer aus „Schnell finden“: was offen ist, schließt; dann über den Router (Palette.kt, Links.kt).
+    LaunchedEffect(graph.paletteLink) {
+        val link = graph.paletteLink ?: return@LaunchedEffect
+        graph.paletteLink = null
+        closePrograms()
+        graph.openNasList = false
+        graph.openAbout = false
+        graph.openVpn = false
+        openPaletteEntry(context, graph, link, home = { tab = Tab.Home }, later = toastLater)
+    }
+    // Die Programme der Startseite (nach Rolle und Diensten) kennt auch die Palette.
+    LaunchedEffect(home.state.programs) { graph.paletteProgramIds = home.state.programs.map { it.id } }
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
     if (tab != Tab.Home) BackHandler { tab = Tab.Home }
     // Ablage und Werkzeuge (Speicher, Freigaben, Benutzer, Plugins, Werkzeuge): eigene Seiten über der Leiste (Admin.kt).
@@ -483,7 +497,7 @@ private fun MainShell(graph: AppGraph) {
                             else -> toastLater()
                         }
                     },
-                    onSearch = toastLater,
+                    onSearch = { graph.openPalette = true },
                     onNotifications = { tab = Tab.Notifications },
                     onMenu = { menu = true },
                     modifier = Modifier.weight(1f),

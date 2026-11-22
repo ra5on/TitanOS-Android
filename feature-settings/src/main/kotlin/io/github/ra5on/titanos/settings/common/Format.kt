@@ -70,18 +70,9 @@ object Fmt {
     }
 }
 
-/**
- * Bindestrich-Wörter im Fließtext („Low-Power-Encodierung“) dürfen am Bindestrich
- * umbrechen: Android bricht sie sonst mitten im Wort (ganze Wörter, Inhaber 21.11.2026).
- * Setzt nach „-“ zwischen zwei Buchstaben einen unsichtbaren Trennpunkt.
- */
-fun breakAtHyphens(text: String): String = text.replace(Regex("(?<=\\p{L})-(?=\\p{L})"), "-\u200B")
+/** Am Bindestrich umbrechen dürfen; dieselbe Regel wie überall (core-ui Words.kt). */
+fun breakAtHyphens(text: String): String = io.github.ra5on.titanos.ui.breakAtHyphens(text)
 
-/**
- * Kennungen im Text (Dateinamen wie claude_desktop_config.json, Fingerabdrücke ab:12:cd,
- * Adressen wie nas.tail1234.ts.net:443, OLLAMA_CONTEXT_LENGTH) dürfen nach „_“, „:“, „.“,
- * „/“ und „@“ umbrechen, wenn ein Buchstabe oder eine Ziffer folgt: sonst bricht Android
- * sie mitten im Wort. Ein unsichtbarer Trennpunkt, kein Zeichen mehr.
- */
-fun breakIds(text: String): String = text.replace(Regex("([_:./@])(?=[\\p{L}\\p{N}])"), "$1\u200B")
+/** Kennungen nach „_“, „:“, „.“, „/“, „@“ umbrechen dürfen (core-ui Words.kt). */
+fun breakIds(text: String): String = io.github.ra5on.titanos.ui.breakIds(text)
 

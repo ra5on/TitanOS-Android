@@ -130,7 +130,12 @@ internal fun UsersProgram(env: AdminEnv, start: String?, onBack: () -> Unit) {
     Polling(Unit, 0) { state.load() }
     LaunchedEffect(start) { if (start == "new") dialog = UserDialog.Create }
     val shown = state.accounts?.let { filterAccounts(it, filter) } ?: emptyList()
-    val current = shown.firstOrNull { it.name == chosen } ?: shown.firstOrNull { it.name == state.meName } ?: shown.firstOrNull()
+    // Nach dem Löschen eines Kontos bleibt man in der Liste (Auftrag I3): am Handy die Liste, nebeneinander
+    // das Konto, das an seiner Stelle steht – nicht das eigene.
+    var deletedAt by rememberSaveable { mutableStateOf(-1) }
+    val current = shown.firstOrNull { it.name == chosen }
+        ?: (if (deletedAt >= 0) shown.getOrNull(minOf(deletedAt, shown.size - 1)) else null)
+        ?: shown.firstOrNull { it.name == state.meName } ?: shown.firstOrNull()
     val reload: () -> Unit = { scope.launch { state.load() } }
     val detailOpen = if (width.twoPanes) current != null else showDetail && current != null
     AdminShell(
@@ -180,7 +185,7 @@ internal fun UsersProgram(env: AdminEnv, start: String?, onBack: () -> Unit) {
                             shown.forEachIndexed { i, a ->
                                 val on = width.twoPanes && current?.name == a.name
                                 Box(Modifier.background(if (on) Titan.colors.accent.copy(alpha = .14f) else Color.Transparent)) {
-                                    AccountRow(a, divider = i > 0) { chosen = a.name; showDetail = true }
+                                    AccountRow(a, divider = i > 0) { chosen = a.name; deletedAt = -1; showDetail = true }
                                 }
                             }
                         }
@@ -193,7 +198,11 @@ internal fun UsersProgram(env: AdminEnv, start: String?, onBack: () -> Unit) {
             listWidth = 380.dp,
         )
     }
-    UsersDialogs(state, dialog, { dialog = it }, reload)
+    UsersDialogs(state, dialog, { dialog = it }, reload, onDeleted = { name ->
+        deletedAt = shown.indexOfFirst { it.name == name }.coerceAtLeast(0)
+        chosen = ""
+        showDetail = false
+    })
 }
 
 @Composable
@@ -523,7 +532,7 @@ private fun AccountDetail(state: UsersState, account: Account, onDialog: (UserDi
 }
 
 @Composable
-private fun UsersDialogs(state: UsersState, dialog: UserDialog?, setDialog: (UserDialog?) -> Unit, reload: () -> Unit) {
+private fun UsersDialogs(state: UsersState, dialog: UserDialog?, setDialog: (UserDialog?) -> Unit, reload: () -> Unit, onDeleted: (String) -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var dialogError by remember(dialog) { mutableStateOf<String?>(null) }
@@ -563,7 +572,7 @@ private fun UsersDialogs(state: UsersState, dialog: UserDialog?, setDialog: (Use
                 title = t("users.deleteTitle", "name" to dialog.name),
                 text = t("users.deleteText"),
                 confirm = t("users.delete"),
-                onConfirm = { run { state.api.delete(dialog.name) } },
+                onConfirm = { run { state.api.delete(dialog.name); onDeleted(dialog.name) } },
                 onDismiss = close,
                 body = {
                     if (reached.isNotEmpty()) Text(t("users.deleteShares", "shares" to reached.joinToString(", ")), style = TitanType.body, color = Titan.colors.text, modifier = Modifier.padding(bottom = 10.dp))

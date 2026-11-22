@@ -43,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -101,8 +102,8 @@ object AgentColors {
 }
 
 object AgentText {
-    /** Silbentrennung (Deutsch): bei großer Schrift bricht ein Wort mit Bindestrich statt mitten drin. */
-    val base = TitanType.body.copy(hyphens = androidx.compose.ui.text.style.Hyphens.Auto)
+    /** Ohne Silbentrennung: nur ganze Wörter (Inhaber 21.11.2026); lange Wörter über breakWords (core-ui). */
+    val base = TitanType.body
     /** --text-md (14 px). */
     val md = base.copy(fontSize = 14.sp, lineHeight = 19.sp)
     val sm = base.copy(fontSize = 12.sp, lineHeight = 16.8.sp)
@@ -224,7 +225,7 @@ fun SRow(
                 if (icon != null) Box(Modifier.width(24.dp).heightIn(min = 22.dp), contentAlignment = Alignment.Center) { WIcon(icon, 19.dp, iconTint ?: c.muted) }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(title, style = AgentText.md.copy(fontWeight = FontWeight.Medium), color = c.text, modifier = Modifier.weight(1f, fill = false))
+                        Text(io.github.ra5on.titanos.ui.breakAtHyphens(title), style = AgentText.md.copy(fontWeight = FontWeight.Medium), color = c.text, modifier = Modifier.weight(1f, fill = false))
                         badge?.invoke()
                     }
                     if (!desc.isNullOrEmpty()) Text(desc, style = AgentText.sm, color = c.muted)
@@ -301,11 +302,23 @@ fun <T> Segments(
             )
         }
     }
-    // Bei großer Schrift brechen gleich breite Felder Wörter mitten durch: dann umbrechen statt teilen.
-    val big = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
-    if (fill && !big) {
-        Row(modifier.fillMaxWidth().then(outer).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 4.dp)) {
+    // Gleich breite Felder nur, wenn das längste Wort jeder Beschriftung in ein Feld passt (ganze Wörter);
+    // sonst umbrechen statt teilen (große Schrift, schmales Fenster, lange Wörter wie „Anweisungen“).
+    val widest = io.github.ra5on.titanos.ui.rememberWidestWord(options.map { it.second }, AgentText.baseSize.copy(fontWeight = FontWeight.SemiBold))
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var width by remember { mutableStateOf(0) }
+    val gap = if (compact) 2.dp else 4.dp
+    val pad = if (compact) 10.dp else 14.dp
+    val cell = with(density) { (width - (6.dp + gap * (options.size - 1)).toPx()) / options.size.coerceAtLeast(1) - (pad * 2).toPx() }
+    if (fill && (width == 0 || widest <= cell)) {
+        Row(modifier.fillMaxWidth().onSizeChanged { width = it.width }.then(outer).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(gap)) {
             options.forEach { (k, l) -> item(Modifier.weight(1f), k, l) }
+        }
+    } else if (fill) {
+        Box(modifier.fillMaxWidth().onSizeChanged { width = it.width }) {
+            FlowRow(Modifier.then(outer).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(gap), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                options.forEach { (k, l) -> item(Modifier, k, l) }
+            }
         }
     } else {
         FlowRow(modifier.then(outer).padding(3.dp), horizontalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -351,7 +364,7 @@ fun PillButton(
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     ) {
         if (icon != null) WIcon(icon, 16.dp, fg)
-        Text(label, style = AgentText.md.copy(fontWeight = if (kind == Btn.Primary || kind == Btn.Warn) FontWeight.SemiBold else FontWeight.Normal), color = fg, textAlign = TextAlign.Center)
+        Text(io.github.ra5on.titanos.ui.breakAtHyphens(label), style = AgentText.md.copy(fontWeight = if (kind == Btn.Primary || kind == Btn.Warn) FontWeight.SemiBold else FontWeight.Normal), color = fg, textAlign = TextAlign.Center)
     }
 }
 

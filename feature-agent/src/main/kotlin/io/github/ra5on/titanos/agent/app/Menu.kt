@@ -234,7 +234,7 @@ private fun MenuItem(icon: String, label: String, on: Boolean = false, count: In
         horizontalArrangement = if (center) Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally) else Arrangement.spacedBy(12.dp),
     ) {
         WIcon(icon, 17.dp, if (on) c.text else c.muted)
-        Text(label, style = AgentText.md.copy(fontSize = 14.5.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal), color = if (muted) c.muted else c.text, modifier = if (center) Modifier else Modifier.weight(1f))
+        Text(io.github.ra5on.titanos.ui.breakAtHyphens(label), style = AgentText.md.copy(fontSize = 14.5.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal), color = if (muted) c.muted else c.text, modifier = if (center) Modifier else Modifier.weight(1f))
         if (count > 0) Text("$count", style = AgentText.sm, color = c.muted)
     }
 }

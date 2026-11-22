@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.Modifier
 import androidx.test.core.app.ApplicationProvider
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -38,16 +41,32 @@ abstract class MailShots {
 
     protected val now = Instant.parse("2026-11-20T11:40:00Z")
 
+    @get:org.junit.Rule
+    val compose = androidx.compose.ui.test.junit4.createComposeRule()
+
+    /**
+     * Ein Bild hell und dunkel, danach die Prüfung jedes Bildschirms wie in den
+     * übrigen Modulen (Auftrag I3, Mail hatte keine): abgeschnittener Text,
+     * Umbruch mitten im Wort, eingeschaltete Silbentrennung, Bedienelemente ohne Namen.
+     */
     protected fun shot(name: String, content: @Composable (MailModel) -> Unit) {
-        for (dark in listOf(true, false)) {
-            captureRoboImage("build/outputs/roborazzi/$name-${if (dark) "dunkel" else "hell"}.png") {
-                TitanTheme(dark = dark) {
-                    val scope = rememberCoroutineScope()
-                    val model = sample(MailModel(MailApi(NasConnection(emptyList(), null)), ApplicationProvider.getApplicationContext(), scope, autoload = false))
-                    Box(Modifier.fillMaxSize()) { content(model) }
-                }
+        var dark by androidx.compose.runtime.mutableStateOf(true)
+        compose.setContent {
+            TitanTheme(dark = dark) {
+                val scope = rememberCoroutineScope()
+                val model = androidx.compose.runtime.remember { sample(MailModel(MailApi(NasConnection(emptyList(), null)), ApplicationProvider.getApplicationContext(), scope, autoload = false)) }
+                Box(Modifier.fillMaxSize()) { content(model) }
             }
         }
+        val found = mutableListOf<String>()
+        for (d in listOf(true, false)) {
+            dark = d
+            compose.waitForIdle()
+            val file = "$name-${if (d) "dunkel" else "hell"}"
+            compose.onRoot().captureRoboImage("build/outputs/roborazzi/$file.png")
+            found += MailAudit.check(compose, file)
+        }
+        org.junit.Assert.assertTrue("Funde in den Bildtests:\n" + found.distinct().joinToString("\n"), found.isEmpty())
     }
 
     private fun sample(m: MailModel): MailModel {

@@ -234,4 +234,4 @@ fun osVersion(version: String?): String {
 }
 
 /** Lange Wortverbindungen mit Bindestrich („Benachrichtigungs-Einstellungen“) dürfen nach dem Bindestrich umbrechen, nie mitten im Wort. */
-fun breakAfterHyphens(text: String): String = text.replace(Regex("(?<=\\p{L})-(?=\\p{L})"), "-\u200B")
+fun breakAfterHyphens(text: String): String = io.github.ra5on.titanos.ui.breakAtHyphens(text)

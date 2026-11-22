@@ -74,6 +74,8 @@ class VpnScreenshotTest {
             node.config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
             for (layout in results) {
                 val text = layout.layoutInput.text.text
+                // Keine Silbentrennung (Inhaber 21.11.2026 „Ganze Wörter“): automatische Trennung ist ein Fund, auch wenn sie hier nicht greift.
+                if (layout.layoutInput.style.hyphens == androidx.compose.ui.text.style.Hyphens.Auto) broken += "Silbentrennung eingeschaltet „${text.take(60)}“"
                 for (line in 0 until layout.lineCount - 1) {
                     val end = layout.getLineEnd(line)
                     if (end <= 0 || end >= text.length) continue

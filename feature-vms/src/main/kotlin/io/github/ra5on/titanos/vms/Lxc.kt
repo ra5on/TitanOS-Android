@@ -114,9 +114,10 @@ fun lxcProblem(context: android.content.Context, e: Throwable): String =
 /** LXC-Systemcontainer wie im Web (routes/lxc). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun LxcRoot(env: ComputeEnv, onBack: () -> Unit) {
+fun LxcRoot(env: ComputeEnv, onBack: () -> Unit, select: String? = null) {
     val api = remember(env.access) { VmApi(env.access) }
-    val state = remember(api) { LxcState(api) }
+    // `/lxc?ct=<name>` (Befehlspalette, Links): diesen Container gleich offen.
+    val state = remember(api) { LxcState(api).apply { if (!select.isNullOrEmpty()) { selected = select; detailOpen = true } } }
     LxcProgram(env, state, onBack)
 }
 

@@ -6,6 +6,8 @@
     <string name="app_unpair_do">Kopplung aufheben</string>
     <string name="app_share_label">Auf TitanOS speichern</string>
     <!-- Mehrere NAS und Konten -->
+    <!-- Befehlspalette: Bereich der Seiten, die es nur in der App gibt (VPN, NAS und Konten …). -->
+    <string name="palette_app">In der App</string>
     <string name="nas_title">NAS und Konten</string>
     <string name="nas_add">NAS hinzufügen</string>
     <string name="nas_add_sub">Ein weiteres NAS oder ein anderes Konto koppeln</string>

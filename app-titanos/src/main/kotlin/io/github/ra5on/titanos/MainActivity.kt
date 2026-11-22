@@ -28,6 +28,25 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Strg/⌘+K öffnet „Schnell finden“ (wie im Web), wo die Oberfläche die Taste
+     * nicht selbst braucht: Terminal und VM-Bildschirm nehmen sie zuerst, die
+     * Systemsteuerung setzt damit die Tastatur in ihre Suche.
+     */
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (super.dispatchKeyEvent(event)) return true
+        if (event.action == android.view.KeyEvent.ACTION_DOWN && event.keyCode == android.view.KeyEvent.KEYCODE_K &&
+            (event.isCtrlPressed || event.isMetaPressed) && !event.isAltPressed && !event.isShiftPressed
+        ) {
+            val graph = (application as TitanApp).graph
+            if (graph.pairing != null) {
+                graph.openPalette = !graph.openPalette
+                return true
+            }
+        }
+        return false
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         take(intent)
@@ -65,7 +84,7 @@ class MainActivity : ComponentActivity() {
             graph.openProgram = "agent"
         }
         // Tippen auf eine Mitteilung: die Liste der Mitteilungen.
-        io.github.ra5on.titanos.notify.NotifyRuntime.take(intent)
+        io.github.ra5on.titanos.notify.NotifyRuntime.take(intent, this)
         if (intent?.action != Intent.ACTION_VIEW) return
         val data = intent.dataString ?: return
         // Ein Kopplungscode gilt nur einmal: kommt derselbe Link wieder (Android startet die Aufgabe nach
