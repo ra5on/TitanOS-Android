@@ -46,6 +46,15 @@ fun AgentAppRoot(graph: AgentGraph, link: PairLink?, onLinkTaken: () -> Unit) {
             onLinkTaken()
         }
     }
+    // Erster Start ab Android 17: erst „Geräte im lokalen Netzwerk“ mit Erklärung, dann die Kopplung über die TitanOS-App erneut.
+    var localIntro by rememberSaveable { mutableStateOf(LocalNetworkIntro.needed(context)) }
+    if (localIntro) {
+        LocalNetworkIntroScreen { granted ->
+            localIntro = false
+            if (granted) (context.applicationContext as? AgentApp)?.retrySibling()
+        }
+        return
+    }
     val model = graph.model
     if (graph.pairing == null || model == null) {
         SetupFlow(graph, pairingModel, step) { step = it }
