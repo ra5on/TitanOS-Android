@@ -312,6 +312,7 @@ private fun ContactList(
                 Text(stringResource(if (width.sidebar) UiR.string.ui_nav_home else R.string.con_lists), style = TitanType.rowTitle, color = c.accent)
             }
             Spacer(Modifier.weight(1f))
+            io.github.ra5on.titanos.agent.panel.AgentPanelButton()
             IconButton(TitanIcons.gear, stringResource(R.string.con_settings), { go(ConRoute.Settings) })
             IconButton(TitanIcons.plus, stringResource(R.string.con_new), { go(ConRoute.Edit(null)) }, tint = c.accent)
         }
