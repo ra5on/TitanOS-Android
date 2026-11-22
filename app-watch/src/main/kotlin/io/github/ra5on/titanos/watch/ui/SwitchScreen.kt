@@ -36,7 +36,9 @@ sealed interface Section<out T> {
 private suspend fun <T> section(load: suspend () -> List<T>): Section<T> = try {
     Section.Ready(load())
 } catch (e: Exception) {
-    if (e.isHidden()) Section.Hidden else Section.Failed(R.string.w_err_reach)
+    // Nicht erlaubt, nicht eingerichtet (Home Assistant: 409 ha_off) oder gerade nicht bereit:
+    // der Bereich fehlt auf der Uhr. Nur ohne Antwort des NAS steht „nicht erreichbar“ da.
+    if (e is io.github.ra5on.titanos.net.ApiException && e.status != 401) Section.Hidden else Section.Failed(R.string.w_err_reach)
 }
 
 /** Geräte von Home Assistant, die die Uhr schalten kann. */

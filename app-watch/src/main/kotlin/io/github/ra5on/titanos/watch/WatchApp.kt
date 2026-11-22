@@ -7,7 +7,6 @@ import android.provider.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import io.github.ra5on.titanos.net.DeviceUnknownException
 import io.github.ra5on.titanos.net.KeystoreDeviceKey
 import io.github.ra5on.titanos.net.NasConnection
 import io.github.ra5on.titanos.net.Pairing
@@ -48,7 +47,8 @@ class WatchGraph(private val app: Context, val store: PairingStore) {
     var unpairedByNas by mutableStateOf(false)
 
     val sessions = SessionManager({ store.load() }, key).also { s ->
-        s.onDeviceUnknown = { forget(byNas = true) }
+        // Kommt aus einem Netz-Thread; die Oberfläche liest den Zustand auf dem Hauptthread.
+        s.onDeviceUnknown = { android.os.Handler(android.os.Looper.getMainLooper()).post { forget(byNas = true) } }
     }
 
     fun api(): WatchApi? = store.load()?.let { WatchApi(NasConnection.forPairing(shared, it, sessions)) }
@@ -102,6 +102,3 @@ class WatchSettings(context: Context) {
         get() = prefs.getString("chat", null)?.takeIf { System.currentTimeMillis() - prefs.getLong("chatAt", 0) < 30 * 60_000 }
         set(v) = prefs.edit().putString("chat", v).putLong("chatAt", System.currentTimeMillis()).apply()
 }
-
-/** Wirft die Kopplung weg, wenn das NAS die Uhr nicht mehr kennt. */
-fun Throwable.unknownDevice(): Boolean = this is DeviceUnknownException

@@ -5,6 +5,8 @@
     <uses-feature android:name="android.hardware.type.watch" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Android 17: Geräte im Heimnetz (das NAS unter 192.168.… oder nas.local) nur mit dieser Erlaubnis. -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <!-- Diktat ohne Spracheingabe des Systems: aufnehmen, Whisper am NAS schreibt mit. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 

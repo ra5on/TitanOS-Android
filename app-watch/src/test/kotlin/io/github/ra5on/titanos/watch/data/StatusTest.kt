@@ -92,3 +92,20 @@ class StatusTest {
         assertTrue(unpaired, unpaired.contains("Noch nicht gekoppelt"))
     }
 }
+
+class AgentDoneTest {
+    private val user = io.github.ra5on.titanos.watch.data.Entry("u", "user", "Liste")
+    private val answer = io.github.ra5on.titanos.watch.data.Entry("a", "assistant", "Erledigt.")
+
+    @org.junit.Test
+    fun waitsUntilTheAgentReallyAnswered() {
+        // Gleich nach dem Senden: „idle“ ohne Antwort ist nicht fertig.
+        org.junit.Assert.assertFalse(io.github.ra5on.titanos.watch.ui.agentDone(Chat("c", state = "idle", entries = listOf(user))))
+        org.junit.Assert.assertTrue(io.github.ra5on.titanos.watch.ui.agentDone(Chat("c", state = "idle", entries = listOf(user, answer))))
+        org.junit.Assert.assertFalse(io.github.ra5on.titanos.watch.ui.agentDone(Chat("c", state = "running", entries = listOf(user, answer))))
+        val p = Pending("p1", "file_write")
+        org.junit.Assert.assertTrue(io.github.ra5on.titanos.watch.ui.agentDone(Chat("c", state = "waiting", pending = p)))
+        // Nach der Freigabe zählt die alte Frage nicht mehr.
+        org.junit.Assert.assertFalse(io.github.ra5on.titanos.watch.ui.agentDone(Chat("c", state = "waiting", pending = p), decided = "p1"))
+    }
+}

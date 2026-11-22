@@ -25,6 +25,7 @@
     <string name="w_pair_err_expired">Die Zahl ist abgelaufen. Hol eine neue.</string>
     <string name="w_pair_err_limit">Gerade zu viele Versuche. Bitte gleich noch einmal.</string>
     <string name="w_pair_err_old_nas">Das NAS kann noch keine Uhren koppeln. Es braucht TitanOS 1.19.</string>
+    <string name="w_pair_err_local_network">Die Uhr darf keine Geräte im lokalen Netzwerk erreichen. Erlaube es, sonst findet sie das NAS im Heimnetz nicht.</string>
     <string name="w_pair_err_other">Das hat nicht geklappt. Bitte noch einmal.</string>
 
     <!-- Startseite -->

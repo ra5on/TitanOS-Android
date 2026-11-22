@@ -50,11 +50,24 @@ fun answerOf(chat: Chat): String {
         .joinToString("\n\n") { it.content!!.trim() }
 }
 
+/**
+ * Fertig heißt: Der Agent wartet auf eine (neue) Freigabe, ist gescheitert
+ * oder hat nach der letzten Zeile der Person geantwortet. Gleich nach dem
+ * Senden meldet das NAS den Chat oft noch als „idle“, nach einer Freigabe
+ * noch mit der alten Frage.
+ */
+fun agentDone(c: Chat, decided: String? = null): Boolean = when (c.state) {
+    "running" -> false
+    "waiting" -> c.pending != null && c.pending.id != decided
+    "error", "interrupted" -> true
+    else -> answerOf(c).isNotBlank()
+}
+
 /** Fragt den Chat ab, bis der Agent fertig ist oder auf eine Freigabe wartet (höchstens 3 Minuten). */
-suspend fun awaitAgent(api: WatchApi, first: Chat): Chat {
+suspend fun awaitAgent(api: WatchApi, first: Chat, decided: String? = null): Chat {
     var chat = first
     val end = System.currentTimeMillis() + 180_000
-    while (chat.state == "running" && System.currentTimeMillis() < end) {
+    while (!agentDone(chat, decided) && System.currentTimeMillis() < end) {
         delay(1500)
         chat = api.chat(chat.id)
     }
@@ -106,7 +119,7 @@ fun AgentRoute() {
         job = scope.launch {
             view = try {
                 api.decide(chat.id, pending.id, approve)
-                val next = awaitAgent(api, api.chat(chat.id))
+                val next = awaitAgent(api, api.chat(chat.id), decided = pending.id)
                 if (g.settings.readAloud) speak(answerOf(next))
                 AgentView.Answer(question, next)
             } catch (_: Exception) {

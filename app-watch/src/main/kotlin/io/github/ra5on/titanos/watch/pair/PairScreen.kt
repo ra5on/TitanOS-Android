@@ -1,6 +1,10 @@
 package io.github.ra5on.titanos.watch.pair
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -22,6 +26,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.wear.compose.material3.MaterialTheme
+import io.github.ra5on.titanos.net.AddressKind
 import io.github.ra5on.titanos.net.ApiException
 import io.github.ra5on.titanos.net.ServerAddress
 import io.github.ra5on.titanos.net.Spki
@@ -40,6 +45,9 @@ import io.github.ra5on.titanos.watch.ui.TextEntry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
+
+/** android.permission.ACCESS_LOCAL_NETWORK, Laufzeit-Erlaubnis ab Android 17 (API 37). */
+const val LOCAL_NETWORK: String = "android.permission.ACCESS_LOCAL_NETWORK"
 
 /** Was der Kopplungsbildschirm gerade zeigt. */
 sealed interface PairView {
@@ -68,10 +76,23 @@ fun PairScreen(initial: PairView = PairView.Intro, unpairedByNas: Boolean = fals
     val context = LocalContext.current
     var view by remember { mutableStateOf(initial) }
     val scope = rememberCoroutineScope()
+    var pending by remember { mutableStateOf<String?>(null) }
+    lateinit var connectRef: (String) -> Unit
+    val localNetwork = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val raw = pending ?: return@rememberLauncherForActivityResult
+        pending = null
+        if (granted) connectRef(raw) else view = PairView.Failed(R.string.w_pair_err_local_network, raw)
+    }
     fun connect(raw: String) {
         val address = ServerAddress.parse(raw.removePrefix("https://").trimEnd('/'))
         if (address == null) {
             view = PairView.Failed(R.string.w_pair_err_address, raw)
+            return
+        }
+        // Android 17: ohne „Geräte im lokalen Netzwerk“ erreicht die Uhr das NAS im Heimnetz nicht.
+        if (Build.VERSION.SDK_INT >= 37 && address.kind == AddressKind.LAN && context.checkSelfPermission(LOCAL_NETWORK) != PackageManager.PERMISSION_GRANTED) {
+            pending = raw
+            localNetwork.launch(LOCAL_NETWORK)
             return
         }
         view = PairView.Connecting(address.server)
@@ -84,6 +105,7 @@ fun PairScreen(initial: PairView = PairView.Intro, unpairedByNas: Boolean = fals
             }
         }
     }
+    connectRef = ::connect
     val label = stringResource(R.string.w_pair_address_label)
     when (val v = view) {
         PairView.Intro -> Page {
