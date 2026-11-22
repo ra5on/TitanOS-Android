@@ -270,7 +270,7 @@ private fun SpeechPart(model: AgentModel, speech: Speech) {
         Grp {
             SwitchRow(tr.t("agent.set.readAutoLabel"), tr.t("agent.set.readAutoHint"), look.read) { model.changeLook(look.copy(read = it)) }
             Row2(tr.t("agent.set.rate"), String.format(if (tr.de) java.util.Locale.GERMAN else java.util.Locale.ENGLISH, "%.1f×", look.rate)) {
-                Range(look.rate.toFloat(), 0.5f..2f, { model.changeLook(look.copy(rate = Math.round(it * 10) / 10.0)) }, String.format("%.1f×", look.rate), steps = 14)
+                Range(look.rate.toFloat(), 0.5f..2f, { model.changeLook(look.copy(rate = Math.round(it * 10) / 10.0)) }, String.format(if (tr.de) java.util.Locale.GERMAN else java.util.Locale.ENGLISH, "%.1f×", look.rate), steps = 14)
             }
             PillButton(tr.t("agent.readAloud"), { speech.speak("preview", tr.t("agent.busy.done") + ". " + tr.t("agent.set.readAutoHint")) }, icon = "volume", small = true)
         }
