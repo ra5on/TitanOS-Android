@@ -93,19 +93,27 @@ fun AdminShell(
     val width = currentWidth()
     val c = Titan.colors
     // Verlauf der im Menü/in der Seitenleiste gewählten Seiten (Einträge mit action öffnen anderes, kein Verlauf).
+    // Die Lambdas entstehen immer (nicht in einem Zweig): der Compose-Compiler merkt sie sich in Gruppen,
+    // bedingt angelegt verrutschten sonst die Plätze dahinter und die Seite verlor ihren Zustand.
     var history by rememberSaveable { mutableStateOf("") }
     val stack = history.split('\n').filter { it.isNotEmpty() }
-    val entries = groups.flatMap { it.entries }
     val select: (String) -> Unit = { id ->
-        if (id != current && entries.firstOrNull { it.id == id }?.action != true) history = (stack + current).joinToString("\n")
+        val action = groups.flatMap { it.entries }.firstOrNull { it.id == id }?.action == true
+        if (id != current && !action) history = (history.split('\n').filter { it.isNotEmpty() } + current).joinToString("\n")
         onSelect(id)
     }
-    val back: () -> Unit = onUp ?: if (stack.isNotEmpty()) {
-        {
-            history = stack.dropLast(1).joinToString("\n")
-            onSelect(stack.last())
+    val pop: () -> Unit = {
+        val s = history.split('\n').filter { it.isNotEmpty() }
+        if (s.isNotEmpty()) {
+            history = s.dropLast(1).joinToString("\n")
+            onSelect(s.last())
         }
-    } else onExit
+    }
+    val back: () -> Unit = when {
+        onUp != null -> onUp
+        stack.isNotEmpty() -> pop
+        else -> onExit
+    }
     BackHandler { back() }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
