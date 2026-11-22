@@ -97,7 +97,7 @@ class StoreTest {
 
     @Test
     fun ownSetupForAndroidStartsFromTheWebAndStaysApart() = runTest {
-        val s = settings().apply { setOwn(true) }
+        val s = settings().apply { chooseOwn(true) }
         val st = store(this, s)
         st.load()
         assertEquals("name", st.prefs.sort)
@@ -113,7 +113,7 @@ class StoreTest {
     @Test
     fun olderNasKeepsTheOwnSetupOnTheDevice() = runTest {
         knowsAndroid = false
-        val s = settings().apply { setOwn(true) }
+        val s = settings().apply { chooseOwn(true) }
         val st = store(this, s)
         st.load()
         st.change("barLoad") { it.copy(barLoad = false) }

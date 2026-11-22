@@ -116,13 +116,13 @@ private fun BoxScope.SettingsDialog(state: WorkspaceState) {
         TextAction(t("desktop.widgets.done")) { state.dialog = null; state.editDock = false }
     }) {
         Section(stringResource(R.string.ws_mode))
-        Segments(settings.mode, listOf(WorkspaceMode.Auto to stringResource(R.string.ws_mode_auto), WorkspaceMode.Always to stringResource(R.string.ws_mode_always), WorkspaceMode.Never to stringResource(R.string.ws_mode_never))) { settings.setMode(it) }
+        Segments(settings.mode, listOf(WorkspaceMode.Auto to stringResource(R.string.ws_mode_auto), WorkspaceMode.Always to stringResource(R.string.ws_mode_always), WorkspaceMode.Never to stringResource(R.string.ws_mode_never))) { settings.chooseMode(it) }
         Hint(stringResource(R.string.ws_mode_hint))
         Section(stringResource(R.string.ws_title))
         SwitchLine(stringResource(R.string.ws_own), settings.own, { on ->
             scope.launch {
                 state.store.flush()
-                settings.setOwn(on)
+                settings.chooseOwn(on)
                 state.store.load()
             }
         }, stringResource(R.string.ws_own_hint))

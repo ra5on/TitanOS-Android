@@ -50,12 +50,12 @@ class WorkspaceSettings(context: Context) {
     var own by mutableStateOf(p.getBoolean("own", false))
         private set
 
-    fun setMode(next: WorkspaceMode) {
+    fun chooseMode(next: WorkspaceMode) {
         mode = next
         p.edit().putString("mode", next.id).apply()
     }
 
-    fun setOwn(next: Boolean) {
+    fun chooseOwn(next: Boolean) {
         own = next
         p.edit().putBoolean("own", next).apply()
     }

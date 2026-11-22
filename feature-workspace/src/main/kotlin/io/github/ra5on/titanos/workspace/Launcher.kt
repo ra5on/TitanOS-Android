@@ -31,7 +31,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -84,11 +83,8 @@ internal fun BoxScope.Launcher(state: WorkspaceState) {
                 filter == "system" -> all.filter { it.kind == "system" || it.kind == "android" }
                 else -> all
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(t("desktop.menu.title"), style = TitanType.topTitle, color = c.text, modifier = Modifier.weight(1f).semantics { heading() })
-            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                for ((id, label) in listOf("all" to t("desktop.menu.all"), "recent" to t("desktop.menu.recent"), "system" to t("desktop.menu.system"), "docker" to t("desktop.menu.docker"))) {
+                for ((id, label) in listOf("all" to t("desktop.menu.all"), "system" to t("desktop.menu.system"), "docker" to t("desktop.menu.docker"), "recent" to t("desktop.menu.recent"))) {
                     if (id == "docker" && state.programs.none { it.kind == "docker" }) continue
                     val on = filter == id && q.isEmpty()
                     Text(
@@ -106,7 +102,21 @@ internal fun BoxScope.Launcher(state: WorkspaceState) {
             } else {
                 ProgramGrid(state, shown, Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()))
             }
-            Text(t("desktop.menu.shortcut"), style = TitanType.small, color = c.muted)
+            Text(t(if (state.store.prefs.menuOrder.isEmpty()) "desktop.menu.orderAz" else "desktop.menu.orderOwn") + " · " + t("desktop.menu.shortcut"), style = TitanType.small, color = c.muted)
+            // Unten wie im Web: Konto, Systemsteuerung, App-Center (soweit es sie für dieses Konto gibt).
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (key in listOf("app:account", "app:settings", "app:appcenter")) {
+                    val p = state.programOf(key) ?: continue
+                    Row(
+                        Modifier.clip(RoundedCornerShape(10.dp)).background(c.chip).clickable(role = Role.Button) { state.open(key) }.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        AppIcon(p.glyph, p.gradient, 20.dp)
+                        Text(if (key == "app:account") state.user else p.label, style = TitanType.small, color = c.text)
+                    }
+                }
+            }
         }
     }
 }

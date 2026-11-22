@@ -185,6 +185,9 @@ private fun commitWidget(state: WorkspaceState, w: Widget, columns: Int) {
     state.store.change("widgets", "customWidgets") { p -> p.copy(widgets = p.widgets.map { if (it.id == w.id) anchored else it }, customWidgets = true) }
 }
 
+/** Innere Kachel eines Widgets (`.in` im Web). */
+private fun Modifier.tile(bg: Color) = clip(RoundedCornerShape(10.dp)).background(bg.copy(alpha = .45f)).padding(12.dp)
+
 @Composable
 private fun Title(text: String) {
     Text(text, style = TitanType.small.copy(fontWeight = FontWeight.SemiBold), color = Titan.colors.muted, modifier = Modifier.padding(bottom = 6.dp).semantics { heading() })
@@ -248,11 +251,11 @@ internal fun WidgetBody(state: WorkspaceState, w: Widget) {
                 }
             }
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                Column(Modifier.weight(1f)) {
+                Column(Modifier.weight(1f).tile(c.bg)) {
                     Text(data.uptime?.let { duration(it) } ?: "–", style = TitanType.body.copy(fontWeight = FontWeight.SemiBold), color = c.text)
                     Muted(t("desktop.widget.uptime"))
                 }
-                Column(Modifier.weight(1f)) {
+                Column(Modifier.weight(1f).tile(c.bg)) {
                     val n = data.nets.firstOrNull()
                     Text(n?.ipv4?.ifEmpty { "–" } ?: "–", style = TitanType.body.copy(fontWeight = FontWeight.SemiBold), color = c.text)
                     if (n != null) Muted(n.iface + if (n.speedMbps > 0) " · " + (if (n.speedMbps >= 1000) "${n.speedMbps / 1000} Gbit/s" else "${n.speedMbps} Mbit/s") else "")
@@ -260,12 +263,12 @@ internal fun WidgetBody(state: WorkspaceState, w: Widget) {
             }
         }
         "cpuram" -> Row(scroll, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f).tile(c.bg)) {
                 Muted(t("desktop.widget.cpu"))
                 Text(data.cpu?.let { Format.percent(it / 100) } ?: "–", style = TitanType.state, color = c.text)
                 Meter((data.cpu ?: 0.0) / 100, t("desktop.widget.cpu"))
             }
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f).tile(c.bg)) {
                 Muted(t("desktop.widget.ram"))
                 Text(Format.percent(data.memFraction), style = TitanType.state, color = c.text)
                 if (data.memTotal > 0) Muted(Format.bytes(data.memUsed))
