@@ -703,6 +703,7 @@ private fun BoxScope.FolderPickerSheet(title: String, writable: Boolean, close: 
             r?.let { SheetButton(t("agent.f.docs.pickThis"), primary = true) { onPick(it.str("id"), dir); close() } },
         ),
     ) {
+        Muted(t(if (writable) "agent.f.docs.pickWrite" else "agent.f.docs.pickRead"))
         if (r != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SmallButton("‹ " + t("agent.f.docs.back"), { if (dir.isEmpty()) root = null else dir = dir.substringBeforeLast('/', "") })
