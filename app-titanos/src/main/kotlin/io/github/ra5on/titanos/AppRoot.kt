@@ -123,7 +123,7 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
                 if (on) PimSync.requestNow(context, manual = false, only = if (kind == "contacts") ContactsContract.AUTHORITY else CalendarContract.AUTHORITY)
             },
         )
-        else -> MainShell(graph)
+        else -> AppLock { MainShell(graph) }
     }
 }
 
@@ -210,6 +210,15 @@ private fun MainShell(graph: AppGraph) {
     val api = graph.api ?: return
     val files = graph.files ?: return
     val photos = graph.photos ?: return
+    // Systemsteuerung: Darstellung des Kontos; Reiter, die sie öffnet.
+    AppearanceSync(graph)
+    LaunchedEffect(graph.openTab) {
+        when (graph.openTab) {
+            "files" -> { tab = Tab.Files; files.push(io.github.ra5on.titanos.files.FilesRoute.Settings) }
+            "notifications" -> tab = Tab.Notifications
+        }
+        graph.openTab = null
+    }
     // Widget „Fotos“: den Stand, den die Startseite zeigt, auch dort.
     val photoLine = io.github.ra5on.titanos.photos.homeTileText(photos.view)
     LaunchedEffect(photoLine, photos.view.upToDate, photos.view.settings.enabled) {
@@ -335,6 +344,7 @@ private fun MainShell(graph: AppGraph) {
                             // Mail, Kalender, Kontakte (feature-mail, feature-pim) in voller Größe.
                             in PROGRAMS -> graph.openProgram = p.id
                             in COMPUTE_PROGRAMS -> compute = p.id
+                            in SETTINGS_PROGRAMS -> graph.openProgram = p.id
                             else -> toastLater()
                         }
                     },

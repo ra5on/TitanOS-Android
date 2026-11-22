@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guard_title">Ask for fingerprint</string>
+    <string name="guard_intro">Before these actions the app asks for your fingerprint. Instead of a fingerprint the phone\'s PIN, pattern or password works too. The NAS still checks the rights itself.</string>
+    <string name="guard_consoles">Consoles (NAS shell, Docker, VMs) never open with a second prompt.</string>
+    <string name="guard_unavailable">This phone has no screen lock. Without one the app cannot ask; the actions then run without asking. Set up a screen lock in the Android settings.</string>
+    <string name="guard_prompt_title">Confirm</string>
+    <string name="guard_grace">Valid afterwards</string>
+    <string name="guard_grace_hint">How long a confirmation also covers further actions</string>
+    <string name="guard_grace_0">Ask every time</string>
+    <string name="guard_grace_seconds">%1$d seconds</string>
+    <string name="guard_grace_minutes">%1$d minutes</string>
+    <string name="guard_reset">Restore defaults</string>
+    <string name="guard_app_open">When opening the app</string>
+    <string name="guard_app_open_hint">Every time the app comes to the foreground</string>
+    <string name="guard_volume_delete">Delete volumes</string>
+    <string name="guard_volume_delete_hint">Delete or format volumes and disks</string>
+    <string name="guard_share_delete">Delete shares</string>
+    <string name="guard_share_delete_hint">Remove shares with their data</string>
+    <string name="guard_users">Change accounts</string>
+    <string name="guard_users_hint">Create, delete, lock accounts, roles and passwords of others</string>
+    <string name="guard_account_security">Own password and access</string>
+    <string name="guard_account_security_hint">Password, 2FA, passkeys, SSH keys, WebDAV, API tokens, devices</string>
+    <string name="guard_network">Network and firewall</string>
+    <string name="guard_network_hint">Change the network, firewall, WireGuard, DNS</string>
+    <string name="guard_access">Access</string>
+    <string name="guard_access_hint">SSH, certificate, stay signed in, console settings</string>
+    <string name="guard_updates">Install updates</string>
+    <string name="guard_updates_hint">System and app updates, choosing a version, switching back</string>
+    <string name="guard_power">Shut down and restart</string>
+    <string name="guard_power_hint">Shut down or restart the NAS</string>
+    <string name="guard_backups">Backups</string>
+    <string name="guard_backups_hint">Restore, delete jobs and snapshots</string>
+    <string name="guard_cluster">Cluster</string>
+    <string name="guard_cluster_hint">Create, join, leave a cluster, remove nodes</string>
+    <string name="guard_compute_delete">Delete VMs and containers</string>
+    <string name="guard_compute_delete_hint">Remove Docker apps, VMs and LXC with their data</string>
+    <string name="guard_plugins">Plugins</string>
+    <string name="guard_plugins_hint">Install and remove plugins</string>
+    <string name="guard_settings">Save other settings</string>
+    <string name="guard_settings_hint">Every other change in the control panel</string>
+</resources>

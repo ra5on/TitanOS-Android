@@ -48,7 +48,15 @@ Die native Android-App zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-B
   - **Fotos:** Stand der Foto-Sicherung, Tippen öffnet sie
   - **Agent fragen:** „Schreiben“ oder „Sprechen“ öffnet die Agent-App
   - aktualisiert alle 30 Minuten, solange ein Widget da ist
-- Hell und dunkel nach der Einstellung des Handys, Deutsch und Englisch.
+- **Systemsteuerung** (Programm „Systemsteuerung“ auf der Startseite) mit allem, was die Weboberfläche unter Einstellungen kann:
+  - alle Seiten in denselben acht Bereichen wie im Web, Suche über jede einzelne Einstellung (Strg+K am großen Bildschirm)
+  - am Handy Ebenen mit Pfeil zurück wie das Web am Handy, ab 761 dp Seitenleiste und Seite wie das Web am PC
+  - Netzwerk mit Rückfall: die App zeigt den Countdown und bietet Bestätigen und Zurücknehmen an, auch wenn die Verbindung kurz weg ist
+  - nur, was die Rolle des Kontos darf; das NAS prüft selbst
+  - die Einstellungen der App (Fotos, Dateien, Mitteilungen, Kontakte und Kalender, Über die App) sind von dort verlinkt
+- **Mein Konto:** Bild, Passwort, Zwei-Faktor-Anmeldung, Passkeys (Liste und Entfernen; anlegen geht nur im Browser, weil ein Passkey an die Adresse der Webseite gebunden ist), SSH-Schlüssel, WebDAV, Geräte und Android-Apps, angemeldete Geräte.
+- **Fingerabdruck:** in einer Liste wählbar, welche Aktionen den Fingerabdruck (oder die PIN des Handys) verlangen, auch „beim Öffnen der App“. Ab Werk z. B. vor Updates, Ausschalten, Netzwerk und Löschen von Volumes. Konsolen fragen nie.
+- **Darstellung** wie im Web je Konto (Thema, Akzent); je Gerät überschreibbar. Hell und dunkel folgen ab Werk dem Handy. Deutsch und Englisch.
 
 ## Installieren und koppeln
 
@@ -217,13 +225,15 @@ Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/debug/`, `app-
 |---|---|
 | `:core-model` | Datentypen der API |
 | `:core-net` | OkHttp, Zertifikatsprüfung mit SPKI-Pinning, Geräteschlüssel im Keystore, Kopplung, Sitzung |
-| `:core-ui` | TitanOS-Theme hell/dunkel, Bausteine, Symbole, Schrift |
+| `:core-ui` | TitanOS-Theme mit der Darstellung des Kontos, Bausteine im Zeilenaufbau, Fingerabdruck (`Guard`), Texte des Webs (`Tr`), Symbole, Schrift |
 | `:feature-pairing` | Willkommen, QR-Code, Adresse von Hand, Koppeln bestätigen, Berechtigungen |
 | `:feature-home` | Start mit Zustandskarte und Programmen |
 | `:feature-files` | Freigaben, Ordner, Datei-Aktionen, Übertragungen |
 | `:feature-notify` | Mitteilungen ohne Google: Liste, Kanäle, eigene Verbindung zum NAS |
 | `:feature-update` | Über die App, Selbst-Update von GitHub mit Signatur- und Prüfsummenprüfung |
 | `:feature-widgets` | Widgets NAS-Zustand, Fotos, Agent fragen (Glance) |
+| `:feature-settings` | Systemsteuerung: alle Einstellungsseiten des Webs, Suche, Fingerabdruck-Liste, Darstellung des Geräts; Texte und Suchindex aus dem Web (`feature-settings/tools/web.mjs`) |
+| `:feature-account` | Mein Konto |
 | `:app-titanos` | die App „TitanOS“ (`io.github.ra5on.titanos`) |
 | `:feature-agent` | Chat mit dem KI-Agenten: Strom (SSE), Freigaben, Markdown, Projekte, Aufträge, Notizen |
 | `:app-agent` | die App „Agent“ (`io.github.ra5on.titanos.agent`) |

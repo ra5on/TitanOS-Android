@@ -44,6 +44,8 @@ include(
     ":feature-mail",
     ":feature-pim",
     ":feature-vpn",
+    ":feature-settings",
+    ":feature-account",
     ":app-titanos",
     ":app-agent",
     ":app-watch",

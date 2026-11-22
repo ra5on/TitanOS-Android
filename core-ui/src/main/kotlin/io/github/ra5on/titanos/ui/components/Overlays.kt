@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -33,6 +34,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import io.github.ra5on.titanos.ui.R
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanType
 import io.github.ra5on.titanos.ui.theme.dangerInk
@@ -60,13 +64,17 @@ fun Modifier.wallpaper(dark: Boolean): Modifier = drawBehind {
 fun BoxScope.Sheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     BackHandler(onBack = onDismiss)
     val c = Titan.colors
+    // Wie beim Bestätigungsdialog: die abgedunkelte Fläche schließt und hat dafür einen Namen.
+    val closeLabel = androidx.compose.ui.res.stringResource(R.string.ui_close)
     Box(
         Modifier.matchParentSize().background(Color.Black.copy(alpha = .5f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
+            .semantics { contentDescription = closeLabel },
     )
     val shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
     Column(
-        Modifier.align(Alignment.BottomCenter).fillMaxWidth().clip(shape).background(c.surface)
+        // Ein hohes Blatt endet unter der Statusleiste, nicht hinter ihr (Titel sonst unter der Uhr).
+        Modifier.align(Alignment.BottomCenter).statusBarsPadding().padding(top = 8.dp).fillMaxWidth().clip(shape).background(c.surface)
             .border(1.dp, c.border, shape)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
             .verticalScroll(rememberScrollState())
@@ -94,15 +102,18 @@ fun BoxScope.ConfirmDialog(
 ) {
     BackHandler(onBack = onDismiss)
     val c = Titan.colors
+    val closeLabel = androidx.compose.ui.res.stringResource(R.string.ui_close)
     Box(
         Modifier.matchParentSize().background(Color.Black.copy(alpha = .5f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
+            .semantics { contentDescription = closeLabel },
     )
     val shape = RoundedCornerShape(22.dp)
     Column(
         Modifier.align(Alignment.Center).padding(horizontal = 24.dp).fillMaxWidth().clip(shape).background(c.surface)
             .border(1.dp, c.border, shape)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
+            .verticalScroll(rememberScrollState())
             .padding(start = 20.dp, end = 20.dp, top = 22.dp, bottom = 16.dp),
     ) {
         Text(title, style = TitanType.title.copy(fontSize = TitanType.title.fontSize * (20f / 22f)), color = c.text, modifier = Modifier.padding(bottom = 10.dp))
