@@ -1,0 +1,21 @@
+{
+ "settings": {
+  "enabled": true,
+  "volume": "Data",
+  "timezone": "Europe/Berlin",
+  "windowFrom": "01:00",
+  "windowTo": "05:00",
+  "jobs": [
+   {
+    "id": "j1",
+    "kind": "raid-check",
+    "target": "Data",
+    "enabled": true
+   }
+  ]
+ },
+ "jobs": [],
+ "history": [],
+ "available": true,
+ "error": ""
+}

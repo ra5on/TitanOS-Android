@@ -33,6 +33,11 @@ val ALL_PROGRAMS = listOf(
     Program("nvr", "nvr", "red"),
     Program("terminal", "terminal", "dark"),
     Program("users", "users", "blue"),
+    // Ablage und Werkzeuge wie apps.ts: Plugins (dort im App-Center), Monitor, Protokolle, Aufgabenplaner.
+    Program("plugins", "store", "pink"),
+    Program("monitor", "monitor", "dark"),
+    Program("logs", "logs", "grey"),
+    Program("planner", "planner", "teal"),
     Program("settings", "settings", "grey"),
 )
 
@@ -48,13 +53,16 @@ fun visiblePrograms(role: String, services: Map<String, Boolean>): List<Program>
     val service = mapOf("docker" to "docker", "vms" to "vms", "lxc" to "lxc")
     return ALL_PROGRAMS.filter { p ->
         when {
-            p.id in adminOnly && !admin -> false
+            (p.id in adminOnly || p.id in ADMIN_TOOL_PROGRAMS) && !admin -> false
             p.id in optIn -> services[p.id] == true
             service[p.id]?.let { services[it] == false } == true -> false
             else -> true
         }
     }
 }
+
+/** Programme von „Ablage und Werkzeuge“ nur für Besitzer/Administratoren (roles: ADMIN in apps.ts). */
+val ADMIN_TOOL_PROGRAMS = setOf("plugins", "monitor", "logs", "planner")
 
 enum class HomeProblem { Offline, NotReady, Locked, Certificate }
 

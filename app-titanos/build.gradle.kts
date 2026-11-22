@@ -82,6 +82,13 @@ dependencies {
     implementation(project(":feature-pairing"))
     implementation(project(":feature-home"))
     implementation(project(":feature-files"))
+    // Ablage und Werkzeuge (Admin.kt).
+    implementation(project(":core-admin"))
+    implementation(project(":feature-storage"))
+    implementation(project(":feature-shares"))
+    implementation(project(":feature-users"))
+    implementation(project(":feature-plugins"))
+    implementation(project(":feature-tools"))
     implementation(project(":feature-update"))
     implementation(project(":feature-widgets"))
     implementation(libs.androidx.glance)

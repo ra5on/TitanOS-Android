@@ -279,6 +279,12 @@ private fun MainShell(graph: AppGraph) {
     }
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
     if (tab != Tab.Home) BackHandler { tab = Tab.Home }
+    // Ablage und Werkzeuge (Speicher, Freigaben, Benutzer, Plugins, Werkzeuge): eigene Seiten über der Leiste (Admin.kt).
+    var admin by rememberSaveable { mutableStateOf<String?>(null) }
+    admin?.let { id ->
+        AdminProgram(id, graph) { admin = null }
+        return
+    }
     var menu by remember { mutableStateOf(false) }
     // „Über die App“ mit Selbst-Update; die Mitteilung „Version … ist da“ öffnet es direkt.
     if (graph.openAbout) {
@@ -313,7 +319,8 @@ private fun MainShell(graph: AppGraph) {
                     home.state,
                     onProgram = { p ->
                         when (p.id) {
-                            "shares" -> tab = Tab.Files
+                            // Freigaben, Speicher, Benutzer, Plugins, Werkzeuge (Ablage und Werkzeuge) wie im Web.
+                            in ADMIN_PROGRAMS -> admin = p.id
                             // Mail, Kalender, Kontakte (feature-mail, feature-pim) in voller Größe.
                             in PROGRAMS -> graph.openProgram = p.id
                             in COMPUTE_PROGRAMS -> compute = p.id

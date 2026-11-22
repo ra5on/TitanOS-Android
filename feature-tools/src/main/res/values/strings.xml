@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Eigene Texte der Werkzeuge, die es im Web nicht gibt (ab Split: rechte Hälfte ohne Auswahl). -->
+    <string name="tools_pick">Wähle links einen Eintrag, um ihn hier zu sehen.</string>
+</resources>

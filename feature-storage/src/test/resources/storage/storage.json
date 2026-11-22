@@ -1,0 +1,771 @@
+{
+ "volumes": [
+  {
+   "mountPoint": "/mnt/Data",
+   "mounted": true,
+   "state": "ok",
+   "sync": null,
+   "mismatches": 0,
+   "usedBytes": 6400000000000,
+   "name": "Data",
+   "level": "raid5",
+   "filesystem": "ext4",
+   "sizeBytes": 16000000000000,
+   "raidDisks": 3,
+   "members": [
+    {
+     "disk": "sda",
+     "state": "active"
+    },
+    {
+     "disk": "sdb",
+     "state": "active"
+    },
+    {
+     "disk": "sdc",
+     "state": "active"
+    }
+   ],
+   "shareQuotas": "active",
+   "syncSpeed": "normal",
+   "cache": {
+    "mode": "writeback",
+    "disk": "sdk",
+    "active": true,
+    "missing": false,
+    "removing": false,
+    "usedBlocks": 500000,
+    "totalBlocks": 1000000,
+    "dirtyBlocks": 1200,
+    "readHitRate": 0.82,
+    "blockBytes": 1000000
+   }
+  },
+  {
+   "mountPoint": "/mnt/Fast",
+   "mounted": true,
+   "state": "ok",
+   "sync": null,
+   "mismatches": 0,
+   "usedBytes": 500000000000,
+   "name": "Fast",
+   "level": "raid1",
+   "filesystem": "btrfs",
+   "sizeBytes": 2000000000000,
+   "raidDisks": 2,
+   "members": [
+    {
+     "disk": "nvme0n1",
+     "state": "active"
+    },
+    {
+     "disk": "nvme1n1",
+     "state": "active"
+    }
+   ],
+   "shareQuotas": "unsupported",
+   "encryption": {
+    "locked": false,
+    "members": 2,
+    "unlocked": 2,
+    "passwords": 2
+   }
+  },
+  {
+   "mountPoint": "/mnt/Safe",
+   "mounted": true,
+   "state": "rebuilding",
+   "sync": {
+    "percent": 42.5,
+    "speedBytesPerSecond": 150000000,
+    "remainingSeconds": 7200
+   },
+   "mismatches": 0,
+   "usedBytes": 3000000000000,
+   "name": "Safe",
+   "level": "raid1",
+   "filesystem": "ext4",
+   "sizeBytes": 8000000000000,
+   "raidDisks": 2,
+   "members": [
+    {
+     "disk": "sdd",
+     "state": "active"
+    },
+    {
+     "disk": "sde",
+     "state": "rebuilding"
+    }
+   ],
+   "shareQuotas": "off",
+   "syncSpeed": "gentle"
+  },
+  {
+   "mountPoint": "/mnt/Scratch",
+   "mounted": true,
+   "state": "ok",
+   "sync": null,
+   "mismatches": 0,
+   "usedBytes": 100000000000,
+   "name": "Scratch",
+   "level": "raid0",
+   "filesystem": "xfs",
+   "sizeBytes": 8000000000000,
+   "raidDisks": 1,
+   "members": [
+    {
+     "disk": "sdf",
+     "state": "active"
+    }
+   ],
+   "shareQuotas": "off"
+  },
+  {
+   "mountPoint": "",
+   "mounted": false,
+   "state": "ok",
+   "sync": null,
+   "mismatches": 0,
+   "usedBytes": 0,
+   "name": "Vault",
+   "level": "raid1",
+   "filesystem": "btrfs",
+   "sizeBytes": 0,
+   "raidDisks": 2,
+   "members": [
+    {
+     "disk": "sdg",
+     "state": "active"
+    },
+    {
+     "disk": "sdh",
+     "state": "active"
+    }
+   ],
+   "shareQuotas": "unsupported",
+   "encryption": {
+    "locked": true,
+    "members": 2,
+    "unlocked": 0,
+    "passwords": 1
+   }
+  },
+  {
+   "mountPoint": "/mnt/Old",
+   "mounted": true,
+   "state": "degraded",
+   "sync": null,
+   "mismatches": 128,
+   "usedBytes": 7500000000000,
+   "name": "Old",
+   "level": "raid1",
+   "filesystem": "ext4",
+   "sizeBytes": 8000000000000,
+   "raidDisks": 2,
+   "members": [
+    {
+     "disk": "sdi",
+     "state": "active"
+    }
+   ],
+   "shareQuotas": "off",
+   "syncSpeed": "normal"
+  }
+ ],
+ "disks": [
+  {
+   "identity": "serial:WD-A1",
+   "name": "sda",
+   "path": "/dev/sda",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-A1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "member",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "volume": "Data",
+   "memberState": "active"
+  },
+  {
+   "identity": "serial:WD-B1",
+   "name": "sdb",
+   "path": "/dev/sdb",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-B1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "member",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "volume": "Data",
+   "memberState": "active"
+  },
+  {
+   "identity": "serial:WD-C1",
+   "name": "sdc",
+   "path": "/dev/sdc",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-C1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "member",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "volume": "Data",
+   "memberState": "active"
+  },
+  {
+   "identity": "serial:WD-D1",
+   "name": "sdd",
+   "path": "/dev/sdd",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-D1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "member",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "volume": "Safe",
+   "memberState": "active"
+  },
+  {
+   "identity": "serial:WD-E1",
+   "name": "sde",
+   "path": "/dev/sde",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-E1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "member",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "volume": "Safe",
+   "memberState": "rebuilding"
+  },
+  {
+   "identity": "serial:WD-F1",
+   "name": "sdf",
+   "path": "/dev/sdf",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-F1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "member",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "volume": "Scratch",
+   "memberState": "active"
+  },
+  {
+   "identity": "serial:WD-G1",
+   "name": "sdg",
+   "path": "/dev/sdg",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-G1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "member",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "volume": "Vault",
+   "memberState": "active"
+  },
+  {
+   "identity": "serial:WD-H1",
+   "name": "sdh",
+   "path": "/dev/sdh",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-H1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "member",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "volume": "Vault",
+   "memberState": "active"
+  },
+  {
+   "identity": "serial:WD-I1",
+   "name": "sdi",
+   "path": "/dev/sdi",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-I1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "member",
+   "smart": {
+    "healthy": false,
+    "temperatureC": 41,
+    "powerOnHours": 12000,
+    "errors": 12,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "volume": "Old",
+   "memberState": "active"
+  },
+  {
+   "identity": "nvme:N1",
+   "name": "nvme0n1",
+   "path": "/dev/nvme0n1",
+   "model": "Samsung SSD 990 PRO 2TB",
+   "serial": "S6Z1NJ0W",
+   "sizeBytes": 2000000000000,
+   "kind": "nvme",
+   "role": "member",
+   "volume": "Fast",
+   "memberState": "active",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 45,
+    "powerOnHours": 3000,
+    "errors": 0,
+    "rotationRate": 0,
+    "wearPercent": 3
+   }
+  },
+  {
+   "identity": "nvme:N2",
+   "name": "nvme1n1",
+   "path": "/dev/nvme1n1",
+   "model": "Samsung SSD 990 PRO 2TB",
+   "serial": "S6Z1NJ0X",
+   "sizeBytes": 2000000000000,
+   "kind": "nvme",
+   "role": "member",
+   "volume": "Fast",
+   "memberState": "active",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 44,
+    "powerOnHours": 3000,
+    "errors": 0,
+    "rotationRate": 0,
+    "wearPercent": 4
+   }
+  },
+  {
+   "identity": "serial:WD-J1",
+   "name": "sdj",
+   "path": "/dev/sdj",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-J1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "free",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   }
+  },
+  {
+   "identity": "ssd:K1",
+   "name": "sdk",
+   "path": "/dev/sdk",
+   "model": "Crucial MX500",
+   "serial": "2214E6",
+   "sizeBytes": 1000000000000,
+   "kind": "ssd",
+   "role": "free",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 30,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 0,
+    "wearPercent": 1
+   }
+  },
+  {
+   "identity": "serial:WD-L1",
+   "name": "sdl",
+   "path": "/dev/sdl",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-L1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "used",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "contents": [
+    "ntfs",
+    "Windows"
+   ]
+  },
+  {
+   "identity": "usb:STICK",
+   "name": "sdm",
+   "path": "/dev/sdm",
+   "model": "SanDisk Ultra Fit",
+   "serial": "4C53",
+   "sizeBytes": 32000000000,
+   "kind": "usb",
+   "role": "stick",
+   "unavailableReason": "stick",
+   "smart": null
+  },
+  {
+   "identity": "serial:WD-N1",
+   "name": "sdn",
+   "path": "/dev/sdn",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-N1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "used",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "unavailableReason": "vm",
+   "contents": [
+    "vm:win11"
+   ]
+  },
+  {
+   "identity": "serial:WD-O1",
+   "name": "sdo",
+   "path": "/dev/sdo",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-O1",
+   "sizeBytes": 8000000000000,
+   "kind": "hdd",
+   "role": "free",
+   "smart": {
+    "healthy": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "errors": 0,
+    "rotationRate": 7200,
+    "wearPercent": -1
+   },
+   "testing": true
+  }
+ ],
+ "diskSleep": {
+  "idleMinutes": 15,
+  "volumes": {
+   "Data": 30
+  },
+  "disks": {
+   "serial:WD-J1": 60
+  },
+  "available": true,
+  "errors": [],
+  "listed": true,
+  "volumeStatus": [
+   {
+    "name": "Data",
+    "override": 30,
+    "effective": 30,
+    "origin": "volume"
+   },
+   {
+    "name": "Safe",
+    "override": null,
+    "effective": 15,
+    "origin": "default"
+   },
+   {
+    "name": "Scratch",
+    "override": null,
+    "effective": 15,
+    "origin": "default"
+   },
+   {
+    "name": "Old",
+    "override": null,
+    "effective": 15,
+    "origin": "default"
+   },
+   {
+    "name": "Fast",
+    "override": null,
+    "effective": 15,
+    "origin": "default"
+   },
+   {
+    "name": "Vault",
+    "override": null,
+    "effective": 15,
+    "origin": "default"
+   }
+  ],
+  "diskStatus": [
+   {
+    "id": "serial:WD-A1",
+    "name": "sda",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-A1",
+    "sizeBytes": 8000000000000,
+    "volume": "Data",
+    "override": null,
+    "effective": 30,
+    "origin": "volume",
+    "state": "asleep",
+    "since": "2026-11-19T13:20:00Z"
+   },
+   {
+    "id": "serial:WD-B1",
+    "name": "sdb",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-B1",
+    "sizeBytes": 8000000000000,
+    "volume": "Data",
+    "override": null,
+    "effective": 30,
+    "origin": "volume",
+    "state": "active",
+    "since": "2026-11-19T13:55:00Z"
+   },
+   {
+    "id": "serial:WD-C1",
+    "name": "sdc",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-C1",
+    "sizeBytes": 8000000000000,
+    "volume": "Data",
+    "override": null,
+    "effective": 30,
+    "origin": "volume",
+    "state": "active",
+    "since": "2026-11-19T14:02:00Z",
+    "wakes": [
+     {
+      "at": "2026-11-19T14:02:00Z",
+      "causes": [
+       {
+        "code": "activity_log"
+       }
+      ]
+     },
+     {
+      "at": "2026-11-18T21:05:00Z",
+      "causes": [
+       {
+        "code": "journal"
+       },
+       {
+        "code": "notifications"
+       }
+      ]
+     },
+     {
+      "at": "2026-11-18T03:05:00Z",
+      "causes": [
+       {
+        "code": "backup_job",
+        "detail": "Backup-alles"
+       }
+      ]
+     },
+     {
+      "at": "2026-11-17T14:05:00Z",
+      "causes": [
+       {
+        "code": "unknown"
+       }
+      ]
+     },
+     {
+      "at": "2026-11-17T09:05:00Z",
+      "causes": [
+       {
+        "code": "smb_session",
+        "detail": "Fotos"
+       }
+      ]
+     },
+     {
+      "at": "2026-11-16T02:05:00Z",
+      "causes": [
+       {
+        "code": "maintenance",
+        "detail": "raid"
+       }
+      ]
+     }
+    ],
+    "wakesToday": 1
+   },
+   {
+    "id": "serial:WD-D1",
+    "name": "sdd",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-D1",
+    "sizeBytes": 8000000000000,
+    "volume": "Safe",
+    "override": null,
+    "effective": 15,
+    "origin": "default",
+    "state": "active"
+   },
+   {
+    "id": "serial:WD-E1",
+    "name": "sde",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-E1",
+    "sizeBytes": 8000000000000,
+    "volume": "Safe",
+    "override": null,
+    "effective": 15,
+    "origin": "default",
+    "state": "active"
+   },
+   {
+    "id": "serial:WD-F1",
+    "name": "sdf",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-F1",
+    "sizeBytes": 8000000000000,
+    "volume": "Scratch",
+    "override": null,
+    "effective": 15,
+    "origin": "default",
+    "state": "asleep",
+    "since": "2026-11-19T10:00:00Z"
+   },
+   {
+    "id": "serial:WD-I1",
+    "name": "sdi",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-I1",
+    "sizeBytes": 8000000000000,
+    "volume": "Old",
+    "override": null,
+    "effective": 15,
+    "origin": "default",
+    "state": "active",
+    "error": "hd-idle: exit status 1"
+   },
+   {
+    "id": "serial:WD-J1",
+    "name": "sdj",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-J1",
+    "sizeBytes": 8000000000000,
+    "volume": null,
+    "override": 60,
+    "effective": 60,
+    "origin": "disk",
+    "state": "asleep",
+    "since": "2026-11-19T09:00:00Z"
+   },
+   {
+    "id": "serial:WD-G1",
+    "name": "sdg",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-G1",
+    "sizeBytes": 8000000000000,
+    "volume": "Vault",
+    "override": null,
+    "effective": 15,
+    "origin": "default",
+    "state": "active"
+   },
+   {
+    "id": "serial:WD-H1",
+    "name": "sdh",
+    "model": "WDC WD80EFZZ-68BTXN0",
+    "serial": "WD-H1",
+    "sizeBytes": 8000000000000,
+    "volume": "Vault",
+    "override": null,
+    "effective": 15,
+    "origin": "default",
+    "state": "active"
+   }
+  ],
+  "unavailable": [
+   {
+    "name": "nvme0n1",
+    "model": "Samsung SSD 990 PRO 2TB",
+    "sizeBytes": 2000000000000,
+    "volume": "Fast",
+    "reason": "nvme"
+   },
+   {
+    "name": "nvme1n1",
+    "model": "Samsung SSD 990 PRO 2TB",
+    "sizeBytes": 2000000000000,
+    "volume": "Fast",
+    "reason": "nvme"
+   },
+   {
+    "name": "sdk",
+    "model": "Crucial MX500",
+    "sizeBytes": 1000000000000,
+    "reason": "ssd"
+   },
+   {
+    "name": "sdm",
+    "model": "SanDisk Ultra Fit",
+    "sizeBytes": 32000000000,
+    "reason": "stick"
+   }
+  ]
+ }
+}

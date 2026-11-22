@@ -1,0 +1,1 @@
+{"settings": {"cachePercent": 20}, "readOnly": false, "budgetBytes": 2400000000, "reserveBytes": 1000000000, "inFlightBytes": 0, "memory": {"totalBytes": 16000000000, "usedBytes": 4000000000, "freeBytes": 2000000000, "availableBytes": 12000000000, "dirtyBytes": 12000000, "writebackBytes": 0, "pressure": {"someAvg10": 0.4, "fullAvg10": 0.0}}, "paused": false}

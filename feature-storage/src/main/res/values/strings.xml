@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="storage_snapshot_name_hint">Buchstaben, Ziffern, _ und -, höchstens 64 Zeichen; beginnt mit Buchstabe oder Ziffer.</string>
+    <string name="storage_select_hint">Wähle links ein Volume oder eine Platte.</string>
+</resources>

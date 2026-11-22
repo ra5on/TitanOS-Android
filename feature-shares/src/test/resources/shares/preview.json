@@ -1,0 +1,1 @@
+{"share":"Documents","volume":"Data","path":"/mnt/Data/Documents","exists":true,"files":18342,"dirs":1204,"bytes":460000000000,"complete":true,"subvolume":false,"blockers":[{"kind":"docker","name":"paperless"}],"warnings":[{"kind":"backup-source","name":"Nachts"}]}

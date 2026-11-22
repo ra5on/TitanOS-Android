@@ -1,0 +1,231 @@
+{
+ "disks": [
+  {
+   "disk": "sda",
+   "path": "/dev/sda",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-A1",
+   "kind": "hdd",
+   "role": "member",
+   "volume": "Data",
+   "state": "ok",
+   "warnings": [],
+   "sleeping": false,
+   "checkedAt": "2026-11-19T12:00:00Z",
+   "readAt": "2026-11-19T11:58:00Z",
+   "values": {
+    "protocol": "ATA",
+    "modelFamily": "Western Digital Red Plus",
+    "firmware": "81.00A81",
+    "passed": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "powerCycles": 210,
+    "rotationRate": 7200,
+    "reallocatedSectors": 0,
+    "pendingSectors": 0,
+    "uncorrectableSectors": 0,
+    "crcErrors": 0,
+    "attributes": [
+     {
+      "id": 5,
+      "name": "Reallocated_Sector_Ct",
+      "value": 100,
+      "worst": 100,
+      "threshold": 5,
+      "raw": "0",
+      "prefailure": true
+     },
+     {
+      "id": 194,
+      "name": "Temperature_Celsius",
+      "value": 118,
+      "worst": 100,
+      "threshold": 0,
+      "raw": "34",
+      "prefailure": false
+     },
+     {
+      "id": 199,
+      "name": "UDMA_CRC_Error_Count",
+      "value": 200,
+      "worst": 200,
+      "threshold": 0,
+      "raw": "0",
+      "prefailure": false
+     }
+    ]
+   }
+  },
+  {
+   "disk": "sdb",
+   "path": "/dev/sdb",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-B1",
+   "kind": "hdd",
+   "role": "member",
+   "volume": "Data",
+   "state": "ok",
+   "warnings": [],
+   "sleeping": true,
+   "checkedAt": "2026-11-19T12:00:00Z",
+   "readAt": "2026-11-19T11:58:00Z",
+   "values": {
+    "protocol": "ATA",
+    "modelFamily": "Western Digital Red Plus",
+    "firmware": "81.00A81",
+    "passed": true,
+    "temperatureC": 34,
+    "powerOnHours": 12000,
+    "powerCycles": 210,
+    "rotationRate": 7200,
+    "reallocatedSectors": 0,
+    "pendingSectors": 0,
+    "uncorrectableSectors": 0,
+    "crcErrors": 0,
+    "attributes": [
+     {
+      "id": 5,
+      "name": "Reallocated_Sector_Ct",
+      "value": 100,
+      "worst": 100,
+      "threshold": 5,
+      "raw": "0",
+      "prefailure": true
+     },
+     {
+      "id": 194,
+      "name": "Temperature_Celsius",
+      "value": 118,
+      "worst": 100,
+      "threshold": 0,
+      "raw": "34",
+      "prefailure": false
+     },
+     {
+      "id": 199,
+      "name": "UDMA_CRC_Error_Count",
+      "value": 200,
+      "worst": 200,
+      "threshold": 0,
+      "raw": "0",
+      "prefailure": false
+     }
+    ]
+   }
+  },
+  {
+   "disk": "sdi",
+   "path": "/dev/sdi",
+   "model": "WDC WD80EFZZ-68BTXN0",
+   "serial": "WD-I1",
+   "kind": "hdd",
+   "role": "member",
+   "volume": "Old",
+   "state": "warning",
+   "warnings": [
+    "reallocated",
+    "pending",
+    "crc"
+   ],
+   "sleeping": false,
+   "checkedAt": "2026-11-19T12:00:00Z",
+   "readAt": "2026-11-19T11:58:00Z",
+   "values": {
+    "protocol": "ATA",
+    "modelFamily": "Western Digital Red Plus",
+    "firmware": "81.00A81",
+    "passed": true,
+    "temperatureC": 41,
+    "powerOnHours": 12000,
+    "powerCycles": 210,
+    "rotationRate": 7200,
+    "reallocatedSectors": 8,
+    "pendingSectors": 2,
+    "uncorrectableSectors": 0,
+    "crcErrors": 12,
+    "attributes": [
+     {
+      "id": 5,
+      "name": "Reallocated_Sector_Ct",
+      "value": 98,
+      "worst": 98,
+      "threshold": 5,
+      "raw": "8",
+      "prefailure": true,
+      "warn": true
+     },
+     {
+      "id": 197,
+      "name": "Current_Pending_Sector",
+      "value": 100,
+      "worst": 100,
+      "threshold": 0,
+      "raw": "2",
+      "prefailure": false,
+      "warn": true,
+      "whenFailed": "past"
+     }
+    ]
+   }
+  },
+  {
+   "disk": "nvme0n1",
+   "path": "/dev/nvme0n1",
+   "model": "Samsung SSD 990 PRO 2TB",
+   "serial": "S6Z1NJ0W",
+   "kind": "nvme",
+   "role": "member",
+   "volume": "Fast",
+   "state": "ok",
+   "warnings": [],
+   "sleeping": false,
+   "checkedAt": "2026-11-19T12:00:00Z",
+   "readAt": "2026-11-19T11:58:00Z",
+   "values": {
+    "protocol": "NVMe",
+    "passed": true,
+    "temperatureC": 45,
+    "powerOnHours": 3000,
+    "powerCycles": 80,
+    "rotationRate": 0,
+    "nvme": {
+     "criticalWarning": 0,
+     "percentageUsed": 3,
+     "availableSpare": 100,
+     "availableSpareThreshold": 10,
+     "mediaErrors": 0,
+     "errorLogEntries": 2,
+     "unsafeShutdowns": 4,
+     "dataUnitsRead": 1,
+     "dataUnitsWritten": 1
+    },
+    "attributes": [
+     {
+      "name": "critical_warning",
+      "raw": "0"
+     },
+     {
+      "name": "percentage_used",
+      "raw": "3"
+     }
+    ]
+   }
+  },
+  {
+   "disk": "sdm",
+   "path": "/dev/sdm",
+   "model": "SanDisk Ultra Fit",
+   "serial": "4C53",
+   "kind": "usb",
+   "role": "member",
+   "volume": null,
+   "state": "unavailable",
+   "warnings": [],
+   "sleeping": false,
+   "checkedAt": "2026-11-19T12:00:00Z",
+   "readAt": "2026-11-19T11:58:00Z",
+   "values": null
+  }
+ ]
+}

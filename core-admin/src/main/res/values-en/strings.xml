@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_locked">The session is locked. Unlock it in the app or in the browser.</string>
+    <string name="admin_certificate">The certificate of the NAS has changed. Pair the app again if you trust the change.</string>
+    <string name="admin_offline">No connection to the NAS.</string>
+    <string name="admin_back">Back</string>
+    <string name="admin_expand">Expand</string>
+    <string name="admin_collapse">Collapse</string>
+    <string name="admin_chart">History %1$s: latest %2$s, highest %3$s, lowest %4$s</string>
+    <string name="admin_chart_empty">History %1$s: no values</string>
+    <string name="admin_selected">Selected</string>
+    <string name="admin_not_selected">Not selected</string>
+    <string name="admin_on">On</string>
+    <string name="admin_off">Off</string>
+    <string name="admin_password_show">Show password</string>
+    <string name="admin_password_hide">Hide password</string>
+    <string name="admin_saved_file">Saved: %1$s</string>
+</resources>
