@@ -238,9 +238,13 @@ class BackupsApiTest {
     }
 
     private fun waitFor(ok: () -> Boolean) {
-        val end = System.currentTimeMillis() + 15_000
+        // Wie Shots.until: echt synchronisieren; abgelaufen erst, wenn Wandzeit und Test-Uhr (je Runde 50 ms) 60 s erreicht haben.
+        val end = System.currentTimeMillis() + 60_000
+        var steps = 0L
         while (!ok()) {
-            check(System.currentTimeMillis() < end) { "Zeit abgelaufen" }
+            check(System.currentTimeMillis() < end || steps * 50 < 60_000) { "Zeit abgelaufen" }
+            steps++
+            runCatching { compose.waitForIdle() }
             org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
             compose.mainClock.advanceTimeBy(50)
             Thread.sleep(30)

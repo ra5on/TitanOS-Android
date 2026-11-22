@@ -3,6 +3,7 @@ package io.github.ra5on.titanos.settings.common
 import io.github.ra5on.titanos.net.NasConnection
 import io.github.ra5on.titanos.net.throwIfError
 import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -25,14 +26,22 @@ import okhttp3.RequestBody.Companion.toRequestBody
  * teilen sich dieselben Dateien, `docs/rules/UPDATES.md`). Nie einen Wert
  * protokollieren: Antworten können Geheimnisse tragen.
  */
-class SettingsApi(private val nas: NasConnection) {
+class SettingsApi(
+    private val nas: NasConnection,
+    /**
+     * Wo die Anfragen laufen. In der App immer [Dispatchers.IO]; Tests übergeben
+     * `Dispatchers.Unconfined`, damit eine Anfrage in genau dem Schritt fertig ist,
+     * in dem der Test die Oberfläche antreibt (keine fremden Fäden gegen die Wanduhr).
+     */
+    val io: CoroutineContext = Dispatchers.IO,
+) {
 
     private fun url(base: HttpUrl, path: String): HttpUrl {
         val clean = path.removePrefix("/")
         return base.resolve("/api/v1/$clean") ?: error("bad path")
     }
 
-    private suspend fun call(method: String, path: String, body: RequestBody?): JsonElement = withContext(Dispatchers.IO) {
+    private suspend fun call(method: String, path: String, body: RequestBody?): JsonElement = withContext(io) {
         nas.execute { base ->
             Request.Builder().url(url(base, path)).method(method, body ?: if (method == "GET" || method == "DELETE") null else EMPTY).build()
         }.use { r ->
@@ -79,7 +88,7 @@ class SettingsApi(private val nas: NasConnection) {
     val origin: String get() = nas.endpoints.firstOrNull()?.base?.toString()?.removeSuffix("/").orEmpty()
 
     /** Lädt rohe Bytes (z. B. eine WireGuard-Datei, eine Sicherung). */
-    suspend fun bytes(path: String, method: String = "GET", body: JsonElement? = null): ByteArray = withContext(Dispatchers.IO) {
+    suspend fun bytes(path: String, method: String = "GET", body: JsonElement? = null): ByteArray = withContext(io) {
         nas.execute { base -> Request.Builder().url(url(base, path)).method(method, body?.let(::json)).build() }.use { r ->
             r.throwIfError()
             r.body.bytes()

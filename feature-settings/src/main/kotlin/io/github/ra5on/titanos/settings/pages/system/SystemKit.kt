@@ -75,7 +75,7 @@ internal object Raw {
         SettingsApi::class.java.getDeclaredField("nas").apply { isAccessible = true }.get(api) as NasConnection
 
     /** Bytes einer Adresse der Weboberfläche (z. B. `/icons/app-192.png`). */
-    suspend fun file(api: SettingsApi, path: String): ByteArray = withContext(Dispatchers.IO) {
+    suspend fun file(api: SettingsApi, path: String): ByteArray = withContext(api.io) {
         nas(api).execute { base -> Request.Builder().url(base.resolve(path) ?: error("bad path")).build() }.use { r ->
             r.throwIfError()
             r.body.bytes()

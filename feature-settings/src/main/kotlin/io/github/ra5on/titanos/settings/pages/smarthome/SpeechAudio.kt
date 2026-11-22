@@ -115,7 +115,7 @@ internal fun wav16k(pcm: ByteArray): ByteArray {
  * gibt, nimmt diese Hilfe dieselbe Verbindung (gleiche Sitzung, gleiche
  * Adressen, keine eigenen Zugangsdaten).
  */
-internal suspend fun SettingsApi.postRaw(path: String, bytes: ByteArray, mime: String): JsonElement = withContext(Dispatchers.IO) {
+internal suspend fun SettingsApi.postRaw(path: String, bytes: ByteArray, mime: String): JsonElement = withContext(io) {
     val field = SettingsApi::class.java.getDeclaredField("nas").apply { isAccessible = true }
     val nas = field.get(this@postRaw) as NasConnection
     nas.execute { base ->

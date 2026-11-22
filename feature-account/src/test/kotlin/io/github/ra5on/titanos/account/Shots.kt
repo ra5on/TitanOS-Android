@@ -72,7 +72,11 @@ class FakeNas {
         fun served(text: String): Boolean = synchronized(active) { active.any { nas -> nas.answers.values.any { it.contains("\"$text\"") } } }
     }
 
-    fun api(): SettingsApi = SettingsApi(NasConnection(listOf(Endpoint(server.url("/"), OkHttpClient())), null))
+    /**
+     * Anfragen laufen synchron im Schritt, in dem der Test die Oberfläche antreibt
+     * (Dispatchers.Unconfined): kein Wettlauf fremder Fäden gegen die Wanduhr, auch unter Last.
+     */
+    fun api(): SettingsApi = SettingsApi(NasConnection(listOf(Endpoint(server.url("/"), OkHttpClient())), null), kotlinx.coroutines.Dispatchers.Unconfined)
 
     fun env(role: String = "owner", user: String = "alex", open: (String) -> Unit = {}) =
         SettingsEnv(api(), { user }, { role }, open, "1.00")
@@ -95,9 +99,13 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
         settle()
     }
 
+    /**
+     * Treibt die Oberfläche um eine feste Zahl von Schritten voran (je 100 ms Test-Uhr), nicht eine
+     * Wandzeit-Spanne: unter Last kam sonst viel weniger Test-Zeit zustande und Seiten waren beim
+     * Bild oder Klick noch nicht fertig. So ist das Ergebnis unabhängig von der Last der VM.
+     */
     fun settle(ms: Long = 900) {
-        val end = System.currentTimeMillis() + ms
-        while (System.currentTimeMillis() < end) {
+        repeat(maxOf(3, (ms / 36).toInt())) {
             org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
             compose.mainClock.advanceTimeBy(100)
             Thread.sleep(30)
@@ -107,8 +115,12 @@ class Shots(private val compose: ComposeContentTestRule, private val dir: String
     /** Wartet, bis [ok] stimmt (Daten kommen auf eigenen Fäden). */
     fun until(timeoutMs: Long = 60_000, ok: () -> Boolean) {
         val end = System.currentTimeMillis() + timeoutMs
+        // Abgelaufen erst, wenn auch die Test-Uhr so weit ist (je Runde 50 ms): unter Last kommt in
+        // derselben Wandzeit viel weniger Test-Zeit zustande, das darf kein Fehlschlag sein.
+        var steps = 0L
         while (!ok()) {
-            check(System.currentTimeMillis() < end) { "Zeit abgelaufen" }
+            check(System.currentTimeMillis() < end || steps * 50 < timeoutMs) { "Zeit abgelaufen" }
+            steps++
             org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
             compose.mainClock.advanceTimeBy(50)
             Thread.sleep(30)

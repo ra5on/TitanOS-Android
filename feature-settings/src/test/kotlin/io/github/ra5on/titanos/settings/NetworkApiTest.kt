@@ -132,22 +132,29 @@ class NetworkApiTest {
     @Test
     fun aLostAnswerDuringTheTrialIsNoError() {
         // Mit neuer Adresse kommt die Antwort nie an: die Seite zeigt „Verbindung weg“ statt eines Fehlers.
+        // Die Antwort kommt erst nach dem Test (nicht nach festen 10 s gegen die 8 s der App: unter Last ein Wettlauf).
+        val release = java.util.concurrent.CountDownLatch(1)
         val m = model()
         nas.server.dispatcher.let { inner ->
             nas.server.dispatcher = object : mockwebserver3.Dispatcher() {
                 override fun dispatch(request: mockwebserver3.RecordedRequest): mockwebserver3.MockResponse {
                     if (request.method == "PUT") {
                         nas.requests += Triple("PUT", request.target.removePrefix("/api/v1/"), request.body?.utf8().orEmpty())
-                        Thread.sleep(10_000)
+                        release.await(2, java.util.concurrent.TimeUnit.MINUTES)
                     }
                     return inner.dispatch(request)
                 }
             }
         }
-        m.apply(context)
-        until(12_000) { m.lost }
-        assertEquals("", m.error)
-        assertFalse(m.busy)
+        try {
+            m.apply(context)
+            // „lost“ setzt die App vor dem Ende von „busy“: auf beides warten.
+            until(60_000) { m.lost && !m.busy }
+            assertEquals("", m.error)
+            assertFalse(m.busy)
+        } finally {
+            release.countDown()
+        }
     }
 
     @Test
