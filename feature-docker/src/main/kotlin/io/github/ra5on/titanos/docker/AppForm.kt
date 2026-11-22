@@ -1,6 +1,11 @@
 package io.github.ra5on.titanos.docker
 
 import android.content.Context
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -183,3 +188,45 @@ internal fun whereText(path: String, volumes: List<StorageVolume>): String {
     val v = volumes.filter { it.mounted }.firstOrNull { path == "/mnt/${it.name}" || path.startsWith("/mnt/${it.name}/") } ?: return ""
     return t("appform.onVolume", "volume" to v.name, "free" to io.github.ra5on.titanos.ui.Format.bytes((v.sizeBytes - v.usedBytes).coerceAtLeast(0)))
 }
+
+/**
+ * Ein Geheimnis der App (Passwort, Schlüssel) wie appform/SecretField.svelte:
+ * verborgen, mit Zeigen, Kopieren und – für erzeugte – neu erzeugen. Der Wert
+ * steht nie offen in Bildern oder Protokollen, solange niemand „Zeigen“ tippt.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun SecretField(label: String, value: String, onChange: (String) -> Unit, hint: String? = null, error: String? = null, onNew: (() -> Unit)? = null) {
+    val c = Titan.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var shown by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Text(label, style = TitanType.small.copy(fontSize = TitanType.rowSub.fontSize), color = c.muted, modifier = Modifier.padding(start = 2.dp, bottom = 4.dp))
+        val shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+        androidx.compose.foundation.text.BasicTextField(
+            value = value,
+            onValueChange = onChange,
+            singleLine = true,
+            textStyle = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize, color = c.text),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(c.accent),
+            visualTransformation = if (shown) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = if (shown) KeyboardType.Text else KeyboardType.Password, autoCorrectEnabled = false),
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
+            decorationBox = { inner ->
+                androidx.compose.foundation.layout.Box(
+                    Modifier.fillMaxWidth().heightIn(min = 46.dp).background(c.surface, shape).border(1.dp, c.border, shape).padding(horizontal = 14.dp, vertical = 11.dp),
+                ) { inner() }
+            },
+        )
+        FlowRow(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            io.github.ra5on.titanos.compute.SmallButton(t(if (shown) "apps.hide" else "apps.show"), io.github.ra5on.titanos.ui.theme.TitanIcons.key, { shown = !shown })
+            io.github.ra5on.titanos.compute.SmallButton(t("viewer.copy"), io.github.ra5on.titanos.ui.theme.TitanIcons.file, {
+                context.getSystemService(android.content.ClipboardManager::class.java)?.setPrimaryClip(android.content.ClipData.newPlainText(label, value))
+            }, enabled = value.isNotEmpty())
+            if (onNew != null) io.github.ra5on.titanos.compute.SmallButton(t("appform.newSecret"), io.github.ra5on.titanos.ui.theme.TitanIcons.restart, onNew)
+        }
+        if (error != null) Text(error, style = TitanType.small, color = c.dangerInk, modifier = Modifier.padding(top = 4.dp, start = 2.dp))
+        else if (hint != null) Text(hint, style = TitanType.small, color = c.muted, modifier = Modifier.padding(top = 4.dp, start = 2.dp))
+    }
+}
+

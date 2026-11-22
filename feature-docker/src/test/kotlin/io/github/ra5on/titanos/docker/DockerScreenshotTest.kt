@@ -86,7 +86,7 @@ class DockerScreenshotTest {
                         Section("cleanup", "Aufräumen", TitanIcons.trash), Section("catalog", "Katalog", TitanIcons.grid),
                     )
                     ProgramShell("Docker", "docker", "blue", sections, "containers", {}, {}) {
-                        ListDetail(detail, {}, list = { ContainerList(env, state, groups) {} }, detail = { GroupDetail(env, state, groups.first(), {}) })
+                        ListDetail(detail, {}, list = { ContainerList(env, state, groups) {} }, detail = { GroupDetail(env, state, groups.first { it.app == "immich" }, {}) })
                     }
                 }
             }
@@ -107,6 +107,7 @@ class DockerScreenshotTest {
     fun cardsWide() = shot("karten-1280", detail = false, layout = DockerLayout(view = "cards", size = "s"))
 
     @Test
+    @Config(qualifiers = "de-w390dp-h3000dp-xhdpi")
     fun appAdvanced() = shot("app-erweitert-390", detail = true, advanced = true)
 
     @Test
@@ -116,6 +117,7 @@ class DockerScreenshotTest {
     }
 
     @Test
+    @Config(qualifiers = "de-w390dp-h2400dp-xhdpi")
     fun install() {
         val tpl = io.github.ra5on.titanos.docker.compose.TemplateInfo(
             immichCompose.replace("# Immich\n", "x-titanos:\n  variables:\n    DB_PASSWORD:\n      secret: generate\n    TZ:\n      help: Zeitzone der App\n  paths:\n    /fotos:\n      suggest: media\n  ports:\n    \"2283\":\n      label: Weboberfläche\n      webui: true\n"),

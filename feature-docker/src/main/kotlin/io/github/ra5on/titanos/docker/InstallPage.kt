@@ -350,8 +350,14 @@ internal fun InstallFields(
         }
         val orig = if (v.required && v.value.isBlank()) "required" else if (v.origin == "required") "own" else v.origin
         val hint = listOf(ui.text("appform.variable", "name" to v.name), help.ifEmpty { note }, ui.text("apps.origin.$orig")).filter { it.isNotEmpty() }.joinToString(" · ")
-        Field(label + if (v.required) " *" else "", v.value, { set(v.copy(value = it, origin = if (v.origin == "generated" || v.origin == "titanos") "template" else v.origin)) },
-            error = if (problems.vars.getOrNull(i) == "required") t("appform.required") else null, hint = hint, placeholder = v.placeholder.ifEmpty { null })
+        val err = if (problems.vars.getOrNull(i) == "required") t("appform.required") else null
+        if (v.secret) {
+            SecretField(label + if (v.required) " *" else "", v.value, { set(v.copy(value = it, origin = if (v.origin == "generated") "template" else v.origin)) }, hint = hint, error = err,
+                onNew = if (v.origin == "generated") ({ set(v.copy(value = io.github.ra5on.titanos.docker.compose.generateSecret())) }) else null)
+        } else {
+            Field(label + if (v.required) " *" else "", v.value, { set(v.copy(value = it, origin = if (v.origin == "generated" || v.origin == "titanos") "template" else v.origin)) },
+                error = err, hint = hint, placeholder = v.placeholder.ifEmpty { null })
+        }
     }
     f.own.vars.forEachIndexed { i, p ->
         fun set(next: Pair) = onChange(f.copy(own = f.own.copy(vars = f.own.vars.toMutableList().also { it[i] = next })))
