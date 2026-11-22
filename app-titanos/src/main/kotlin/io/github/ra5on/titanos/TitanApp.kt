@@ -36,6 +36,7 @@ import io.github.ra5on.titanos.photos.SettingsStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class TitanApp : Application(), Configuration.Provider, SiblingHost {
     // Eine Kopplung für beide Apps (feature-pairing Sibling.kt).
@@ -92,6 +93,17 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost {
         io.github.ra5on.titanos.mail.MailRuntime.nas = { graph.connection() }
         io.github.ra5on.titanos.mail.MailRuntime.stream = { graph.connection(io.github.ra5on.titanos.notify.NotifyApi.streamClient(graph.shared)) }
         graph.pairing?.let { io.github.ra5on.titanos.pim.sync.PimAccount.ensure(this, io.github.ra5on.titanos.pim.sync.PimAccount.nameFor(it.user, it.hostname)) }
+        // Eigenes VPN (feature-vpn): Verbindung, Adresse im Tunnel und die Seite „VPN“.
+        io.github.ra5on.titanos.vpn.VpnRuntime.install(this, object : io.github.ra5on.titanos.vpn.VpnHost {
+            override fun connection(): NasConnection? = graph.connection()
+            override fun setTunnelAddress(address: io.github.ra5on.titanos.net.PinnedAddress?) {
+                Handler(Looper.getMainLooper()).post { graph.setVpnAddress(address) }
+            }
+            override fun openVpnIntent(context: android.content.Context): android.content.Intent =
+                android.content.Intent(context, MainActivity::class.java)
+                    .putExtra(io.github.ra5on.titanos.vpn.VpnNotify.EXTRA_OPEN_VPN, true)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        })
         // Ungekoppelt und die Agent-App ist gekoppelt: sie koppelt diese App mit.
         Sibling.ask(this, this)
     }
@@ -116,6 +128,9 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
 
     /** „Über die App“ offen (Menü oder Mitteilung „Version … ist da“). */
     var openAbout by mutableStateOf(false)
+
+    /** Seite „VPN“ offen (Menü, Mitteilung oder Kachel). */
+    var openVpn by mutableStateOf(false)
 
     /** Mail, Kalender oder Kontakte in voller Größe (`mail`, `calendar`, `contacts`), sonst null. */
     var openProgram by mutableStateOf<String?>(null)
@@ -177,9 +192,40 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         io.github.ra5on.titanos.pim.sync.PimAccount.ensure(app, io.github.ra5on.titanos.pim.sync.PimAccount.nameFor(p.user, p.hostname))
     }
 
+    /**
+     * Das NAS im eigenen WireGuard-Tunnel als weitere Adresse der Kopplung
+     * (feature-vpn); null nimmt sie weg. Die Verbindungen entstehen neu.
+     */
+    fun setVpnAddress(address: io.github.ra5on.titanos.net.PinnedAddress?) {
+        val p = pairing ?: return
+        val next = p.copy(addresses = p.addresses.filterNot { it.isVpn } + listOfNotNull(address))
+        if (next == p) return
+        store.save(next)
+        pairing = next
+        api = apiFor(next)
+        files = FilesModel(app, api!!, transfers, scope, offline)
+        photosApi = photosApiFor(next)
+        photos = photosModelFor(api, photosApi)
+        notifyApi = notifyApiFor(next)
+    }
+
+    private var forgettingVpn = false
+
     /** Kopplung aufheben: Schlüssel, Kopplung und Sitzung weg. Am NAS beendet man das Gerät im Browser. */
     fun forget(byNas: Boolean = false) {
         if (pairing == null) return
+        // Den WireGuard-Zugang am NAS zuerst entfernen, solange die Sitzung noch gilt (kurz versucht).
+        if (!byNas && io.github.ra5on.titanos.vpn.VpnRuntime.store.profile() != null) {
+            if (forgettingVpn) return
+            forgettingVpn = true
+            scope.launch {
+                io.github.ra5on.titanos.vpn.VpnRuntime.forget(remote = true)
+                forgettingVpn = false
+                forget(byNas = false)
+            }
+            return
+        }
+        scope.launch { io.github.ra5on.titanos.vpn.VpnRuntime.forget(remote = false) }
         store.clear()
         runCatching { key.delete() }
         sessions.forget()

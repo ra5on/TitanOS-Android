@@ -35,6 +35,7 @@ include(
     ":feature-nvr",
     ":feature-mail",
     ":feature-pim",
+    ":feature-vpn",
     ":app-titanos",
     ":app-agent",
     ":lint-rules",

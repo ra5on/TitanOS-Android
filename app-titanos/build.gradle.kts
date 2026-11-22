@@ -43,6 +43,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { compose = true }
+    packaging {
+        jniLibs {
+            // Aus com.wireguard.android:tunnel nur libwg-go.so (GoBackend). libwg.so und libwg-quick.so sind
+            // wireguard-tools (GPL-2.0) für den Kernel-Weg mit Root, den die App nicht nutzt (THIRD_PARTY_LICENSES).
+            excludes += listOf("**/libwg.so", "**/libwg-quick.so")
+        }
+    }
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -87,6 +94,7 @@ dependencies {
     implementation(project(":feature-nvr"))
     implementation(project(":feature-mail"))
     implementation(project(":feature-pim"))
+    implementation(project(":feature-vpn"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.zxing.embedded)
     implementation(libs.androidx.activity.compose)

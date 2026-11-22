@@ -6,10 +6,19 @@ import kotlinx.serialization.Serializable
  * Eine gekoppelte Adresse: der beim Koppeln festgehaltene SPKI-Wert und ob die
  * Adresse ein öffentliches Zertifikat hat (dann gilt eine normale Prüfung als
  * Ersatz, wenn sich der Schlüssel bei der Erneuerung ändert).
+ *
+ * [kind] ist leer für Adressen aus der Kopplung und [KIND_VPN] für das NAS im
+ * eigenen WireGuard-Tunnel (feature-vpn): die gilt nur, solange der Tunnel läuft,
+ * dann aber zuerst.
  */
 @Serializable
-data class PinnedAddress(val server: String, val spki: String = "", val publicCert: Boolean = false) {
+data class PinnedAddress(val server: String, val spki: String = "", val publicCert: Boolean = false, val kind: String = "") {
     val address: ServerAddress? get() = ServerAddress.parse(server)
+    val isVpn: Boolean get() = kind == KIND_VPN
+
+    companion object {
+        const val KIND_VPN = "vpn"
+    }
 }
 
 /** Was nach der Kopplung bleibt. user und device kommen zusammen aus `pair/wait`. */

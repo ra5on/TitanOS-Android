@@ -52,6 +52,8 @@ enum class AddressKind {
     LAN,
     /** Unterwegs über Tailscale. */
     TAILSCALE,
+    /** Das NAS im eigenen WireGuard-Tunnel der App; nur, solange er läuft. */
+    VPN,
     OTHER;
 
     companion object {
