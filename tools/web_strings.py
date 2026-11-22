@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Übernimmt die Texte der Weboberfläche für den Bereich Rechnen (Docker,
-VMs, LXC, NVR, Terminal) als Android-Ressourcen in core-compute.
+VMs, LXC, NVR, Terminal) und den Arbeitsplatz als Android-Ressourcen in core-compute.
 
 Aufruf: tools/web_strings.py <TitanOS-Repo>
 Schreibt core-compute/src/main/res/values{,-en}/web_strings.xml (Deutsch ist
@@ -27,17 +27,19 @@ WHOLE = ["nvr", "vms", "docker", "dres", "appform", "lxc", "apps", "media", "ter
          "dnet", "appopens", "tailnetPublish", "lan", "schedule", "hardware", "proxy", "netx", "autoUpdate",
          "appaccess", "error", "common", "cleanup", "ops", "report.day", "backup.dayShort", "backup.day",
          "desktop.side", "desktop.app", "state", "status", "duration", "confirm", "delete", "keep", "digest",
-         "bridge", "network", "webapps", "viewer", "editor.restart", "editor.network", "settings.terminal", "settings.terminalDesc", "settings.consoles", "settings.consoleIdle", "settings.consoleIdleMinutes", "settings.consoleIdleNever", "settings.consoleIdleDesc", "ui"]
+         "bridge", "network", "webapps", "viewer", "editor.restart", "editor.network", "settings.terminal", "settings.terminalDesc", "settings.consoles", "settings.consoleIdle", "settings.consoleIdleMinutes", "settings.consoleIdleNever", "settings.consoleIdleDesc", "ui",
+         # Arbeitsplatz (feature-workspace): Fenster, Dock, Widgets, Menüs wie lib/desktop.
+         "desktop", "menubar", "quick", "look.on", "look.off"]
 
 # Einzelne Schlüssel aus anderen Bereichen, die die Seiten nutzen.
 src_dirs = ["routes/docker", "routes/vms", "routes/lxc", "routes/nvr", "routes/terminal", "routes/apps", "lib/nvr",
-            "lib/components", "lib"]
+            "lib/components", "lib", "lib/desktop"]
 used = set()
 pat = re.compile(r"""\bt\(\s*['"`]([a-zA-Z0-9_.]+)['"`]""")
 for d in src_dirs:
     base = os.path.join(repo, "web/src", d)
     for root, _, files in os.walk(base):
-        if d in ("lib", "lib/components") and root != base:
+        if d in ("lib", "lib/components", "lib/desktop") and root != base and not root.endswith("menubar"):
             continue
         for f in files:
             if f.endswith((".svelte", ".ts")):

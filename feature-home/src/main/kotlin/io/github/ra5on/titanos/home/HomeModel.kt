@@ -29,6 +29,8 @@ val ALL_PROGRAMS = listOf(
     Program("mail", "mail", "blue"),
     Program("calendar", "calendar", "violet"),
     Program("contacts", "contacts", "green"),
+    // KI-Agent in der TitanOS-App wie im Web (nur, wenn das NAS ihn anbietet).
+    Program("agent", "agent", "ember"),
     Program("backup", "backup", "green"),
     Program("nvr", "nvr", "red"),
     Program("terminal", "terminal", "dark"),
@@ -49,7 +51,7 @@ val ALL_PROGRAMS = listOf(
 fun visiblePrograms(role: String, services: Map<String, Boolean>): List<Program> {
     val admin = role == "owner" || role == "admin"
     val adminOnly = setOf("shares", "storage", "docker", "vms", "lxc", "backup", "terminal", "users")
-    val optIn = setOf("mail", "calendar", "contacts")
+    val optIn = setOf("mail", "calendar", "contacts", "agent")
     val service = mapOf("docker" to "docker", "vms" to "vms", "lxc" to "lxc")
     return ALL_PROGRAMS.filter { p ->
         when {

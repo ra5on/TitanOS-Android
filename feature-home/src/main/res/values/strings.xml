@@ -42,6 +42,7 @@
     <string name="app_mail">Mail</string>
     <string name="app_calendar">Kalender</string>
     <string name="app_contacts">Kontakte</string>
+    <string name="app_agent">KI-Agent</string>
     <string name="app_backup">Sicherung</string>
     <string name="app_nvr">NVR</string>
     <string name="app_terminal">Terminal</string>

@@ -344,7 +344,7 @@ fun VmScreen(env: ComputeEnv, api: VmApi, vm: Vm, full: Boolean, onFull: () -> U
     }
     val screenBg = Color(0xFF0B0F14)
 
-    Column(Modifier.fillMaxSize()) {
+    val toolbar: @Composable () -> Unit = {
         if (!full) Toolbar(
             vm = vm,
             shownMode = shownMode,
@@ -370,8 +370,10 @@ fun VmScreen(env: ComputeEnv, api: VmApi, vm: Vm, full: Boolean, onFull: () -> U
             onReconnect = { attempt++ },
         )
         if (session.resizeFailed != 0) NoticeBox(NoticeLevel.Warn, t("vms.size.failed"), Modifier.padding(horizontal = 8.dp))
+    }
+    val screen: @Composable () -> Unit = {
         Box(
-            Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(if (full) 0.dp else 10.dp)).background(screenBg)
+            Modifier.fillMaxSize().clip(RoundedCornerShape(if (full) 0.dp else 10.dp)).background(screenBg)
                 .onSizeChanged { box = it }
                 .semantics {
                     contentDescription = label
@@ -621,6 +623,8 @@ fun VmScreen(env: ComputeEnv, api: VmApi, vm: Vm, full: Boolean, onFull: () -> U
                 }
             }
         }
+    }
+    val keys: @Composable () -> Unit = {
         if (keyBar && phase == ScreenPhase.Connected) {
             KeyBar(
                 keyboardOpen = keyboardOpen,
@@ -647,6 +651,25 @@ fun VmScreen(env: ComputeEnv, api: VmApi, vm: Vm, full: Boolean, onFull: () -> U
                 color = Titan.colors.muted,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
             )
+        }
+    }
+    // Faltbares in Tischhaltung: oben der Bildschirm, unten Leiste und Tasten (core-ui FoldPanes);
+    // die Verbindung bleibt beim Auf- und Zuklappen bestehen.
+    io.github.ra5on.titanos.ui.FoldPanes(
+        first = screen,
+        second = {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                toolbar()
+                keys()
+            }
+        },
+        modifier = Modifier.fillMaxSize(),
+        book = false,
+    ) { a, _ ->
+        Column(Modifier.fillMaxSize()) {
+            toolbar()
+            Box(Modifier.weight(1f).fillMaxWidth()) { a() }
+            keys()
         }
     }
 

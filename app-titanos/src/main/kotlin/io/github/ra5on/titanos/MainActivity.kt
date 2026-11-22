@@ -43,6 +43,12 @@ class MainActivity : ComponentActivity() {
         if (intent?.getBooleanExtra(io.github.ra5on.titanos.vpn.VpnNotify.EXTRA_OPEN_VPN, false) == true) {
             (application as TitanApp).graph.openVpn = true
         }
+        // Assistent, Notizen oder die Mitteilung einer Antwort: der KI-Agent bei diesem Chat.
+        intent?.getStringExtra(EXTRA_AGENT_CHAT)?.let { chat ->
+            val graph = (application as TitanApp).graph
+            graph.programLink = if (chat.isEmpty()) "/agent" else "/agent?chat=$chat"
+            graph.openProgram = "agent"
+        }
         // Tippen auf eine Mitteilung: die Liste der Mitteilungen.
         io.github.ra5on.titanos.notify.NotifyRuntime.take(intent)
         if (intent?.action != Intent.ACTION_VIEW) return

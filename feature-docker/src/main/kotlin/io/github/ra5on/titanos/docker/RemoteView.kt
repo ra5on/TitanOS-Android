@@ -19,6 +19,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -371,7 +372,7 @@ internal fun RemoteViewPage(access: ComputeAccess, app: String, onClose: () -> U
     var showClip by remember { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     val screenLabel = t("viewer.screen")
-    Column(Modifier.fillMaxSize()) {
+    val controls: @Composable () -> Unit = {
         FlowRow(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically) {
             IconButton(TitanIcons.back, androidx.compose.ui.res.stringResource(io.github.ra5on.titanos.ui.R.string.ui_back), onClose)
             Text(app, style = TitanType.rowTitle, color = Titan.colors.text)
@@ -400,8 +401,10 @@ internal fun RemoteViewPage(access: ComputeAccess, app: String, onClose: () -> U
             Field(t("viewer.clipboardField"), clip, { clip = it })
             SmallButton(t("viewer.clipboardSend"), TitanIcons.upload, { session.sendClipboard(clip); ui.toast(ui.text("viewer.clipboardSent")) }, enabled = clip.isNotEmpty())
         }
+    }
+    val screen: @Composable () -> Unit = {
         Box(
-            Modifier.weight(1f).fillMaxWidth().background(Color.Black)
+            Modifier.fillMaxSize().background(Color.Black)
                 .onSizeChanged {
                     box = it
                     with(density) { session.size((it.width / this.density).toInt(), (it.height / this.density).toInt(), this.density) }
@@ -471,6 +474,18 @@ internal fun RemoteViewPage(access: ComputeAccess, app: String, onClose: () -> U
                     },
             )
             if (session.phase == "connecting") Text(t("viewer.starting"), style = TitanType.body, color = Color.White, modifier = Modifier.align(Alignment.Center))
+        }
+    }
+    // Faltbares in Tischhaltung: oben das Bild, unten Leiste und Eingabe (core-ui FoldPanes); die Sitzung bleibt.
+    io.github.ra5on.titanos.ui.FoldPanes(
+        first = screen,
+        second = { Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState())) { controls() } },
+        modifier = Modifier.fillMaxSize(),
+        book = false,
+    ) { a, _ ->
+        Column(Modifier.fillMaxSize()) {
+            controls()
+            Box(Modifier.weight(1f).fillMaxWidth()) { a() }
         }
     }
 }

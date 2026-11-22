@@ -309,17 +309,25 @@ fun ListDetail(
     listWidth: Dp = 360.dp,
 ) {
     val width = currentWidth()
-    if (width.twoPanes) {
-        Row(Modifier.fillMaxSize()) {
-            Box(Modifier.widthIn(max = listWidth).weight(0.42f).fillMaxHeight()) { list() }
-            Box(Modifier.fillMaxHeight().width(1.dp).background(Titan.colors.border))
-            Box(Modifier.weight(0.58f).fillMaxHeight()) { detail() }
+    // Faltbares in Buchhaltung: links die Liste, rechts der Inhalt, getrennt am Falz (core-ui FoldPanes).
+    io.github.ra5on.titanos.ui.FoldPanes(
+        first = { Box(Modifier.fillMaxSize()) { list() } },
+        second = { Box(Modifier.fillMaxSize()) { detail() } },
+        modifier = Modifier.fillMaxSize(),
+        tabletop = false,
+    ) { a, b ->
+        if (width.twoPanes) {
+            Row(Modifier.fillMaxSize()) {
+                Box(Modifier.widthIn(max = listWidth).weight(0.42f).fillMaxHeight()) { a() }
+                Box(Modifier.fillMaxHeight().width(1.dp).background(Titan.colors.border))
+                Box(Modifier.weight(0.58f).fillMaxHeight()) { b() }
+            }
+        } else if (detailOpen) {
+            BackHandler(onBack = onCloseDetail)
+            Box(Modifier.fillMaxSize()) { b() }
+        } else {
+            Box(Modifier.fillMaxSize()) { a() }
         }
-    } else if (detailOpen) {
-        BackHandler(onBack = onCloseDetail)
-        Box(Modifier.fillMaxSize()) { detail() }
-    } else {
-        Box(Modifier.fillMaxSize()) { list() }
     }
 }
 

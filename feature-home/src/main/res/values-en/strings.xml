@@ -41,6 +41,7 @@
     <string name="app_mail">Mail</string>
     <string name="app_calendar">Calendar</string>
     <string name="app_contacts">Contacts</string>
+    <string name="app_agent">AI agent</string>
     <string name="app_backup">Backup</string>
     <string name="app_nvr">NVR</string>
     <string name="app_terminal">Terminal</string>

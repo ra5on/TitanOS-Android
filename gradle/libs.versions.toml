@@ -29,6 +29,8 @@ testRunner = "1.6.2"
 testExtJunit = "1.2.1"
 # Eigenes VPN (feature-vpn): offizielle WireGuard-Bibliothek, Apache-2.0, Maven Central (geprüft 21.11.2026).
 wireguardTunnel = "1.0.20260102"
+# Faltbare (Buch- und Tischhaltung): WindowInfoTracker, FoldingFeature; window-testing für die Tests.
+window = "1.5.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -73,6 +75,8 @@ androidx-test-uiautomator = { module = "androidx.test.uiautomator:uiautomator", 
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "testRunner" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "testExtJunit" }
 wireguard-tunnel = { module = "com.wireguard.android:tunnel", version.ref = "wireguardTunnel" }
+androidx-window = { module = "androidx.window:window", version.ref = "window" }
+androidx-window-testing = { module = "androidx.window:window-testing", version.ref = "window" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 
 stream-webrtc = { module = "io.getstream:stream-webrtc-android", version.ref = "stream-webrtc" }

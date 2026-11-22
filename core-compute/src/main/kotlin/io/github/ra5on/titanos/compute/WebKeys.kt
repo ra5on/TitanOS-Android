@@ -4,7 +4,7 @@ package io.github.ra5on.titanos.compute
 /** Schlüssel der Weboberfläche (z. B. `docker.start`) → Ressource in core-compute. */
 internal object WebKeys {
     val map: Map<String, Int> by lazy {
-        HashMap<String, Int>(8512).apply {
+        HashMap<String, Int>(9496).apply {
             part0(this)
             part1(this)
             part2(this)
@@ -20,6 +20,7 @@ internal object WebKeys {
             part12(this)
             part13(this)
             part14(this)
+            part15(this)
         }
     }
 
@@ -435,12 +436,147 @@ internal object WebKeys {
         m["desktop.app.terminal"] = R.string.w_desktop_app_terminal
         m["desktop.app.users"] = R.string.w_desktop_app_users
         m["desktop.app.vms"] = R.string.w_desktop_app_vms
+        m["desktop.badge.updates"] = R.string.w_desktop_badge_updates
+        m["desktop.badge.vms"] = R.string.w_desktop_badge_vms
+        m["desktop.badge.volumes"] = R.string.w_desktop_badge_volumes
+        m["desktop.bar.load"] = R.string.w_desktop_bar_load
+        m["desktop.bar.loadHint"] = R.string.w_desktop_bar_loadHint
+        m["desktop.bar.showDesktop"] = R.string.w_desktop_bar_showDesktop
+        m["desktop.bar.size"] = R.string.w_desktop_bar_size
+        m["desktop.bar.title"] = R.string.w_desktop_bar_title
+        m["desktop.closeBusyAnyway"] = R.string.w_desktop_closeBusyAnyway
+        m["desktop.closeBusyText"] = R.string.w_desktop_closeBusyText
+        m["desktop.closeBusyTitle"] = R.string.w_desktop_closeBusyTitle
+        m["desktop.ctx.appearance"] = R.string.w_desktop_ctx_appearance
+        m["desktop.ctx.autoArrange"] = R.string.w_desktop_ctx_autoArrange
+        m["desktop.ctx.iconSize"] = R.string.w_desktop_ctx_iconSize
+        m["desktop.ctx.layouts"] = R.string.w_desktop_ctx_layouts
+        m["desktop.ctx.newFolder"] = R.string.w_desktop_ctx_newFolder
+        m["desktop.ctx.newWindow"] = R.string.w_desktop_ctx_newWindow
+        m["desktop.ctx.open"] = R.string.w_desktop_ctx_open
+        m["desktop.ctx.removeFromDesktop"] = R.string.w_desktop_ctx_removeFromDesktop
+        m["desktop.ctx.restart"] = R.string.w_desktop_ctx_restart
+        m["desktop.ctx.settings"] = R.string.w_desktop_ctx_settings
+        m["desktop.ctx.showInDocker"] = R.string.w_desktop_ctx_showInDocker
+        m["desktop.ctx.sort"] = R.string.w_desktop_ctx_sort
+        m["desktop.ctx.start"] = R.string.w_desktop_ctx_start
+        m["desktop.ctx.stop"] = R.string.w_desktop_ctx_stop
+        m["desktop.ctx.toDesktop"] = R.string.w_desktop_ctx_toDesktop
+        m["desktop.ctx.wallpaper"] = R.string.w_desktop_ctx_wallpaper
+        m["desktop.ctx.whoMay"] = R.string.w_desktop_ctx_whoMay
+        m["desktop.ctx.widgets"] = R.string.w_desktop_ctx_widgets
+        m["desktop.direct.notReached"] = R.string.w_desktop_direct_notReached
+        m["desktop.direct.starting"] = R.string.w_desktop_direct_starting
+        m["desktop.direct.useDirect"] = R.string.w_desktop_direct_useDirect
+        m["desktop.direct.useRemote"] = R.string.w_desktop_direct_useRemote
+        m["desktop.dock.border"] = R.string.w_desktop_dock_border
+        m["desktop.dock.borderOff"] = R.string.w_desktop_dock_borderOff
+        m["desktop.dock.borderOn"] = R.string.w_desktop_dock_borderOn
+        m["desktop.dock.bottom"] = R.string.w_desktop_dock_bottom
+        m["desktop.dock.closeAll"] = R.string.w_desktop_dock_closeAll
+        m["desktop.dock.edit"] = R.string.w_desktop_dock_edit
+        m["desktop.dock.editHint"] = R.string.w_desktop_dock_editHint
+        m["desktop.dock.empty"] = R.string.w_desktop_dock_empty
+        m["desktop.dock.hide"] = R.string.w_desktop_dock_hide
+        m["desktop.dock.left"] = R.string.w_desktop_dock_left
+        m["desktop.dock.magnify"] = R.string.w_desktop_dock_magnify
+        m["desktop.dock.magnifyLight"] = R.string.w_desktop_dock_magnifyLight
+        m["desktop.dock.magnifyOff"] = R.string.w_desktop_dock_magnifyOff
+        m["desktop.dock.magnifyStrong"] = R.string.w_desktop_dock_magnifyStrong
+        m["desktop.dock.menu"] = R.string.w_desktop_dock_menu
+        m["desktop.dock.opacity"] = R.string.w_desktop_dock_opacity
+        m["desktop.dock.pin"] = R.string.w_desktop_dock_pin
+        m["desktop.dock.position"] = R.string.w_desktop_dock_position
+        m["desktop.dock.reset"] = R.string.w_desktop_dock_reset
+        m["desktop.dock.right"] = R.string.w_desktop_dock_right
+        m["desktop.dock.show"] = R.string.w_desktop_dock_show
+        m["desktop.dock.size"] = R.string.w_desktop_dock_size
+        m["desktop.dock.title"] = R.string.w_desktop_dock_title
+        m["desktop.dock.unpin"] = R.string.w_desktop_dock_unpin
+        m["desktop.dock.unpinNamed"] = R.string.w_desktop_dock_unpinNamed
+        m["desktop.error.text"] = R.string.w_desktop_error_text
+        m["desktop.error.title"] = R.string.w_desktop_error_title
+        m["desktop.files.drop"] = R.string.w_desktop_files_drop
+        m["desktop.folder.empty"] = R.string.w_desktop_folder_empty
+        m["desktop.folder.newName"] = R.string.w_desktop_folder_newName
+        m["desktop.folder.remove"] = R.string.w_desktop_folder_remove
+        m["desktop.folder.rename"] = R.string.w_desktop_folder_rename
+        m["desktop.folder.takeOutHint"] = R.string.w_desktop_folder_takeOutHint
+        m["desktop.gallery.addSize"] = R.string.w_desktop_gallery_addSize
+        m["desktop.gallery.agent"] = R.string.w_desktop_gallery_agent
+        m["desktop.gallery.backups"] = R.string.w_desktop_gallery_backups
+        m["desktop.gallery.camera"] = R.string.w_desktop_gallery_camera
+        m["desktop.gallery.clock"] = R.string.w_desktop_gallery_clock
+        m["desktop.gallery.cpuram"] = R.string.w_desktop_gallery_cpuram
+        m["desktop.gallery.devices"] = R.string.w_desktop_gallery_devices
+        m["desktop.gallery.docker"] = R.string.w_desktop_gallery_docker
+        m["desktop.gallery.gpu"] = R.string.w_desktop_gallery_gpu
+        m["desktop.gallery.hint"] = R.string.w_desktop_gallery_hint
+        m["desktop.gallery.homeassistant"] = R.string.w_desktop_gallery_homeassistant
+        m["desktop.gallery.igpu"] = R.string.w_desktop_gallery_igpu
+        m["desktop.gallery.network"] = R.string.w_desktop_gallery_network
+        m["desktop.gallery.npu"] = R.string.w_desktop_gallery_npu
+        m["desktop.gallery.shown"] = R.string.w_desktop_gallery_shown
+        m["desktop.gallery.status"] = R.string.w_desktop_gallery_status
+        m["desktop.gallery.tasks"] = R.string.w_desktop_gallery_tasks
+        m["desktop.gallery.temperatures"] = R.string.w_desktop_gallery_temperatures
+        m["desktop.gallery.vms"] = R.string.w_desktop_gallery_vms
+        m["desktop.gallery.volumes"] = R.string.w_desktop_gallery_volumes
+        m["desktop.layout.count"] = R.string.w_desktop_layout_count
+        m["desktop.layout.defaultName"] = R.string.w_desktop_layout_defaultName
+        m["desktop.layout.delete"] = R.string.w_desktop_layout_delete
+        m["desktop.layout.name"] = R.string.w_desktop_layout_name
+        m["desktop.layout.namePlaceholder"] = R.string.w_desktop_layout_namePlaceholder
+        m["desktop.layout.none"] = R.string.w_desktop_layout_none
+        m["desktop.layout.restore"] = R.string.w_desktop_layout_restore
+        m["desktop.layout.save"] = R.string.w_desktop_layout_save
+        m["desktop.layout.text"] = R.string.w_desktop_layout_text
+        m["desktop.layout.title"] = R.string.w_desktop_layout_title
+        m["desktop.menu.all"] = R.string.w_desktop_menu_all
+        m["desktop.menu.arrange"] = R.string.w_desktop_menu_arrange
+        m["desktop.menu.arrangeDone"] = R.string.w_desktop_menu_arrangeDone
+        m["desktop.menu.arrangeHint"] = R.string.w_desktop_menu_arrangeHint
+        m["desktop.menu.arrangeHintTouch"] = R.string.w_desktop_menu_arrangeHintTouch
+        m["desktop.menu.arrangeOff"] = R.string.w_desktop_menu_arrangeOff
+        m["desktop.menu.context"] = R.string.w_desktop_menu_context
+        m["desktop.menu.docker"] = R.string.w_desktop_menu_docker
+        m["desktop.menu.dragHint"] = R.string.w_desktop_menu_dragHint
+        m["desktop.menu.filter"] = R.string.w_desktop_menu_filter
+        m["desktop.menu.lock"] = R.string.w_desktop_menu_lock
+        m["desktop.menu.logout"] = R.string.w_desktop_menu_logout
+        m["desktop.menu.moveBack"] = R.string.w_desktop_menu_moveBack
+        m["desktop.menu.moveOn"] = R.string.w_desktop_menu_moveOn
+        m["desktop.menu.moved"] = R.string.w_desktop_menu_moved
+        m["desktop.menu.nothing"] = R.string.w_desktop_menu_nothing
+        m["desktop.menu.orderAz"] = R.string.w_desktop_menu_orderAz
+        m["desktop.menu.orderOwn"] = R.string.w_desktop_menu_orderOwn
+        m["desktop.menu.recent"] = R.string.w_desktop_menu_recent
+        m["desktop.menu.resetOrder"] = R.string.w_desktop_menu_resetOrder
+        m["desktop.menu.restart"] = R.string.w_desktop_menu_restart
+        m["desktop.menu.restartShort"] = R.string.w_desktop_menu_restartShort
+        m["desktop.menu.search"] = R.string.w_desktop_menu_search
+        m["desktop.menu.searchShort"] = R.string.w_desktop_menu_searchShort
+        m["desktop.menu.shortcut"] = R.string.w_desktop_menu_shortcut
+        m["desktop.menu.shutdown"] = R.string.w_desktop_menu_shutdown
+        m["desktop.menu.shutdownShort"] = R.string.w_desktop_menu_shutdownShort
+        m["desktop.menu.system"] = R.string.w_desktop_menu_system
+        m["desktop.menu.title"] = R.string.w_desktop_menu_title
+        m["desktop.menu.updatesCount"] = R.string.w_desktop_menu_updatesCount
+        m["desktop.menu.vms"] = R.string.w_desktop_menu_vms
+        m["desktop.phone.home"] = R.string.w_desktop_phone_home
+        m["desktop.phone.pages"] = R.string.w_desktop_phone_pages
+        m["desktop.phone.up"] = R.string.w_desktop_phone_up
+        m["desktop.settings.hours"] = R.string.w_desktop_settings_hours
         m["desktop.settings.lock"] = R.string.w_desktop_settings_lock
         m["desktop.settings.lockHint"] = R.string.w_desktop_settings_lockHint
         m["desktop.settings.lockPhone"] = R.string.w_desktop_settings_lockPhone
         m["desktop.settings.lockPhoneHint"] = R.string.w_desktop_settings_lockPhoneHint
         m["desktop.settings.minutes"] = R.string.w_desktop_settings_minutes
         m["desktop.settings.never"] = R.string.w_desktop_settings_never
+        m["desktop.settings.reset"] = R.string.w_desktop_settings_reset
+        m["desktop.settings.resetIcons"] = R.string.w_desktop_settings_resetIcons
+        m["desktop.settings.resetIconsHint"] = R.string.w_desktop_settings_resetIconsHint
+        m["desktop.settings.title"] = R.string.w_desktop_settings_title
         m["desktop.side.about"] = R.string.w_desktop_side_about
         m["desktop.side.access"] = R.string.w_desktop_side_access
         m["desktop.side.accounts"] = R.string.w_desktop_side_accounts
@@ -492,6 +628,9 @@ internal object WebKeys {
         m["desktop.side.notifications"] = R.string.w_desktop_side_notifications
         m["desktop.side.overview"] = R.string.w_desktop_side_overview
         m["desktop.side.ownApp"] = R.string.w_desktop_side_ownApp
+    }
+
+    private fun part2(m: HashMap<String, Int>) {
         m["desktop.side.plugins"] = R.string.w_desktop_side_plugins
         m["desktop.side.powerButton"] = R.string.w_desktop_side_powerButton
         m["desktop.side.programs"] = R.string.w_desktop_side_programs
@@ -513,8 +652,108 @@ internal object WebKeys {
         m["desktop.side.viewer"] = R.string.w_desktop_side_viewer
         m["desktop.side.vmList"] = R.string.w_desktop_side_vmList
         m["desktop.side.volumes"] = R.string.w_desktop_side_volumes
+        m["desktop.size.l"] = R.string.w_desktop_size_l
+        m["desktop.size.m"] = R.string.w_desktop_size_m
+        m["desktop.size.s"] = R.string.w_desktop_size_s
+        m["desktop.sort.free"] = R.string.w_desktop_sort_free
+        m["desktop.sort.kind"] = R.string.w_desktop_sort_kind
+        m["desktop.sort.name"] = R.string.w_desktop_sort_name
+        m["desktop.sort.recent"] = R.string.w_desktop_sort_recent
+        m["desktop.switcher.keys"] = R.string.w_desktop_switcher_keys
+        m["desktop.switcher.title"] = R.string.w_desktop_switcher_title
+        m["desktop.toast.drop"] = R.string.w_desktop_toast_drop
+        m["desktop.toast.prefs"] = R.string.w_desktop_toast_prefs
+        m["desktop.toast.restart"] = R.string.w_desktop_toast_restart
+        m["desktop.toast.start"] = R.string.w_desktop_toast_start
+        m["desktop.toast.stop"] = R.string.w_desktop_toast_stop
+        m["desktop.vmScreen"] = R.string.w_desktop_vmScreen
+        m["desktop.wallpaper.aurora"] = R.string.w_desktop_wallpaper_aurora
+        m["desktop.wallpaper.bergsee"] = R.string.w_desktop_wallpaper_bergsee
+        m["desktop.wallpaper.calm"] = R.string.w_desktop_wallpaper_calm
+        m["desktop.wallpaper.dunes"] = R.string.w_desktop_wallpaper_dunes
+        m["desktop.wallpaper.failed"] = R.string.w_desktop_wallpaper_failed
+        m["desktop.wallpaper.grid"] = R.string.w_desktop_wallpaper_grid
+        m["desktop.wallpaper.kueste"] = R.string.w_desktop_wallpaper_kueste
+        m["desktop.wallpaper.live"] = R.string.w_desktop_wallpaper_live
+        m["desktop.wallpaper.liveHint"] = R.string.w_desktop_wallpaper_liveHint
+        m["desktop.wallpaper.nebelwald"] = R.string.w_desktop_wallpaper_nebelwald
+        m["desktop.wallpaper.nordlicht"] = R.string.w_desktop_wallpaper_nordlicht
+        m["desktop.wallpaper.peaks"] = R.string.w_desktop_wallpaper_peaks
+        m["desktop.wallpaper.title"] = R.string.w_desktop_wallpaper_title
+        m["desktop.wallpaper.upload"] = R.string.w_desktop_wallpaper_upload
+        m["desktop.wallpaper.uploadHint"] = R.string.w_desktop_wallpaper_uploadHint
+        m["desktop.wallpaper.wave"] = R.string.w_desktop_wallpaper_wave
+        m["desktop.wallpaper.weltraum"] = R.string.w_desktop_wallpaper_weltraum
+        m["desktop.wallpaper.wueste"] = R.string.w_desktop_wallpaper_wueste
+        m["desktop.widget.agent"] = R.string.w_desktop_widget_agent
+        m["desktop.widget.agentAsk"] = R.string.w_desktop_widget_agentAsk
+        m["desktop.widget.agentIdle"] = R.string.w_desktop_widget_agentIdle
+        m["desktop.widget.agentOff"] = R.string.w_desktop_widget_agentOff
+        m["desktop.widget.agentOpen"] = R.string.w_desktop_widget_agentOpen
+        m["desktop.widget.agentRuns"] = R.string.w_desktop_widget_agentRuns
+        m["desktop.widget.agentWaits"] = R.string.w_desktop_widget_agentWaits
+        m["desktop.widget.allGood"] = R.string.w_desktop_widget_allGood
+        m["desktop.widget.allGoodText"] = R.string.w_desktop_widget_allGoodText
+        m["desktop.widget.attention"] = R.string.w_desktop_widget_attention
+        m["desktop.widget.backupRunning"] = R.string.w_desktop_widget_backupRunning
+        m["desktop.widget.backups"] = R.string.w_desktop_widget_backups
+        m["desktop.widget.camera"] = R.string.w_desktop_widget_camera
+        m["desktop.widget.cameraChoice"] = R.string.w_desktop_widget_cameraChoice
+        m["desktop.widget.cameraNone"] = R.string.w_desktop_widget_cameraNone
+        m["desktop.widget.cameraOpen"] = R.string.w_desktop_widget_cameraOpen
+        m["desktop.widget.clock"] = R.string.w_desktop_widget_clock
+        m["desktop.widget.cpu"] = R.string.w_desktop_widget_cpu
+        m["desktop.widget.cpuram"] = R.string.w_desktop_widget_cpuram
+        m["desktop.widget.docker"] = R.string.w_desktop_widget_docker
+        m["desktop.widget.gpu"] = R.string.w_desktop_widget_gpu
+        m["desktop.widget.gpuClock"] = R.string.w_desktop_widget_gpuClock
+        m["desktop.widget.gpuDevice"] = R.string.w_desktop_widget_gpuDevice
+        m["desktop.widget.gpuHistory"] = R.string.w_desktop_widget_gpuHistory
+        m["desktop.widget.gpuMemory"] = R.string.w_desktop_widget_gpuMemory
+        m["desktop.widget.gpuNone"] = R.string.w_desktop_widget_gpuNone
+        m["desktop.widget.gpuPower"] = R.string.w_desktop_widget_gpuPower
+        m["desktop.widget.gpuShows"] = R.string.w_desktop_widget_gpuShows
+        m["desktop.widget.gpuTemperature"] = R.string.w_desktop_widget_gpuTemperature
+        m["desktop.widget.gpuUsage"] = R.string.w_desktop_widget_gpuUsage
+        m["desktop.widget.homeassistant"] = R.string.w_desktop_widget_homeassistant
+        m["desktop.widget.igpu"] = R.string.w_desktop_widget_igpu
+        m["desktop.widget.network"] = R.string.w_desktop_widget_network
+        m["desktop.widget.noApps"] = R.string.w_desktop_widget_noApps
+        m["desktop.widget.noBackups"] = R.string.w_desktop_widget_noBackups
+        m["desktop.widget.noHa"] = R.string.w_desktop_widget_noHa
+        m["desktop.widget.noTemps"] = R.string.w_desktop_widget_noTemps
+        m["desktop.widget.noVms"] = R.string.w_desktop_widget_noVms
+        m["desktop.widget.noVolumes"] = R.string.w_desktop_widget_noVolumes
+        m["desktop.widget.npu"] = R.string.w_desktop_widget_npu
+        m["desktop.widget.openBackups"] = R.string.w_desktop_widget_openBackups
+        m["desktop.widget.openTasks"] = R.string.w_desktop_widget_openTasks
+        m["desktop.widget.ram"] = R.string.w_desktop_widget_ram
+        m["desktop.widget.running"] = R.string.w_desktop_widget_running
+        m["desktop.widget.status"] = R.string.w_desktop_widget_status
+        m["desktop.widget.stopped"] = R.string.w_desktop_widget_stopped
+        m["desktop.widget.tasks"] = R.string.w_desktop_widget_tasks
+        m["desktop.widget.temperatures"] = R.string.w_desktop_widget_temperatures
+        m["desktop.widget.uptime"] = R.string.w_desktop_widget_uptime
+        m["desktop.widget.vms"] = R.string.w_desktop_widget_vms
+        m["desktop.widget.volumeState"] = R.string.w_desktop_widget_volumeState
+        m["desktop.widget.volumes"] = R.string.w_desktop_widget_volumes
+        m["desktop.widget.volumesAttention"] = R.string.w_desktop_widget_volumesAttention
+        m["desktop.widgets.add"] = R.string.w_desktop_widgets_add
+        m["desktop.widgets.done"] = R.string.w_desktop_widgets_done
+        m["desktop.widgets.editHint"] = R.string.w_desktop_widgets_editHint
+        m["desktop.widgets.hideAll"] = R.string.w_desktop_widgets_hideAll
+        m["desktop.widgets.remove"] = R.string.w_desktop_widgets_remove
+        m["desktop.widgets.removeOne"] = R.string.w_desktop_widgets_removeOne
+        m["desktop.widgets.reset"] = R.string.w_desktop_widgets_reset
+        m["desktop.widgets.show"] = R.string.w_desktop_widgets_show
+        m["desktop.widgets.size"] = R.string.w_desktop_widgets_size
+        m["desktop.window.close"] = R.string.w_desktop_window_close
         m["desktop.window.fold"] = R.string.w_desktop_window_fold
         m["desktop.window.loadFailed"] = R.string.w_desktop_window_loadFailed
+        m["desktop.window.maximize"] = R.string.w_desktop_window_maximize
+        m["desktop.window.minimize"] = R.string.w_desktop_window_minimize
+        m["desktop.window.openTab"] = R.string.w_desktop_window_openTab
+        m["desktop.window.restore"] = R.string.w_desktop_window_restore
         m["desktop.window.unfold"] = R.string.w_desktop_window_unfold
         m["detail.label"] = R.string.w_detail_label
         m["detail.networkProblem"] = R.string.w_detail_networkProblem
@@ -627,9 +866,6 @@ internal object WebKeys {
         m["docker.logsHits"] = R.string.w_docker_logsHits
         m["docker.logsRefresh"] = R.string.w_docker_logsRefresh
         m["docker.logsSearch"] = R.string.w_docker_logsSearch
-    }
-
-    private fun part2(m: HashMap<String, Int>) {
         m["docker.logsTitle"] = R.string.w_docker_logsTitle
         m["docker.morePorts"] = R.string.w_docker_morePorts
         m["docker.noCurrentData"] = R.string.w_docker_noCurrentData
@@ -695,6 +931,9 @@ internal object WebKeys {
         m["docker.table.colName"] = R.string.w_docker_table_colName
         m["docker.table.colState"] = R.string.w_docker_table_colState
         m["docker.table.consoleOf"] = R.string.w_docker_table_consoleOf
+    }
+
+    private fun part3(m: HashMap<String, Int>) {
         m["docker.table.containers"] = R.string.w_docker_table_containers
         m["docker.table.filterAll"] = R.string.w_docker_table_filterAll
         m["docker.table.filterRunning"] = R.string.w_docker_table_filterRunning
@@ -930,9 +1169,6 @@ internal object WebKeys {
         m["error.app_session_required"] = R.string.w_error_app_session_required
         m["error.app_unknown"] = R.string.w_error_app_unknown
         m["error.application_backup_running"] = R.string.w_error_application_backup_running
-    }
-
-    private fun part3(m: HashMap<String, Int>) {
         m["error.apps_unavailable"] = R.string.w_error_apps_unavailable
         m["error.attachment_not_text"] = R.string.w_error_attachment_not_text
         m["error.attachment_too_large"] = R.string.w_error_attachment_too_large
@@ -998,6 +1234,9 @@ internal object WebKeys {
         m["error.cluster_member"] = R.string.w_error_cluster_member
         m["error.cluster_node_self"] = R.string.w_error_cluster_node_self
         m["error.cluster_node_unknown"] = R.string.w_error_cluster_node_unknown
+    }
+
+    private fun part4(m: HashMap<String, Int>) {
         m["error.cluster_none"] = R.string.w_error_cluster_none
         m["error.cluster_not_permitted"] = R.string.w_error_cluster_not_permitted
         m["error.cluster_restarting"] = R.string.w_error_cluster_restarting
@@ -1233,9 +1472,6 @@ internal object WebKeys {
         m["error.lan_exists"] = R.string.w_error_lan_exists
         m["error.lan_in_use"] = R.string.w_error_lan_in_use
         m["error.last_active_owner"] = R.string.w_error_last_active_owner
-    }
-
-    private fun part4(m: HashMap<String, Int>) {
         m["error.last_owner"] = R.string.w_error_last_owner
         m["error.length_required"] = R.string.w_error_length_required
         m["error.letsencrypt_busy"] = R.string.w_error_letsencrypt_busy
@@ -1301,6 +1537,9 @@ internal object WebKeys {
         m["error.note_changed"] = R.string.w_error_note_changed
         m["error.note_invalid"] = R.string.w_error_note_invalid
         m["error.notify_test_failed"] = R.string.w_error_notify_test_failed
+    }
+
+    private fun part5(m: HashMap<String, Int>) {
         m["error.nvr_access_admin"] = R.string.w_error_nvr_access_admin
         m["error.nvr_camera_exists"] = R.string.w_error_nvr_camera_exists
         m["error.nvr_camera_limit"] = R.string.w_error_nvr_camera_limit
@@ -1536,9 +1775,6 @@ internal object WebKeys {
         m["error.volume_exists"] = R.string.w_error_volume_exists
         m["error.volume_has_docker"] = R.string.w_error_volume_has_docker
         m["error.volume_has_lxc"] = R.string.w_error_volume_has_lxc
-    }
-
-    private fun part5(m: HashMap<String, Int>) {
         m["error.volume_has_maintenance"] = R.string.w_error_volume_has_maintenance
         m["error.volume_has_monitoring"] = R.string.w_error_volume_has_monitoring
         m["error.volume_has_plugins"] = R.string.w_error_volume_has_plugins
@@ -1604,6 +1840,9 @@ internal object WebKeys {
         m["hardware.intro"] = R.string.w_hardware_intro
         m["hardware.kind.gpu"] = R.string.w_hardware_kind_gpu
         m["hardware.kind.igpu"] = R.string.w_hardware_kind_igpu
+    }
+
+    private fun part6(m: HashMap<String, Int>) {
         m["hardware.kind.npu"] = R.string.w_hardware_kind_npu
         m["hardware.noDriver"] = R.string.w_hardware_noDriver
         m["hardware.noGroup"] = R.string.w_hardware_noGroup
@@ -1839,9 +2078,6 @@ internal object WebKeys {
         m["media.originalFile"] = R.string.w_media_originalFile
         m["media.pause"] = R.string.w_media_pause
         m["media.phase.cancelled"] = R.string.w_media_phase_cancelled
-    }
-
-    private fun part6(m: HashMap<String, Int>) {
         m["media.phase.done"] = R.string.w_media_phase_done
         m["media.phase.downloading"] = R.string.w_media_phase_downloading
         m["media.phase.extracting"] = R.string.w_media_phase_extracting
@@ -1875,7 +2111,214 @@ internal object WebKeys {
         m["media.virtioLoading"] = R.string.w_media_virtioLoading
         m["media.virtioRetry"] = R.string.w_media_virtioRetry
         m["media.volume"] = R.string.w_media_volume
+        m["menu.account"] = R.string.w_menu_account
+        m["menubar.account.devices"] = R.string.w_menubar_account_devices
+        m["menubar.account.logoutAll"] = R.string.w_menubar_account_logoutAll
+        m["menubar.account.passkeys"] = R.string.w_menubar_account_passkeys
+        m["menubar.account.password"] = R.string.w_menubar_account_password
+        m["menubar.account.recoveryCodes"] = R.string.w_menubar_account_recoveryCodes
+        m["menubar.account.ssh"] = R.string.w_menubar_account_ssh
+        m["menubar.account.twoFactorOff"] = R.string.w_menubar_account_twoFactorOff
+        m["menubar.account.twoFactorOn"] = R.string.w_menubar_account_twoFactorOn
+        m["menubar.account.webdav"] = R.string.w_menubar_account_webdav
+        m["menubar.agent.inProject"] = R.string.w_menubar_agent_inProject
+        m["menubar.agent.inbox"] = R.string.w_menubar_agent_inbox
+        m["menubar.agent.know"] = R.string.w_menubar_agent_know
+        m["menubar.agent.knowledge"] = R.string.w_menubar_agent_knowledge
+        m["menubar.agent.model"] = R.string.w_menubar_agent_model
+        m["menubar.agent.newChat"] = R.string.w_menubar_agent_newChat
+        m["menubar.agent.notes"] = R.string.w_menubar_agent_notes
+        m["menubar.agent.planned"] = R.string.w_menubar_agent_planned
+        m["menubar.agent.project"] = R.string.w_menubar_agent_project
+        m["menubar.agent.settings"] = R.string.w_menubar_agent_settings
         m["menubar.appcenter.all"] = R.string.w_menubar_appcenter_all
+        m["menubar.appcenter.categories"] = R.string.w_menubar_appcenter_categories
+        m["menubar.appcenter.fromLink"] = R.string.w_menubar_appcenter_fromLink
+        m["menubar.appcenter.installed"] = R.string.w_menubar_appcenter_installed
+        m["menubar.appcenter.refresh"] = R.string.w_menubar_appcenter_refresh
+        m["menubar.appcenter.source"] = R.string.w_menubar_appcenter_source
+        m["menubar.appcenter.sources"] = R.string.w_menubar_appcenter_sources
+        m["menubar.appcenter.webapps"] = R.string.w_menubar_appcenter_webapps
+        m["menubar.backup.new"] = R.string.w_menubar_backup_new
+        m["menubar.backup.now"] = R.string.w_menubar_backup_now
+        m["menubar.backup.restore"] = R.string.w_menubar_backup_restore
+        m["menubar.backup.stick"] = R.string.w_menubar_backup_stick
+    }
+
+    private fun part7(m: HashMap<String, Int>) {
+        m["menubar.backup.stickNow"] = R.string.w_menubar_backup_stickNow
+        m["menubar.desktop"] = R.string.w_menubar_desktop
+        m["menubar.docker.checkUpdates"] = R.string.w_menubar_docker_checkUpdates
+        m["menubar.docker.compose"] = R.string.w_menubar_docker_compose
+        m["menubar.docker.filterRunning"] = R.string.w_menubar_docker_filterRunning
+        m["menubar.docker.filterStopped"] = R.string.w_menubar_docker_filterStopped
+        m["menubar.docker.filterUpdates"] = R.string.w_menubar_docker_filterUpdates
+        m["menubar.docker.install"] = R.string.w_menubar_docker_install
+        m["menubar.docker.startAll"] = R.string.w_menubar_docker_startAll
+        m["menubar.docker.stopAll"] = R.string.w_menubar_docker_stopAll
+        m["menubar.docker.updateAll"] = R.string.w_menubar_docker_updateAll
+        m["menubar.edit.copy"] = R.string.w_menubar_edit_copy
+        m["menubar.edit.cut"] = R.string.w_menubar_edit_cut
+        m["menubar.edit.find"] = R.string.w_menubar_edit_find
+        m["menubar.edit.paste"] = R.string.w_menubar_edit_paste
+        m["menubar.edit.redo"] = R.string.w_menubar_edit_redo
+        m["menubar.edit.selectAll"] = R.string.w_menubar_edit_selectAll
+        m["menubar.edit.undo"] = R.string.w_menubar_edit_undo
+        m["menubar.exportJson"] = R.string.w_menubar_exportJson
+        m["menubar.files.back"] = R.string.w_menubar_files_back
+        m["menubar.files.delete"] = R.string.w_menubar_files_delete
+        m["menubar.files.download"] = R.string.w_menubar_files_download
+        m["menubar.files.favorites"] = R.string.w_menubar_files_favorites
+        m["menubar.files.folderView"] = R.string.w_menubar_files_folderView
+        m["menubar.files.forward"] = R.string.w_menubar_files_forward
+        m["menubar.files.goto"] = R.string.w_menubar_files_goto
+        m["menubar.files.hidden"] = R.string.w_menubar_files_hidden
+        m["menubar.files.newFile"] = R.string.w_menubar_files_newFile
+        m["menubar.files.newFolder"] = R.string.w_menubar_files_newFolder
+        m["menubar.files.openTrash"] = R.string.w_menubar_files_openTrash
+        m["menubar.files.openWith"] = R.string.w_menubar_files_openWith
+        m["menubar.files.preview"] = R.string.w_menubar_files_preview
+        m["menubar.files.properties"] = R.string.w_menubar_files_properties
+        m["menubar.files.recent"] = R.string.w_menubar_files_recent
+        m["menubar.files.rename"] = R.string.w_menubar_files_rename
+        m["menubar.files.shares"] = R.string.w_menubar_files_shares
+        m["menubar.files.sortBy"] = R.string.w_menubar_files_sortBy
+        m["menubar.files.sortModified"] = R.string.w_menubar_files_sortModified
+        m["menubar.files.sortName"] = R.string.w_menubar_files_sortName
+        m["menubar.files.sortSize"] = R.string.w_menubar_files_sortSize
+        m["menubar.files.trash"] = R.string.w_menubar_files_trash
+        m["menubar.files.twoPanes"] = R.string.w_menubar_files_twoPanes
+        m["menubar.files.up"] = R.string.w_menubar_files_up
+        m["menubar.files.upload"] = R.string.w_menubar_files_upload
+        m["menubar.files.uploadFiles"] = R.string.w_menubar_files_uploadFiles
+        m["menubar.files.uploadFolder"] = R.string.w_menubar_files_uploadFolder
+        m["menubar.files.zip"] = R.string.w_menubar_files_zip
+        m["menubar.help.diagnose"] = R.string.w_menubar_help_diagnose
+        m["menubar.help.program"] = R.string.w_menubar_help_program
+        m["menubar.help.shortcuts"] = R.string.w_menubar_help_shortcuts
+        m["menubar.label"] = R.string.w_menubar_label
+        m["menubar.load"] = R.string.w_menubar_load
+        m["menubar.logs.export"] = R.string.w_menubar_logs_export
+        m["menubar.logs.exportPrevious"] = R.string.w_menubar_logs_exportPrevious
+        m["menubar.logs.follow"] = R.string.w_menubar_logs_follow
+        m["menubar.logs.level"] = R.string.w_menubar_logs_level
+        m["menubar.logs.pack"] = R.string.w_menubar_logs_pack
+        m["menubar.logs.range"] = R.string.w_menubar_logs_range
+        m["menubar.logs.source"] = R.string.w_menubar_logs_source
+        m["menubar.lxc.console"] = R.string.w_menubar_lxc_console
+        m["menubar.lxc.edit"] = R.string.w_menubar_lxc_edit
+        m["menubar.lxc.kill"] = R.string.w_menubar_lxc_kill
+        m["menubar.lxc.new"] = R.string.w_menubar_lxc_new
+        m["menubar.lxc.shell"] = R.string.w_menubar_lxc_shell
+        m["menubar.lxc.show"] = R.string.w_menubar_lxc_show
+        m["menubar.lxc.snapshot"] = R.string.w_menubar_lxc_snapshot
+        m["menubar.lxc.stop"] = R.string.w_menubar_lxc_stop
+        m["menubar.menu.account"] = R.string.w_menubar_menu_account
+        m["menubar.menu.agent"] = R.string.w_menubar_menu_agent
+        m["menubar.menu.app"] = R.string.w_menubar_menu_app
+        m["menubar.menu.container"] = R.string.w_menubar_menu_container
+        m["menubar.menu.edit"] = R.string.w_menubar_menu_edit
+        m["menubar.menu.file"] = R.string.w_menubar_menu_file
+        m["menubar.menu.go"] = R.string.w_menubar_menu_go
+        m["menubar.menu.help"] = R.string.w_menubar_menu_help
+        m["menubar.menu.machine"] = R.string.w_menubar_menu_machine
+        m["menubar.menu.media"] = R.string.w_menubar_menu_media
+        m["menubar.menu.screen"] = R.string.w_menubar_menu_screen
+        m["menubar.menu.services"] = R.string.w_menubar_menu_services
+        m["menubar.menu.shell"] = R.string.w_menubar_menu_shell
+        m["menubar.menu.sort"] = R.string.w_menubar_menu_sort
+        m["menubar.menu.tools"] = R.string.w_menubar_menu_tools
+        m["menubar.menu.view"] = R.string.w_menubar_menu_view
+        m["menubar.menu.window"] = R.string.w_menubar_menu_window
+        m["menubar.monitor.byCpu"] = R.string.w_menubar_monitor_byCpu
+        m["menubar.monitor.byMemory"] = R.string.w_menubar_monitor_byMemory
+        m["menubar.monitor.byName"] = R.string.w_menubar_monitor_byName
+        m["menubar.monitor.check"] = R.string.w_menubar_monitor_check
+        m["menubar.monitor.export"] = R.string.w_menubar_monitor_export
+        m["menubar.monitor.refresh"] = R.string.w_menubar_monitor_refresh
+        m["menubar.phone.pages"] = R.string.w_menubar_phone_pages
+        m["menubar.planner.newScript"] = R.string.w_menubar_planner_newScript
+        m["menubar.planner.newTask"] = R.string.w_menubar_planner_newTask
+        m["menubar.planner.run"] = R.string.w_menubar_planner_run
+        m["menubar.refresh"] = R.string.w_menubar_refresh
+        m["menubar.remote.clipGet"] = R.string.w_menubar_remote_clipGet
+        m["menubar.remote.clipSend"] = R.string.w_menubar_remote_clipSend
+        m["menubar.remote.mute"] = R.string.w_menubar_remote_mute
+        m["menubar.remote.restart"] = R.string.w_menubar_remote_restart
+        m["menubar.remote.stats"] = R.string.w_menubar_remote_stats
+        m["menubar.remote.upload"] = R.string.w_menubar_remote_upload
+        m["menubar.security.addZone"] = R.string.w_menubar_security_addZone
+        m["menubar.security.apply"] = R.string.w_menubar_security_apply
+        m["menubar.security.discard"] = R.string.w_menubar_security_discard
+        m["menubar.security.firewall"] = R.string.w_menubar_security_firewall
+        m["menubar.settings.config"] = R.string.w_menubar_settings_config
+        m["menubar.settings.groups"] = R.string.w_menubar_settings_groups
+        m["menubar.settings.search"] = R.string.w_menubar_settings_search
+        m["menubar.shares.byName"] = R.string.w_menubar_shares_byName
+        m["menubar.shares.byVolume"] = R.string.w_menubar_shares_byVolume
+        m["menubar.shares.connect"] = R.string.w_menubar_shares_connect
+        m["menubar.shares.delete"] = R.string.w_menubar_shares_delete
+        m["menubar.shares.edit"] = R.string.w_menubar_shares_edit
+        m["menubar.shares.new"] = R.string.w_menubar_shares_new
+        m["menubar.shares.nfs"] = R.string.w_menubar_shares_nfs
+        m["menubar.shares.protoAll"] = R.string.w_menubar_shares_protoAll
+        m["menubar.shares.rights"] = R.string.w_menubar_shares_rights
+        m["menubar.shares.smb"] = R.string.w_menubar_shares_smb
+        m["menubar.short.close"] = R.string.w_menubar_short_close
+        m["menubar.short.launcher"] = R.string.w_menubar_short_launcher
+        m["menubar.short.menubar"] = R.string.w_menubar_short_menubar
+        m["menubar.short.minimize"] = R.string.w_menubar_short_minimize
+        m["menubar.short.showDesktop"] = R.string.w_menubar_short_showDesktop
+        m["menubar.short.snap"] = R.string.w_menubar_short_snap
+        m["menubar.short.switcher"] = R.string.w_menubar_short_switcher
+        m["menubar.storage.addDisk"] = R.string.w_menubar_storage_addDisk
+        m["menubar.storage.disks"] = R.string.w_menubar_storage_disks
+        m["menubar.storage.newVolume"] = R.string.w_menubar_storage_newVolume
+        m["menubar.storage.rescan"] = R.string.w_menubar_storage_rescan
+        m["menubar.storage.scrub"] = R.string.w_menubar_storage_scrub
+        m["menubar.storage.sleep"] = R.string.w_menubar_storage_sleep
+        m["menubar.storage.smart"] = R.string.w_menubar_storage_smart
+        m["menubar.storage.volumes"] = R.string.w_menubar_storage_volumes
+        m["menubar.terminal.clear"] = R.string.w_menubar_terminal_clear
+        m["menubar.terminal.closeTab"] = R.string.w_menubar_terminal_closeTab
+        m["menubar.terminal.consoleOf"] = R.string.w_menubar_terminal_consoleOf
+        m["menubar.terminal.newTab"] = R.string.w_menubar_terminal_newTab
+        m["menubar.users.active"] = R.string.w_menubar_users_active
+        m["menubar.users.delete"] = R.string.w_menubar_users_delete
+        m["menubar.users.lock"] = R.string.w_menubar_users_lock
+        m["menubar.users.locked"] = R.string.w_menubar_users_locked
+        m["menubar.users.new"] = R.string.w_menubar_users_new
+        m["menubar.users.password"] = R.string.w_menubar_users_password
+        m["menubar.users.reset2fa"] = R.string.w_menubar_users_reset2fa
+        m["menubar.vms.cad"] = R.string.w_menubar_vms_cad
+        m["menubar.vms.clone"] = R.string.w_menubar_vms_clone
+        m["menubar.vms.edit"] = R.string.w_menubar_vms_edit
+        m["menubar.vms.fullscreen"] = R.string.w_menubar_vms_fullscreen
+        m["menubar.vms.hardware"] = R.string.w_menubar_vms_hardware
+        m["menubar.vms.isoEject"] = R.string.w_menubar_vms_isoEject
+        m["menubar.vms.isoInsert"] = R.string.w_menubar_vms_isoInsert
+        m["menubar.vms.keys"] = R.string.w_menubar_vms_keys
+        m["menubar.vms.new"] = R.string.w_menubar_vms_new
+        m["menubar.vms.overview"] = R.string.w_menubar_vms_overview
+        m["menubar.vms.paste"] = R.string.w_menubar_vms_paste
+        m["menubar.vms.poweroff"] = R.string.w_menubar_vms_poweroff
+        m["menubar.vms.reboot"] = R.string.w_menubar_vms_reboot
+        m["menubar.vms.remove"] = R.string.w_menubar_vms_remove
+        m["menubar.vms.resolution"] = R.string.w_menubar_vms_resolution
+        m["menubar.vms.schedule"] = R.string.w_menubar_vms_schedule
+        m["menubar.vms.screen"] = R.string.w_menubar_vms_screen
+        m["menubar.vms.screenshot"] = R.string.w_menubar_vms_screenshot
+        m["menubar.vms.serial"] = R.string.w_menubar_vms_serial
+        m["menubar.vms.shutdown"] = R.string.w_menubar_vms_shutdown
+        m["menubar.vms.snapshots"] = R.string.w_menubar_vms_snapshots
+        m["menubar.vms.start"] = R.string.w_menubar_vms_start
+        m["menubar.webapp.defaultApp"] = R.string.w_menubar_webapp_defaultApp
+        m["menubar.webapp.new"] = R.string.w_menubar_webapp_new
+        m["menubar.webapp.reload"] = R.string.w_menubar_webapp_reload
+        m["menubar.webapp.save"] = R.string.w_menubar_webapp_save
+        m["menubar.window.all"] = R.string.w_menubar_window_all
+        m["menubar.window.left"] = R.string.w_menubar_window_left
+        m["menubar.window.right"] = R.string.w_menubar_window_right
         m["nav.docker"] = R.string.w_nav_docker
         m["nav.lxc"] = R.string.w_nav_lxc
         m["nav.settings"] = R.string.w_nav_settings
@@ -2003,6 +2446,9 @@ internal object WebKeys {
         m["netx.purpose"] = R.string.w_netx_purpose
         m["netx.purpose.apps"] = R.string.w_netx_purpose_apps
         m["netx.purpose.custom"] = R.string.w_netx_purpose_custom
+    }
+
+    private fun part8(m: HashMap<String, Int>) {
         m["netx.purpose.management"] = R.string.w_netx_purpose_management
         m["netx.purpose.storage"] = R.string.w_netx_purpose_storage
         m["netx.remoteInstall"] = R.string.w_netx_remoteInstall
@@ -2142,9 +2588,6 @@ internal object WebKeys {
         m["nvr.audio.none"] = R.string.w_nvr_audio_none
         m["nvr.audio.title"] = R.string.w_nvr_audio_title
         m["nvr.audio.twoWay"] = R.string.w_nvr_audio_twoWay
-    }
-
-    private fun part7(m: HashMap<String, Int>) {
         m["nvr.audio.twoWayHint"] = R.string.w_nvr_audio_twoWayHint
         m["nvr.audio.twoWayNeedsSound"] = R.string.w_nvr_audio_twoWayNeedsSound
         m["nvr.camera.checkFirst"] = R.string.w_nvr_camera_checkFirst
@@ -2306,6 +2749,9 @@ internal object WebKeys {
         m["nvr.events.allCameras"] = R.string.w_nvr_events_allCameras
         m["nvr.events.allKinds"] = R.string.w_nvr_events_allKinds
         m["nvr.events.allSeen"] = R.string.w_nvr_events_allSeen
+    }
+
+    private fun part9(m: HashMap<String, Int>) {
         m["nvr.events.autoplayMuted"] = R.string.w_nvr_events_autoplayMuted
         m["nvr.events.clipSave"] = R.string.w_nvr_events_clipSave
         m["nvr.events.deleteKeptText"] = R.string.w_nvr_events_deleteKeptText
@@ -2445,9 +2891,6 @@ internal object WebKeys {
         m["nvr.ha.state.armed_vacation"] = R.string.w_nvr_ha_state_armed_vacation
         m["nvr.ha.state.arming"] = R.string.w_nvr_ha_state_arming
         m["nvr.ha.state.below_horizon"] = R.string.w_nvr_ha_state_below_horizon
-    }
-
-    private fun part8(m: HashMap<String, Int>) {
         m["nvr.ha.state.closed"] = R.string.w_nvr_ha_state_closed
         m["nvr.ha.state.disarmed"] = R.string.w_nvr_ha_state_disarmed
         m["nvr.ha.state.home"] = R.string.w_nvr_ha_state_home
@@ -2609,6 +3052,9 @@ internal object WebKeys {
         m["nvr.plates.title"] = R.string.w_nvr_plates_title
         m["nvr.plates.tooMany"] = R.string.w_nvr_plates_tooMany
         m["nvr.plates.unused"] = R.string.w_nvr_plates_unused
+    }
+
+    private fun part10(m: HashMap<String, Int>) {
         m["nvr.privacy.dismiss"] = R.string.w_nvr_privacy_dismiss
         m["nvr.privacy.failed"] = R.string.w_nvr_privacy_failed
         m["nvr.privacy.read"] = R.string.w_nvr_privacy_read
@@ -2748,9 +3194,6 @@ internal object WebKeys {
         m["nvr.rights.live"] = R.string.w_nvr_rights_live
         m["nvr.rights.liveFor"] = R.string.w_nvr_rights_liveFor
         m["nvr.rights.names"] = R.string.w_nvr_rights_names
-    }
-
-    private fun part9(m: HashMap<String, Int>) {
         m["nvr.rights.namesFor"] = R.string.w_nvr_rights_namesFor
         m["nvr.rights.namesHint"] = R.string.w_nvr_rights_namesHint
         m["nvr.rights.noCameras"] = R.string.w_nvr_rights_noCameras
@@ -2912,6 +3355,9 @@ internal object WebKeys {
         m["ops.choose"] = R.string.w_ops_choose
         m["ops.clone"] = R.string.w_ops_clone
         m["ops.cloneHint"] = R.string.w_ops_cloneHint
+    }
+
+    private fun part11(m: HashMap<String, Int>) {
         m["ops.cloneRecovery"] = R.string.w_ops_cloneRecovery
         m["ops.cpu"] = R.string.w_ops_cpu
         m["ops.daily"] = R.string.w_ops_daily
@@ -3051,9 +3497,6 @@ internal object WebKeys {
         m["ops.selectTooMany"] = R.string.w_ops_selectTooMany
         m["ops.send"] = R.string.w_ops_send
         m["ops.skip"] = R.string.w_ops_skip
-    }
-
-    private fun part10(m: HashMap<String, Int>) {
         m["ops.snapshotBtrfsOnly"] = R.string.w_ops_snapshotBtrfsOnly
         m["ops.snapshotContent"] = R.string.w_ops_snapshotContent
         m["ops.snapshotHint"] = R.string.w_ops_snapshotHint
@@ -3114,6 +3557,41 @@ internal object WebKeys {
         m["personalNotify.quietHint"] = R.string.w_personalNotify_quietHint
         m["personalNotify.quietTo"] = R.string.w_personalNotify_quietTo
         m["personalNotify.title"] = R.string.w_personalNotify_title
+        m["phone.bell"] = R.string.w_phone_bell
+        m["phone.bellUnread"] = R.string.w_phone_bellUnread
+        m["phone.dock"] = R.string.w_phone_dock
+        m["phone.edit.back"] = R.string.w_phone_edit_back
+        m["phone.edit.bar"] = R.string.w_phone_edit_bar
+        m["phone.edit.done"] = R.string.w_phone_edit_done
+        m["phone.edit.fromDock"] = R.string.w_phone_edit_fromDock
+        m["phone.edit.hint"] = R.string.w_phone_edit_hint
+        m["phone.edit.newPage"] = R.string.w_phone_edit_newPage
+        m["phone.edit.on"] = R.string.w_phone_edit_on
+        m["phone.edit.pageBack"] = R.string.w_phone_edit_pageBack
+        m["phone.edit.pageOn"] = R.string.w_phone_edit_pageOn
+        m["phone.edit.toDock"] = R.string.w_phone_edit_toDock
+        m["phone.folder.dissolve"] = R.string.w_phone_folder_dissolve
+        m["phone.folder.label"] = R.string.w_phone_folder_label
+        m["phone.folder.name"] = R.string.w_phone_folder_name
+        m["phone.folder.new"] = R.string.w_phone_folder_new
+        m["phone.folder.rename"] = R.string.w_phone_folder_rename
+        m["phone.folder.takeOut"] = R.string.w_phone_folder_takeOut
+        m["phone.notices.allRead"] = R.string.w_phone_notices_allRead
+        m["phone.notices.dark"] = R.string.w_phone_notices_dark
+        m["phone.notices.live"] = R.string.w_phone_notices_live
+        m["phone.notices.new"] = R.string.w_phone_notices_new
+        m["phone.notices.quick"] = R.string.w_phone_notices_quick
+        m["phone.notices.read"] = R.string.w_phone_notices_read
+        m["phone.notices.readOne"] = R.string.w_phone_notices_readOne
+        m["phone.notices.swipeHint"] = R.string.w_phone_notices_swipeHint
+        m["phone.page"] = R.string.w_phone_page
+        m["phone.pages"] = R.string.w_phone_pages
+        m["phone.search.settings"] = R.string.w_phone_search_settings
+        m["phone.settings.dock"] = R.string.w_phone_settings_dock
+        m["phone.widgets.add"] = R.string.w_phone_widgets_add
+        m["phone.widgets.addTitle"] = R.string.w_phone_widgets_addTitle
+        m["phone.widgets.remove"] = R.string.w_phone_widgets_remove
+        m["phone.widgets.resize"] = R.string.w_phone_widgets_resize
         m["plugins.choice.buildHint"] = R.string.w_plugins_choice_buildHint
         m["plugins.choice.built"] = R.string.w_plugins_choice_built
         m["plugins.choice.bundled"] = R.string.w_plugins_choice_bundled
@@ -3180,6 +3658,9 @@ internal object WebKeys {
         m["proxy.aliasInvalid"] = R.string.w_proxy_aliasInvalid
         m["proxy.aliasTooMany"] = R.string.w_proxy_aliasTooMany
         m["proxy.aliases"] = R.string.w_proxy_aliases
+    }
+
+    private fun part12(m: HashMap<String, Int>) {
         m["proxy.aliasesHint"] = R.string.w_proxy_aliasesHint
         m["proxy.aliasesList"] = R.string.w_proxy_aliasesList
         m["proxy.aliasesPlaceholder"] = R.string.w_proxy_aliasesPlaceholder
@@ -3307,6 +3788,22 @@ internal object WebKeys {
         m["push.testSent"] = R.string.w_push_testSent
         m["push.thisDevice"] = R.string.w_push_thisDevice
         m["push.title"] = R.string.w_push_title
+        m["quick.backupRun"] = R.string.w_quick_backupRun
+        m["quick.confirm"] = R.string.w_quick_confirm
+        m["quick.confirmDo"] = R.string.w_quick_confirmDo
+        m["quick.confirmTitle"] = R.string.w_quick_confirmTitle
+        m["quick.containerRestart"] = R.string.w_quick_containerRestart
+        m["quick.containerStart"] = R.string.w_quick_containerStart
+        m["quick.containerStop"] = R.string.w_quick_containerStop
+        m["quick.done"] = R.string.w_quick_done
+        m["quick.lock"] = R.string.w_quick_lock
+        m["quick.logout"] = R.string.w_quick_logout
+        m["quick.restart"] = R.string.w_quick_restart
+        m["quick.shutdown"] = R.string.w_quick_shutdown
+        m["quick.stickBackup"] = R.string.w_quick_stickBackup
+        m["quick.title"] = R.string.w_quick_title
+        m["quick.vmShutdown"] = R.string.w_quick_vmShutdown
+        m["quick.vmStart"] = R.string.w_quick_vmStart
         m["report.day.0"] = R.string.w_report_day_0
         m["report.day.1"] = R.string.w_report_day_1
         m["report.day.2"] = R.string.w_report_day_2
@@ -3354,9 +3851,6 @@ internal object WebKeys {
         m["schedule.days.6"] = R.string.w_schedule_days_6
         m["schedule.days.workdays"] = R.string.w_schedule_days_workdays
         m["schedule.every"] = R.string.w_schedule_every
-    }
-
-    private fun part11(m: HashMap<String, Int>) {
         m["schedule.invalid"] = R.string.w_schedule_invalid
         m["schedule.kind"] = R.string.w_schedule_kind
         m["schedule.kind.advanced"] = R.string.w_schedule_kind_advanced
@@ -3393,6 +3887,7 @@ internal object WebKeys {
         m["settings.consoleIdleMinutes"] = R.string.w_settings_consoleIdleMinutes
         m["settings.consoleIdleNever"] = R.string.w_settings_consoleIdleNever
         m["settings.consoles"] = R.string.w_settings_consoles
+        m["settings.new"] = R.string.w_settings_new
         m["settings.path"] = R.string.w_settings_path
         m["settings.terminal"] = R.string.w_settings_terminal
         m["settings.terminalDesc"] = R.string.w_settings_terminalDesc
@@ -3407,6 +3902,7 @@ internal object WebKeys {
         m["shares.unsaved"] = R.string.w_shares_unsaved
         m["shortcuts.alt"] = R.string.w_shortcuts_alt
         m["shortcuts.ctrl"] = R.string.w_shortcuts_ctrl
+        m["shortcuts.delete"] = R.string.w_shortcuts_delete
         m["shortcuts.hint"] = R.string.w_shortcuts_hint
         m["shortcuts.space"] = R.string.w_shortcuts_space
         m["shortcuts.title"] = R.string.w_shortcuts_title
@@ -3465,6 +3961,9 @@ internal object WebKeys {
         m["snapshots.save"] = R.string.w_snapshots_save
         m["snapshots.scheduled"] = R.string.w_snapshots_scheduled
         m["snapshots.scope"] = R.string.w_snapshots_scope
+    }
+
+    private fun part13(m: HashMap<String, Int>) {
         m["snapshots.stopFirst"] = R.string.w_snapshots_stopFirst
         m["snapshots.stoppedInfo"] = R.string.w_snapshots_stoppedInfo
         m["snapshots.time"] = R.string.w_snapshots_time
@@ -3657,9 +4156,6 @@ internal object WebKeys {
         m["ui.taskBackup"] = R.string.w_ui_taskBackup
         m["ui.taskCopy"] = R.string.w_ui_taskCopy
         m["ui.taskUpdate"] = R.string.w_ui_taskUpdate
-    }
-
-    private fun part12(m: HashMap<String, Int>) {
         m["ui.taskUpload"] = R.string.w_ui_taskUpload
         m["ui.taskVM"] = R.string.w_ui_taskVM
         m["ui.taskVolume"] = R.string.w_ui_taskVolume
@@ -3768,6 +4264,9 @@ internal object WebKeys {
         m["viewer.settings.idleMinutes"] = R.string.w_viewer_settings_idleMinutes
         m["viewer.settings.idleNever"] = R.string.w_viewer_settings_idleNever
         m["viewer.settings.idleText"] = R.string.w_viewer_settings_idleText
+    }
+
+    private fun part14(m: HashMap<String, Int>) {
         m["viewer.settings.image"] = R.string.w_viewer_settings_image
         m["viewer.settings.imageDownloading"] = R.string.w_viewer_settings_imageDownloading
         m["viewer.settings.imageError"] = R.string.w_viewer_settings_imageError
@@ -3960,9 +4459,6 @@ internal object WebKeys {
         m["vms.form.pinNote"] = R.string.w_vms_form_pinNote
         m["vms.form.pinSummary"] = R.string.w_vms_form_pinSummary
         m["vms.form.presetE"] = R.string.w_vms_form_presetE
-    }
-
-    private fun part13(m: HashMap<String, Int>) {
         m["vms.form.presetNone"] = R.string.w_vms_form_presetNone
         m["vms.form.presetP"] = R.string.w_vms_form_presetP
         m["vms.form.requiredCompanions"] = R.string.w_vms_form_requiredCompanions
@@ -4071,6 +4567,9 @@ internal object WebKeys {
         m["vms.ov.cdTitle"] = R.string.w_vms_ov_cdTitle
         m["vms.ov.connection"] = R.string.w_vms_ov_connection
         m["vms.ov.copyAddress"] = R.string.w_vms_ov_copyAddress
+    }
+
+    private fun part15(m: HashMap<String, Int>) {
         m["vms.ov.cpuHistory"] = R.string.w_vms_ov_cpuHistory
         m["vms.ov.cpus"] = R.string.w_vms_ov_cpus
         m["vms.ov.devices"] = R.string.w_vms_ov_devices
@@ -4263,9 +4762,6 @@ internal object WebKeys {
         m["webapps.migrate.moreText"] = R.string.w_webapps_migrate_moreText
         m["webapps.migrate.never"] = R.string.w_webapps_migrate_never
         m["webapps.migrate.onNode"] = R.string.w_webapps_migrate_onNode
-    }
-
-    private fun part14(m: HashMap<String, Int>) {
         m["webapps.migrate.running"] = R.string.w_webapps_migrate_running
         m["webapps.migrate.title"] = R.string.w_webapps_migrate_title
         m["webapps.migrate.whyText"] = R.string.w_webapps_migrate_whyText

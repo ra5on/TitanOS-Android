@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ws_title">Arbeitsplatz</string>
+    <string name="ws_mode">Arbeitsplatz zeigen</string>
+    <string name="ws_mode_auto">Automatisch</string>
+    <string name="ws_mode_always">Immer</string>
+    <string name="ws_mode_never">Nie</string>
+    <string name="ws_mode_hint">Automatisch: am Monitor im Desktop-Modus und in breiten Fenstern ab Desktop-Breite. Sonst die Handy-Gestaltung.</string>
+    <string name="ws_own">Eigene Einrichtung für Android</string>
+    <string name="ws_own_hint">Aus: Symbole, Widgets, Hintergrund und Dock wie im Web. An: eine eigene Einrichtung für die Android-Geräte dieses Kontos.</string>
+    <string name="ws_on">Ein</string>
+    <string name="ws_off">Aus</string>
+    <string name="ws_wallpaper_more">Eigene Bilder und alle Einstellungen der Darstellung in der Systemsteuerung.</string>
+    <string name="ws_shortcuts_menu">Strg + Leertaste: Menü</string>
+    <string name="ws_shortcuts_esc">Escape: Menü, Ordner und Bearbeiten schließen</string>
+    <string name="ws_shortcuts_back">Zurück: eine Seite zurück im vorderen Fenster, sonst minimieren</string>
+    <string name="ws_save_failed">Die Einrichtung des Arbeitsplatzes ließ sich nicht speichern.</string>
+    <string name="ws_agent_panel">KI-Agent</string>
+</resources>

@@ -102,6 +102,9 @@ dependencies {
     implementation(project(":feature-mail"))
     implementation(project(":feature-pim"))
     implementation(project(":feature-vpn"))
+    // Arbeitsplatz wie im Web und der KI-Agent in der TitanOS-App (PLAN 116 F1).
+    implementation(project(":feature-workspace"))
+    implementation(project(":feature-agent"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.zxing.embedded)
     implementation(libs.androidx.activity.compose)

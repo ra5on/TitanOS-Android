@@ -38,7 +38,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class TitanApp : Application(), Configuration.Provider, SiblingHost {
+class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.ra5on.titanos.agent.system.AgentHost {
+    // Der KI-Agent auch in dieser App (Assistent, Notizen, Fenster; WorkspaceHost.kt).
+    override fun agentModel() = graph.agentModel()
+    override fun openAgent(context: android.content.Context, chatId: String?) = openAgentIn(context, chatId)
+
     // Eine Kopplung für beide Apps (feature-pairing Sibling.kt).
     override val siblingApp get() = "titanos"
     override val siblingStore get() = graph.store
@@ -148,6 +152,15 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
     /** Wird gesetzt, wenn das NAS das Gerät nicht mehr kennt; die Willkommensseite sagt es dann. */
     var unpairedByNas by mutableStateOf(false)
 
+    private var agent: Pair<Pairing, io.github.ra5on.titanos.agent.chat.AgentModel>? = null
+
+    /** Der KI-Agent dieser Kopplung (einmal je Kopplung, wie in der Agent-App); null ohne Kopplung. */
+    fun agentModel(): io.github.ra5on.titanos.agent.chat.AgentModel? {
+        val p = pairing ?: return null
+        agent?.takeIf { it.first == p }?.let { return it.second }
+        return agentModelFor(app, p, shared, sessions, scope).also { agent = p to it }
+    }
+
     val sessions = SessionManager({ pairing }, key).also {
         it.onDeviceUnknown = { main.post { forget(byNas = true) } }
     }
@@ -244,6 +257,8 @@ class AppGraph(private val app: Application, val store: PairingStore, val key: D
         // Das Konto „TitanOS“ weg: Android löscht seine Kontakte und Termine vom Handy (am NAS bleiben sie).
         io.github.ra5on.titanos.pim.sync.PimAccount.remove(app)
         openProgram = null
+        agent?.second?.forget()
+        agent = null
         unpairedByNas = byNas
     }
 }

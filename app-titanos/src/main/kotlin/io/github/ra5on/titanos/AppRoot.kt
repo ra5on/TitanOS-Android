@@ -203,6 +203,8 @@ private enum class Tab { Home, Files, Photos, Notifications }
 
 @Composable
 private fun MainShell(graph: AppGraph) {
+    // Arbeitsplatz wie im Web (feature-workspace, WorkspaceHost.kt): am Monitor und in breiten Fenstern.
+    if (workspaceFirst(graph)) return
     val context = LocalContext.current
     val later = stringResource(R.string.app_later_toast)
     val toastLater = { Toast.makeText(context, later, Toast.LENGTH_SHORT).show() }

@@ -55,6 +55,7 @@ fun programLabel(id: String): String = stringResource(
         "mail" -> R.string.app_mail
         "calendar" -> R.string.app_calendar
         "contacts" -> R.string.app_contacts
+        "agent" -> R.string.app_agent
         "backup" -> R.string.app_backup
         "nvr" -> R.string.app_nvr
         "terminal" -> R.string.app_terminal

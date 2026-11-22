@@ -7,8 +7,8 @@ import io.github.ra5on.titanos.pim.CalendarApp
 import io.github.ra5on.titanos.pim.ContactsApp
 import io.github.ra5on.titanos.notify.NotifyApi
 
-/** Die Programme der Startseite, die die App in voller Größe zeigt. */
-internal val PROGRAMS = setOf("mail", "calendar", "contacts")
+/** Die Programme der Startseite, die die App in voller Größe zeigt (der KI-Agent wie im Web, PLAN 116 F1). */
+internal val PROGRAMS = setOf("mail", "calendar", "contacts", "agent")
 
 /** Die Seite „Kontakte und Kalender“ (Abgleich mit den Apps des Handys). */
 internal const val PIM_SYNC = "pimsync"
@@ -27,6 +27,11 @@ internal fun ProgramHost(graph: AppGraph, id: String, onClose: () -> Unit) {
         "calendar" -> CalendarApp(nas, stream, onClose)
         "contacts" -> ContactsApp(nas, stream, onClose)
         PIM_SYNC -> io.github.ra5on.titanos.pim.sync.SyncScreen(nas, onClose)
+        "agent" -> {
+            // Zuerst angemeldet: die Zurück-Handler des Agenten (Chat, Menü) greifen vorher.
+            androidx.activity.compose.BackHandler(onBack = onClose)
+            AgentWindow(graph, graph.programLink.orEmpty())
+        }
         else -> onClose()
     }
 }

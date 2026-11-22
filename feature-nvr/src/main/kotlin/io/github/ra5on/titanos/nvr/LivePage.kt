@@ -218,7 +218,7 @@ fun LiveScreen(
     ) {
         val wide = maxWidth >= 760.dp
         val stacked = (if (showEvents && wide) maxWidth - 336.dp else maxWidth) < 560.dp
-        Column(Modifier.fillMaxSize()) {
+        val bar: @Composable () -> Unit = {
             if (!(live.full && prefs.hideBar)) {
                 FlowRow(
                     Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
@@ -259,12 +259,26 @@ fun LiveScreen(
                     }
                 }
             }
-            val wall: @Composable (Modifier, Boolean) -> Unit = { m, scroll ->
-                Wall(cameras, byId, ids, running, prefs, activity, api, live, stacked, m, scroll)
-            }
-            val aside: @Composable (Modifier) -> Unit = { m ->
-                EventsAside(events, eventsAvailable, nameOf, onOpenEvent, onAllEvents, m)
-            }
+        }
+        val wall: @Composable (Modifier, Boolean) -> Unit = { m, scroll ->
+            Wall(cameras, byId, ids, running, prefs, activity, api, live, stacked, m, scroll)
+        }
+        val aside: @Composable (Modifier) -> Unit = { m ->
+            EventsAside(events, eventsAvailable, nameOf, onOpenEvent, onAllEvents, m)
+        }
+        // Faltbares in Tischhaltung: oben die Bilder, unten Leiste und Ereignisse (core-ui FoldPanes).
+        io.github.ra5on.titanos.ui.FoldPanes(
+            first = { wall(Modifier.fillMaxSize(), true) },
+            second = {
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    bar()
+                    if (showEvents) aside(Modifier.fillMaxWidth().padding(horizontal = 16.dp))
+                }
+            },
+            modifier = Modifier.fillMaxSize(),
+            book = false,
+        ) { _, _ -> Column(Modifier.fillMaxSize()) {
+            bar()
             if (showEvents && wide) {
                 Row(Modifier.weight(1f).fillMaxWidth()) {
                     wall(Modifier.weight(1f).fillMaxHeight(), true)
@@ -278,7 +292,7 @@ fun LiveScreen(
             } else {
                 wall(Modifier.weight(1f).fillMaxWidth(), true)
             }
-        }
+        } }
     }
 }
 

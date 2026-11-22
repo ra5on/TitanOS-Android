@@ -321,6 +321,34 @@ private fun MediaPage(api: FilesApi, location: Location, e: FileEntry, active: B
         if (!audio) NasPlayer(api, location.root.id, location.full(e.name), active = true, onError = { error = it }, modifier = Modifier.fillMaxSize(), controls = false)
         return
     }
+    if (!audio) {
+        // Faltbares in Tischhaltung: oben das Video, unten die Bedienung (core-ui FoldPanes); die Wiedergabe läuft weiter.
+        val player: @Composable () -> Unit = { NasPlayer(api, location.root.id, location.full(e.name), active, onError = { error = it }, modifier = Modifier.fillMaxSize()) }
+        val controls: @Composable () -> Unit = {
+            error?.let { Problem(stringResource(R.string.view_play_failed, it), Modifier.padding(16.dp)) }
+            FlowRow(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Chip(stringResource(R.string.media_pip), onClick = {
+                    (context.findActivity())?.enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational(16, 9)).build())
+                })
+                Chip(stringResource(R.string.media_cast_tv), onClick = { cast = true })
+            }
+        }
+        Box(Modifier.fillMaxSize()) {
+            io.github.ra5on.titanos.ui.FoldPanes(
+                first = player,
+                second = { Column(Modifier.fillMaxSize().navigationBarsPadding()) { controls() } },
+                modifier = Modifier.fillMaxSize(),
+                book = false,
+            ) { a, _ ->
+                Column(Modifier.fillMaxSize().statusBarsPadding().padding(top = 64.dp).navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    controls()
+                    Box(Modifier.fillMaxWidth().weight(1f)) { a() }
+                }
+            }
+            if (cast) CastSheet(location, e) { cast = false }
+        }
+        return
+    }
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(top = 64.dp).navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
             if (audio) {

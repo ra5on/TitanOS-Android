@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -255,7 +256,7 @@ internal fun androidx.compose.foundation.layout.ColumnScope.Sessions(env: Comput
             }
         }, onClose = { searching = false })
     }
-    Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 4.dp)) {
+    val screen: @Composable () -> Unit = { Box(Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
         TermView(
             active,
             fontSize,
@@ -278,8 +279,8 @@ internal fun androidx.compose.foundation.layout.ColumnScope.Sessions(env: Comput
                 }
             }
         }
-    }
-    Toolbar(
+    } }
+    val controls: @Composable () -> Unit = { Toolbar(
         fontSize = fontSize,
         onFont = { fontSize = it.coerceIn(MIN_FONT, MAX_FONT); TermPrefs.setFontSize(context, fontSize) },
         onCopy = { copySelection(context, active, viewState) },
@@ -296,7 +297,20 @@ internal fun androidx.compose.foundation.layout.ColumnScope.Sessions(env: Comput
         onMouse = { mouse = it; TermPrefs.setMouse(context, it) },
         hasSelection = viewState.selection != null,
     )
-    if (keyBar) KeyBar(ctrl, alt, fnRow, onCtrl = { ctrl = !ctrl }, onAlt = { alt = !alt }, onKey = { sink.key(it) }, onText = { sink.typed(it) })
+    if (keyBar) KeyBar(ctrl, alt, fnRow, onCtrl = { ctrl = !ctrl }, onAlt = { alt = !alt }, onKey = { sink.key(it) }, onText = { sink.typed(it) }) }
+    // Faltbares in Tischhaltung: oben die Konsole, unten Leiste und Tasten (core-ui FoldPanes);
+    // die Sitzung bleibt beim Auf- und Zuklappen bestehen.
+    io.github.ra5on.titanos.ui.FoldPanes(
+        first = screen,
+        second = { Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { controls() } },
+        modifier = Modifier.weight(1f).fillMaxWidth(),
+        book = false,
+    ) { a, _ ->
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f).fillMaxWidth()) { a() }
+            controls()
+        }
+    }
 }
 
 @Composable
