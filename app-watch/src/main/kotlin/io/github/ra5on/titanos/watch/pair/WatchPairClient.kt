@@ -30,8 +30,13 @@ object WatchCode {
 
     private fun sha256(text: String): ByteArray = MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8))
 
-    /** base64url(SHA-256("titanos-watch-commit\n" + publicKey + "\n" + secret)). */
-    fun commit(publicKey: String, secret: String): String = url.encodeToString(sha256("titanos-watch-commit\n$publicKey\n$secret"))
+    /**
+     * base64url(SHA-256("titanos-watch-commit\n" + publicKey + "\n" + spki + "\n" + 1|0 + "\n" + secret)):
+     * bindet vor dem Zufallswert des NAS alles, was in die Ziffern eingeht, auch das
+     * gesehene Zertifikat und ob es öffentlich gültig war (Sicherheitsdurchsicht 22.11.2026).
+     */
+    fun commit(publicKey: String, spki: String, public: Boolean, secret: String): String =
+        url.encodeToString(sha256("titanos-watch-commit\n$publicKey\n$spki\n${if (public) "1" else "0"}\n$secret"))
 
     /** Erste acht Bytes big-endian modulo 10⁶, sechs Stellen. */
     fun code(id: String, publicKey: String, nonce: String, secret: String, spki: String, public: Boolean): String {
@@ -107,7 +112,7 @@ class WatchPairClient(
         val secret = WatchCode.secret(random)
         val started = endpoint.client.run(
             Request.Builder().url(endpoint.base.resolve("/api/v1/app/pair/watch")!!)
-                .post(jsonBody(WatchStartRequest(name, pub, WatchCode.commit(pub, secret)))).build(),
+                .post(jsonBody(WatchStartRequest(name, pub, WatchCode.commit(pub, probed.spki, probed.publiclyValid, secret)))).build(),
         ).decode<WatchStartResponse>()
         endpoint.client.run(
             Request.Builder().url(endpoint.base.resolve("/api/v1/app/pair/watch/${started.id}/reveal")!!)
