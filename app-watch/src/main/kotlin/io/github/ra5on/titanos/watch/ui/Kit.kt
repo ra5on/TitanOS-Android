@@ -94,11 +94,28 @@ fun WText(
     color: Color = Color.Unspecified,
     center: Boolean = false,
 ) {
+    val (fitted, fit) = rememberWholeWords(text, style)
+    CompositionLocalProvider(LocalTextConfiguration provides if (center) unlimitedCentered else unlimited) {
+        Text(
+            text,
+            modifier = modifier.then(fit).then(if (center) Modifier.fillMaxWidth() else Modifier),
+            color = color,
+            style = fitted,
+            textAlign = if (center) TextAlign.Center else TextAlign.Start,
+        )
+    }
+}
+
+/**
+ * Ganze Wörter: passt das längste Wort bei großer Schrift nicht in die
+ * Breite, wird nur dieser Text so weit kleiner, dass es passt – statt es
+ * mitten im Wort zu trennen. Liefert den Stil und einen Modifier, der die
+ * Breite aus dem Layout liest (Wear-Knöpfe messen ihren Inhalt vorab,
+ * BoxWithConstraints geht dort nicht).
+ */
+@Composable
+fun rememberWholeWords(text: String, style: TextStyle): Pair<TextStyle, Modifier> {
     val base = style.copy(hyphens = Hyphens.None, lineBreak = LineBreak.Paragraph)
-    // Ganze Wörter: passt das längste Wort bei großer Schrift nicht in die
-    // Breite, wird nur dieser Text so weit kleiner, dass es passt – statt es
-    // mitten im Wort zu trennen. Die Breite kommt aus dem Layout (Wear-Knöpfe
-    // messen ihren Inhalt vorab, BoxWithConstraints geht dort nicht).
     var avail by remember { mutableIntStateOf(0) }
     val measurer = rememberTextMeasurer()
     val fitted = remember(text, base, avail) {
@@ -124,23 +141,14 @@ fun WText(
             if (f == 1f) base else scaled(f)
         }
     }
-    CompositionLocalProvider(LocalTextConfiguration provides if (center) unlimitedCentered else unlimited) {
-        Text(
-            text,
-            modifier = modifier
-                .layout { measurable, constraints ->
-                    // Nur kleiner werden: misst ein Baustein zweimal mit verschiedener Breite,
-                    // pendelt der Text sonst endlos hin und her. Es gilt die engste.
-                    if (constraints.hasBoundedWidth && (avail == 0 || constraints.maxWidth < avail)) avail = constraints.maxWidth
-                    val placeable = measurable.measure(constraints)
-                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-                }
-                .then(if (center) Modifier.fillMaxWidth() else Modifier),
-            color = color,
-            style = fitted,
-            textAlign = if (center) TextAlign.Center else TextAlign.Start,
-        )
+    val fit = Modifier.layout { measurable, constraints ->
+        // Nur kleiner werden: misst ein Baustein zweimal mit verschiedener Breite,
+        // pendelt der Text sonst endlos hin und her. Es gilt die engste.
+        if (constraints.hasBoundedWidth && (avail == 0 || constraints.maxWidth < avail)) avail = constraints.maxWidth
+        val placeable = measurable.measure(constraints)
+        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
     }
+    return fitted to fit
 }
 
 /** Wo eine Zeile umbrechen darf: Leerzeichen und Zeilenende (Wörter mit Bindestrich bleiben ganz). */

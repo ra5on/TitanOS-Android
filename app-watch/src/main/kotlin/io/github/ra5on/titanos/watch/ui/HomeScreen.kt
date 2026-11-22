@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -38,7 +39,7 @@ fun HomeScreen(status: WatchStatus?, approvals: Int, problem: Int?, onOpen: (Str
             item {
                 RowButton(
                     stringResource(R.string.w_approvals),
-                    sub = androidx.compose.ui.platform.LocalContext.current.resources.getQuantityString(R.plurals.w_approvals_waiting, approvals, approvals),
+                    sub = pluralStringResource(R.plurals.w_approvals_waiting, approvals, approvals),
                     onClick = { onOpen(Routes.APPROVALS) },
                     icon = TitanIcons.shield,
                 )
@@ -66,7 +67,7 @@ fun StatusCard(s: WatchStatus?, problem: Int?, onClick: () -> Unit) {
                     WText(stringResource(R.string.w_storage_line, it, Format.bytes(s.freeBytes)), modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                 }
                 if (s.newMessages > 0) {
-                    WText(LocalContext.current.resources.getQuantityString(R.plurals.w_new_messages, s.newMessages, s.newMessages), modifier = Modifier.padding(horizontal = 8.dp))
+                    WText(pluralStringResource(R.plurals.w_new_messages, s.newMessages, s.newMessages), modifier = Modifier.padding(horizontal = 8.dp))
                 }
                 if (problem != null) {
                     WText(stringResource(R.string.w_stale, time(s.at)), color = WatchColors.muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp))

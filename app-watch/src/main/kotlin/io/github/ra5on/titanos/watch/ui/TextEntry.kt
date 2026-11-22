@@ -46,10 +46,11 @@ fun TextEntry(title: String, initial: String = "", uri: Boolean = false, onDone:
     Page {
         item { Header(title) }
         item {
+            val (style, fit) = rememberWholeWords(value, MaterialTheme.typography.bodyLarge.copy(color = Color.White))
             BasicTextField(
                 value = value,
                 onValueChange = { value = it },
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+                textStyle = style,
                 cursorBrush = SolidColor(WatchColors.accent),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = if (uri) KeyboardType.Uri else KeyboardType.Text,
@@ -61,6 +62,7 @@ fun TextEntry(title: String, initial: String = "", uri: Boolean = false, onDone:
                     .background(Color(0xFF1E252C), RoundedCornerShape(16.dp))
                     .border(1.dp, WatchColors.accent, RoundedCornerShape(16.dp))
                     .padding(horizontal = 14.dp, vertical = 12.dp)
+                    .then(fit)
                     .semantics { contentDescription = title },
             )
         }
