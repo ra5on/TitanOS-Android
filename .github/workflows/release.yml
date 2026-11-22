@@ -46,7 +46,8 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Ab 1.00 viele Module und Bildtests: lokal (3 Worker) 45 Minuten für Bauen, Tests und Lint.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
@@ -85,7 +86,7 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     environment: release
     permissions:
       contents: write

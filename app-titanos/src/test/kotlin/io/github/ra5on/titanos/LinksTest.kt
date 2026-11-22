@@ -2,6 +2,7 @@ package io.github.ra5on.titanos
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Die Links aus Systemsteuerung, Konto, Ablage und Werkzeuge führen in der App ins richtige Programm (Links.kt). */
@@ -32,7 +33,10 @@ class LinksTest {
     @Test
     fun outsideTheNasAndOnlyOnTheWeb() {
         assertEquals(LinkTarget.External("https://example.org/a"), linkTarget("https://example.org/a"))
-        assertEquals(LinkTarget.Agent("/agent?profile=assist"), linkTarget("/agent?profile=assist"))
+        // Der Agent: ohne eigenes Programm die Agent-App; sobald die TitanOS-App ihn selbst zeigt
+        // („agent“ in PROGRAMS, Arbeitsplatz von F1), das Programm in der App. Beides ist richtig.
+        val agent = linkTarget("/agent?profile=assist")
+        assertTrue("$agent", agent == LinkTarget.Agent("/agent?profile=assist") || agent == LinkTarget.Program("agent", "/agent?profile=assist"))
         assertEquals(LinkTarget.WebOnly, linkTarget("/welcome?step=4"))
         assertEquals(LinkTarget.WebOnly, linkTarget("javascript:alert(1)"))
     }

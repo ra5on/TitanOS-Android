@@ -11,6 +11,7 @@ Die nativen Android-Apps zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS
 <img src="docs/screenshots/20-dateien-freigaben-dunkel.png" width="200" alt="Freigaben">
 </p>
 
+<!-- I1: Zeilen mit „F1“ kommen mit feat/1.00-workspace; ohne diesen Zweig streichen. -->
 ## Drei Apps
 
 | App | Datei | Wofür |
@@ -19,7 +20,7 @@ Die nativen Android-Apps zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS
 | **Agent** (`io.github.ra5on.titanos.agent`) | `TitanOS-Agent-X.YY.apk` | der KI-Agent deines NAS wie die Handy-Seite des Agenten im Web, auch als digitaler Assistent von Android |
 | **Uhr** (`io.github.ra5on.titanos.watch`) | `TitanOS-Watch-X.YY.apk` | Zustand, Agent per Sprache, Schalten und Kameras auf einer Wear-OS-Uhr |
 
-Die Agent-App ist eigenständig; den Agenten gibt es auch in der TitanOS-App. Alle drei sind mit demselben Schlüssel signiert.
+Die Agent-App ist eigenständig; <!-- F1 --> den Agenten gibt es auch in der TitanOS-App. Alle drei sind mit demselben Schlüssel signiert.
 
 ## Was du brauchst
 
@@ -66,7 +67,7 @@ Unter **Mein Konto › Geräte** siehst du jede gekoppelte App und Uhr. Mit „B
 - **Kontakte und Kalender** als Konto „TitanOS“ in den Apps des Handys, Abgleich in beide Richtungen.
 - **Mitteilungen ohne Google:** dieselben Meldungen wie im Browser, über eine eigene sparsame Verbindung zum NAS oder alle 15 Minuten.
 - **Dateien im System:** Das NAS erscheint in der Dateiauswahl von Android; „Öffnen mit TitanOS“ für Word, Excel, PDF und PowerPoint; „Teilen → Auf TitanOS speichern“.
-- **Große Bildschirme:** Liste und Inhalt nebeneinander wie das Web am PC; am Monitor (Desktop-Modus) der Arbeitsplatz wie im Web mit Fenstern, Dock und Widgets (Automatisch, Immer oder Nie). Faltbare in Buch- und Tischhaltung. Maus, Tastatur, Ziehen und Ablegen.
+- **Große Bildschirme:** Liste und Inhalt nebeneinander wie das Web am PC; <!-- F1: Arbeitsplatz, Buch-/Tischhaltung --> am Monitor (Desktop-Modus) der Arbeitsplatz wie im Web mit Fenstern, Dock und Widgets (Automatisch, Immer oder Nie). Faltbare in Buch- und Tischhaltung. Maus, Tastatur, Ziehen und Ablegen.
 - **Extras:** Widgets (NAS-Zustand, Fotos, Agent fragen), auch auf dem Sperrbildschirm; Schnelleinstellungen; App-Kurzbefehle; Gerätesteuerung von Android für Container, VMs und Home Assistant.
 - **Fingerabdruck:** In einer Liste stellst du ein, welche Aktionen Fingerabdruck oder PIN verlangen, ab Werk z. B. Passwort, 2FA, Passkeys, Tokens, Netzwerk und Zerstörendes; wahlweise auch beim Öffnen der App. Konsolen fragen nie.
 - **Darstellung** wie im Web je Konto (Thema, Akzent, Hintergrund), je Gerät überschreibbar; hell und dunkel ab Werk wie das Handy. Deutsch und Englisch. Schrift bis 200 % ohne abgeschnittene Texte.
@@ -105,7 +106,7 @@ Die Agent-App bringt den KI-Agenten deines NAS aufs Handy, in der Gestaltung der
 - **Funktionen:** Papierkram, Fristen, Ransomware-Wächter, Notfallhandbuch, Notfallzugang, Hardware-Berater, Durchspielen, Backup-Buddy, Skill-Katalog.
 - **Sprechmodus** mit Whisper und Piper am NAS, sonst Spracheingabe und -ausgabe des Handys.
 - **Entwürfe „Öffnen und bearbeiten“** für Mail, Termin, Kontakt und Aufgabe öffnen sich in der App; Office-Dateien im Office der TitanOS-App.
-- **Digitaler Assistent:** In Android unter „Standard-Apps › Digitaler Assistent und Spracheingabe“ wählbar (empfohlen die Agent-App). Bildschirminhalt nur nach Einstellung (Nie, Jedes Mal fragen – ab Werk –, Immer) und nur ans eigene NAS.
+- <!-- F1: TitanOS-App als Assistent --> **Digitaler Assistent:** In Android unter „Standard-Apps › Digitaler Assistent und Spracheingabe“ wählbar (empfohlen die Agent-App). Bildschirminhalt nur nach Einstellung (Nie, Jedes Mal fragen – ab Werk –, Immer) und nur ans eigene NAS.
 - **Notizen-App** des Systems (ab Android 14).
 - **Android Auto:** Antworten erscheinen als Nachricht mit „Antworten“ per Sprache und „Gelesen“. Ohne Play Store muss in den Entwickleroptionen von Android Auto „Unbekannte Quellen“ an sein.
 - **Teilen → „Agent fragen“:** Text oder ein Bild aus einer anderen App landen in einem neuen Chat.
