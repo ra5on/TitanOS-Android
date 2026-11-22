@@ -68,4 +68,13 @@ class DockerLogicTest {
         val o = AppOpens(mounts = listOf(OpensMount("/mnt/Data/Fotos", "/shares/Fotos", true), OpensMount("/x", "/data", false), OpensMount("/y", "/shares/a/b", false)))
         assertEquals(listOf(ShareMount("Fotos", true)), mountedShares(o))
     }
+
+    @Test
+    fun remoteKeys() {
+        assertEquals("KeyZ", domCode(android.view.KeyEvent.KEYCODE_Z))
+        assertEquals("Digit7", domCode(android.view.KeyEvent.KEYCODE_7))
+        assertEquals("F12", domCode(android.view.KeyEvent.KEYCODE_F12))
+        assertEquals("Backspace", domCode(android.view.KeyEvent.KEYCODE_DEL))
+        assertNull(domCode(android.view.KeyEvent.KEYCODE_VOLUME_UP))
+    }
 }

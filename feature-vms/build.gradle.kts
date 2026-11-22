@@ -57,3 +57,8 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     debugImplementation(libs.compose.ui.test.manifest)
 }
+
+// Ein hängender Bildtest (endlose Animation, Zeichnen) beendet den Lauf, statt einen der zwei Gradle-Plätze der VM zu halten.
+tasks.withType<Test>().configureEach {
+    timeout.set(java.time.Duration.ofMinutes(10))
+}

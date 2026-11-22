@@ -74,7 +74,7 @@ class DockerScreenshotTest {
 
     private fun shot(name: String, detail: Boolean, layout: DockerLayout = DockerLayout(), advanced: Boolean = false) {
         val state = DockerState(DockerApi(access)).also { it.status = status; it.layout = layout }
-        state.editors["immich"] = AppEditorState(state.api, "immich").apply { original = immichCompose; text = immichCompose; parse() }
+        state.editors["immich"] = AppEditorState(state.api, "immich").apply { original = immichCompose; text = immichCompose; preloaded = true; parse() }
         RuntimeEnvironment.getApplication().getSharedPreferences("docker", 0).edit().putBoolean("advanced", advanced).commit()
         val groups = groupsOf(status.containers)
         for (dark in listOf(true, false)) {

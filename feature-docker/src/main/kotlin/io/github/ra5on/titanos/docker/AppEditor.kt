@@ -84,6 +84,8 @@ class AppEditorState(val api: DockerApi, val app: String) {
     var applying by mutableStateOf(false)
     var result by mutableStateOf<ApplyResult?>(null)
     private var doc: YamlDoc? = null
+    /** Vorab gefüllt (Bildtests): nicht vom NAS neu laden. */
+    var preloaded = false
 
     val changed: Boolean get() = original != null && text != original
 
@@ -204,7 +206,7 @@ internal fun AppEditorSection(env: io.github.ra5on.titanos.compute.ComputeEnv, s
     var proxyVersion by remember { mutableIntStateOf(0) }
     var volumes by remember { mutableStateOf<List<StorageVolume>>(emptyList()) }
     LaunchedEffect(app) {
-        if (ed.original == null) ed.load()
+        if (!ed.preloaded && !ed.changed && !ed.applying) ed.load()
         volumes = state.api.storage()
     }
     LaunchedEffect(app, proxyVersion) { proxy = state.api.proxy() }

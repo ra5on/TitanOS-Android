@@ -1057,6 +1057,2232 @@
    "hardware": {
     "web": []
    }
+  },
+  {
+   "id": "katalog-immich",
+   "input": {
+    "id": "katalog-immich",
+    "compose": "# SPDX-License-Identifier: AGPL-3.0-only\n# Adapted from the official Immich v3.3.3 release composition by TitanOS,\n# 2026-10-16: app-store metadata, linked secret, persistent bind mounts,\n# health dependencies and explicit service addresses. See adjacent LICENSE.\n# 2026-10-24: rolling application/cache tags and independently editable images;\n# PostgreSQL now follows the VectorChord publisher's pg18-latest channel.\n# Existing PostgreSQL 14 installations require migration before switching.\n# https://github.com/immich-app/immich/releases/tag/v3.3.3\nx-titanos:\n  icon: \"https://raw.githubusercontent.com/immich-app/immich/main/design/immich-logo.svg\"\n  name: Immich\n  main: immich-server\n  category: photos\n  description:\n    de: Fotos und Videos sichern, durchsuchen und teilen. Mit Datenbank und Gesichtserkennung.\n    en: Back up, search and share photos and videos. Includes the database and face recognition.\n  tips:\n    de: Jeder Dienst hat ein eigenes Image-Feld im Docker-App-Editor; dort den Tag auf eine gewünschte Version setzen. Aktueller Kanal ist für Server und ML release (Immich bietet kein latest), für Valkey latest. PostgreSQL nutzt pg18-latest vom VectorChord-Hersteller, ohne feste Patch-/Erweiterungsversion. Vorhandene PostgreSQL-14-Daten vor dem Wechsel auf PostgreSQL 18 migrieren; nicht einfach das Image austauschen. Mindestens 6 GB RAM und 2 CPU-Kerne für Immich einplanen. Beim ersten Öffnen ein Administratorkonto anlegen. Datenbank und Fotos liegen getrennt auf dem Daten-Volume; beide sichern. KI-Modelle werden beim ersten Einsatz geladen. CPU-Betrieb ist voreingestellt. Eine GPU für Videoverarbeitung gezielt beim Dienst immich-server auswählen und in Immich aktivieren. Für KI-Beschleunigung benötigt der ML-Dienst zusätzlich das passende offizielle CUDA-/OpenVINO-Abbild. Versionswechsel gemeinsam für Server und ML durchführen und vorher die Immich-Upgradehinweise lesen.\n    en: Each service has its own image field in the Docker app editor; set its tag to the desired version there. The current channel is release for server and ML (Immich does not publish latest), and latest for Valkey. PostgreSQL uses pg18-latest from the VectorChord publisher, without pinned patch/extension versions. Migrate existing PostgreSQL 14 data before switching to PostgreSQL 18; do not simply replace the image. Allow at least 6 GB RAM and 2 CPU cores for Immich. Create an administrator account on first opening. Database and photos are stored separately on the data volume; back up both. AI models download on first use. CPU operation is the default. Select a GPU explicitly for immich-server and enable transcoding acceleration in Immich. ML acceleration additionally requires the matching official CUDA/OpenVINO image. Upgrade server and ML together after reading the Immich upgrade notes.\n  variables:\n    DB_PASSWORD:\n      label: { de: Datenbankpasswort, en: Database password }\n      secret: generate\n      required: true\n    POSTGRES_PASSWORD:\n      from: DB_PASSWORD\n  paths:\n    /data:\n      label: { de: Fotos und Videos, en: Photos and videos }\n    /var/lib/postgresql:\n      label: { de: PostgreSQL-Datenbank (lokales Volume), en: PostgreSQL database (local volume) }\n    /cache:\n      label: { de: KI-Modelle, en: AI models }\n  ports:\n    \"2283\":\n      label: Immich\n      webui: true\nservices:\n  immich-server:\n    labels:\n      titanos.webui: \"http://[host]:2283\"\n    image: ghcr.io/immich-app/immich-server:release\n    restart: unless-stopped\n    environment:\n      TZ: \"\"\n      DB_HOSTNAME: database\n      DB_USERNAME: postgres\n      DB_DATABASE_NAME: immich\n      DB_PASSWORD: \"\"\n      REDIS_HOSTNAME: redis\n      IMMICH_MACHINE_LEARNING_URL: http://immich-machine-learning:3003\n    volumes:\n      - ./library:/data\n    ports:\n      - \"2283:2283\"\n    depends_on:\n      database: { condition: service_healthy }\n      redis: { condition: service_healthy }\n    healthcheck:\n      disable: false\n  immich-machine-learning:\n    image: ghcr.io/immich-app/immich-machine-learning:release\n    restart: unless-stopped\n    environment:\n      TZ: \"\"\n    volumes:\n      - ./model-cache:/cache\n    healthcheck:\n      disable: false\n  redis:\n    image: docker.io/valkey/valkey:latest\n    restart: unless-stopped\n    healthcheck:\n      test: [CMD-SHELL, \"redis-cli ping | grep -q PONG\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n  database:\n    image: ghcr.io/tensorchord/vchord-suite:pg18-latest\n    restart: unless-stopped\n    environment:\n      POSTGRES_PASSWORD: \"\"\n      POSTGRES_USER: postgres\n      POSTGRES_DB: immich\n      POSTGRES_INITDB_ARGS: --data-checksums\n    volumes:\n      - ./postgres:/var/lib/postgresql\n    shm_size: 128mb\n    healthcheck:\n      test: [CMD, pg_isready, --host=127.0.0.1, --username=postgres, --dbname=immich]\n      interval: 10s\n      timeout: 5s\n      retries: 10\n      start_period: 30s\n",
+    "name": "immich",
+    "shares": [
+     {
+      "name": "Medien",
+      "path": "/mnt/Data/Medien"
+     },
+     {
+      "name": "Dokumente",
+      "path": "/mnt/Data/Dokumente"
+     }
+    ],
+    "used": {
+     "8080/tcp": ""
+    },
+    "installed": [],
+    "edits": {
+     "vars": {},
+     "own": {
+      "vars": [
+       {
+        "name": "EXTRA",
+        "value": "ja"
+       }
+      ],
+      "paths": [],
+      "ports": [],
+      "labels": [],
+      "devices": []
+     }
+    }
+   },
+   "casaCompose": null,
+   "read": {
+    "images": [
+     {
+      "service": "immich-server",
+      "image": "ghcr.io/immich-app/immich-server:release"
+     },
+     {
+      "service": "immich-machine-learning",
+      "image": "ghcr.io/immich-app/immich-machine-learning:release"
+     },
+     {
+      "service": "redis",
+      "image": "docker.io/valkey/valkey:latest"
+     },
+     {
+      "service": "database",
+      "image": "ghcr.io/tensorchord/vchord-suite:pg18-latest"
+     }
+    ],
+    "publicUrl": "",
+    "name": "immich",
+    "tips": {
+     "de": "Jeder Dienst hat ein eigenes Image-Feld im Docker-App-Editor; dort den Tag auf eine gewünschte Version setzen. Aktueller Kanal ist für Server und ML release (Immich bietet kein latest), für Valkey latest. PostgreSQL nutzt pg18-latest vom VectorChord-Hersteller, ohne feste Patch-/Erweiterungsversion. Vorhandene PostgreSQL-14-Daten vor dem Wechsel auf PostgreSQL 18 migrieren; nicht einfach das Image austauschen. Mindestens 6 GB RAM und 2 CPU-Kerne für Immich einplanen. Beim ersten Öffnen ein Administratorkonto anlegen. Datenbank und Fotos liegen getrennt auf dem Daten-Volume; beide sichern. KI-Modelle werden beim ersten Einsatz geladen. CPU-Betrieb ist voreingestellt. Eine GPU für Videoverarbeitung gezielt beim Dienst immich-server auswählen und in Immich aktivieren. Für KI-Beschleunigung benötigt der ML-Dienst zusätzlich das passende offizielle CUDA-/OpenVINO-Abbild. Versionswechsel gemeinsam für Server und ML durchführen und vorher die Immich-Upgradehinweise lesen.",
+     "en": "Each service has its own image field in the Docker app editor; set its tag to the desired version there. The current channel is release for server and ML (Immich does not publish latest), and latest for Valkey. PostgreSQL uses pg18-latest from the VectorChord publisher, without pinned patch/extension versions. Migrate existing PostgreSQL 14 data before switching to PostgreSQL 18; do not simply replace the image. Allow at least 6 GB RAM and 2 CPU cores for Immich. Create an administrator account on first opening. Database and photos are stored separately on the data volume; back up both. AI models download on first use. CPU operation is the default. Select a GPU explicitly for immich-server and enable transcoding acceleration in Immich. ML acceleration additionally requires the matching official CUDA/OpenVINO image. Upgrade server and ML together after reading the Immich upgrade notes."
+    },
+    "risks": [],
+    "missingDevices": [],
+    "main": "immich-server",
+    "vars": [
+     {
+      "service": "immich-server",
+      "name": "TZ",
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "immich-server",
+      "name": "DB_HOSTNAME",
+      "placeholder": "",
+      "value": "database",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "immich-server",
+      "name": "DB_USERNAME",
+      "placeholder": "",
+      "value": "postgres",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "immich-server",
+      "name": "DB_DATABASE_NAME",
+      "placeholder": "",
+      "value": "immich",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "immich-server",
+      "name": "DB_PASSWORD",
+      "label": {
+       "de": "Datenbankpasswort",
+       "en": "Database password"
+      },
+      "placeholder": "",
+      "value": "GEN_DB_PASSWORD",
+      "origin": "generated",
+      "secret": true,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "immich-server",
+      "name": "REDIS_HOSTNAME",
+      "placeholder": "",
+      "value": "redis",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "immich-server",
+      "name": "IMMICH_MACHINE_LEARNING_URL",
+      "placeholder": "",
+      "value": "http://immich-machine-learning:3003",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "immich-machine-learning",
+      "name": "TZ",
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "database",
+      "name": "POSTGRES_USER",
+      "placeholder": "",
+      "value": "postgres",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "database",
+      "name": "POSTGRES_DB",
+      "placeholder": "",
+      "value": "immich",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "database",
+      "name": "POSTGRES_INITDB_ARGS",
+      "placeholder": "",
+      "value": "--data-checksums",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     }
+    ],
+    "paths": [
+     {
+      "service": "immich-server",
+      "index": 0,
+      "container": "/data",
+      "label": {
+       "de": "Fotos und Videos",
+       "en": "Photos and videos"
+      },
+      "template": "./library",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/immich/library",
+      "touched": false
+     },
+     {
+      "service": "immich-machine-learning",
+      "index": 0,
+      "container": "/cache",
+      "label": {
+       "de": "KI-Modelle",
+       "en": "AI models"
+      },
+      "template": "./model-cache",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/immich/model-cache",
+      "touched": false
+     },
+     {
+      "service": "database",
+      "index": 0,
+      "container": "/var/lib/postgresql",
+      "label": {
+       "de": "PostgreSQL-Datenbank (lokales Volume)",
+       "en": "PostgreSQL database (local volume)"
+      },
+      "template": "./postgres",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/immich/postgres",
+      "touched": false
+     }
+    ],
+    "ports": [
+     {
+      "service": "immich-server",
+      "index": 0,
+      "container": "2283",
+      "protocol": "tcp",
+      "label": "Immich",
+      "webui": true,
+      "templateHost": "2283",
+      "blockedBy": null,
+      "host": "2283"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "own": {
+     "vars": [],
+     "paths": [],
+     "ports": [],
+     "labels": [],
+     "devices": []
+    }
+   },
+   "problems": {
+    "images": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "name": "",
+    "vars": [
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "paths": [
+     "",
+     "",
+     ""
+    ],
+    "ports": [
+     ""
+    ],
+    "ownVars": [
+     ""
+    ],
+    "ownPaths": [],
+    "ownPorts": [],
+    "ownDevices": [],
+    "cpuset": false,
+    "memLimit": false,
+    "missing": 0,
+    "blocking": false
+   },
+   "compose": "# SPDX-License-Identifier: AGPL-3.0-only\n# Adapted from the official Immich v3.3.3 release composition by TitanOS,\n# 2026-10-16: app-store metadata, linked secret, persistent bind mounts,\n# health dependencies and explicit service addresses. See adjacent LICENSE.\n# 2026-10-24: rolling application/cache tags and independently editable images;\n# PostgreSQL now follows the VectorChord publisher's pg18-latest channel.\n# Existing PostgreSQL 14 installations require migration before switching.\n# https://github.com/immich-app/immich/releases/tag/v3.3.3\nx-titanos:\n  icon: \"https://raw.githubusercontent.com/immich-app/immich/main/design/immich-logo.svg\"\n  name: Immich\n  main: immich-server\n  category: photos\n  description:\n    de: Fotos und Videos sichern, durchsuchen und teilen. Mit Datenbank und Gesichtserkennung.\n    en: Back up, search and share photos and videos. Includes the database and face recognition.\n  tips:\n    de: Jeder Dienst hat ein eigenes Image-Feld im Docker-App-Editor; dort den Tag auf eine gewünschte Version setzen. Aktueller Kanal ist für Server und ML release (Immich bietet kein latest), für Valkey latest. PostgreSQL nutzt pg18-latest vom VectorChord-Hersteller, ohne feste Patch-/Erweiterungsversion. Vorhandene PostgreSQL-14-Daten vor dem Wechsel auf PostgreSQL 18 migrieren; nicht einfach das Image austauschen. Mindestens 6 GB RAM und 2 CPU-Kerne für Immich einplanen. Beim ersten Öffnen ein Administratorkonto anlegen. Datenbank und Fotos liegen getrennt auf dem Daten-Volume; beide sichern. KI-Modelle werden beim ersten Einsatz geladen. CPU-Betrieb ist voreingestellt. Eine GPU für Videoverarbeitung gezielt beim Dienst immich-server auswählen und in Immich aktivieren. Für KI-Beschleunigung benötigt der ML-Dienst zusätzlich das passende offizielle CUDA-/OpenVINO-Abbild. Versionswechsel gemeinsam für Server und ML durchführen und vorher die Immich-Upgradehinweise lesen.\n    en: Each service has its own image field in the Docker app editor; set its tag to the desired version there. The current channel is release for server and ML (Immich does not publish latest), and latest for Valkey. PostgreSQL uses pg18-latest from the VectorChord publisher, without pinned patch/extension versions. Migrate existing PostgreSQL 14 data before switching to PostgreSQL 18; do not simply replace the image. Allow at least 6 GB RAM and 2 CPU cores for Immich. Create an administrator account on first opening. Database and photos are stored separately on the data volume; back up both. AI models download on first use. CPU operation is the default. Select a GPU explicitly for immich-server and enable transcoding acceleration in Immich. ML acceleration additionally requires the matching official CUDA/OpenVINO image. Upgrade server and ML together after reading the Immich upgrade notes.\n  variables:\n    DB_PASSWORD:\n      label: { de: Datenbankpasswort, en: Database password }\n      secret: generate\n      required: true\n    POSTGRES_PASSWORD:\n      from: DB_PASSWORD\n  paths:\n    /data:\n      label: { de: Fotos und Videos, en: Photos and videos }\n    /var/lib/postgresql:\n      label: { de: PostgreSQL-Datenbank (lokales Volume), en: PostgreSQL database (local volume) }\n    /cache:\n      label: { de: KI-Modelle, en: AI models }\n  ports:\n    \"2283\":\n      label: Immich\n      webui: true\nservices:\n  immich-server:\n    labels:\n      titanos.icon: https://raw.githubusercontent.com/immich-app/immich/main/design/immich-logo.svg\n      titanos.webui: http://[host]:2283\n    image: ghcr.io/immich-app/immich-server:release\n    restart: unless-stopped\n    environment:\n      TZ: Europe/Berlin\n      DB_HOSTNAME: database\n      DB_USERNAME: postgres\n      DB_DATABASE_NAME: immich\n      DB_PASSWORD: ${DB_PASSWORD}\n      REDIS_HOSTNAME: redis\n      IMMICH_MACHINE_LEARNING_URL: http://immich-machine-learning:3003\n      EXTRA: ja\n    volumes:\n      - ./library:/data\n    ports:\n      - \"2283:2283\"\n    depends_on:\n      database: { condition: service_healthy }\n      redis: { condition: service_healthy }\n    healthcheck:\n      disable: false\n  immich-machine-learning:\n    image: ghcr.io/immich-app/immich-machine-learning:release\n    restart: unless-stopped\n    environment:\n      TZ: Europe/Berlin\n    volumes:\n      - ./model-cache:/cache\n    healthcheck:\n      disable: false\n  redis:\n    image: docker.io/valkey/valkey:latest\n    restart: unless-stopped\n    healthcheck:\n      test: [ CMD-SHELL, \"redis-cli ping | grep -q PONG\" ]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n  database:\n    image: ghcr.io/tensorchord/vchord-suite:pg18-latest\n    restart: unless-stopped\n    environment:\n      POSTGRES_PASSWORD: ${DB_PASSWORD}\n      POSTGRES_USER: postgres\n      POSTGRES_DB: immich\n      POSTGRES_INITDB_ARGS: --data-checksums\n    volumes:\n      - ./postgres:/var/lib/postgresql\n    shm_size: 128mb\n    healthcheck:\n      test: [ CMD, pg_isready, --host=127.0.0.1, --username=postgres, --dbname=immich ]\n      interval: 10s\n      timeout: 5s\n      retries: 10\n      start_period: 30s\n",
+   "env": {
+    "DB_PASSWORD": "GEN_DB_PASSWORD"
+   },
+   "plain": {
+    "x-titanos": {
+     "icon": "https://raw.githubusercontent.com/immich-app/immich/main/design/immich-logo.svg",
+     "name": "Immich",
+     "main": "immich-server",
+     "category": "photos",
+     "description": {
+      "de": "Fotos und Videos sichern, durchsuchen und teilen. Mit Datenbank und Gesichtserkennung.",
+      "en": "Back up, search and share photos and videos. Includes the database and face recognition."
+     },
+     "tips": {
+      "de": "Jeder Dienst hat ein eigenes Image-Feld im Docker-App-Editor; dort den Tag auf eine gewünschte Version setzen. Aktueller Kanal ist für Server und ML release (Immich bietet kein latest), für Valkey latest. PostgreSQL nutzt pg18-latest vom VectorChord-Hersteller, ohne feste Patch-/Erweiterungsversion. Vorhandene PostgreSQL-14-Daten vor dem Wechsel auf PostgreSQL 18 migrieren; nicht einfach das Image austauschen. Mindestens 6 GB RAM und 2 CPU-Kerne für Immich einplanen. Beim ersten Öffnen ein Administratorkonto anlegen. Datenbank und Fotos liegen getrennt auf dem Daten-Volume; beide sichern. KI-Modelle werden beim ersten Einsatz geladen. CPU-Betrieb ist voreingestellt. Eine GPU für Videoverarbeitung gezielt beim Dienst immich-server auswählen und in Immich aktivieren. Für KI-Beschleunigung benötigt der ML-Dienst zusätzlich das passende offizielle CUDA-/OpenVINO-Abbild. Versionswechsel gemeinsam für Server und ML durchführen und vorher die Immich-Upgradehinweise lesen.",
+      "en": "Each service has its own image field in the Docker app editor; set its tag to the desired version there. The current channel is release for server and ML (Immich does not publish latest), and latest for Valkey. PostgreSQL uses pg18-latest from the VectorChord publisher, without pinned patch/extension versions. Migrate existing PostgreSQL 14 data before switching to PostgreSQL 18; do not simply replace the image. Allow at least 6 GB RAM and 2 CPU cores for Immich. Create an administrator account on first opening. Database and photos are stored separately on the data volume; back up both. AI models download on first use. CPU operation is the default. Select a GPU explicitly for immich-server and enable transcoding acceleration in Immich. ML acceleration additionally requires the matching official CUDA/OpenVINO image. Upgrade server and ML together after reading the Immich upgrade notes."
+     },
+     "variables": {
+      "DB_PASSWORD": {
+       "label": {
+        "de": "Datenbankpasswort",
+        "en": "Database password"
+       },
+       "secret": "generate",
+       "required": true
+      },
+      "POSTGRES_PASSWORD": {
+       "from": "DB_PASSWORD"
+      }
+     },
+     "paths": {
+      "/data": {
+       "label": {
+        "de": "Fotos und Videos",
+        "en": "Photos and videos"
+       }
+      },
+      "/var/lib/postgresql": {
+       "label": {
+        "de": "PostgreSQL-Datenbank (lokales Volume)",
+        "en": "PostgreSQL database (local volume)"
+       }
+      },
+      "/cache": {
+       "label": {
+        "de": "KI-Modelle",
+        "en": "AI models"
+       }
+      }
+     },
+     "ports": {
+      "2283": {
+       "label": "Immich",
+       "webui": true
+      }
+     }
+    },
+    "services": {
+     "immich-server": {
+      "labels": {
+       "titanos.icon": "https://raw.githubusercontent.com/immich-app/immich/main/design/immich-logo.svg",
+       "titanos.webui": "http://[host]:2283"
+      },
+      "image": "ghcr.io/immich-app/immich-server:release",
+      "restart": "unless-stopped",
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "DB_HOSTNAME": "database",
+       "DB_USERNAME": "postgres",
+       "DB_DATABASE_NAME": "immich",
+       "DB_PASSWORD": "${DB_PASSWORD}",
+       "REDIS_HOSTNAME": "redis",
+       "IMMICH_MACHINE_LEARNING_URL": "http://immich-machine-learning:3003",
+       "EXTRA": "ja"
+      },
+      "volumes": [
+       "./library:/data"
+      ],
+      "ports": [
+       "2283:2283"
+      ],
+      "depends_on": {
+       "database": {
+        "condition": "service_healthy"
+       },
+       "redis": {
+        "condition": "service_healthy"
+       }
+      },
+      "healthcheck": {
+       "disable": false
+      }
+     },
+     "immich-machine-learning": {
+      "image": "ghcr.io/immich-app/immich-machine-learning:release",
+      "restart": "unless-stopped",
+      "environment": {
+       "TZ": "Europe/Berlin"
+      },
+      "volumes": [
+       "./model-cache:/cache"
+      ],
+      "healthcheck": {
+       "disable": false
+      }
+     },
+     "redis": {
+      "image": "docker.io/valkey/valkey:latest",
+      "restart": "unless-stopped",
+      "healthcheck": {
+       "test": [
+        "CMD-SHELL",
+        "redis-cli ping | grep -q PONG"
+       ],
+       "interval": "10s",
+       "timeout": "5s",
+       "retries": 5
+      }
+     },
+     "database": {
+      "image": "ghcr.io/tensorchord/vchord-suite:pg18-latest",
+      "restart": "unless-stopped",
+      "environment": {
+       "POSTGRES_PASSWORD": "${DB_PASSWORD}",
+       "POSTGRES_USER": "postgres",
+       "POSTGRES_DB": "immich",
+       "POSTGRES_INITDB_ARGS": "--data-checksums"
+      },
+      "volumes": [
+       "./postgres:/var/lib/postgresql"
+      ],
+      "shm_size": "128mb",
+      "healthcheck": {
+       "test": [
+        "CMD",
+        "pg_isready",
+        "--host=127.0.0.1",
+        "--username=postgres",
+        "--dbname=immich"
+       ],
+       "interval": "10s",
+       "timeout": "5s",
+       "retries": 10,
+       "start_period": "30s"
+      }
+     }
+    }
+   },
+   "casaPlain": null,
+   "hardware": {
+    "database": [],
+    "immich-machine-learning": [],
+    "immich-server": [],
+    "redis": []
+   }
+  },
+  {
+   "id": "katalog-nextcloud",
+   "input": {
+    "id": "katalog-nextcloud",
+    "compose": "\nx-titanos:\n  icon: \"https://raw.githubusercontent.com/nextcloud/server/master/core/img/favicon-touch.png\"\n  name: Nextcloud + MariaDB\n  main: nextcloud\n  category: productivity\n\n  description:\n    de: >-\n      Private Cloud mit Dateisynchronisierung,\n      Benutzerverwaltung, Kalender und Kontakten.\n      Nextcloud und MariaDB werden automatisch\n      eingerichtet und miteinander verbunden.\n      Beide Versionen sind individuell wählbar.\n      Inklusive automatischer Administrator-\n      einrichtung und Cron-Hintergrunddienst.\n    en: >-\n      Private cloud with file synchronization,\n      user management, calendars and contacts.\n      Nextcloud and MariaDB are configured\n      automatically. Both versions can be selected.\n      Includes automatic administrator setup\n      and background cron service.\n\n  tips:\n    de: >-\n      Nextcloud und MariaDB verwenden standardmäßig latest.\n      Versionen über die Image-Tags im Dienst-Editor oder\n      beim Installieren in der Compose-Ansicht wählen.\n      Nextcloud und den Cron-Dienst auf dieselbe Version setzen.\n      Anschließend Administrator-Benutzername,\n      Passwort und Server-IP oder Domain eingeben.\n      Die Datenbankpasswörter werden automatisch\n      von TitanOS generiert und dauerhaft gespeichert.\n      Nextcloud verbindet sich automatisch mit MariaDB.\n      Der Installationsassistent wird übersprungen.\n      Die Weboberfläche ist über Port 8080 erreichbar.\n      MariaDB ist nur im internen Docker-Netzwerk\n      erreichbar. Der Cron-Dienst übernimmt\n      regelmäßige Hintergrundaufgaben.\n      Vor Versionswechseln Backups erstellen.\n      Für öffentlichen Zugriff HTTPS verwenden.\n    en: >-\n      Nextcloud and MariaDB default to latest.\n      Select versions using service image tags in the editor\n      or in the Compose view during installation.\n      Keep Nextcloud and the cron service on the same version.\n      Enter administrator username, password\n      and server IP address or domain.\n      Database passwords are generated and\n      stored automatically by TitanOS.\n      Nextcloud connects to MariaDB automatically.\n      The installation wizard is skipped.\n      The web interface runs on port 8080.\n      MariaDB is only available internally.\n      Cron handles background jobs.\n      Back up data before changing versions.\n      Use HTTPS for public access.\n\n  # ============================================\n  # TITANOS VARIABLEN\n  # ============================================\n\n  variables:\n\n    # ------------------------------------------\n    # NEXTCLOUD ADMINISTRATOR\n    # ------------------------------------------\n\n    NEXTCLOUD_ADMIN_USER:\n      label:\n        de: Administrator-Benutzername\n        en: Administrator username\n      required: true\n\n    NEXTCLOUD_ADMIN_PASSWORD:\n      label:\n        de: Administrator-Passwort\n        en: Administrator password\n      secret: true\n      required: true\n\n    # ------------------------------------------\n    # SERVER / DOMAIN\n    # ------------------------------------------\n\n    NEXTCLOUD_TRUSTED_DOMAINS:\n      label:\n        de: Server-IP oder Domain\n        en: Server IP or domain\n      required: true\n\n    # ------------------------------------------\n    # DATENBANK\n    # ------------------------------------------\n\n    MYSQL_PASSWORD:\n      label:\n        de: Datenbankpasswort\n        en: Database password\n      secret: generate\n      required: true\n\n    MARIADB_ROOT_PASSWORD:\n      label:\n        de: MariaDB Root-Passwort\n        en: MariaDB root password\n      secret: generate\n      required: true\n\n    # ------------------------------------------\n    # PHP\n    # ------------------------------------------\n\n    PHP_MEMORY_LIMIT:\n      label:\n        de: PHP-Arbeitsspeicherlimit\n        en: PHP memory limit\n\n    PHP_UPLOAD_LIMIT:\n      label:\n        de: Maximale Uploadgröße\n        en: Maximum upload size\n\n  # ============================================\n  # PERSISTENTE DATEN\n  # ============================================\n\n  paths:\n\n    /var/www/html:\n      label:\n        de: Nextcloud-Dateien und Konfiguration\n        en: Nextcloud files and configuration\n\n    /var/lib/mysql:\n      label:\n        de: MariaDB-Datenbank\n        en: MariaDB database\n\n  # ============================================\n  # PORTS\n  # ============================================\n\n  ports:\n\n    \"80\":\n      label: Nextcloud Weboberfläche\n      webui: true\n\n\n# ==============================================\n# SERVICES\n# ==============================================\n\nservices:\n\n  # ============================================\n  # MARIADB\n  # ============================================\n\n  mariadb:\n    image: \"mariadb:latest\"\n    restart: unless-stopped\n\n    # ==========================================\n    # DATENBANKKONFIGURATION\n    # ==========================================\n\n    environment:\n\n      TZ: \"Europe/Berlin\"\n\n      # Datenbank automatisch erstellen\n      MYSQL_DATABASE: \"nextcloud\"\n\n      # Datenbankbenutzer automatisch erstellen\n      MYSQL_USER: \"nextcloud\"\n\n      # Generiertes gemeinsames Datenbankpasswort\n      MYSQL_PASSWORD: \"\"\n\n      # Separates generiertes Root-Passwort\n      MARIADB_ROOT_PASSWORD: \"\"\n\n    # ==========================================\n    # DATENBANKOPTIMIERUNG\n    # ==========================================\n\n    command:\n      - --transaction-isolation=READ-COMMITTED\n      - --binlog-format=ROW\n\n    # ==========================================\n    # PERSISTENTER SPEICHER\n    # ==========================================\n\n    volumes:\n      - ./mariadb:/var/lib/mysql\n\n    # ==========================================\n    # HEALTHCHECK\n    # ==========================================\n\n    healthcheck:\n      test:\n        - CMD\n        - healthcheck.sh\n        - --connect\n        - --innodb_initialized\n\n      interval: 10s\n      timeout: 5s\n      start_period: 60s\n      retries: 10\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    security_opt:\n      - no-new-privileges=true\n\n    # Kein öffentlicher Datenbankport.\n\n    # ==========================================\n    # BEENDEN\n    # ==========================================\n\n    stop_grace_period: 60s\n\n    # ==========================================\n    # LOGS\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n\n\n  # ============================================\n  # NEXTCLOUD\n  # ============================================\n\n  nextcloud:\n    labels:\n      titanos.webui: \"http://[host]:8080\"\n    image: \"nextcloud:latest\"\n    restart: unless-stopped\n\n    # ==========================================\n    # AUTOMATISCHE INSTALLATION\n    # ==========================================\n\n    environment:\n\n      # ----------------------------------------\n      # SYSTEM\n      # ----------------------------------------\n\n      TZ: \"Europe/Berlin\"\n\n      # ----------------------------------------\n      # ----------------------------------------\n\n\n\n      # ----------------------------------------\n      # ADMINISTRATOR\n      # ----------------------------------------\n\n      # Wird vom Benutzer eingegeben\n      NEXTCLOUD_ADMIN_USER: \"\"\n\n      # Wird vom Benutzer eingegeben\n      NEXTCLOUD_ADMIN_PASSWORD: \"\"\n\n      # ----------------------------------------\n      # AUTOMATISCHE DATENBANKVERBINDUNG\n      # ----------------------------------------\n\n      # Host = MariaDB-Service\n      MYSQL_HOST: \"mariadb\"\n\n      # Datenbankname\n      MYSQL_DATABASE: \"nextcloud\"\n\n      # Datenbankbenutzer\n      MYSQL_USER: \"nextcloud\"\n\n      # Identisches generiertes Passwort\n      # wie im MariaDB-Service\n      MYSQL_PASSWORD: \"\"\n\n      # ----------------------------------------\n      # SERVER / DOMAIN\n      # ----------------------------------------\n\n      # Wird in TitanOS abgefragt\n      # IP oder Domain ohne http://\n      NEXTCLOUD_TRUSTED_DOMAINS: \"\"\n\n      # ----------------------------------------\n      # PHP\n      # ----------------------------------------\n\n      PHP_MEMORY_LIMIT: \"512M\"\n\n      PHP_UPLOAD_LIMIT: \"2G\"\n\n      # ----------------------------------------\n      # APACHE\n      # ----------------------------------------\n\n      APACHE_BODY_LIMIT: \"0\"\n\n      # ----------------------------------------\n      # NEXTCLOUD\n      # ----------------------------------------\n\n      NEXTCLOUD_INIT_HTACCESS: \"true\"\n\n    # ==========================================\n    # NETZWERK\n    # ==========================================\n\n    ports:\n      - \"8080:80\"\n\n    # ==========================================\n    # PERSISTENTE DATEN\n    # ==========================================\n\n    volumes:\n      - ./nextcloud:/var/www/html\n\n    # ==========================================\n    # STARTREIHENFOLGE\n    # ==========================================\n\n    depends_on:\n      mariadb:\n        condition: service_healthy\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    security_opt:\n      - no-new-privileges=true\n\n    # ==========================================\n    # BEENDEN\n    # ==========================================\n\n    stop_grace_period: 30s\n\n    # ==========================================\n    # LOGS\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n\n\n  # ============================================\n  # NEXTCLOUD CRON\n  # ============================================\n\n  nextcloud-cron:\n\n    # Verwendet dieselbe Version wie Nextcloud\n    image: \"nextcloud:latest\"\n    restart: unless-stopped\n\n    # ==========================================\n    # HINTERGRUNDAUFGABEN\n    # ==========================================\n\n    entrypoint: /cron.sh\n\n    environment:\n      TZ: \"Europe/Berlin\"\n\n    # ==========================================\n    # GEMEINSAMER SPEICHER\n    # ==========================================\n\n    volumes:\n      - ./nextcloud:/var/www/html\n\n    # ==========================================\n    # STARTREIHENFOLGE\n    # ==========================================\n\n    depends_on:\n      mariadb:\n        condition: service_healthy\n\n      nextcloud:\n        condition: service_started\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    security_opt:\n      - no-new-privileges=true\n\n    # ==========================================\n    # BEENDEN\n    # ==========================================\n\n    stop_grace_period: 30s\n\n    # ==========================================\n    # LOGS\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n",
+    "name": "nextcloud",
+    "shares": [
+     {
+      "name": "Medien",
+      "path": "/mnt/Data/Medien"
+     },
+     {
+      "name": "Dokumente",
+      "path": "/mnt/Data/Dokumente"
+     }
+    ],
+    "used": {
+     "8080/tcp": ""
+    },
+    "installed": [],
+    "edits": {
+     "vars": {
+      "NEXTCLOUD_ADMIN_USER": "wert-nextcloud_admin_user",
+      "NEXTCLOUD_ADMIN_PASSWORD": "wert-nextcloud_admin_password",
+      "NEXTCLOUD_TRUSTED_DOMAINS": "wert-nextcloud_trusted_domains"
+     },
+     "own": {
+      "vars": [
+       {
+        "name": "EXTRA",
+        "value": "ja"
+       }
+      ],
+      "paths": [],
+      "ports": [],
+      "labels": [],
+      "devices": []
+     }
+    }
+   },
+   "casaCompose": null,
+   "read": {
+    "images": [
+     {
+      "service": "mariadb",
+      "image": "mariadb:latest"
+     },
+     {
+      "service": "nextcloud",
+      "image": "nextcloud:latest"
+     },
+     {
+      "service": "nextcloud-cron",
+      "image": "nextcloud:latest"
+     }
+    ],
+    "publicUrl": "",
+    "name": "nextcloud",
+    "tips": {
+     "de": "Nextcloud und MariaDB verwenden standardmäßig latest. Versionen über die Image-Tags im Dienst-Editor oder beim Installieren in der Compose-Ansicht wählen. Nextcloud und den Cron-Dienst auf dieselbe Version setzen. Anschließend Administrator-Benutzername, Passwort und Server-IP oder Domain eingeben. Die Datenbankpasswörter werden automatisch von TitanOS generiert und dauerhaft gespeichert. Nextcloud verbindet sich automatisch mit MariaDB. Der Installationsassistent wird übersprungen. Die Weboberfläche ist über Port 8080 erreichbar. MariaDB ist nur im internen Docker-Netzwerk erreichbar. Der Cron-Dienst übernimmt regelmäßige Hintergrundaufgaben. Vor Versionswechseln Backups erstellen. Für öffentlichen Zugriff HTTPS verwenden.",
+     "en": "Nextcloud and MariaDB default to latest. Select versions using service image tags in the editor or in the Compose view during installation. Keep Nextcloud and the cron service on the same version. Enter administrator username, password and server IP address or domain. Database passwords are generated and stored automatically by TitanOS. Nextcloud connects to MariaDB automatically. The installation wizard is skipped. The web interface runs on port 8080. MariaDB is only available internally. Cron handles background jobs. Back up data before changing versions. Use HTTPS for public access."
+    },
+    "risks": [],
+    "missingDevices": [],
+    "main": "nextcloud",
+    "vars": [
+     {
+      "service": "mariadb",
+      "name": "TZ",
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "mariadb",
+      "name": "MYSQL_DATABASE",
+      "placeholder": "",
+      "value": "nextcloud",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "mariadb",
+      "name": "MYSQL_USER",
+      "placeholder": "",
+      "value": "nextcloud",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "mariadb",
+      "name": "MYSQL_PASSWORD",
+      "label": {
+       "de": "Datenbankpasswort",
+       "en": "Database password"
+      },
+      "placeholder": "",
+      "value": "GEN_MYSQL_PASSWORD",
+      "origin": "generated",
+      "secret": true,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "mariadb",
+      "name": "MARIADB_ROOT_PASSWORD",
+      "label": {
+       "de": "MariaDB Root-Passwort",
+       "en": "MariaDB root password"
+      },
+      "placeholder": "",
+      "value": "GEN_MARIADB_ROOT_PASSWORD",
+      "origin": "generated",
+      "secret": true,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "TZ",
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "nextcloud",
+      "name": "NEXTCLOUD_ADMIN_USER",
+      "label": {
+       "de": "Administrator-Benutzername",
+       "en": "Administrator username"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "required",
+      "secret": false,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "NEXTCLOUD_ADMIN_PASSWORD",
+      "label": {
+       "de": "Administrator-Passwort",
+       "en": "Administrator password"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "required",
+      "secret": true,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "MYSQL_HOST",
+      "placeholder": "",
+      "value": "mariadb",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "MYSQL_DATABASE",
+      "placeholder": "",
+      "value": "nextcloud",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "MYSQL_USER",
+      "placeholder": "",
+      "value": "nextcloud",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "NEXTCLOUD_TRUSTED_DOMAINS",
+      "label": {
+       "de": "Server-IP oder Domain",
+       "en": "Server IP or domain"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "required",
+      "secret": false,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "PHP_MEMORY_LIMIT",
+      "label": {
+       "de": "PHP-Arbeitsspeicherlimit",
+       "en": "PHP memory limit"
+      },
+      "placeholder": "",
+      "value": "512M",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "PHP_UPLOAD_LIMIT",
+      "label": {
+       "de": "Maximale Uploadgröße",
+       "en": "Maximum upload size"
+      },
+      "placeholder": "",
+      "value": "2G",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "APACHE_BODY_LIMIT",
+      "placeholder": "",
+      "value": "0",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud",
+      "name": "NEXTCLOUD_INIT_HTACCESS",
+      "placeholder": "",
+      "value": "true",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "nextcloud-cron",
+      "name": "TZ",
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     }
+    ],
+    "paths": [
+     {
+      "service": "mariadb",
+      "index": 0,
+      "container": "/var/lib/mysql",
+      "label": {
+       "de": "MariaDB-Datenbank",
+       "en": "MariaDB database"
+      },
+      "template": "./mariadb",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/nextcloud/mariadb",
+      "touched": false
+     },
+     {
+      "service": "nextcloud",
+      "index": 0,
+      "container": "/var/www/html",
+      "label": {
+       "de": "Nextcloud-Dateien und Konfiguration",
+       "en": "Nextcloud files and configuration"
+      },
+      "template": "./nextcloud",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/nextcloud/nextcloud",
+      "touched": false
+     },
+     {
+      "service": "nextcloud-cron",
+      "index": 0,
+      "container": "/var/www/html",
+      "label": {
+       "de": "Nextcloud-Dateien und Konfiguration",
+       "en": "Nextcloud files and configuration"
+      },
+      "template": "./nextcloud",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/nextcloud/nextcloud",
+      "touched": false
+     }
+    ],
+    "ports": [
+     {
+      "service": "nextcloud",
+      "index": 0,
+      "container": "80",
+      "protocol": "tcp",
+      "label": "Nextcloud Weboberfläche",
+      "webui": true,
+      "templateHost": "8080",
+      "blockedBy": "",
+      "host": "8081"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "own": {
+     "vars": [],
+     "paths": [],
+     "ports": [],
+     "labels": [],
+     "devices": []
+    }
+   },
+   "problems": {
+    "images": [
+     false,
+     false,
+     false
+    ],
+    "name": "",
+    "vars": [
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "paths": [
+     "",
+     "",
+     ""
+    ],
+    "ports": [
+     ""
+    ],
+    "ownVars": [
+     ""
+    ],
+    "ownPaths": [],
+    "ownPorts": [],
+    "ownDevices": [],
+    "cpuset": false,
+    "memLimit": false,
+    "missing": 0,
+    "blocking": false
+   },
+   "compose": "x-titanos:\n  icon: \"https://raw.githubusercontent.com/nextcloud/server/master/core/img/favicon-touch.png\"\n  name: Nextcloud + MariaDB\n  main: nextcloud\n  category: productivity\n\n  description:\n    de: >-\n      Private Cloud mit Dateisynchronisierung, Benutzerverwaltung, Kalender und Kontakten. Nextcloud und MariaDB werden automatisch eingerichtet und miteinander verbunden. Beide Versionen sind individuell wählbar. Inklusive automatischer Administrator- einrichtung und Cron-Hintergrunddienst.\n    en: >-\n      Private cloud with file synchronization, user management, calendars and contacts. Nextcloud and MariaDB are configured automatically. Both versions can be selected. Includes automatic administrator setup and background cron service.\n\n  tips:\n    de: >-\n      Nextcloud und MariaDB verwenden standardmäßig latest. Versionen über die Image-Tags im Dienst-Editor oder beim Installieren in der Compose-Ansicht wählen. Nextcloud und den Cron-Dienst auf dieselbe Version setzen. Anschließend Administrator-Benutzername, Passwort und Server-IP oder Domain eingeben. Die Datenbankpasswörter werden automatisch von TitanOS generiert und dauerhaft gespeichert. Nextcloud verbindet sich automatisch mit MariaDB. Der Installationsassistent wird übersprungen. Die Weboberfläche ist über Port 8080 erreichbar. MariaDB ist nur im internen Docker-Netzwerk erreichbar. Der Cron-Dienst übernimmt regelmäßige Hintergrundaufgaben. Vor Versionswechseln Backups erstellen. Für öffentlichen Zugriff HTTPS verwenden.\n    en: >-\n      Nextcloud and MariaDB default to latest. Select versions using service image tags in the editor or in the Compose view during installation. Keep Nextcloud and the cron service on the same version. Enter administrator username, password and server IP address or domain. Database passwords are generated and stored automatically by TitanOS. Nextcloud connects to MariaDB automatically. The installation wizard is skipped. The web interface runs on port 8080. MariaDB is only available internally. Cron handles background jobs. Back up data before changing versions. Use HTTPS for public access.\n\n  # ============================================\n  # TITANOS VARIABLEN\n  # ============================================\n\n  variables:\n\n    # ------------------------------------------\n    # NEXTCLOUD ADMINISTRATOR\n    # ------------------------------------------\n\n    NEXTCLOUD_ADMIN_USER:\n      label:\n        de: Administrator-Benutzername\n        en: Administrator username\n      required: true\n\n    NEXTCLOUD_ADMIN_PASSWORD:\n      label:\n        de: Administrator-Passwort\n        en: Administrator password\n      secret: true\n      required: true\n\n    # ------------------------------------------\n    # SERVER / DOMAIN\n    # ------------------------------------------\n\n    NEXTCLOUD_TRUSTED_DOMAINS:\n      label:\n        de: Server-IP oder Domain\n        en: Server IP or domain\n      required: true\n\n    # ------------------------------------------\n    # DATENBANK\n    # ------------------------------------------\n\n    MYSQL_PASSWORD:\n      label:\n        de: Datenbankpasswort\n        en: Database password\n      secret: generate\n      required: true\n\n    MARIADB_ROOT_PASSWORD:\n      label:\n        de: MariaDB Root-Passwort\n        en: MariaDB root password\n      secret: generate\n      required: true\n\n    # ------------------------------------------\n    # PHP\n    # ------------------------------------------\n\n    PHP_MEMORY_LIMIT:\n      label:\n        de: PHP-Arbeitsspeicherlimit\n        en: PHP memory limit\n\n    PHP_UPLOAD_LIMIT:\n      label:\n        de: Maximale Uploadgröße\n        en: Maximum upload size\n\n  # ============================================\n  # PERSISTENTE DATEN\n  # ============================================\n\n  paths:\n\n    /var/www/html:\n      label:\n        de: Nextcloud-Dateien und Konfiguration\n        en: Nextcloud files and configuration\n\n    /var/lib/mysql:\n      label:\n        de: MariaDB-Datenbank\n        en: MariaDB database\n\n  # ============================================\n  # PORTS\n  # ============================================\n\n  ports:\n\n    \"80\":\n      label: Nextcloud Weboberfläche\n      webui: true\n\n# ==============================================\n# SERVICES\n# ==============================================\n\nservices:\n\n  # ============================================\n  # MARIADB\n  # ============================================\n\n  mariadb:\n    image: \"mariadb:latest\"\n    restart: unless-stopped\n\n    # ==========================================\n    # DATENBANKKONFIGURATION\n    # ==========================================\n\n    environment:\n      TZ: Europe/Berlin\n      MYSQL_DATABASE: nextcloud\n      MYSQL_USER: nextcloud\n      MYSQL_PASSWORD: ${MYSQL_PASSWORD}\n      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}\n\n    # ==========================================\n    # DATENBANKOPTIMIERUNG\n    # ==========================================\n\n    command:\n      - --transaction-isolation=READ-COMMITTED\n      - --binlog-format=ROW\n\n    # ==========================================\n    # PERSISTENTER SPEICHER\n    # ==========================================\n\n    volumes:\n      - ./mariadb:/var/lib/mysql\n\n    # ==========================================\n    # HEALTHCHECK\n    # ==========================================\n\n    healthcheck:\n      test:\n        - CMD\n        - healthcheck.sh\n        - --connect\n        - --innodb_initialized\n\n      interval: 10s\n      timeout: 5s\n      start_period: 60s\n      retries: 10\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    security_opt:\n      - no-new-privileges=true\n\n    # Kein öffentlicher Datenbankport.\n\n    # ==========================================\n    # BEENDEN\n    # ==========================================\n\n    stop_grace_period: 60s\n\n    # ==========================================\n    # LOGS\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n\n  # ============================================\n  # NEXTCLOUD\n  # ============================================\n\n  nextcloud:\n    labels:\n      titanos.icon: https://raw.githubusercontent.com/nextcloud/server/master/core/img/favicon-touch.png\n      titanos.webui: http://[host]:8081\n    image: \"nextcloud:latest\"\n    restart: unless-stopped\n\n    # ==========================================\n    # AUTOMATISCHE INSTALLATION\n    # ==========================================\n\n    environment:\n      # ----------------------------------------\n      # SYSTEM\n      # ----------------------------------------\n\n      TZ: Europe/Berlin\n      NEXTCLOUD_ADMIN_USER: wert-nextcloud_admin_user\n      NEXTCLOUD_ADMIN_PASSWORD: ${NEXTCLOUD_ADMIN_PASSWORD}\n      MYSQL_HOST: mariadb\n      MYSQL_DATABASE: nextcloud\n      MYSQL_USER: nextcloud\n      MYSQL_PASSWORD: ${MYSQL_PASSWORD}\n      NEXTCLOUD_TRUSTED_DOMAINS: wert-nextcloud_trusted_domains\n      PHP_MEMORY_LIMIT: 512M\n      PHP_UPLOAD_LIMIT: 2G\n      APACHE_BODY_LIMIT: \"0\"\n      NEXTCLOUD_INIT_HTACCESS: \"true\"\n      EXTRA: ja\n\n    # ==========================================\n    # NETZWERK\n    # ==========================================\n\n    ports:\n      - \"8081:80\"\n\n    # ==========================================\n    # PERSISTENTE DATEN\n    # ==========================================\n\n    volumes:\n      - ./nextcloud:/var/www/html\n\n    # ==========================================\n    # STARTREIHENFOLGE\n    # ==========================================\n\n    depends_on:\n      mariadb:\n        condition: service_healthy\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    security_opt:\n      - no-new-privileges=true\n\n    # ==========================================\n    # BEENDEN\n    # ==========================================\n\n    stop_grace_period: 30s\n\n    # ==========================================\n    # LOGS\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n\n  # ============================================\n  # NEXTCLOUD CRON\n  # ============================================\n\n  nextcloud-cron:\n\n    # Verwendet dieselbe Version wie Nextcloud\n    image: \"nextcloud:latest\"\n    restart: unless-stopped\n\n    # ==========================================\n    # HINTERGRUNDAUFGABEN\n    # ==========================================\n\n    entrypoint: /cron.sh\n\n    environment:\n      TZ: \"Europe/Berlin\"\n\n    # ==========================================\n    # GEMEINSAMER SPEICHER\n    # ==========================================\n\n    volumes:\n      - ./nextcloud:/var/www/html\n\n    # ==========================================\n    # STARTREIHENFOLGE\n    # ==========================================\n\n    depends_on:\n      mariadb:\n        condition: service_healthy\n\n      nextcloud:\n        condition: service_started\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    security_opt:\n      - no-new-privileges=true\n\n    # ==========================================\n    # BEENDEN\n    # ==========================================\n\n    stop_grace_period: 30s\n\n    # ==========================================\n    # LOGS\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n",
+   "env": {
+    "MYSQL_PASSWORD": "GEN_MYSQL_PASSWORD",
+    "MARIADB_ROOT_PASSWORD": "GEN_MARIADB_ROOT_PASSWORD",
+    "NEXTCLOUD_ADMIN_PASSWORD": "wert-nextcloud_admin_password"
+   },
+   "plain": {
+    "x-titanos": {
+     "icon": "https://raw.githubusercontent.com/nextcloud/server/master/core/img/favicon-touch.png",
+     "name": "Nextcloud + MariaDB",
+     "main": "nextcloud",
+     "category": "productivity",
+     "description": {
+      "de": "Private Cloud mit Dateisynchronisierung, Benutzerverwaltung, Kalender und Kontakten. Nextcloud und MariaDB werden automatisch eingerichtet und miteinander verbunden. Beide Versionen sind individuell wählbar. Inklusive automatischer Administrator- einrichtung und Cron-Hintergrunddienst.",
+      "en": "Private cloud with file synchronization, user management, calendars and contacts. Nextcloud and MariaDB are configured automatically. Both versions can be selected. Includes automatic administrator setup and background cron service."
+     },
+     "tips": {
+      "de": "Nextcloud und MariaDB verwenden standardmäßig latest. Versionen über die Image-Tags im Dienst-Editor oder beim Installieren in der Compose-Ansicht wählen. Nextcloud und den Cron-Dienst auf dieselbe Version setzen. Anschließend Administrator-Benutzername, Passwort und Server-IP oder Domain eingeben. Die Datenbankpasswörter werden automatisch von TitanOS generiert und dauerhaft gespeichert. Nextcloud verbindet sich automatisch mit MariaDB. Der Installationsassistent wird übersprungen. Die Weboberfläche ist über Port 8080 erreichbar. MariaDB ist nur im internen Docker-Netzwerk erreichbar. Der Cron-Dienst übernimmt regelmäßige Hintergrundaufgaben. Vor Versionswechseln Backups erstellen. Für öffentlichen Zugriff HTTPS verwenden.",
+      "en": "Nextcloud and MariaDB default to latest. Select versions using service image tags in the editor or in the Compose view during installation. Keep Nextcloud and the cron service on the same version. Enter administrator username, password and server IP address or domain. Database passwords are generated and stored automatically by TitanOS. Nextcloud connects to MariaDB automatically. The installation wizard is skipped. The web interface runs on port 8080. MariaDB is only available internally. Cron handles background jobs. Back up data before changing versions. Use HTTPS for public access."
+     },
+     "variables": {
+      "NEXTCLOUD_ADMIN_USER": {
+       "label": {
+        "de": "Administrator-Benutzername",
+        "en": "Administrator username"
+       },
+       "required": true
+      },
+      "NEXTCLOUD_ADMIN_PASSWORD": {
+       "label": {
+        "de": "Administrator-Passwort",
+        "en": "Administrator password"
+       },
+       "secret": true,
+       "required": true
+      },
+      "NEXTCLOUD_TRUSTED_DOMAINS": {
+       "label": {
+        "de": "Server-IP oder Domain",
+        "en": "Server IP or domain"
+       },
+       "required": true
+      },
+      "MYSQL_PASSWORD": {
+       "label": {
+        "de": "Datenbankpasswort",
+        "en": "Database password"
+       },
+       "secret": "generate",
+       "required": true
+      },
+      "MARIADB_ROOT_PASSWORD": {
+       "label": {
+        "de": "MariaDB Root-Passwort",
+        "en": "MariaDB root password"
+       },
+       "secret": "generate",
+       "required": true
+      },
+      "PHP_MEMORY_LIMIT": {
+       "label": {
+        "de": "PHP-Arbeitsspeicherlimit",
+        "en": "PHP memory limit"
+       }
+      },
+      "PHP_UPLOAD_LIMIT": {
+       "label": {
+        "de": "Maximale Uploadgröße",
+        "en": "Maximum upload size"
+       }
+      }
+     },
+     "paths": {
+      "/var/www/html": {
+       "label": {
+        "de": "Nextcloud-Dateien und Konfiguration",
+        "en": "Nextcloud files and configuration"
+       }
+      },
+      "/var/lib/mysql": {
+       "label": {
+        "de": "MariaDB-Datenbank",
+        "en": "MariaDB database"
+       }
+      }
+     },
+     "ports": {
+      "80": {
+       "label": "Nextcloud Weboberfläche",
+       "webui": true
+      }
+     }
+    },
+    "services": {
+     "mariadb": {
+      "image": "mariadb:latest",
+      "restart": "unless-stopped",
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "MYSQL_DATABASE": "nextcloud",
+       "MYSQL_USER": "nextcloud",
+       "MYSQL_PASSWORD": "${MYSQL_PASSWORD}",
+       "MARIADB_ROOT_PASSWORD": "${MARIADB_ROOT_PASSWORD}"
+      },
+      "command": [
+       "--transaction-isolation=READ-COMMITTED",
+       "--binlog-format=ROW"
+      ],
+      "volumes": [
+       "./mariadb:/var/lib/mysql"
+      ],
+      "healthcheck": {
+       "test": [
+        "CMD",
+        "healthcheck.sh",
+        "--connect",
+        "--innodb_initialized"
+       ],
+       "interval": "10s",
+       "timeout": "5s",
+       "start_period": "60s",
+       "retries": 10
+      },
+      "security_opt": [
+       "no-new-privileges=true"
+      ],
+      "stop_grace_period": "60s",
+      "logging": {
+       "driver": "json-file",
+       "options": {
+        "max-size": "10m",
+        "max-file": "3"
+       }
+      }
+     },
+     "nextcloud": {
+      "labels": {
+       "titanos.icon": "https://raw.githubusercontent.com/nextcloud/server/master/core/img/favicon-touch.png",
+       "titanos.webui": "http://[host]:8081"
+      },
+      "image": "nextcloud:latest",
+      "restart": "unless-stopped",
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "NEXTCLOUD_ADMIN_USER": "wert-nextcloud_admin_user",
+       "NEXTCLOUD_ADMIN_PASSWORD": "${NEXTCLOUD_ADMIN_PASSWORD}",
+       "MYSQL_HOST": "mariadb",
+       "MYSQL_DATABASE": "nextcloud",
+       "MYSQL_USER": "nextcloud",
+       "MYSQL_PASSWORD": "${MYSQL_PASSWORD}",
+       "NEXTCLOUD_TRUSTED_DOMAINS": "wert-nextcloud_trusted_domains",
+       "PHP_MEMORY_LIMIT": "512M",
+       "PHP_UPLOAD_LIMIT": "2G",
+       "APACHE_BODY_LIMIT": "0",
+       "NEXTCLOUD_INIT_HTACCESS": "true",
+       "EXTRA": "ja"
+      },
+      "ports": [
+       "8081:80"
+      ],
+      "volumes": [
+       "./nextcloud:/var/www/html"
+      ],
+      "depends_on": {
+       "mariadb": {
+        "condition": "service_healthy"
+       }
+      },
+      "security_opt": [
+       "no-new-privileges=true"
+      ],
+      "stop_grace_period": "30s",
+      "logging": {
+       "driver": "json-file",
+       "options": {
+        "max-size": "10m",
+        "max-file": "3"
+       }
+      }
+     },
+     "nextcloud-cron": {
+      "image": "nextcloud:latest",
+      "restart": "unless-stopped",
+      "entrypoint": "/cron.sh",
+      "environment": {
+       "TZ": "Europe/Berlin"
+      },
+      "volumes": [
+       "./nextcloud:/var/www/html"
+      ],
+      "depends_on": {
+       "mariadb": {
+        "condition": "service_healthy"
+       },
+       "nextcloud": {
+        "condition": "service_started"
+       }
+      },
+      "security_opt": [
+       "no-new-privileges=true"
+      ],
+      "stop_grace_period": "30s",
+      "logging": {
+       "driver": "json-file",
+       "options": {
+        "max-size": "10m",
+        "max-file": "3"
+       }
+      }
+     }
+    }
+   },
+   "casaPlain": null,
+   "hardware": {
+    "mariadb": [],
+    "nextcloud": [],
+    "nextcloud-cron": []
+   }
+  },
+  {
+   "id": "katalog-zigbee2mqtt",
+   "input": {
+    "id": "katalog-zigbee2mqtt",
+    "compose": "x-titanos:\n  name: Zigbee2MQTT\n  main: zigbee2mqtt\n  category: home\n  description:\n    de: Zigbee-Geräte über MQTT verbinden. Mit privatem MQTT-Broker und Einrichtungsassistent.\n    en: Connect Zigbee devices over MQTT. Includes a private MQTT broker and onboarding wizard.\n  tips:\n    de: \"Ein kompatibler Zigbee-Koordinator ist erforderlich und wird nicht automatisch zugeordnet. Für\n      USB zuerst im Container-Editor das einzelne Gerät durchreichen und danach im Assistenten den\n      Containerpfad angeben; ein Netzwerk-Koordinator kann per TCP-Adresse verwendet werden. Die\n      Vorlage gewährt keine pauschalen USB- oder Host-Rechte. Im Assistenten mqtt://broker:1883 als\n      MQTT-Server verwenden. Dieser Broker hat keinen veröffentlichten Port und gehört nur zu dieser\n      Instanz. Der erste Einrichtungsassistent ist noch nicht durch den Frontend-Schlüssel\n      geschützt: nur im vertrauenswürdigen Netz einrichten. Danach schützt der erzeugte\n      Frontend-Schlüssel den Zugriff. Für Home Assistant dessen MQTT-Anbindung separat einrichten;\n      für einen gemeinsamen Broker die MQTT-Adresse in der App-Konfiguration ändern. Funkbetrieb und\n      echte Adapter sind hardwareabhängig.\"\n    en: \"A compatible Zigbee coordinator is required and is not assigned automatically. For USB, first\n      pass through the single device in the container editor and enter its container path in\n      onboarding; network coordinators can use a TCP address. The template grants no broad USB or\n      host privileges. Use mqtt://broker:1883 as the MQTT server in onboarding. This private broker\n      publishes no port and belongs only to this instance. Initial onboarding is not yet protected\n      by the frontend key: configure it on a trusted network. Afterwards the generated frontend key\n      protects access. Configure Home Assistant MQTT access separately; change the app MQTT URL to\n      use a shared broker. Radio operation and real adapters depend on hardware.\"\n  variables:\n    ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN:\n      label:\n        de: Zugriffsschlüssel der Weboberfläche\n        en: Web interface access key\n      secret: generate\n      required: true\n    TZ:\n      label:\n        de: Zeitzone\n        en: Timezone\n      fill: timezone\n  paths:\n    /app/data:\n      label:\n        de: Zigbee-Konfiguration und Netzwerkdaten\n        en: Zigbee configuration and network data\n  ports:\n    \"8080\":\n      label: WebUI / Onboarding\n      webui: true\n  icon: https://raw.githubusercontent.com/Koenkk/zigbee2mqtt/master/images/logo.png\nservices:\n  broker:\n    image: eclipse-mosquitto:latest\n    restart: unless-stopped\n    configs:\n      - source: mqtt\n        target: /mosquitto/config/mosquitto.conf\n    volumes:\n      - mqtt-data:/mosquitto/data\n    logging: &a1\n      driver: json-file\n      options:\n        max-size: 10m\n        max-file: \"3\"\n  zigbee2mqtt:\n    image: ghcr.io/koenkk/zigbee2mqtt:latest\n    restart: unless-stopped\n    labels:\n      titanos.webui: http://[host]:8082\n    ports:\n      - 8082:8080\n    logging: *a1\n    depends_on:\n      - broker\n    environment:\n      TZ: \"\"\n      ZIGBEE2MQTT_CONFIG_MQTT_SERVER: mqtt://broker:1883\n      ZIGBEE2MQTT_CONFIG_FRONTEND_ENABLED: \"true\"\n      ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN: \"\"\n      Z2M_ONBOARD_URL: http://0.0.0.0:8080\n    volumes:\n      - ./data:/app/data\nvolumes:\n  mqtt-data: {}\nconfigs:\n  mqtt:\n    content: |\n      listener 1883\n      allow_anonymous true\n      persistence true\n      persistence_location /mosquitto/data/\n      log_dest stdout\n",
+    "name": "zigbee2mqtt",
+    "shares": [
+     {
+      "name": "Medien",
+      "path": "/mnt/Data/Medien"
+     },
+     {
+      "name": "Dokumente",
+      "path": "/mnt/Data/Dokumente"
+     }
+    ],
+    "used": {
+     "8080/tcp": ""
+    },
+    "installed": [],
+    "edits": {
+     "vars": {},
+     "own": {
+      "vars": [
+       {
+        "name": "EXTRA",
+        "value": "ja"
+       }
+      ],
+      "paths": [],
+      "ports": [],
+      "labels": [],
+      "devices": []
+     }
+    }
+   },
+   "casaCompose": null,
+   "read": {
+    "images": [
+     {
+      "service": "broker",
+      "image": "eclipse-mosquitto:latest"
+     },
+     {
+      "service": "zigbee2mqtt",
+      "image": "ghcr.io/koenkk/zigbee2mqtt:latest"
+     }
+    ],
+    "publicUrl": "",
+    "name": "zigbee2mqtt",
+    "tips": {
+     "de": "Ein kompatibler Zigbee-Koordinator ist erforderlich und wird nicht automatisch zugeordnet. Für USB zuerst im Container-Editor das einzelne Gerät durchreichen und danach im Assistenten den Containerpfad angeben; ein Netzwerk-Koordinator kann per TCP-Adresse verwendet werden. Die Vorlage gewährt keine pauschalen USB- oder Host-Rechte. Im Assistenten mqtt://broker:1883 als MQTT-Server verwenden. Dieser Broker hat keinen veröffentlichten Port und gehört nur zu dieser Instanz. Der erste Einrichtungsassistent ist noch nicht durch den Frontend-Schlüssel geschützt: nur im vertrauenswürdigen Netz einrichten. Danach schützt der erzeugte Frontend-Schlüssel den Zugriff. Für Home Assistant dessen MQTT-Anbindung separat einrichten; für einen gemeinsamen Broker die MQTT-Adresse in der App-Konfiguration ändern. Funkbetrieb und echte Adapter sind hardwareabhängig.",
+     "en": "A compatible Zigbee coordinator is required and is not assigned automatically. For USB, first pass through the single device in the container editor and enter its container path in onboarding; network coordinators can use a TCP address. The template grants no broad USB or host privileges. Use mqtt://broker:1883 as the MQTT server in onboarding. This private broker publishes no port and belongs only to this instance. Initial onboarding is not yet protected by the frontend key: configure it on a trusted network. Afterwards the generated frontend key protects access. Configure Home Assistant MQTT access separately; change the app MQTT URL to use a shared broker. Radio operation and real adapters depend on hardware."
+    },
+    "risks": [],
+    "missingDevices": [],
+    "main": "zigbee2mqtt",
+    "vars": [
+     {
+      "service": "zigbee2mqtt",
+      "name": "TZ",
+      "label": {
+       "de": "Zeitzone",
+       "en": "Timezone"
+      },
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "zigbee2mqtt",
+      "name": "ZIGBEE2MQTT_CONFIG_MQTT_SERVER",
+      "placeholder": "",
+      "value": "mqtt://broker:1883",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "zigbee2mqtt",
+      "name": "ZIGBEE2MQTT_CONFIG_FRONTEND_ENABLED",
+      "placeholder": "",
+      "value": "true",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "zigbee2mqtt",
+      "name": "ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN",
+      "label": {
+       "de": "Zugriffsschlüssel der Weboberfläche",
+       "en": "Web interface access key"
+      },
+      "placeholder": "",
+      "value": "GEN_ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN",
+      "origin": "generated",
+      "secret": true,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "zigbee2mqtt",
+      "name": "Z2M_ONBOARD_URL",
+      "placeholder": "",
+      "value": "http://0.0.0.0:8080",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     }
+    ],
+    "paths": [
+     {
+      "service": "zigbee2mqtt",
+      "index": 0,
+      "container": "/app/data",
+      "label": {
+       "de": "Zigbee-Konfiguration und Netzwerkdaten",
+       "en": "Zigbee configuration and network data"
+      },
+      "template": "./data",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/zigbee2mqtt/data",
+      "touched": false
+     }
+    ],
+    "ports": [
+     {
+      "service": "zigbee2mqtt",
+      "index": 0,
+      "container": "8080",
+      "protocol": "tcp",
+      "label": "WebUI / Onboarding",
+      "webui": true,
+      "templateHost": "8082",
+      "blockedBy": null,
+      "host": "8082"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "own": {
+     "vars": [],
+     "paths": [],
+     "ports": [],
+     "labels": [],
+     "devices": []
+    }
+   },
+   "problems": {
+    "images": [
+     false,
+     false
+    ],
+    "name": "",
+    "vars": [
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "paths": [
+     ""
+    ],
+    "ports": [
+     ""
+    ],
+    "ownVars": [
+     ""
+    ],
+    "ownPaths": [],
+    "ownPorts": [],
+    "ownDevices": [],
+    "cpuset": false,
+    "memLimit": false,
+    "missing": 0,
+    "blocking": false
+   },
+   "compose": "x-titanos:\n  name: Zigbee2MQTT\n  main: zigbee2mqtt\n  category: home\n  description:\n    de: Zigbee-Geräte über MQTT verbinden. Mit privatem MQTT-Broker und Einrichtungsassistent.\n    en: Connect Zigbee devices over MQTT. Includes a private MQTT broker and onboarding wizard.\n  tips:\n    de: \"Ein kompatibler Zigbee-Koordinator ist erforderlich und wird nicht automatisch zugeordnet. Für USB zuerst im Container-Editor das einzelne Gerät durchreichen und danach im Assistenten den Containerpfad angeben; ein Netzwerk-Koordinator kann per TCP-Adresse verwendet werden. Die Vorlage gewährt keine pauschalen USB- oder Host-Rechte. Im Assistenten mqtt://broker:1883 als MQTT-Server verwenden. Dieser Broker hat keinen veröffentlichten Port und gehört nur zu dieser Instanz. Der erste Einrichtungsassistent ist noch nicht durch den Frontend-Schlüssel geschützt: nur im vertrauenswürdigen Netz einrichten. Danach schützt der erzeugte Frontend-Schlüssel den Zugriff. Für Home Assistant dessen MQTT-Anbindung separat einrichten; für einen gemeinsamen Broker die MQTT-Adresse in der App-Konfiguration ändern. Funkbetrieb und echte Adapter sind hardwareabhängig.\"\n    en: \"A compatible Zigbee coordinator is required and is not assigned automatically. For USB, first pass through the single device in the container editor and enter its container path in onboarding; network coordinators can use a TCP address. The template grants no broad USB or host privileges. Use mqtt://broker:1883 as the MQTT server in onboarding. This private broker publishes no port and belongs only to this instance. Initial onboarding is not yet protected by the frontend key: configure it on a trusted network. Afterwards the generated frontend key protects access. Configure Home Assistant MQTT access separately; change the app MQTT URL to use a shared broker. Radio operation and real adapters depend on hardware.\"\n  variables:\n    ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN:\n      label:\n        de: Zugriffsschlüssel der Weboberfläche\n        en: Web interface access key\n      secret: generate\n      required: true\n    TZ:\n      label:\n        de: Zeitzone\n        en: Timezone\n      fill: timezone\n  paths:\n    /app/data:\n      label:\n        de: Zigbee-Konfiguration und Netzwerkdaten\n        en: Zigbee configuration and network data\n  ports:\n    \"8080\":\n      label: WebUI / Onboarding\n      webui: true\n  icon: https://raw.githubusercontent.com/Koenkk/zigbee2mqtt/master/images/logo.png\nservices:\n  broker:\n    image: eclipse-mosquitto:latest\n    restart: unless-stopped\n    configs:\n      - source: mqtt\n        target: /mosquitto/config/mosquitto.conf\n    volumes:\n      - mqtt-data:/mosquitto/data\n    logging: &a1\n      driver: json-file\n      options:\n        max-size: 10m\n        max-file: \"3\"\n  zigbee2mqtt:\n    image: ghcr.io/koenkk/zigbee2mqtt:latest\n    restart: unless-stopped\n    labels:\n      titanos.icon: https://raw.githubusercontent.com/Koenkk/zigbee2mqtt/master/images/logo.png\n      titanos.webui: http://[host]:8082\n    ports:\n      - 8082:8080\n    logging: *a1\n    depends_on:\n      - broker\n    environment:\n      TZ: Europe/Berlin\n      ZIGBEE2MQTT_CONFIG_MQTT_SERVER: mqtt://broker:1883\n      ZIGBEE2MQTT_CONFIG_FRONTEND_ENABLED: \"true\"\n      ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN: ${ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN}\n      Z2M_ONBOARD_URL: http://0.0.0.0:8080\n      EXTRA: ja\n    volumes:\n      - ./data:/app/data\nvolumes:\n  mqtt-data: {}\nconfigs:\n  mqtt:\n    content: |\n      listener 1883\n      allow_anonymous true\n      persistence true\n      persistence_location /mosquitto/data/\n      log_dest stdout\n",
+   "env": {
+    "ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN": "GEN_ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN"
+   },
+   "plain": {
+    "x-titanos": {
+     "name": "Zigbee2MQTT",
+     "main": "zigbee2mqtt",
+     "category": "home",
+     "description": {
+      "de": "Zigbee-Geräte über MQTT verbinden. Mit privatem MQTT-Broker und Einrichtungsassistent.",
+      "en": "Connect Zigbee devices over MQTT. Includes a private MQTT broker and onboarding wizard."
+     },
+     "tips": {
+      "de": "Ein kompatibler Zigbee-Koordinator ist erforderlich und wird nicht automatisch zugeordnet. Für USB zuerst im Container-Editor das einzelne Gerät durchreichen und danach im Assistenten den Containerpfad angeben; ein Netzwerk-Koordinator kann per TCP-Adresse verwendet werden. Die Vorlage gewährt keine pauschalen USB- oder Host-Rechte. Im Assistenten mqtt://broker:1883 als MQTT-Server verwenden. Dieser Broker hat keinen veröffentlichten Port und gehört nur zu dieser Instanz. Der erste Einrichtungsassistent ist noch nicht durch den Frontend-Schlüssel geschützt: nur im vertrauenswürdigen Netz einrichten. Danach schützt der erzeugte Frontend-Schlüssel den Zugriff. Für Home Assistant dessen MQTT-Anbindung separat einrichten; für einen gemeinsamen Broker die MQTT-Adresse in der App-Konfiguration ändern. Funkbetrieb und echte Adapter sind hardwareabhängig.",
+      "en": "A compatible Zigbee coordinator is required and is not assigned automatically. For USB, first pass through the single device in the container editor and enter its container path in onboarding; network coordinators can use a TCP address. The template grants no broad USB or host privileges. Use mqtt://broker:1883 as the MQTT server in onboarding. This private broker publishes no port and belongs only to this instance. Initial onboarding is not yet protected by the frontend key: configure it on a trusted network. Afterwards the generated frontend key protects access. Configure Home Assistant MQTT access separately; change the app MQTT URL to use a shared broker. Radio operation and real adapters depend on hardware."
+     },
+     "variables": {
+      "ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN": {
+       "label": {
+        "de": "Zugriffsschlüssel der Weboberfläche",
+        "en": "Web interface access key"
+       },
+       "secret": "generate",
+       "required": true
+      },
+      "TZ": {
+       "label": {
+        "de": "Zeitzone",
+        "en": "Timezone"
+       },
+       "fill": "timezone"
+      }
+     },
+     "paths": {
+      "/app/data": {
+       "label": {
+        "de": "Zigbee-Konfiguration und Netzwerkdaten",
+        "en": "Zigbee configuration and network data"
+       }
+      }
+     },
+     "ports": {
+      "8080": {
+       "label": "WebUI / Onboarding",
+       "webui": true
+      }
+     },
+     "icon": "https://raw.githubusercontent.com/Koenkk/zigbee2mqtt/master/images/logo.png"
+    },
+    "services": {
+     "broker": {
+      "image": "eclipse-mosquitto:latest",
+      "restart": "unless-stopped",
+      "configs": [
+       {
+        "source": "mqtt",
+        "target": "/mosquitto/config/mosquitto.conf"
+       }
+      ],
+      "volumes": [
+       "mqtt-data:/mosquitto/data"
+      ],
+      "logging": {
+       "driver": "json-file",
+       "options": {
+        "max-size": "10m",
+        "max-file": "3"
+       }
+      }
+     },
+     "zigbee2mqtt": {
+      "image": "ghcr.io/koenkk/zigbee2mqtt:latest",
+      "restart": "unless-stopped",
+      "labels": {
+       "titanos.icon": "https://raw.githubusercontent.com/Koenkk/zigbee2mqtt/master/images/logo.png",
+       "titanos.webui": "http://[host]:8082"
+      },
+      "ports": [
+       "8082:8080"
+      ],
+      "logging": {
+       "driver": "json-file",
+       "options": {
+        "max-size": "10m",
+        "max-file": "3"
+       }
+      },
+      "depends_on": [
+       "broker"
+      ],
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "ZIGBEE2MQTT_CONFIG_MQTT_SERVER": "mqtt://broker:1883",
+       "ZIGBEE2MQTT_CONFIG_FRONTEND_ENABLED": "true",
+       "ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN": "${ZIGBEE2MQTT_CONFIG_FRONTEND_AUTH_TOKEN}",
+       "Z2M_ONBOARD_URL": "http://0.0.0.0:8080",
+       "EXTRA": "ja"
+      },
+      "volumes": [
+       "./data:/app/data"
+      ]
+     }
+    },
+    "volumes": {
+     "mqtt-data": {}
+    },
+    "configs": {
+     "mqtt": {
+      "content": "listener 1883\nallow_anonymous true\npersistence true\npersistence_location /mosquitto/data/\nlog_dest stdout\n"
+     }
+    }
+   },
+   "casaPlain": null,
+   "hardware": {
+    "broker": [],
+    "zigbee2mqtt": []
+   }
+  },
+  {
+   "id": "katalog-frigate",
+   "input": {
+    "id": "katalog-frigate",
+    "compose": "\nx-titanos:\n  icon: \"https://raw.githubusercontent.com/blakeblackshear/frigate/dev/web/images/branding/apple-touch-icon.png\"\n  name: Frigate NVR\n  main: frigate\n  category: security\n\n  description:\n    de: >-\n      Lokale Videoüberwachung mit KI-Objekterkennung,\n      Kamera-Livestreams, Aufzeichnungen und Ereignissen.\n      Frigate bietet eine geschützte Weboberfläche,\n      einen Kamera-Einrichtungsassistenten und optional\n      Hardwarebeschleunigung für Intel, AMD, NVIDIA und Coral.\n    en: >-\n      Local video surveillance with AI object detection,\n      camera live streams, recordings and events.\n      Includes authenticated web UI, camera setup wizard\n      and optional Intel, AMD, NVIDIA and Coral acceleration.\n\n  tips:\n    de: >-\n      Nach dem Start https://SERVER-IP:8971 öffnen.\n      Frigate legt den Benutzer admin mit zufälligem Passwort\n      an. Das erste Passwort steht im Container-Log und\n      sollte direkt im Dashboard geändert werden.\n      Kameras anschließend im Assistenten hinzufügen.\n      Die Konfiguration und Aufzeichnungen bleiben erhalten.\n      Port 5000 (API ohne Anmeldung) ist nicht freigegeben.\n      Für NVIDIA das TensorRT-Image und eine Docker-GPU-\n      Freigabe konfigurieren; für Intel/AMD bei Bedarf\n      /dev/dri durchreichen. Keine direkten Internetfreigaben.\n      Bei Versionswechseln die Konfiguration vorher sichern.\n    en: >-\n      Open https://SERVER-IP:8971 after starting.\n      Frigate creates an admin account and random password;\n      find the first password in container logs and change it.\n      Add cameras through the setup wizard.\n      Configuration and recordings persist.\n      Port 5000 (unauthenticated API) is not exposed.\n      NVIDIA requires a TensorRT image and Docker GPU access;\n      Intel/AMD may require /dev/dri passthrough.\n      Do not expose the app directly to the internet.\n      Back up the config before upgrading.\n\n  variables:\n    TZ:\n      label:\n        de: Zeitzone\n        en: Timezone\n\n    FRIGATE_RTSP_USER:\n      label:\n        de: RTSP-Benutzername (optional)\n        en: RTSP username (optional)\n\n    FRIGATE_RTSP_PASSWORD:\n      label:\n        de: RTSP-Passwort (optional)\n        en: RTSP password (optional)\n      secret: true\n\n    FRIGATE_MQTT_HOST:\n      label:\n        de: MQTT-Server (optional)\n        en: MQTT server (optional)\n\n    FRIGATE_MQTT_USER:\n      label:\n        de: MQTT-Benutzername (optional)\n        en: MQTT username (optional)\n\n    FRIGATE_MQTT_PASSWORD:\n      label:\n        de: MQTT-Passwort (optional)\n        en: MQTT password (optional)\n      secret: true\n\n    PLUS_API_KEY:\n      label:\n        de: Frigate+ API-Schlüssel (optional)\n        en: Frigate+ API key (optional)\n      secret: true\n\n  paths:\n    /config:\n      label:\n        de: Einstellungen, Benutzer und Ereignisdatenbank\n        en: Settings, users and event database\n\n    /media/frigate:\n      label:\n        de: Kameraaufzeichnungen, Clips und Schnappschüsse\n        en: Recordings, clips and snapshots\n\n  ports:\n    \"8971\":\n      label: Frigate Dashboard (HTTPS)\n      webui: true\n\n    \"8554\":\n      label: RTSP-Restream (TCP)\n      webui: false\n\n    \"8555\":\n      label: WebRTC (TCP und UDP)\n      webui: false\n\n\nservices:\n  frigate:\n    labels:\n      titanos.webui: \"https://[host]:8971\"\n    image: \"ghcr.io/blakeblackshear/frigate:stable\"\n    restart: unless-stopped\n    stop_grace_period: 30s\n\n    environment:\n      TZ: \"Europe/Berlin\"\n\n      # Optionale Kamera-Zugangsdaten\n      FRIGATE_RTSP_USER: \"\"\n      FRIGATE_RTSP_PASSWORD: \"\"\n\n      # Optionale MQTT-Zugangsdaten\n      FRIGATE_MQTT_HOST: \"\"\n      FRIGATE_MQTT_USER: \"\"\n      FRIGATE_MQTT_PASSWORD: \"\"\n\n      # Optionaler Frigate+ Zugang\n      PLUS_API_KEY: \"\"\n\n    ports:\n      # Geschütztes HTTPS-Dashboard\n      - \"8971:8971/tcp\"\n\n      # RTSP-Restreaming\n      - \"8554:8554/tcp\"\n\n      # WebRTC für Live-Kameras\n      - \"8555:8555/tcp\"\n      - \"8555:8555/udp\"\n\n      # API ohne Authentifizierung\n      # bewusst NICHT freigeben.\n      # - \"5000:5000/tcp\"\n\n      # Go2RTC-Admin-Oberfläche\n      # ebenfalls nicht freigeben.\n      # - \"1984:1984/tcp\"\n\n    # Shared Memory für Kamerastreams\n    shm_size: \"512mb\"\n\n    volumes:\n      # Konfiguration und Datenbank\n      - ./config:/config\n\n      # Aufzeichnungen und Medien\n      - ./media:/media/frigate\n\n      # Temporärer Aufnahme-Cache (1 GB RAM)\n      - type: tmpfs\n        target: /tmp/cache\n        tmpfs:\n          size: 1000000000\n\n    # ==========================================\n    # OPTIONAL: INTEL / AMD\n    # ==========================================\n\n    # devices:\n    #   - /dev/dri/renderD128:/dev/dri/renderD128\n    #\n    # Anschließend FFmpeg-Beschleunigung\n    # in Frigate konfigurieren:\n    # preset-vaapi\n\n    # ==========================================\n    # OPTIONAL: NVIDIA / TENSORRT\n    # ==========================================\n\n    # Frigate-Image auf stable-tensorrt ändern\n    # und die GPU-Freigabe aktivieren.\n    #\n    # deploy:\n    #   resources:\n    #     reservations:\n    #       devices:\n    #         - driver: nvidia\n    #           count: 1\n    #           capabilities: [gpu]\n    #\n    # Für NVIDIA-Videodekodierung:\n    # FFmpeg-Preset preset-nvidia verwenden.\n\n    # ==========================================\n    # OPTIONAL: GOOGLE CORAL USB\n    # ==========================================\n\n    # devices:\n    #   - /dev/bus/usb:/dev/bus/usb\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    security_opt:\n      - no-new-privileges=true\n\n    cap_drop:\n      - ALL\n\n    # s6 log ownership/user switching, file permissions and clean NGINX shutdown.\n    # Keep other capabilities dropped; no privileged mode or host access.\n    cap_add:\n      - CHOWN\n      - DAC_OVERRIDE\n      - FOWNER\n      - FSETID\n      - SETGID\n      - SETUID\n      - KILL\n\n    # ==========================================\n    # PROTOKOLLIERUNG\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n",
+    "name": "frigate",
+    "shares": [
+     {
+      "name": "Medien",
+      "path": "/mnt/Data/Medien"
+     },
+     {
+      "name": "Dokumente",
+      "path": "/mnt/Data/Dokumente"
+     }
+    ],
+    "used": {
+     "8080/tcp": ""
+    },
+    "installed": [],
+    "edits": {
+     "vars": {},
+     "own": {
+      "vars": [
+       {
+        "name": "EXTRA",
+        "value": "ja"
+       }
+      ],
+      "paths": [],
+      "ports": [],
+      "labels": [],
+      "devices": []
+     }
+    }
+   },
+   "casaCompose": null,
+   "read": {
+    "images": [
+     {
+      "service": "frigate",
+      "image": "ghcr.io/blakeblackshear/frigate:stable"
+     }
+    ],
+    "publicUrl": "",
+    "name": "frigate",
+    "tips": {
+     "de": "Nach dem Start https://SERVER-IP:8971 öffnen. Frigate legt den Benutzer admin mit zufälligem Passwort an. Das erste Passwort steht im Container-Log und sollte direkt im Dashboard geändert werden. Kameras anschließend im Assistenten hinzufügen. Die Konfiguration und Aufzeichnungen bleiben erhalten. Port 5000 (API ohne Anmeldung) ist nicht freigegeben. Für NVIDIA das TensorRT-Image und eine Docker-GPU- Freigabe konfigurieren; für Intel/AMD bei Bedarf /dev/dri durchreichen. Keine direkten Internetfreigaben. Bei Versionswechseln die Konfiguration vorher sichern.",
+     "en": "Open https://SERVER-IP:8971 after starting. Frigate creates an admin account and random password; find the first password in container logs and change it. Add cameras through the setup wizard. Configuration and recordings persist. Port 5000 (unauthenticated API) is not exposed. NVIDIA requires a TensorRT image and Docker GPU access; Intel/AMD may require /dev/dri passthrough. Do not expose the app directly to the internet. Back up the config before upgrading."
+    },
+    "risks": [
+     "capabilities"
+    ],
+    "missingDevices": [],
+    "main": "frigate",
+    "vars": [
+     {
+      "service": "frigate",
+      "name": "TZ",
+      "label": {
+       "de": "Zeitzone",
+       "en": "Timezone"
+      },
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "frigate",
+      "name": "FRIGATE_RTSP_USER",
+      "label": {
+       "de": "RTSP-Benutzername (optional)",
+       "en": "RTSP username (optional)"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "frigate",
+      "name": "FRIGATE_RTSP_PASSWORD",
+      "label": {
+       "de": "RTSP-Passwort (optional)",
+       "en": "RTSP password (optional)"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "template",
+      "secret": true,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "frigate",
+      "name": "FRIGATE_MQTT_HOST",
+      "label": {
+       "de": "MQTT-Server (optional)",
+       "en": "MQTT server (optional)"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "frigate",
+      "name": "FRIGATE_MQTT_USER",
+      "label": {
+       "de": "MQTT-Benutzername (optional)",
+       "en": "MQTT username (optional)"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "frigate",
+      "name": "FRIGATE_MQTT_PASSWORD",
+      "label": {
+       "de": "MQTT-Passwort (optional)",
+       "en": "MQTT password (optional)"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "template",
+      "secret": true,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "frigate",
+      "name": "PLUS_API_KEY",
+      "label": {
+       "de": "Frigate+ API-Schlüssel (optional)",
+       "en": "Frigate+ API key (optional)"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "template",
+      "secret": true,
+      "required": false,
+      "fill": ""
+     }
+    ],
+    "paths": [
+     {
+      "service": "frigate",
+      "index": 0,
+      "container": "/config",
+      "label": {
+       "de": "Einstellungen, Benutzer und Ereignisdatenbank",
+       "en": "Settings, users and event database"
+      },
+      "template": "./config",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/frigate/config",
+      "touched": false
+     },
+     {
+      "service": "frigate",
+      "index": 1,
+      "container": "/media/frigate",
+      "label": {
+       "de": "Kameraaufzeichnungen, Clips und Schnappschüsse",
+       "en": "Recordings, clips and snapshots"
+      },
+      "template": "./media",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/frigate/media",
+      "touched": false
+     }
+    ],
+    "ports": [
+     {
+      "service": "frigate",
+      "index": 0,
+      "container": "8971",
+      "protocol": "tcp",
+      "label": "Frigate Dashboard (HTTPS)",
+      "webui": true,
+      "templateHost": "8971",
+      "blockedBy": null,
+      "host": "8971"
+     },
+     {
+      "service": "frigate",
+      "index": 1,
+      "container": "8554",
+      "protocol": "tcp",
+      "label": "RTSP-Restream (TCP)",
+      "webui": false,
+      "templateHost": "8554",
+      "blockedBy": null,
+      "host": "8554"
+     },
+     {
+      "service": "frigate",
+      "index": 2,
+      "container": "8555",
+      "protocol": "tcp",
+      "label": "WebRTC (TCP und UDP)",
+      "webui": false,
+      "templateHost": "8555",
+      "blockedBy": null,
+      "host": "8555"
+     },
+     {
+      "service": "frigate",
+      "index": 3,
+      "container": "8555",
+      "protocol": "udp",
+      "webui": false,
+      "templateHost": "8555",
+      "blockedBy": null,
+      "host": "8555"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "own": {
+     "vars": [],
+     "paths": [],
+     "ports": [],
+     "labels": [],
+     "devices": []
+    }
+   },
+   "problems": {
+    "images": [
+     false
+    ],
+    "name": "",
+    "vars": [
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "paths": [
+     "",
+     ""
+    ],
+    "ports": [
+     "",
+     "",
+     "",
+     ""
+    ],
+    "ownVars": [
+     ""
+    ],
+    "ownPaths": [],
+    "ownPorts": [],
+    "ownDevices": [],
+    "cpuset": false,
+    "memLimit": false,
+    "missing": 0,
+    "blocking": false
+   },
+   "compose": "x-titanos:\n  icon: \"https://raw.githubusercontent.com/blakeblackshear/frigate/dev/web/images/branding/apple-touch-icon.png\"\n  name: Frigate NVR\n  main: frigate\n  category: security\n\n  description:\n    de: >-\n      Lokale Videoüberwachung mit KI-Objekterkennung, Kamera-Livestreams, Aufzeichnungen und Ereignissen. Frigate bietet eine geschützte Weboberfläche, einen Kamera-Einrichtungsassistenten und optional Hardwarebeschleunigung für Intel, AMD, NVIDIA und Coral.\n    en: >-\n      Local video surveillance with AI object detection, camera live streams, recordings and events. Includes authenticated web UI, camera setup wizard and optional Intel, AMD, NVIDIA and Coral acceleration.\n\n  tips:\n    de: >-\n      Nach dem Start https://SERVER-IP:8971 öffnen. Frigate legt den Benutzer admin mit zufälligem Passwort an. Das erste Passwort steht im Container-Log und sollte direkt im Dashboard geändert werden. Kameras anschließend im Assistenten hinzufügen. Die Konfiguration und Aufzeichnungen bleiben erhalten. Port 5000 (API ohne Anmeldung) ist nicht freigegeben. Für NVIDIA das TensorRT-Image und eine Docker-GPU- Freigabe konfigurieren; für Intel/AMD bei Bedarf /dev/dri durchreichen. Keine direkten Internetfreigaben. Bei Versionswechseln die Konfiguration vorher sichern.\n    en: >-\n      Open https://SERVER-IP:8971 after starting. Frigate creates an admin account and random password; find the first password in container logs and change it. Add cameras through the setup wizard. Configuration and recordings persist. Port 5000 (unauthenticated API) is not exposed. NVIDIA requires a TensorRT image and Docker GPU access; Intel/AMD may require /dev/dri passthrough. Do not expose the app directly to the internet. Back up the config before upgrading.\n\n  variables:\n    TZ:\n      label:\n        de: Zeitzone\n        en: Timezone\n\n    FRIGATE_RTSP_USER:\n      label:\n        de: RTSP-Benutzername (optional)\n        en: RTSP username (optional)\n\n    FRIGATE_RTSP_PASSWORD:\n      label:\n        de: RTSP-Passwort (optional)\n        en: RTSP password (optional)\n      secret: true\n\n    FRIGATE_MQTT_HOST:\n      label:\n        de: MQTT-Server (optional)\n        en: MQTT server (optional)\n\n    FRIGATE_MQTT_USER:\n      label:\n        de: MQTT-Benutzername (optional)\n        en: MQTT username (optional)\n\n    FRIGATE_MQTT_PASSWORD:\n      label:\n        de: MQTT-Passwort (optional)\n        en: MQTT password (optional)\n      secret: true\n\n    PLUS_API_KEY:\n      label:\n        de: Frigate+ API-Schlüssel (optional)\n        en: Frigate+ API key (optional)\n      secret: true\n\n  paths:\n    /config:\n      label:\n        de: Einstellungen, Benutzer und Ereignisdatenbank\n        en: Settings, users and event database\n\n    /media/frigate:\n      label:\n        de: Kameraaufzeichnungen, Clips und Schnappschüsse\n        en: Recordings, clips and snapshots\n\n  ports:\n    \"8971\":\n      label: Frigate Dashboard (HTTPS)\n      webui: true\n\n    \"8554\":\n      label: RTSP-Restream (TCP)\n      webui: false\n\n    \"8555\":\n      label: WebRTC (TCP und UDP)\n      webui: false\n\nservices:\n  frigate:\n    labels:\n      titanos.icon: https://raw.githubusercontent.com/blakeblackshear/frigate/dev/web/images/branding/apple-touch-icon.png\n      titanos.webui: https://[host]:8971\n    image: \"ghcr.io/blakeblackshear/frigate:stable\"\n    restart: unless-stopped\n    stop_grace_period: 30s\n\n    environment:\n      TZ: Europe/Berlin\n      EXTRA: ja\n\n    ports:\n      # Geschütztes HTTPS-Dashboard\n      - \"8971:8971/tcp\"\n\n      # RTSP-Restreaming\n      - \"8554:8554/tcp\"\n\n      # WebRTC für Live-Kameras\n      - \"8555:8555/tcp\"\n      - \"8555:8555/udp\"\n      # API ohne Authentifizierung\n      # bewusst NICHT freigeben.\n      # - \"5000:5000/tcp\"\n\n      # Go2RTC-Admin-Oberfläche\n      # ebenfalls nicht freigeben.\n      # - \"1984:1984/tcp\"\n\n      # Shared Memory für Kamerastreams\n    shm_size: \"512mb\"\n\n    volumes:\n      # Konfiguration und Datenbank\n      - ./config:/config\n\n      # Aufzeichnungen und Medien\n      - ./media:/media/frigate\n\n      # Temporärer Aufnahme-Cache (1 GB RAM)\n      - type: tmpfs\n        target: /tmp/cache\n        tmpfs:\n          size: 1000000000\n\n    # ==========================================\n    # OPTIONAL: INTEL / AMD\n    # ==========================================\n\n    # devices:\n    #   - /dev/dri/renderD128:/dev/dri/renderD128\n    #\n    # Anschließend FFmpeg-Beschleunigung\n    # in Frigate konfigurieren:\n    # preset-vaapi\n\n    # ==========================================\n    # OPTIONAL: NVIDIA / TENSORRT\n    # ==========================================\n\n    # Frigate-Image auf stable-tensorrt ändern\n    # und die GPU-Freigabe aktivieren.\n    #\n    # deploy:\n    #   resources:\n    #     reservations:\n    #       devices:\n    #         - driver: nvidia\n    #           count: 1\n    #           capabilities: [gpu]\n    #\n    # Für NVIDIA-Videodekodierung:\n    # FFmpeg-Preset preset-nvidia verwenden.\n\n    # ==========================================\n    # OPTIONAL: GOOGLE CORAL USB\n    # ==========================================\n\n    # devices:\n    #   - /dev/bus/usb:/dev/bus/usb\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    security_opt:\n      - no-new-privileges=true\n\n    cap_drop:\n      - ALL\n\n    # s6 log ownership/user switching, file permissions and clean NGINX shutdown.\n    # Keep other capabilities dropped; no privileged mode or host access.\n    cap_add:\n      - CHOWN\n      - DAC_OVERRIDE\n      - FOWNER\n      - FSETID\n      - SETGID\n      - SETUID\n      - KILL\n\n    # ==========================================\n    # PROTOKOLLIERUNG\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n",
+   "env": {},
+   "plain": {
+    "x-titanos": {
+     "icon": "https://raw.githubusercontent.com/blakeblackshear/frigate/dev/web/images/branding/apple-touch-icon.png",
+     "name": "Frigate NVR",
+     "main": "frigate",
+     "category": "security",
+     "description": {
+      "de": "Lokale Videoüberwachung mit KI-Objekterkennung, Kamera-Livestreams, Aufzeichnungen und Ereignissen. Frigate bietet eine geschützte Weboberfläche, einen Kamera-Einrichtungsassistenten und optional Hardwarebeschleunigung für Intel, AMD, NVIDIA und Coral.",
+      "en": "Local video surveillance with AI object detection, camera live streams, recordings and events. Includes authenticated web UI, camera setup wizard and optional Intel, AMD, NVIDIA and Coral acceleration."
+     },
+     "tips": {
+      "de": "Nach dem Start https://SERVER-IP:8971 öffnen. Frigate legt den Benutzer admin mit zufälligem Passwort an. Das erste Passwort steht im Container-Log und sollte direkt im Dashboard geändert werden. Kameras anschließend im Assistenten hinzufügen. Die Konfiguration und Aufzeichnungen bleiben erhalten. Port 5000 (API ohne Anmeldung) ist nicht freigegeben. Für NVIDIA das TensorRT-Image und eine Docker-GPU- Freigabe konfigurieren; für Intel/AMD bei Bedarf /dev/dri durchreichen. Keine direkten Internetfreigaben. Bei Versionswechseln die Konfiguration vorher sichern.",
+      "en": "Open https://SERVER-IP:8971 after starting. Frigate creates an admin account and random password; find the first password in container logs and change it. Add cameras through the setup wizard. Configuration and recordings persist. Port 5000 (unauthenticated API) is not exposed. NVIDIA requires a TensorRT image and Docker GPU access; Intel/AMD may require /dev/dri passthrough. Do not expose the app directly to the internet. Back up the config before upgrading."
+     },
+     "variables": {
+      "TZ": {
+       "label": {
+        "de": "Zeitzone",
+        "en": "Timezone"
+       }
+      },
+      "FRIGATE_RTSP_USER": {
+       "label": {
+        "de": "RTSP-Benutzername (optional)",
+        "en": "RTSP username (optional)"
+       }
+      },
+      "FRIGATE_RTSP_PASSWORD": {
+       "label": {
+        "de": "RTSP-Passwort (optional)",
+        "en": "RTSP password (optional)"
+       },
+       "secret": true
+      },
+      "FRIGATE_MQTT_HOST": {
+       "label": {
+        "de": "MQTT-Server (optional)",
+        "en": "MQTT server (optional)"
+       }
+      },
+      "FRIGATE_MQTT_USER": {
+       "label": {
+        "de": "MQTT-Benutzername (optional)",
+        "en": "MQTT username (optional)"
+       }
+      },
+      "FRIGATE_MQTT_PASSWORD": {
+       "label": {
+        "de": "MQTT-Passwort (optional)",
+        "en": "MQTT password (optional)"
+       },
+       "secret": true
+      },
+      "PLUS_API_KEY": {
+       "label": {
+        "de": "Frigate+ API-Schlüssel (optional)",
+        "en": "Frigate+ API key (optional)"
+       },
+       "secret": true
+      }
+     },
+     "paths": {
+      "/config": {
+       "label": {
+        "de": "Einstellungen, Benutzer und Ereignisdatenbank",
+        "en": "Settings, users and event database"
+       }
+      },
+      "/media/frigate": {
+       "label": {
+        "de": "Kameraaufzeichnungen, Clips und Schnappschüsse",
+        "en": "Recordings, clips and snapshots"
+       }
+      }
+     },
+     "ports": {
+      "8554": {
+       "label": "RTSP-Restream (TCP)",
+       "webui": false
+      },
+      "8555": {
+       "label": "WebRTC (TCP und UDP)",
+       "webui": false
+      },
+      "8971": {
+       "label": "Frigate Dashboard (HTTPS)",
+       "webui": true
+      }
+     }
+    },
+    "services": {
+     "frigate": {
+      "labels": {
+       "titanos.icon": "https://raw.githubusercontent.com/blakeblackshear/frigate/dev/web/images/branding/apple-touch-icon.png",
+       "titanos.webui": "https://[host]:8971"
+      },
+      "image": "ghcr.io/blakeblackshear/frigate:stable",
+      "restart": "unless-stopped",
+      "stop_grace_period": "30s",
+      "environment": {
+       "TZ": "Europe/Berlin",
+       "EXTRA": "ja"
+      },
+      "ports": [
+       "8971:8971/tcp",
+       "8554:8554/tcp",
+       "8555:8555/tcp",
+       "8555:8555/udp"
+      ],
+      "shm_size": "512mb",
+      "volumes": [
+       "./config:/config",
+       "./media:/media/frigate",
+       {
+        "type": "tmpfs",
+        "target": "/tmp/cache",
+        "tmpfs": {
+         "size": 1000000000
+        }
+       }
+      ],
+      "security_opt": [
+       "no-new-privileges=true"
+      ],
+      "cap_drop": [
+       "ALL"
+      ],
+      "cap_add": [
+       "CHOWN",
+       "DAC_OVERRIDE",
+       "FOWNER",
+       "FSETID",
+       "SETGID",
+       "SETUID",
+       "KILL"
+      ],
+      "logging": {
+       "driver": "json-file",
+       "options": {
+        "max-size": "10m",
+        "max-file": "3"
+       }
+      }
+     }
+    }
+   },
+   "casaPlain": null,
+   "hardware": {
+    "frigate": []
+   }
+  },
+  {
+   "id": "katalog-bambu-lab",
+   "input": {
+    "id": "katalog-bambu-lab",
+    "compose": "\nx-titanos:\n  icon: \"https://raw.githubusercontent.com/bambulab/BambuStudio/master/resources/images/BambuStudio_128px.png\"\n  name: Bambu Studio\n  main: bambustudio\n\n  # „Öffnen mit“ im Dateimanager von TitanOS (ab 0.69): Dateien dieser\n  # Typen öffnet TitanOS mit dem Programm im Container. Pfad im Container\n  # unter /shares/<Freigabe>; TitanOS fragt beim ersten Öffnen nach dem\n  # Einhängen der Freigabe.\n  opens:\n    types: [3mf, stl, step, stp, obj, amf]\n    command: [/opt/bambustudio/AppRun, \"{file}\"]\n    user: abc\n  category: productivity\n\n  description:\n    de: >-\n      Bambu Studio als browserbasierte Anwendung\n      für Bambu Lab 3D-Drucker.\n      3D-Modelle vorbereiten, slicen und drucken.\n      Mit Benutzeranmeldung, Versionsauswahl,\n      dauerhaftem Speicher und optionaler\n      GPU-Beschleunigung.\n    en: >-\n      Browser-based Bambu Studio for\n      Bambu Lab 3D printers.\n      Prepare, slice and print 3D models.\n      Includes authentication, version selection,\n      persistent storage and optional\n      GPU acceleration.\n\n  tips:\n    de: >-\n      Beim Installieren Benutzername und Passwort\n      für die Weboberfläche vergeben.\n      Bambu Studio ist über HTTPS auf Port\n      3001 erreichbar.\n      Beim ersten Aufruf muss gegebenenfalls\n      das selbstsignierte Zertifikat bestätigt\n      werden. Anschließend Bambu Studio\n      einrichten und den Drucker verbinden.\n      Die Verbindung zu Bambu Lab Druckern\n      kann über das Bambu-Konto oder LAN-Modus\n      erfolgen. Die automatische Druckersuche\n      kann im Docker-Bridge-Netz eingeschränkt\n      sein. Gegebenenfalls die Drucker-IP\n      manuell eintragen.\n      Einstellungen, Druckprofile und Dateien\n      bleiben dauerhaft erhalten.\n      GPU-Beschleunigung ist optional.\n      Die Anwendung nicht ohne zusätzliche\n      Sicherheitsmaßnahmen öffentlich freigeben.\n    en: >-\n      Set a username and password during\n      installation.\n      Bambu Studio is accessible via HTTPS\n      on port 3001.\n      Accept the self-signed certificate\n      warning if prompted.\n      Configure Bambu Studio and connect\n      your printer through your Bambu account\n      or LAN mode.\n      Automatic printer discovery may be\n      limited by Docker bridge networking.\n      Manual printer IP configuration may\n      be required.\n      Settings, print profiles and files\n      are stored persistently.\n      GPU acceleration is optional.\n      Do not expose the application publicly\n      without additional security.\n\n  # ============================================\n  # TITANOS VARIABLEN\n  # ============================================\n\n  variables:\n\n    # ------------------------------------------\n    # BENUTZERANMELDUNG\n    # ------------------------------------------\n\n    CUSTOM_USER:\n      label:\n        de: Weboberfläche Benutzername\n        en: Web interface username\n      required: true\n\n    PASSWORD:\n      label:\n        de: Weboberfläche Passwort\n        en: Web interface password\n      secret: true\n      required: true\n\n    # ------------------------------------------\n    # SYSTEM\n    # ------------------------------------------\n\n    PUID:\n      label:\n        de: Benutzer-ID\n        en: User ID\n\n    PGID:\n      label:\n        de: Gruppen-ID\n        en: Group ID\n\n    TZ:\n      label:\n        de: Zeitzone\n        en: Timezone\n\n    LC_ALL:\n      label:\n        de: Sprache der Anwendung\n        en: Application language\n\n    # ------------------------------------------\n    # DARSTELLUNG\n    # ------------------------------------------\n\n    DARK_MODE:\n      label:\n        de: Dunkles Design aktivieren\n        en: Enable dark mode\n\n    TITLE:\n      label:\n        de: Titel der Weboberfläche\n        en: Web interface title\n\n    # ------------------------------------------\n    # PERFORMANCE\n    # ------------------------------------------\n\n    AUTO_GPU:\n      label:\n        de: Automatische GPU-Nutzung\n        en: Automatic GPU usage\n\n    # ------------------------------------------\n    # SICHERHEIT\n    # ------------------------------------------\n\n    SELKIES_ENABLE_SHARING:\n      label:\n        de: Sitzungsfreigabe erlauben\n        en: Allow session sharing\n\n  # ============================================\n  # PERSISTENTE DATEN\n  # ============================================\n\n  paths:\n\n    /config:\n      label:\n        de: Konfiguration, Projekte und Druckprofile\n        en: Configuration, projects and print profiles\n\n  # ============================================\n  # PORTS\n  # ============================================\n\n  ports:\n\n    \"3001\":\n      label: Bambu Studio HTTPS\n      webui: true\n\n\n# ==============================================\n# SERVICES\n# ==============================================\n\nservices:\n\n  bambustudio:\n    image: \"lscr.io/linuxserver/bambustudio:latest\"\n    restart: unless-stopped\n\n    # ==========================================\n    # SYSTEM\n    # ==========================================\n\n    labels:\n      titanos.webui: \"https://[host]:3003\"\n\n    environment:\n\n      # ----------------------------------------\n      # ----------------------------------------\n\n\n      # ----------------------------------------\n      # BENUTZER UND BERECHTIGUNGEN\n      # ----------------------------------------\n\n      PUID: \"1000\"\n      PGID: \"1000\"\n\n      # ----------------------------------------\n      # SPRACHE UND ZEIT\n      # ----------------------------------------\n\n      TZ: \"Europe/Berlin\"\n      LC_ALL: \"de_DE.UTF-8\"\n\n      # ----------------------------------------\n      # WEBANMELDUNG\n      # ----------------------------------------\n\n      # Wird von TitanOS abgefragt\n      CUSTOM_USER: \"\"\n\n      # Wird von TitanOS abgefragt\n      PASSWORD: \"\"\n\n      # ----------------------------------------\n      # OBERFLÄCHE\n      # ----------------------------------------\n\n      TITLE: \"Bambu Studio\"\n\n      # Dunkles Design\n      DARK_MODE: \"true\"\n\n      # ----------------------------------------\n      # GPU\n      # ----------------------------------------\n\n      # Ohne Gerätefreigabe CPU-Betrieb\n      AUTO_GPU: \"false\"\n\n      # ----------------------------------------\n      # SICHERHEIT\n      # ----------------------------------------\n\n      # Sitzungsfreigabe deaktivieren\n      SELKIES_ENABLE_SHARING: \"false\"\n\n      # ----------------------------------------\n      # OPTIONALE ERWEITERUNGEN\n      # ----------------------------------------\n\n      # Wayland standardmäßig verwenden\n      PIXELFLUX_WAYLAND: \"true\"\n\n      # Gamepad-Unterstützung deaktivieren\n      NO_GAMEPAD: \"true\"\n\n    # ==========================================\n    # PORTFREIGABEN\n    # ==========================================\n\n    ports:\n\n      # Browserzugriff über HTTPS\n      - \"3003:3001\"\n\n    # ==========================================\n    # PERSISTENTE DATEN\n    # ==========================================\n\n    volumes:\n\n      # Konfiguration, Projekte, Druckprofile\n      - ./config:/config\n\n    # ==========================================\n    # GEMEINSAMER SPEICHER\n    # ==========================================\n\n    # Wichtig für grafische Anwendungen\n    shm_size: \"1gb\"\n\n    # ==========================================\n    # OPTIONALE GPU-BESCHLEUNIGUNG\n    # ==========================================\n\n    # Für Intel/AMD mit /dev/dri:\n    #\n    # devices:\n    #   - /dev/dri:/dev/dri\n    #\n    # Zusätzlich:\n    # AUTO_GPU: \"true\"\n    #\n    # NVIDIA benötigt eine separate\n    # Docker-GPU-Konfiguration und geeignete\n    # NVIDIA-Treiber auf dem Host.\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    # Kein privilegierter Container\n    # Kein Docker-Socket-Mount\n    # Keine zusätzlichen Host-Verzeichnisse\n\n    # ==========================================\n    # BEENDEN\n    # ==========================================\n\n    stop_grace_period: 30s\n\n    # ==========================================\n    # PROTOKOLLIERUNG\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n",
+    "name": "bambu-lab",
+    "shares": [
+     {
+      "name": "Medien",
+      "path": "/mnt/Data/Medien"
+     },
+     {
+      "name": "Dokumente",
+      "path": "/mnt/Data/Dokumente"
+     }
+    ],
+    "used": {
+     "8080/tcp": ""
+    },
+    "installed": [],
+    "edits": {
+     "vars": {
+      "CUSTOM_USER": "wert-custom_user",
+      "PASSWORD": "wert-password"
+     },
+     "own": {
+      "vars": [
+       {
+        "name": "EXTRA",
+        "value": "ja"
+       }
+      ],
+      "paths": [],
+      "ports": [],
+      "labels": [],
+      "devices": []
+     }
+    }
+   },
+   "casaCompose": null,
+   "read": {
+    "images": [
+     {
+      "service": "bambustudio",
+      "image": "lscr.io/linuxserver/bambustudio:latest"
+     }
+    ],
+    "publicUrl": "",
+    "name": "bambu-lab",
+    "tips": {
+     "de": "Beim Installieren Benutzername und Passwort für die Weboberfläche vergeben. Bambu Studio ist über HTTPS auf Port 3001 erreichbar. Beim ersten Aufruf muss gegebenenfalls das selbstsignierte Zertifikat bestätigt werden. Anschließend Bambu Studio einrichten und den Drucker verbinden. Die Verbindung zu Bambu Lab Druckern kann über das Bambu-Konto oder LAN-Modus erfolgen. Die automatische Druckersuche kann im Docker-Bridge-Netz eingeschränkt sein. Gegebenenfalls die Drucker-IP manuell eintragen. Einstellungen, Druckprofile und Dateien bleiben dauerhaft erhalten. GPU-Beschleunigung ist optional. Die Anwendung nicht ohne zusätzliche Sicherheitsmaßnahmen öffentlich freigeben.",
+     "en": "Set a username and password during installation. Bambu Studio is accessible via HTTPS on port 3001. Accept the self-signed certificate warning if prompted. Configure Bambu Studio and connect your printer through your Bambu account or LAN mode. Automatic printer discovery may be limited by Docker bridge networking. Manual printer IP configuration may be required. Settings, print profiles and files are stored persistently. GPU acceleration is optional. Do not expose the application publicly without additional security."
+    },
+    "risks": [],
+    "missingDevices": [],
+    "main": "bambustudio",
+    "vars": [
+     {
+      "service": "bambustudio",
+      "name": "PUID",
+      "label": {
+       "de": "Benutzer-ID",
+       "en": "User ID"
+      },
+      "placeholder": "",
+      "value": "1000",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "uid"
+     },
+     {
+      "service": "bambustudio",
+      "name": "PGID",
+      "label": {
+       "de": "Gruppen-ID",
+       "en": "Group ID"
+      },
+      "placeholder": "",
+      "value": "100",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "gid"
+     },
+     {
+      "service": "bambustudio",
+      "name": "TZ",
+      "label": {
+       "de": "Zeitzone",
+       "en": "Timezone"
+      },
+      "placeholder": "",
+      "value": "Europe/Berlin",
+      "origin": "titanos",
+      "secret": false,
+      "required": false,
+      "fill": "timezone"
+     },
+     {
+      "service": "bambustudio",
+      "name": "LC_ALL",
+      "label": {
+       "de": "Sprache der Anwendung",
+       "en": "Application language"
+      },
+      "placeholder": "",
+      "value": "de_DE.UTF-8",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "bambustudio",
+      "name": "CUSTOM_USER",
+      "label": {
+       "de": "Weboberfläche Benutzername",
+       "en": "Web interface username"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "required",
+      "secret": false,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "bambustudio",
+      "name": "PASSWORD",
+      "label": {
+       "de": "Weboberfläche Passwort",
+       "en": "Web interface password"
+      },
+      "placeholder": "",
+      "value": "",
+      "origin": "required",
+      "secret": true,
+      "required": true,
+      "fill": ""
+     },
+     {
+      "service": "bambustudio",
+      "name": "TITLE",
+      "label": {
+       "de": "Titel der Weboberfläche",
+       "en": "Web interface title"
+      },
+      "placeholder": "",
+      "value": "Bambu Studio",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "bambustudio",
+      "name": "DARK_MODE",
+      "label": {
+       "de": "Dunkles Design aktivieren",
+       "en": "Enable dark mode"
+      },
+      "placeholder": "",
+      "value": "true",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "bambustudio",
+      "name": "AUTO_GPU",
+      "label": {
+       "de": "Automatische GPU-Nutzung",
+       "en": "Automatic GPU usage"
+      },
+      "placeholder": "",
+      "value": "false",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "bambustudio",
+      "name": "SELKIES_ENABLE_SHARING",
+      "label": {
+       "de": "Sitzungsfreigabe erlauben",
+       "en": "Allow session sharing"
+      },
+      "placeholder": "",
+      "value": "false",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "bambustudio",
+      "name": "PIXELFLUX_WAYLAND",
+      "placeholder": "",
+      "value": "true",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     },
+     {
+      "service": "bambustudio",
+      "name": "NO_GAMEPAD",
+      "placeholder": "",
+      "value": "true",
+      "origin": "template",
+      "secret": false,
+      "required": false,
+      "fill": ""
+     }
+    ],
+    "paths": [
+     {
+      "service": "bambustudio",
+      "index": 0,
+      "container": "/config",
+      "label": {
+       "de": "Konfiguration, Projekte und Druckprofile",
+       "en": "Configuration, projects and print profiles"
+      },
+      "template": "./config",
+      "share": null,
+      "wanted": false,
+      "host": "/mnt/Data/appdata/bambu-lab/config",
+      "touched": false
+     }
+    ],
+    "ports": [
+     {
+      "service": "bambustudio",
+      "index": 0,
+      "container": "3001",
+      "protocol": "tcp",
+      "label": "Bambu Studio HTTPS",
+      "webui": true,
+      "templateHost": "3003",
+      "blockedBy": null,
+      "host": "3003"
+     }
+    ],
+    "cpuset": "",
+    "memLimit": "",
+    "own": {
+     "vars": [],
+     "paths": [],
+     "ports": [],
+     "labels": [],
+     "devices": []
+    }
+   },
+   "problems": {
+    "images": [
+     false
+    ],
+    "name": "",
+    "vars": [
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "paths": [
+     ""
+    ],
+    "ports": [
+     ""
+    ],
+    "ownVars": [
+     ""
+    ],
+    "ownPaths": [],
+    "ownPorts": [],
+    "ownDevices": [],
+    "cpuset": false,
+    "memLimit": false,
+    "missing": 0,
+    "blocking": false
+   },
+   "compose": "x-titanos:\n  icon: \"https://raw.githubusercontent.com/bambulab/BambuStudio/master/resources/images/BambuStudio_128px.png\"\n  name: Bambu Studio\n  main: bambustudio\n\n  # „Öffnen mit“ im Dateimanager von TitanOS (ab 0.69): Dateien dieser\n  # Typen öffnet TitanOS mit dem Programm im Container. Pfad im Container\n  # unter /shares/<Freigabe>; TitanOS fragt beim ersten Öffnen nach dem\n  # Einhängen der Freigabe.\n  opens:\n    types: [ 3mf, stl, step, stp, obj, amf ]\n    command: [ /opt/bambustudio/AppRun, \"{file}\" ]\n    user: abc\n  category: productivity\n\n  description:\n    de: >-\n      Bambu Studio als browserbasierte Anwendung für Bambu Lab 3D-Drucker. 3D-Modelle vorbereiten, slicen und drucken. Mit Benutzeranmeldung, Versionsauswahl, dauerhaftem Speicher und optionaler GPU-Beschleunigung.\n    en: >-\n      Browser-based Bambu Studio for Bambu Lab 3D printers. Prepare, slice and print 3D models. Includes authentication, version selection, persistent storage and optional GPU acceleration.\n\n  tips:\n    de: >-\n      Beim Installieren Benutzername und Passwort für die Weboberfläche vergeben. Bambu Studio ist über HTTPS auf Port 3001 erreichbar. Beim ersten Aufruf muss gegebenenfalls das selbstsignierte Zertifikat bestätigt werden. Anschließend Bambu Studio einrichten und den Drucker verbinden. Die Verbindung zu Bambu Lab Druckern kann über das Bambu-Konto oder LAN-Modus erfolgen. Die automatische Druckersuche kann im Docker-Bridge-Netz eingeschränkt sein. Gegebenenfalls die Drucker-IP manuell eintragen. Einstellungen, Druckprofile und Dateien bleiben dauerhaft erhalten. GPU-Beschleunigung ist optional. Die Anwendung nicht ohne zusätzliche Sicherheitsmaßnahmen öffentlich freigeben.\n    en: >-\n      Set a username and password during installation. Bambu Studio is accessible via HTTPS on port 3001. Accept the self-signed certificate warning if prompted. Configure Bambu Studio and connect your printer through your Bambu account or LAN mode. Automatic printer discovery may be limited by Docker bridge networking. Manual printer IP configuration may be required. Settings, print profiles and files are stored persistently. GPU acceleration is optional. Do not expose the application publicly without additional security.\n\n  # ============================================\n  # TITANOS VARIABLEN\n  # ============================================\n\n  variables:\n\n    # ------------------------------------------\n    # BENUTZERANMELDUNG\n    # ------------------------------------------\n\n    CUSTOM_USER:\n      label:\n        de: Weboberfläche Benutzername\n        en: Web interface username\n      required: true\n\n    PASSWORD:\n      label:\n        de: Weboberfläche Passwort\n        en: Web interface password\n      secret: true\n      required: true\n\n    # ------------------------------------------\n    # SYSTEM\n    # ------------------------------------------\n\n    PUID:\n      label:\n        de: Benutzer-ID\n        en: User ID\n\n    PGID:\n      label:\n        de: Gruppen-ID\n        en: Group ID\n\n    TZ:\n      label:\n        de: Zeitzone\n        en: Timezone\n\n    LC_ALL:\n      label:\n        de: Sprache der Anwendung\n        en: Application language\n\n    # ------------------------------------------\n    # DARSTELLUNG\n    # ------------------------------------------\n\n    DARK_MODE:\n      label:\n        de: Dunkles Design aktivieren\n        en: Enable dark mode\n\n    TITLE:\n      label:\n        de: Titel der Weboberfläche\n        en: Web interface title\n\n    # ------------------------------------------\n    # PERFORMANCE\n    # ------------------------------------------\n\n    AUTO_GPU:\n      label:\n        de: Automatische GPU-Nutzung\n        en: Automatic GPU usage\n\n    # ------------------------------------------\n    # SICHERHEIT\n    # ------------------------------------------\n\n    SELKIES_ENABLE_SHARING:\n      label:\n        de: Sitzungsfreigabe erlauben\n        en: Allow session sharing\n\n  # ============================================\n  # PERSISTENTE DATEN\n  # ============================================\n\n  paths:\n\n    /config:\n      label:\n        de: Konfiguration, Projekte und Druckprofile\n        en: Configuration, projects and print profiles\n\n  # ============================================\n  # PORTS\n  # ============================================\n\n  ports:\n\n    \"3001\":\n      label: Bambu Studio HTTPS\n      webui: true\n\n# ==============================================\n# SERVICES\n# ==============================================\n\nservices:\n\n  bambustudio:\n    image: \"lscr.io/linuxserver/bambustudio:latest\"\n    restart: unless-stopped\n\n    # ==========================================\n    # SYSTEM\n    # ==========================================\n\n    labels:\n      titanos.icon: https://raw.githubusercontent.com/bambulab/BambuStudio/master/resources/images/BambuStudio_128px.png\n      titanos.webui: https://[host]:3003\n\n    environment:\n      # ----------------------------------------\n      # ----------------------------------------\n\n\n      # ----------------------------------------\n      # BENUTZER UND BERECHTIGUNGEN\n      # ----------------------------------------\n\n      PUID: \"1000\"\n      PGID: \"100\"\n      TZ: Europe/Berlin\n      LC_ALL: de_DE.UTF-8\n      CUSTOM_USER: wert-custom_user\n      PASSWORD: ${PASSWORD}\n      TITLE: Bambu Studio\n      DARK_MODE: \"true\"\n      AUTO_GPU: \"false\"\n      SELKIES_ENABLE_SHARING: \"false\"\n      PIXELFLUX_WAYLAND: \"true\"\n      NO_GAMEPAD: \"true\"\n      EXTRA: ja\n\n    # ==========================================\n    # PORTFREIGABEN\n    # ==========================================\n\n    ports:\n\n      # Browserzugriff über HTTPS\n      - \"3003:3001\"\n\n    # ==========================================\n    # PERSISTENTE DATEN\n    # ==========================================\n\n    volumes:\n\n      # Konfiguration, Projekte, Druckprofile\n      - ./config:/config\n\n    # ==========================================\n    # GEMEINSAMER SPEICHER\n    # ==========================================\n\n    # Wichtig für grafische Anwendungen\n    shm_size: \"1gb\"\n\n    # ==========================================\n    # OPTIONALE GPU-BESCHLEUNIGUNG\n    # ==========================================\n\n    # Für Intel/AMD mit /dev/dri:\n    #\n    # devices:\n    #   - /dev/dri:/dev/dri\n    #\n    # Zusätzlich:\n    # AUTO_GPU: \"true\"\n    #\n    # NVIDIA benötigt eine separate\n    # Docker-GPU-Konfiguration und geeignete\n    # NVIDIA-Treiber auf dem Host.\n\n    # ==========================================\n    # SICHERHEIT\n    # ==========================================\n\n    # Kein privilegierter Container\n    # Kein Docker-Socket-Mount\n    # Keine zusätzlichen Host-Verzeichnisse\n\n    # ==========================================\n    # BEENDEN\n    # ==========================================\n\n    stop_grace_period: 30s\n\n    # ==========================================\n    # PROTOKOLLIERUNG\n    # ==========================================\n\n    logging:\n      driver: json-file\n      options:\n        max-size: \"10m\"\n        max-file: \"3\"\n",
+   "env": {
+    "PASSWORD": "wert-password"
+   },
+   "plain": {
+    "x-titanos": {
+     "icon": "https://raw.githubusercontent.com/bambulab/BambuStudio/master/resources/images/BambuStudio_128px.png",
+     "name": "Bambu Studio",
+     "main": "bambustudio",
+     "opens": {
+      "types": [
+       "3mf",
+       "stl",
+       "step",
+       "stp",
+       "obj",
+       "amf"
+      ],
+      "command": [
+       "/opt/bambustudio/AppRun",
+       "{file}"
+      ],
+      "user": "abc"
+     },
+     "category": "productivity",
+     "description": {
+      "de": "Bambu Studio als browserbasierte Anwendung für Bambu Lab 3D-Drucker. 3D-Modelle vorbereiten, slicen und drucken. Mit Benutzeranmeldung, Versionsauswahl, dauerhaftem Speicher und optionaler GPU-Beschleunigung.",
+      "en": "Browser-based Bambu Studio for Bambu Lab 3D printers. Prepare, slice and print 3D models. Includes authentication, version selection, persistent storage and optional GPU acceleration."
+     },
+     "tips": {
+      "de": "Beim Installieren Benutzername und Passwort für die Weboberfläche vergeben. Bambu Studio ist über HTTPS auf Port 3001 erreichbar. Beim ersten Aufruf muss gegebenenfalls das selbstsignierte Zertifikat bestätigt werden. Anschließend Bambu Studio einrichten und den Drucker verbinden. Die Verbindung zu Bambu Lab Druckern kann über das Bambu-Konto oder LAN-Modus erfolgen. Die automatische Druckersuche kann im Docker-Bridge-Netz eingeschränkt sein. Gegebenenfalls die Drucker-IP manuell eintragen. Einstellungen, Druckprofile und Dateien bleiben dauerhaft erhalten. GPU-Beschleunigung ist optional. Die Anwendung nicht ohne zusätzliche Sicherheitsmaßnahmen öffentlich freigeben.",
+      "en": "Set a username and password during installation. Bambu Studio is accessible via HTTPS on port 3001. Accept the self-signed certificate warning if prompted. Configure Bambu Studio and connect your printer through your Bambu account or LAN mode. Automatic printer discovery may be limited by Docker bridge networking. Manual printer IP configuration may be required. Settings, print profiles and files are stored persistently. GPU acceleration is optional. Do not expose the application publicly without additional security."
+     },
+     "variables": {
+      "CUSTOM_USER": {
+       "label": {
+        "de": "Weboberfläche Benutzername",
+        "en": "Web interface username"
+       },
+       "required": true
+      },
+      "PASSWORD": {
+       "label": {
+        "de": "Weboberfläche Passwort",
+        "en": "Web interface password"
+       },
+       "secret": true,
+       "required": true
+      },
+      "PUID": {
+       "label": {
+        "de": "Benutzer-ID",
+        "en": "User ID"
+       }
+      },
+      "PGID": {
+       "label": {
+        "de": "Gruppen-ID",
+        "en": "Group ID"
+       }
+      },
+      "TZ": {
+       "label": {
+        "de": "Zeitzone",
+        "en": "Timezone"
+       }
+      },
+      "LC_ALL": {
+       "label": {
+        "de": "Sprache der Anwendung",
+        "en": "Application language"
+       }
+      },
+      "DARK_MODE": {
+       "label": {
+        "de": "Dunkles Design aktivieren",
+        "en": "Enable dark mode"
+       }
+      },
+      "TITLE": {
+       "label": {
+        "de": "Titel der Weboberfläche",
+        "en": "Web interface title"
+       }
+      },
+      "AUTO_GPU": {
+       "label": {
+        "de": "Automatische GPU-Nutzung",
+        "en": "Automatic GPU usage"
+       }
+      },
+      "SELKIES_ENABLE_SHARING": {
+       "label": {
+        "de": "Sitzungsfreigabe erlauben",
+        "en": "Allow session sharing"
+       }
+      }
+     },
+     "paths": {
+      "/config": {
+       "label": {
+        "de": "Konfiguration, Projekte und Druckprofile",
+        "en": "Configuration, projects and print profiles"
+       }
+      }
+     },
+     "ports": {
+      "3001": {
+       "label": "Bambu Studio HTTPS",
+       "webui": true
+      }
+     }
+    },
+    "services": {
+     "bambustudio": {
+      "image": "lscr.io/linuxserver/bambustudio:latest",
+      "restart": "unless-stopped",
+      "labels": {
+       "titanos.icon": "https://raw.githubusercontent.com/bambulab/BambuStudio/master/resources/images/BambuStudio_128px.png",
+       "titanos.webui": "https://[host]:3003"
+      },
+      "environment": {
+       "PUID": "1000",
+       "PGID": "100",
+       "TZ": "Europe/Berlin",
+       "LC_ALL": "de_DE.UTF-8",
+       "CUSTOM_USER": "wert-custom_user",
+       "PASSWORD": "${PASSWORD}",
+       "TITLE": "Bambu Studio",
+       "DARK_MODE": "true",
+       "AUTO_GPU": "false",
+       "SELKIES_ENABLE_SHARING": "false",
+       "PIXELFLUX_WAYLAND": "true",
+       "NO_GAMEPAD": "true",
+       "EXTRA": "ja"
+      },
+      "ports": [
+       "3003:3001"
+      ],
+      "volumes": [
+       "./config:/config"
+      ],
+      "shm_size": "1gb",
+      "stop_grace_period": "30s",
+      "logging": {
+       "driver": "json-file",
+       "options": {
+        "max-size": "10m",
+        "max-file": "3"
+       }
+      }
+     }
+    }
+   },
+   "casaPlain": null,
+   "hardware": {
+    "bambustudio": []
+   }
   }
  ],
  "edits": [
