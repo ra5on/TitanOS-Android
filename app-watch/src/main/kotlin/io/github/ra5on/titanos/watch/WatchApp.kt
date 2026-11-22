@@ -66,6 +66,7 @@ class WatchGraph(private val app: Context, val store: PairingStore) {
         sessions.forget()
         status.clear()
         settings.lastChat = null
+        settings.askedPermissions = false
         runCatching { key.delete() }
         unpairedByNas = byNas
         pairing = null
@@ -96,6 +97,11 @@ class WatchSettings(context: Context) {
     var nasVoice: Boolean
         get() = prefs.getBoolean("nasVoice", false)
         set(v) = prefs.edit().putBoolean("nasVoice", v).apply()
+
+    /** Nach der Kopplung einmal nach „lokales Netzwerk“ und Mitteilungen gefragt. */
+    var askedPermissions: Boolean
+        get() = prefs.getBoolean("askedPermissions", false)
+        set(v) = prefs.edit().putBoolean("askedPermissions", v).apply()
 
     /** Der Chat der Uhr: weitere Fragen innerhalb von 30 Minuten gehen in denselben. */
     var lastChat: String?

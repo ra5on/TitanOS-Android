@@ -31,8 +31,7 @@ import io.github.ra5on.titanos.watch.R
 
 /**
  * Eintippen auf der Uhr mit der Tastatur des Systems (dort gibt es meist
- * auch eine Diktier-Taste). Ein eigenes Feld statt RemoteInput: RemoteInput
- * lieferte im Wear-OS-7-Emulator nach „Senden“ keinen Text zurück.
+ * auch eine Diktier-Taste), in einem eigenen Feld der App.
  */
 @Composable
 fun TextEntry(title: String, initial: String = "", uri: Boolean = false, onDone: (String) -> Unit, onCancel: () -> Unit) {

@@ -1,5 +1,10 @@
 package io.github.ra5on.titanos.watch.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -19,7 +24,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.MaterialTheme
+import io.github.ra5on.titanos.net.AddressKind
 import io.github.ra5on.titanos.ui.Format
+import io.github.ra5on.titanos.watch.pair.LOCAL_NETWORK
 import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.watch.R
 import io.github.ra5on.titanos.watch.data.WatchStatus
@@ -86,6 +93,18 @@ fun HomeRoute(onOpen: (String) -> Unit) {
     var problem by remember { mutableStateOf<Int?>(null) }
     var approvals by remember { mutableIntStateOf(0) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    // Einmal nach der Kopplung fragen, wie das Handy beim Einrichten: Heimnetz-Adressen
+    // (Android 17, „lokales Netzwerk“) und Mitteilungen (Hinweis auf ein Update).
+    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { g.settings.askedPermissions = true }
+    LaunchedEffect(Unit) {
+        if (g.settings.askedPermissions) return@LaunchedEffect
+        val lan = g.pairing?.addresses?.any { it.address?.kind == AddressKind.LAN } == true
+        val wanted = buildList {
+            if (Build.VERSION.SDK_INT >= 37 && lan) add(LOCAL_NETWORK)
+            add(Manifest.permission.POST_NOTIFICATIONS)
+        }.filter { context.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (wanted.isEmpty()) g.settings.askedPermissions = true else ask.launch(wanted.toTypedArray())
+    }
     LaunchedEffect(Unit) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             while (true) {
