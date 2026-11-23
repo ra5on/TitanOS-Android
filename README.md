@@ -238,6 +238,12 @@ Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/github/debug/`
 | `:app-watch` | die Uhr-App (`io.github.ra5on.titanos.watch`, Wear OS) |
 | `:lint-rules` | Lint-Regel gegen abgeschnittenen Text |
 
+## Haftungsausschluss
+
+Die Android-Apps gehören zu TitanOS, einem privaten, nicht kommerziellen Projekt. Es wird kostenlos und ohne Gewähr bereitgestellt, die Nutzung geschieht auf eigenes Risiko. RAID und Snapshots ersetzen keine Datensicherung. Den vollständigen Hinweis auf Deutsch und Englisch enthält [DISCLAIMER.md](DISCLAIMER.md).
+
+*Part of TitanOS, a private, non-commercial project, provided free of charge and without warranty; use it at your own risk. See [DISCLAIMER.md](DISCLAIMER.md).*
+
 ## Lizenz
 
 Die App ist **Fair Source** unter der [Functional Source License 1.1 mit Apache-2.0-Zukunftslizenz (FSL-1.1-ALv2)](LICENSE.md), wie TitanOS. Nutzen, Ändern und Weitergeben ist erlaubt, nur kein konkurrierendes kommerzielles Angebot. Zwei Jahre nach Erscheinen steht jede Version unter der Apache License 2.0; bis dahin ist sie nicht „Open Source“.
