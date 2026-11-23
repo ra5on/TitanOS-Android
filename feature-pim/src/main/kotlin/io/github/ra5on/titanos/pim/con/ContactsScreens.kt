@@ -443,7 +443,7 @@ internal fun indexLetters(height: Float, letterHeight: Float, present: Set<Strin
  * Die Höhe je Buchstabe folgt der Schriftgröße (200 % zeigt weniger).
  */
 @Composable
-private fun LetterIndex(present: Set<String>, modifier: Modifier, onJump: (String) -> Unit) {
+internal fun LetterIndex(present: Set<String>, modifier: Modifier, onJump: (String) -> Unit) {
     val c = Titan.colors
     val style = TitanType.small.copy(fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
     val density = androidx.compose.ui.platform.LocalDensity.current
