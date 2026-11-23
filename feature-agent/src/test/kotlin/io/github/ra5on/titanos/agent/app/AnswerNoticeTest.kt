@@ -220,12 +220,26 @@ class AnswerNoticeTest {
         val nm = shadowOf(app.getSystemService(NotificationManager::class.java))
         assertEquals(1, nm.allNotifications.size)
         assertEquals("agent-c1", nm.activeNotifications.single().tag)
-        // Das NAS meldet denselben Lauf: bleibt still.
+        // Die erste Meldung klingelt; das NAS meldet denselben Lauf: bleibt still.
+        assertEquals(0, nm.activeNotifications.single().notification.flags and android.app.Notification.FLAG_ONLY_ALERT_ONCE)
         assertEquals(false, AgentNotices.claim("c1", "38 Grad.", AgentNotices.Source.Nas))
-        // Kam zuerst das NAS, meldet die App dieselbe Antwort nicht noch einmal.
+        // Kam zuerst das NAS und ist seine Mitteilung weggewischt, bleibt es dabei.
         assertEquals(true, AgentNotices.claim("c2", "Fertig.", AgentNotices.Source.Nas))
         notifier.post(app, tr, "c2", "Backup", null, "Fertig.", null)
         assertEquals(1, nm.allNotifications.size)
+        // Steht sie noch da, ersetzt die App sie still (gleicher Schlüssel, nur einmal klingeln)
+        // durch die Nachricht mit „Antworten“ und „Gelesen“ (Android Auto).
+        val manager = app.getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(android.app.NotificationChannel("notify-agent", "NAS", NotificationManager.IMPORTANCE_HIGH))
+        manager.notify("agent-c3", 0x7116_0100, android.app.Notification.Builder(app, "notify-agent").setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle("KI-Agent: Backup").setContentText("Fertig.").build())
+        assertEquals(true, AgentNotices.claim("c3", "Fertig.", AgentNotices.Source.Nas))
+        notifier.post(app, tr, "c3", "Backup", null, "Fertig.", null)
+        val c3 = nm.activeNotifications.filter { it.tag == "agent-c3" }
+        assertEquals(1, c3.size)
+        assertEquals("agent-answers", c3.single().notification.channelId)
+        assertEquals(android.app.Notification.FLAG_ONLY_ALERT_ONCE, c3.single().notification.flags and android.app.Notification.FLAG_ONLY_ALERT_ONCE)
+        assertEquals(2, c3.single().notification.actions.size)
+        manager.cancel("agent-c3", 0x7116_0100)
         // „Gelesen“ und das Erscheinen des Chats nehmen sie unter demselben Schlüssel weg.
         notifier.cancel(app, "c1")
         assertEquals(0, nm.allNotifications.size)

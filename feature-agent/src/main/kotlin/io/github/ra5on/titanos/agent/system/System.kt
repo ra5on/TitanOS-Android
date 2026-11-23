@@ -221,8 +221,13 @@ object AnswerNotifier {
      */
     fun post(context: Context, tr: Tr, chatId: String, title: String, question: String?, answer: String, open: PendingIntent?) {
         if (!enabled(context) || !allowed(context)) return
-        // Steht die Antwort schon als Mitteilung des NAS in der Leiste, nicht noch einmal (1.03).
-        if (!io.github.ra5on.titanos.agent.app.AgentNotices.claim(chatId, answer, io.github.ra5on.titanos.agent.app.AgentNotices.Source.App)) return
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        val (tag, id) = slot(chatId)
+        // Hat das NAS dieselbe Antwort schon gemeldet (1.03), klingelt sie nicht noch einmal. Steht seine
+        // Mitteilung noch in der Leiste, ersetzt die App sie still durch diese (Antworten, Gelesen,
+        // Android Auto); weggewischt bleibt weggewischt.
+        val first = io.github.ra5on.titanos.agent.app.AgentNotices.claim(chatId, answer, io.github.ra5on.titanos.agent.app.AgentNotices.Source.App)
+        if (!first && runCatching { nm.activeNotifications.none { it.id == id && it.tag == tag } }.getOrDefault(true)) return
         channel(context, tr)
         val me = Person.Builder().setName(tr.t("agent.you").let { if (it == "agent.you") (if (tr.de) "Ich" else "Me") else it }).build()
         val agent = Person.Builder().setName(tr.t("nav.agent")).setBot(true).setKey("agent").build()
@@ -254,13 +259,13 @@ object AnswerNotifier {
             .setCategory(Notification.CATEGORY_MESSAGE)
             .setShortcutId(null)
             .setAutoCancel(true)
+            .setOnlyAlertOnce(!first)
             .setContentIntent(open)
             .addAction(replyAction)
             .addAction(readAction)
             .build()
-        val (tag, id) = slot(chatId)
         try {
-            context.getSystemService(NotificationManager::class.java)?.notify(tag, id, n)
+            nm.notify(tag, id, n)
         } catch (_: SecurityException) {
             // Berechtigung inzwischen entzogen.
         }
