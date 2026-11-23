@@ -230,6 +230,13 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
     /** Vom Widget „Fotos“ geöffnet: der Reiter Fotos. */
     var openPhotos by mutableStateOf(false)
 
+    /**
+     * Ein Wunsch an den KI-Agenten von außen (Teilen → „Agent fragen“, Widget,
+     * Kurzbefehl, Schnittstelle ASK): füllt nur das Eingabefeld eines neuen
+     * Chats, gesendet wird erst nach Tippen. Bis 1.00 gab es das nur in der Agent-App.
+     */
+    var pendingAsk by mutableStateOf<io.github.ra5on.titanos.agent.chat.AskRequest?>(null)
+
     /** „Über die App“ offen (Menü oder Mitteilung „Version … ist da“). */
     var openAbout by mutableStateOf(false)
 

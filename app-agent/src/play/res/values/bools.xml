@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Bauvariante für Google Play (core-ui Distribution). -->
-    <bool name="titan_play">true</bool>
-</resources>

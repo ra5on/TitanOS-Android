@@ -44,12 +44,8 @@ object Shortcuts {
         runCatching { ShortcutManagerCompat.removeAllDynamicShortcuts(context) }
     }
 
-    /** Den Agenten fragen: die Agent-App mit ihrer Schnittstelle (ASK), wie das Widget. */
-    fun askAgent(context: Context): Intent? {
-        val installed = runCatching { context.packageManager.getPackageInfo(AgentWidget.AGENT_PACKAGE, 0) }.isSuccess
-        if (!installed) return null
-        return Intent(AgentWidget.ASK_ACTION).setPackage(AgentWidget.AGENT_PACKAGE).putExtra("voice", false).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
+    /** Den Agenten fragen: der Agent dieser App mit einem neuen Chat (Schnittstelle ASK), wie das Widget. */
+    fun askAgent(context: Context): Intent = AgentWidget.askIntent(context, voice = false)
 
     /** „Fotos sichern“ an alle NAS mit eingeschalteter Sicherung; falsch, wenn Android ablehnt oder keine eingeschaltet ist. */
     fun backupNow(context: Context): Boolean {
@@ -75,20 +71,14 @@ class ShortcutActivity : ComponentActivity() {
         if (savedInstanceState != null) return
         val graph = (application as TitanApp).graph
         val what = intent?.getStringExtra(Shortcuts.EXTRA)
-        if (graph.pairing == null && what != "ask") {
+        if (graph.pairing == null) {
             Toast.makeText(this, getString(R.string.sc_not_paired), Toast.LENGTH_LONG).show()
             openApp()
             return
         }
         when (what) {
             "ask" -> {
-                val ask = Shortcuts.askAgent(this)
-                if (ask != null) {
-                    startActivity(ask)
-                } else {
-                    Toast.makeText(this, getString(R.string.sc_agent_missing), Toast.LENGTH_LONG).show()
-                    startActivity(appIntent().putExtra(AgentWidget.EXTRA_OPEN_ABOUT, true))
-                }
+                startActivity(Shortcuts.askAgent(this))
                 finish()
             }
             "upload" -> pick.launch(arrayOf("*/*"))

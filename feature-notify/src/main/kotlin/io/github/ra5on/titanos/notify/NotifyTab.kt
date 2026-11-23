@@ -122,11 +122,8 @@ fun NotifyTab(nav: @Composable () -> Unit) {
                 NotifyRuntime.inbox(context).update { Inbox.markRead(it, listOf(n.id)) to Unit }
                 NotifyRuntime.changed()
                 Poster.cancel(context, Poster.tagOf(NotifyRuntime.active(), n))
-                if (n.app == "agent" || n.kind == Category.Agent) {
-                    Poster.openIntent(context, n, NotifyRuntime.active())?.let { runCatching { it.send() } }
-                } else {
-                    NotifyRuntime.requestOpen(n.link)
-                }
+                // Auch Antworten des KI-Agenten: der Agent dieser App beim Chat (1.01, keine Agent-App mehr).
+                NotifyRuntime.requestOpen(n.link)
             },
             onMenu = { menu = true },
             bottomBar = nav,

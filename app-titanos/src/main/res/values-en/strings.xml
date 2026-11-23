@@ -5,6 +5,7 @@
     <string name="app_unpaired">The NAS no longer knows this phone (ended or expired). Please pair again.</string>
     <string name="app_unpair_do">Remove pairing</string>
     <string name="app_share_label">Save to TitanOS</string>
+    <string name="agent_share_label">Ask agent</string>
     <!-- Several NAS and accounts -->
     <!-- Befehlspalette: Bereich der Seiten, die es nur in der App gibt (VPN, NAS und Konten …). -->
     <string name="palette_app">In the app</string>
@@ -43,7 +44,6 @@
     <string name="sc_upload_long">Upload a file to the NAS</string>
     <string name="sc_photos">Back up photos</string>
     <string name="sc_photos_long">Back up photos now</string>
-    <string name="sc_agent_missing">The Agent app is not installed.</string>
     <string name="sc_not_paired">No NAS paired yet.</string>
     <string name="tile_photos">Photo backup</string>
     <string name="tile_photos_idle">Tap: back up now</string>

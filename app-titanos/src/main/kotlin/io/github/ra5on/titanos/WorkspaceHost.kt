@@ -282,9 +282,9 @@ internal fun openAgentIn(context: android.content.Context, chatId: String?) {
 internal const val EXTRA_AGENT_CHAT = "chat"
 
 /**
- * Der KI-Agent in der TitanOS-App wie das Agent-Fenster im Web: dieselben
- * Bildschirme wie die Agent-App (feature-agent), über die Kopplung dieser App.
- * Die Agent-App bleibt eigenständig. [href] `/agent?chat=<id>` öffnet einen Chat.
+ * Der KI-Agent in der TitanOS-App wie das Agent-Fenster im Web (feature-agent),
+ * über die Kopplung dieser App. Seit 1.01 der einzige Ort des Agenten am Handy;
+ * die Agent-App wird nicht weiterentwickelt. [href] `/agent?chat=<id>` öffnet einen Chat.
  */
 @Composable
 internal fun AgentWindow(graph: AppGraph, href: String = "") {
@@ -294,8 +294,9 @@ internal fun AgentWindow(graph: AppGraph, href: String = "") {
     var open by remember(href) { mutableStateOf(if (href.contains("chat=")) href.substringAfter("chat=").substringBefore('&') else null) }
     AgentRoot(
         model,
-        ask = null,
-        onAskTaken = {},
+        // „Agent fragen“ von außen (Teilen, Widget, Kurzbefehl): nur ins Eingabefeld eines neuen Chats.
+        ask = graph.pendingAsk,
+        onAskTaken = { graph.pendingAsk = null },
         open = open,
         onOpenTaken = { open = null },
         versionName = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty() }.getOrDefault(""),

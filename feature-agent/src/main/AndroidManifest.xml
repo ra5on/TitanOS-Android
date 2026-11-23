@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Spracheingabe (speechAvailable): ohne diesen Eintrag sieht die App keine Spracherkennung. -->
+    <!-- Spracheingabe (speechAvailable): ohne diesen Eintrag sieht die App keine Spracherkennung.
+         Vorlesen mit der Sprachausgabe des Handys: ohne TTS_SERVICE findet TextToSpeech ab Android 11
+         keine Sprachausgabe (bis 1.00 stand das nur in der Agent-App). -->
     <queries>
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
     </queries>
+    <!-- Spracheingabe und Sprechmodus über die Sprachdienste des NAS (Aufnahme im Handy). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Ohne Netz scheitert Senden sofort, statt erst nach der Zeitüberschreitung. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Antworten des Agenten als Mitteilung (auch Android Auto). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Kurz vibrieren (Darstellung › Vibration). -->

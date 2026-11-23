@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Nur für den ersten Augenblick vor Compose: Hintergrund wie das Theme Hell bzw. Graphit. -->
-    <style name="Theme.Agent" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/agent_bg</item>
-    </style>
-    <color name="agent_bg">#F3F4F6</color>
-</resources>

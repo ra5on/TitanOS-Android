@@ -5,6 +5,7 @@
     <string name="app_unpaired">Das NAS kennt dieses Handy nicht mehr (beendet oder abgelaufen). Bitte neu koppeln.</string>
     <string name="app_unpair_do">Kopplung aufheben</string>
     <string name="app_share_label">Auf TitanOS speichern</string>
+    <string name="agent_share_label">Agent fragen</string>
     <!-- Mehrere NAS und Konten -->
     <!-- Befehlspalette: Bereich der Seiten, die es nur in der App gibt (VPN, NAS und Konten …). -->
     <string name="palette_app">In der App</string>
@@ -43,7 +44,6 @@
     <string name="sc_upload_long">Datei aufs NAS hochladen</string>
     <string name="sc_photos">Fotos sichern</string>
     <string name="sc_photos_long">Fotos jetzt sichern</string>
-    <string name="sc_agent_missing">Die Agent-App ist nicht installiert.</string>
     <string name="sc_not_paired">Noch kein NAS gekoppelt.</string>
     <string name="tile_photos">Foto-Sicherung</string>
     <string name="tile_photos_idle">Tippen: jetzt sichern</string>

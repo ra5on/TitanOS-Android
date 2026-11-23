@@ -33,10 +33,11 @@ class LinksTest {
     @Test
     fun outsideTheNasAndOnlyOnTheWeb() {
         assertEquals(LinkTarget.External("https://example.org/a"), linkTarget("https://example.org/a"))
-        // Der Agent: ohne eigenes Programm die Agent-App; sobald die TitanOS-App ihn selbst zeigt
-        // („agent“ in PROGRAMS, Arbeitsplatz von F1), das Programm in der App. Beides ist richtig.
-        val agent = linkTarget("/agent?profile=assist")
-        assertTrue("$agent", agent == LinkTarget.Agent("/agent?profile=assist") || agent == LinkTarget.Program("agent", "/agent?profile=assist"))
+        // Der Agent: seit 1.01 immer das Programm in dieser App (die Agent-App wird nicht mehr gepflegt),
+        // auch für die Links der Mitteilungen des NAS.
+        assertEquals(LinkTarget.Program("agent", "/agent?profile=assist"), linkTarget("/agent?profile=assist"))
+        assertEquals(LinkTarget.Program("agent", "/agent?chat=c1"), linkTarget("/agent?chat=c1"))
+        assertEquals(LinkTarget.Program("agent", "/agent?profile=assist&chat=c1"), linkTarget("/agent?profile=assist&chat=c1"))
         assertEquals(LinkTarget.WebOnly, linkTarget("/welcome?step=4"))
         assertEquals(LinkTarget.WebOnly, linkTarget("javascript:alert(1)"))
     }

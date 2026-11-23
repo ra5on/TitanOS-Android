@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.Agent" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/agent_bg</item>
-    </style>
-    <color name="agent_bg">#0E1114</color>
-</resources>

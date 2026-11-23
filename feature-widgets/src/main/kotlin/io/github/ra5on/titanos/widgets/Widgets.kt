@@ -184,28 +184,22 @@ class PhotosWidget : GlanceAppWidget() {
     }
 }
 
-/** „Agent fragen“ (Entwurf 82): Schreiben oder Sprechen öffnet die Agent-App. */
+/**
+ * „Agent fragen“ (Entwurf 82): Schreiben oder Sprechen öffnet den KI-Agenten
+ * dieser App mit einem neuen Chat (seit 1.01; vorher die Agent-App).
+ */
 class AgentWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val installed = runCatching { context.packageManager.getPackageInfo(AGENT_PACKAGE, 0) }.isSuccess
         provideContent {
             GlanceTheme {
                 Box(GlanceModifier.fillMaxSize().background(W.agentBg).cornerRadius(24.dp).padding(14.dp)) {
                     Column(GlanceModifier.fillMaxWidth()) {
                         Text(context.getString(R.string.w_agent), style = TextStyle(color = W.agentText, fontSize = 16.sp, fontWeight = FontWeight.Bold))
-                        if (!installed) {
-                            Text(
-                                context.getString(R.string.w_agent_missing),
-                                style = TextStyle(color = W.agentText, fontSize = 13.sp),
-                                modifier = GlanceModifier.clickable(launch(context, EXTRA_OPEN_ABOUT)),
-                            )
-                        } else {
-                            Spacer(GlanceModifier.height(10.dp))
-                            Row(GlanceModifier.fillMaxWidth()) {
-                                Chip(context.getString(R.string.w_agent_write), ask(voice = false), GlanceModifier.defaultWeight())
-                                Spacer(GlanceModifier.width(8.dp))
-                                Chip(context.getString(R.string.w_agent_speak), ask(voice = true), GlanceModifier.defaultWeight())
-                            }
+                        Spacer(GlanceModifier.height(10.dp))
+                        Row(GlanceModifier.fillMaxWidth()) {
+                            Chip(context.getString(R.string.w_agent_write), ask(context, voice = false), GlanceModifier.defaultWeight())
+                            Spacer(GlanceModifier.width(8.dp))
+                            Chip(context.getString(R.string.w_agent_speak), ask(context, voice = true), GlanceModifier.defaultWeight())
                         }
                     }
                 }
@@ -220,15 +214,16 @@ class AgentWidget : GlanceAppWidget() {
         }
     }
 
-    private fun ask(voice: Boolean): Action = actionStartActivity(
-        Intent(ASK_ACTION).setPackage(AGENT_PACKAGE).putExtra("voice", voice).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-    )
+    private fun ask(context: Context, voice: Boolean): Action = actionStartActivity(askIntent(context, voice))
 
     companion object {
-        const val AGENT_PACKAGE = "io.github.ra5on.titanos.agent"
-        /** Schnittstelle der Agent-App (Extra `text`, `voice`). */
+        /** Schnittstelle „Agent fragen“ (Extra `text`, `voice`); seit 1.01 in der TitanOS-App, Name wie in der Agent-App. */
         const val ASK_ACTION = "io.github.ra5on.titanos.agent.ASK"
         const val EXTRA_OPEN_ABOUT = "io.github.ra5on.titanos.OPEN_ABOUT"
+
+        /** Neuer Chat im Agenten dieser App, wahlweise gleich mit Spracheingabe; gesendet wird nie von selbst. */
+        fun askIntent(context: Context, voice: Boolean): Intent =
+            Intent(ASK_ACTION).setPackage(context.packageName).putExtra("voice", voice).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 }
 

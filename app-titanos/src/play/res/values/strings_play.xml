@@ -7,7 +7,5 @@
     <string name="play_about_updates">Updates</string>
     <string name="play_about_updates_text">Neue Versionen installiert Google Play.</string>
     <string name="play_about_store">Google Play</string>
-    <string name="play_about_agent">Agent-App</string>
-    <string name="play_about_agent_missing">nicht installiert</string>
     <string name="play_about_note">Diese Fassung kommt aus Google Play. Die Fassung von GitHub aktualisiert sich selbst; beide lassen sich nicht gleichzeitig installieren.</string>
 </resources>
