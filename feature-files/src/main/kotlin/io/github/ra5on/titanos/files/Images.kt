@@ -119,23 +119,33 @@ object NasImages {
         }
     }
 
-    /** Das Original, verkleinert auf höchstens [maxPx] an der längeren Seite. */
-    suspend fun original(context: Context, api: FilesApi, root: String, path: String, modified: String, sizeBytes: Long, maxPx: Int): Bitmap? {
-        val k = key(root, path, modified, -maxPx)
-        memory.get(k)?.let { return it }
+    /**
+     * Das Original als Datei im Cache (`cache/view`, geladen über
+     * `files/download`, höchstens [ORIGINAL_LIMIT]); null, wenn es zu groß
+     * ist, die Einstellung „Originale laden“ es gerade verbietet oder es
+     * nicht geht.
+     */
+    suspend fun originalFile(context: Context, api: FilesApi, root: String, path: String, modified: String, sizeBytes: Long): File? {
         if (sizeBytes > ORIGINAL_LIMIT) return null
+        val file = cacheFile(context, root, path, modified)
+        if (file.isFile) return file
         if (!FilesSettings.allowed(context, FilesSettings.get(context).originals)) return null
         return full.withPermit {
-            memory.get(k) ?: try {
-                val file = cacheFile(context, root, path, modified)
+            try {
                 if (!file.exists()) api.downloadTo(root, path, file, ORIGINAL_LIMIT)
-                withContext(Dispatchers.Default) { decode(file, maxPx) }?.also { memory.put(k, it) }
+                file.takeIf { it.isFile }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
                 null
             }
         }
+    }
+
+    /** Das Original, verkleinert auf höchstens [maxPx] an der längeren Seite (für Formate ohne Kacheln, etwa GIF). Nicht im Cache der Vorschaubilder. */
+    suspend fun original(context: Context, api: FilesApi, root: String, path: String, modified: String, sizeBytes: Long, maxPx: Int): Bitmap? {
+        val file = originalFile(context, api, root, path, modified, sizeBytes) ?: return null
+        return withContext(Dispatchers.Default) { decode(file, maxPx) }
     }
 
     fun decode(file: File, maxPx: Int): Bitmap? = try {
@@ -257,49 +267,63 @@ fun ZoomImage(image: ImageBitmap, description: String?, onZoom: (Boolean) -> Uni
     }
 }
 
-@Composable
-fun ZoomBox(onZoom: (Boolean) -> Unit, onTap: () -> Unit, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    var box by remember { mutableStateOf(IntSize.Zero) }
+/** Zoom und Verschiebung eines [ZoomBox]; [maxScale] je Bild (ein Panorama braucht mehr als 8-fach). */
+@androidx.compose.runtime.Stable
+class ZoomState {
+    var scale by mutableFloatStateOf(1f)
+    var offset by mutableStateOf(Offset.Zero)
+    var box by mutableStateOf(IntSize.Zero)
+    var maxScale by mutableFloatStateOf(8f)
+
     fun clamp(o: Offset, s: Float): Offset {
         val maxX = (box.width * (s - 1f)) / 2f
         val maxY = (box.height * (s - 1f)) / 2f
         return Offset(o.x.coerceIn(-maxX, maxX), o.y.coerceIn(-maxY, maxY))
     }
-    LaunchedEffect(scale > 1.01f) { onZoom(scale > 1.01f) }
+}
+
+@Composable
+fun rememberZoomState(): ZoomState = remember { ZoomState() }
+
+@Composable
+fun ZoomBox(onZoom: (Boolean) -> Unit, onTap: () -> Unit, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) =
+    ZoomBox(rememberZoomState(), onZoom, onTap, modifier, content)
+
+@Composable
+fun ZoomBox(zoom: ZoomState, onZoom: (Boolean) -> Unit, onTap: () -> Unit, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+    LaunchedEffect(zoom.scale > 1.01f) { onZoom(zoom.scale > 1.01f) }
     Box(
         modifier
-            .onSizeChanged { box = it }
+            .onSizeChanged { zoom.box = it }
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { onTap() },
                     onDoubleTap = { at ->
-                        if (scale > 1.01f) {
-                            scale = 1f
-                            offset = Offset.Zero
+                        if (zoom.scale > 1.01f) {
+                            zoom.scale = 1f
+                            zoom.offset = Offset.Zero
                         } else {
                             val s = 2.5f
-                            val center = Offset(box.width / 2f, box.height / 2f)
-                            scale = s
-                            offset = clamp((center - at) * (s - 1f), s)
+                            val center = Offset(zoom.box.width / 2f, zoom.box.height / 2f)
+                            zoom.scale = s
+                            zoom.offset = zoom.clamp((center - at) * (s - 1f), s)
                         }
                     },
                 )
             }
             .pointerInput(Unit) {
-                awaitEachGestureZoom({ scale > 1.01f }) { pan, zoom ->
-                    val s = (scale * zoom).coerceIn(1f, 8f)
-                    scale = s
-                    offset = if (s <= 1.01f) Offset.Zero else clamp(offset + pan, s)
+                awaitEachGestureZoom({ zoom.scale > 1.01f }) { pan, factor ->
+                    val s = (zoom.scale * factor).coerceIn(1f, zoom.maxScale)
+                    zoom.scale = s
+                    zoom.offset = if (s <= 1.01f) Offset.Zero else zoom.clamp(zoom.offset + pan, s)
                     s > 1.01f
                 }
             }
             .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                translationX = offset.x
-                translationY = offset.y
+                scaleX = zoom.scale
+                scaleY = zoom.scale
+                translationX = zoom.offset.x
+                translationY = zoom.offset.y
             },
         content = content,
     )
