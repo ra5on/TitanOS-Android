@@ -22,11 +22,11 @@ object UpdateCheck {
         OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build()
     }
 
-    suspend fun run(context: Context): AppRelease? {
+    suspend fun run(context: Context, http: OkHttpClient = client): AppRelease? {
         val settings = UpdateSettings(context)
         UpdateState.step = UpdateStep.Checking
         return try {
-            val source = ReleaseSource(client)
+            val source = ReleaseSource(http)
             val all = source.releases()
             val own = AppKind.own(context.packageName)
             // Nur die eigene App; die Agent-App bekommt ab 1.01 keine Updates mehr (ihr Agent ist in dieser App).

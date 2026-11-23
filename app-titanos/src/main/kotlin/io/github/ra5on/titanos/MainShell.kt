@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos
 
+import io.github.ra5on.titanos.ui.components.Snackbar
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -288,7 +289,7 @@ internal fun MainShell(graph: AppGraph) {
         // Fertig geladen, während die App vorn ist (Entwurf 21): „In Downloads gespeichert“ mit Öffnen und Zeigen.
         files.saved?.let { t ->
             val noApp = stringResource(io.github.ra5on.titanos.files.R.string.tr_open_failed)
-            io.github.ra5on.titanos.ui.components.Snackbar(
+            Snackbar(
                 text = t.name,
                 sub = stringResource(io.github.ra5on.titanos.files.R.string.tr_saved),
                 done = true,
@@ -549,6 +550,21 @@ private fun ShellContent(
                 onNotifications = { closeAll(); shell.tab = Tab.Notifications },
                 onMenu = { shell.drawer = true },
                 onNas = { shell.nasSheet = true },
+                menuBadge = io.github.ra5on.titanos.update.UpdateHint.version != null,
+                banner = io.github.ra5on.titanos.update.UpdateHint.version?.takeIf { io.github.ra5on.titanos.update.UpdateHint.banner(context) }?.let { v ->
+                    {
+                        UpdateBanner(
+                            v,
+                            onUpdate = {
+                                io.github.ra5on.titanos.update.UpdateHint.install(context, graph.scope)
+                                // Fortschritt und Rückfragen zeigt „Über die App“.
+                                closeAll()
+                                graph.openAbout = true
+                            },
+                            onLater = { io.github.ra5on.titanos.update.UpdateHint.dismiss(context) },
+                        )
+                    }
+                },
                 title = homeNasTitle(graph, home.state.hostname),
                 node = graph.pairing?.nodeName?.takeIf { it.isNotBlank() && graph.pairing?.node?.isNotEmpty() == true },
                 photos = homeTileText(photos.view),

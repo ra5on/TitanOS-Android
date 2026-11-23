@@ -217,7 +217,19 @@ internal fun BoxScope.SideMenu(
                 if (running == 0 && finished == 0) stringResource(R.string.side_transfers_none) else stringResource(R.string.side_transfers_sub, running, finished)
             }
             MenuRow(stringResource(R.string.side_transfers), transfersSub, false, { RowIcon(TitanIcons.download, tint = c.text) }) { onDismiss(); onTransfers() }
-            MenuRow(stringResource(io.github.ra5on.titanos.home.R.string.home_menu_about), null, false, { RowIcon(TitanIcons.info, tint = c.text) }) { onDismiss(); onAbout() }
+            // Neue Version (1.02): Punkt und Zeile darunter, nicht nur Farbe.
+            val newVersion = io.github.ra5on.titanos.update.UpdateHint.version
+            MenuRow(
+                stringResource(io.github.ra5on.titanos.home.R.string.home_menu_about),
+                newVersion?.let { stringResource(R.string.update_menu_sub, it) },
+                false,
+                {
+                    Box {
+                        RowIcon(TitanIcons.info, tint = c.text)
+                        if (newVersion != null) Box(Modifier.align(Alignment.TopEnd).size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(c.accent))
+                    }
+                },
+            ) { onDismiss(); onAbout() }
         }
     }
 }
@@ -287,6 +299,31 @@ internal fun BoxScope.NasSheet(graph: AppGraph, onDismiss: () -> Unit) {
         NasChoices(graph, onDismiss)
         Divider(Modifier.padding(vertical = 10.dp))
         MenuRow(stringResource(R.string.nas_add), null, false, { RowIcon(TitanIcons.plus, tint = c.text) }) { onDismiss(); graph.beginAdd() }
+    }
+}
+
+/**
+ * Hinweis auf der Startseite (1.02): „TitanOS 1.03 ist da“ mit „Jetzt
+ * aktualisieren“ (derselbe Ablauf wie unter „Über die App“) und „Später“
+ * (für diese Version weg; der Punkt am Seitenmenü bleibt).
+ */
+@Composable
+internal fun UpdateBanner(version: String, onUpdate: () -> Unit, onLater: () -> Unit) {
+    val c = Titan.colors
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp).fillMaxWidth().clip(shape).background(c.surface).border(1.dp, c.accent.copy(alpha = .6f), shape)
+            .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(TitanIcons.download, null, tint = c.accent, modifier = Modifier.size(22.dp))
+            Text(stringResource(R.string.update_hint, version), style = TitanType.rowTitle, color = c.text, modifier = Modifier.weight(1f).semantics { heading() })
+        }
+        Text(stringResource(R.string.update_hint_text), style = TitanType.small, color = c.muted, modifier = Modifier.padding(start = 32.dp, top = 2.dp))
+        androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
+            io.github.ra5on.titanos.ui.components.TitanButton(stringResource(R.string.update_hint_later), onLater, kind = io.github.ra5on.titanos.ui.components.ButtonKind.Normal)
+            io.github.ra5on.titanos.ui.components.TitanButton(stringResource(R.string.update_hint_do), onUpdate, kind = io.github.ra5on.titanos.ui.components.ButtonKind.Primary)
+        }
     }
 }
 

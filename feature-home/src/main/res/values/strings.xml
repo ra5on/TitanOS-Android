@@ -60,6 +60,7 @@
     <string name="app_files">Dateien</string>
     <string name="app_photos">Fotos</string>
     <string name="home_side_menu">Seitenmenü</string>
+    <string name="home_side_menu_update">Seitenmenü, neue Version der App</string>
     <string name="home_nas_switch">%1$s, NAS oder Knoten wählen</string>
     <string name="home_nas_online">verbunden</string>
     <string name="home_nas_offline">nicht erreichbar</string>

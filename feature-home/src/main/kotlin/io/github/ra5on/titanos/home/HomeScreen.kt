@@ -142,6 +142,10 @@ fun HomeScreen(
     node: String? = null,
     /** Knopf mit dem Namen: Auswahl von NAS und Cluster-Knoten (ohne: das Seitenmenü). */
     onNas: (() -> Unit)? = null,
+    /** Punkt am Seitenmenü (eine neue Version der App ist da, 1.02). */
+    menuBadge: Boolean = false,
+    /** Hinweis unter der Leiste (neue Version), null: keiner. */
+    banner: (@Composable () -> Unit)? = null,
     /** Stand der Foto-Sicherung in Worten für Zustand und Widget; null: kommt später. */
     photos: String? = null,
     onPhotos: (() -> Unit)? = null,
@@ -211,9 +215,10 @@ fun HomeScreen(
                     if (editing) {
                         EditBar(onAdd = { adding = true }, onDone = ::finish)
                     } else {
-                        HomeTopBar(title, node, state.problem != HomeProblem.Offline, onMenu, onNas ?: onMenu, onSearch, onNotifications)
+                        HomeTopBar(title, node, state.problem != HomeProblem.Offline, onMenu, onNas ?: onMenu, onSearch, onNotifications, menuBadge)
                     }
                 }
+                if (!editing) banner?.invoke()
                 state.problem?.let {
                     Problem(
                         stringResource(
@@ -340,13 +345,17 @@ internal fun editPages(draft: PhonePrefs, keys: List<String>): List<List<String>
 }
 
 @Composable
-private fun HomeTopBar(title: String, node: String?, online: Boolean, onMenu: () -> Unit, onNas: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit) {
+private fun HomeTopBar(title: String, node: String?, online: Boolean, onMenu: () -> Unit, onNas: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit, menuBadge: Boolean = false) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 6.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        IconButton(TitanIcons.menu, stringResource(R.string.home_side_menu), onMenu, size = 24.dp)
+        Box {
+            IconButton(TitanIcons.menu, stringResource(if (menuBadge) R.string.home_side_menu_update else R.string.home_side_menu), onMenu, size = 24.dp)
+            // Neue Version: ein Punkt am Menü (der Name sagt es TalkBack).
+            if (menuBadge) Box(Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp).size(10.dp).clip(CircleShape).background(Titan.colors.accent).border(1.5.dp, Titan.colors.bg, CircleShape))
+        }
         Box(Modifier.weight(1f)) { NasPill(nasPillText(title, node), online, onNas) }
         IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), onSearch)
         IconButton(TitanIcons.bell, stringResource(R.string.home_notifications), onNotifications)
