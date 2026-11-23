@@ -226,8 +226,13 @@ object AnswerNotifier {
         // Hat das NAS dieselbe Antwort schon gemeldet (1.03), klingelt sie nicht noch einmal. Steht seine
         // Mitteilung noch in der Leiste, ersetzt die App sie still durch diese (Antworten, Gelesen,
         // Android Auto); weggewischt bleibt weggewischt.
-        val first = io.github.ra5on.titanos.agent.app.AgentNotices.claim(chatId, answer, io.github.ra5on.titanos.agent.app.AgentNotices.Source.App)
-        if (!first && runCatching { nm.activeNotifications.none { it.id == id && it.tag == tag } }.getOrDefault(true)) return
+        val notices = io.github.ra5on.titanos.agent.app.AgentNotices
+        val first = notices.claim(chatId, answer, io.github.ra5on.titanos.agent.app.AgentNotices.Source.App)
+        if (!first) {
+            val showing = notices.justShownByOther(chatId, io.github.ra5on.titanos.agent.app.AgentNotices.Source.App) ||
+                runCatching { nm.activeNotifications.any { it.id == id && it.tag == tag } }.getOrDefault(false)
+            if (!showing) return
+        }
         channel(context, tr)
         val me = Person.Builder().setName(tr.t("agent.you").let { if (it == "agent.you") (if (tr.de) "Ich" else "Me") else it }).build()
         val agent = Person.Builder().setName(tr.t("nav.agent")).setBot(true).setKey("agent").build()

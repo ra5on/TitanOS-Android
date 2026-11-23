@@ -224,7 +224,7 @@ class AnswerNoticeTest {
         assertEquals(0, nm.activeNotifications.single().notification.flags and android.app.Notification.FLAG_ONLY_ALERT_ONCE)
         assertEquals(false, AgentNotices.claim("c1", "38 Grad.", AgentNotices.Source.Nas))
         // Kam zuerst das NAS und ist seine Mitteilung weggewischt, bleibt es dabei.
-        assertEquals(true, AgentNotices.claim("c2", "Fertig.", AgentNotices.Source.Nas))
+        assertEquals(true, AgentNotices.claim("c2", "Fertig.", AgentNotices.Source.Nas, now = System.currentTimeMillis() - 10_000))
         notifier.post(app, tr, "c2", "Backup", null, "Fertig.", null)
         assertEquals(1, nm.allNotifications.size)
         // Steht sie noch da, ersetzt die App sie still (gleicher Schlüssel, nur einmal klingeln)

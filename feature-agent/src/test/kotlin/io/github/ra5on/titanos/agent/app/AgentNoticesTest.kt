@@ -61,4 +61,14 @@ class AgentNoticesTest {
         assertTrue(AgentNotices.claim("c1", "Neue Antwort.", Source.Nas, now = 10_000))
         assertFalse(AgentNotices.claim("c1", "Neue Antwort.", Source.App, now = 10_500))
     }
+
+    @Test
+    fun justShownByTheOtherSide() {
+        assertTrue(AgentNotices.claim("c1", answer, Source.Nas, now = 1_000))
+        assertTrue(AgentNotices.justShownByOther("c1", Source.App, now = 1_030))
+        assertFalse(AgentNotices.justShownByOther("c1", Source.Nas, now = 1_030))
+        assertFalse(AgentNotices.justShownByOther("c1", Source.App, now = 7_000))
+        AgentNotices.seen("c1")
+        assertFalse(AgentNotices.justShownByOther("c1", Source.App, now = 1_030))
+    }
 }

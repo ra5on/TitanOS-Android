@@ -54,6 +54,15 @@ object AgentNotices {
     }
 
     /**
+     * Ob die andere Stelle den Chat [chat] vor höchstens [within] ms gemeldet hat.
+     * Ihre Mitteilung steht dann sicher noch in der Leiste, auch wenn Android sie
+     * in `activeNotifications` noch nicht zeigt (notify kommt dort etwas später an).
+     */
+    fun justShownByOther(chat: String, source: Source, now: Long = System.currentTimeMillis(), within: Long = 5_000): Boolean = synchronized(shown) {
+        shown[chat]?.any { it.source != source && it.open && now - it.at in 0..within } == true
+    }
+
+    /**
      * Der Chat ist erschienen: was in der Leiste stand, ist gesehen. Die nächste
      * Antwort klingelt wieder, auch wenn sie bald kommt; nur eine späte Meldung
      * derselben Antwort (gleicher Text) bleibt still.
