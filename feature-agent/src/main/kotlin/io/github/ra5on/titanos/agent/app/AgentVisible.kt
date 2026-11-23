@@ -7,6 +7,10 @@ package io.github.ra5on.titanos.agent.app
  * das NAS selbst schweigt über die Meldung „zu sehen“ (`/agent/chats/…/seen`).
  */
 object AgentVisible {
+    /** Wie viele Oberflächen einen Chat gerade vorne zeigen (Fenster und Leiste am Arbeitsplatz zeigen ihn zweimal). */
+    private val counts = LinkedHashMap<String, Int>()
+
+    /** Der zuletzt erschienene Chat, der noch zu sehen ist. */
     @Volatile
     var chat: String? = null
         private set
@@ -16,18 +20,34 @@ object AgentVisible {
     var onShown: (String) -> Unit = {}
 
     fun show(id: String) {
-        chat = id
+        synchronized(counts) {
+            counts[id] = (counts[id] ?: 0) + 1
+            chat = id
+        }
         runCatching { onShown(id) }
     }
 
+    /** Eine Oberfläche zeigt [id] nicht mehr; zu sehen bleibt er, solange eine andere ihn zeigt. */
     fun hide(id: String) {
-        if (chat == id) chat = null
+        synchronized(counts) {
+            val left = (counts[id] ?: 0) - 1
+            if (left > 0) counts[id] = left else counts.remove(id)
+            if (chat == id && left <= 0) chat = counts.keys.lastOrNull()
+        }
     }
 
-    /** Ob [link] (`/agent?chat=<id>`) den Chat meint, der gerade zu sehen ist. */
+    /** Ob [link] (`/agent?chat=<id>`, auch `/agent?profile=assist&chat=<id>`) einen Chat meint, der gerade zu sehen ist. */
     fun shows(link: String?): Boolean {
-        val id = chat ?: return false
-        return chatOf(link) == id
+        val id = chatOf(link) ?: return false
+        return synchronized(counts) { counts.containsKey(id) }
+    }
+
+    /** Nur für Tests: nichts zu sehen. */
+    internal fun reset() {
+        synchronized(counts) {
+            counts.clear()
+            chat = null
+        }
     }
 
     /** Die Kennung des Chats aus einem Link `/agent?chat=<id>` (auch mit `&profile=…`). */

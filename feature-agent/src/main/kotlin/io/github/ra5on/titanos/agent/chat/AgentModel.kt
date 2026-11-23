@@ -196,8 +196,43 @@ class AgentModel(
 
     /** Vibration (Darstellung: „Vibration“); setzt die App. */
     var vibrate: (LongArray) -> Unit = {}
-    /** Eine neue Antwort ist da (Vorlesen, wenn gewünscht); setzt die App. */
-    var onAnswer: (Entry) -> Unit = {}
+    /**
+     * Wer von einer neuen Antwort hören will (Vorlesen, Mitteilung im
+     * Hintergrund). Jede Oberfläche meldet sich an und beim Verschwinden
+     * wieder ab ([onAnswer]). Vorher hängte jede neue Oberfläche sich an
+     * eine Kette, die nie kürzer wurde: In der TitanOS-App lebt das Modell so
+     * lange wie der Prozess, und die Kette einer längst beendeten Activity
+     * (aus den letzten Apps gewischt, der Mitteilungsdienst hielt den Prozess)
+     * hielt deren Lebenszyklus „DESTROYED“ fest und meldete jede Antwort als
+     * Mitteilung, auch im gerade offenen Chat (1.01).
+     */
+    private val answerListeners = java.util.concurrent.CopyOnWriteArrayList<(Entry) -> Unit>()
+
+    /** Meldet [listener] für neue Antworten an; die Rückgabe meldet ihn wieder ab. */
+    fun onAnswer(listener: (Entry) -> Unit): () -> Unit {
+        answerListeners += listener
+        return { answerListeners.remove(listener) }
+    }
+
+    /** Wie viele Oberflächen gerade von Antworten hören (Tests). */
+    val answerListenerCount: Int get() = answerListeners.size
+
+    /** Eine Antwort ist da: allen angemeldeten Oberflächen sagen (intern auch für Tests). */
+    internal fun answered(e: Entry) {
+        for (l in answerListeners) runCatching { l(e) }
+    }
+
+    /**
+     * „Zu sehen“ ans NAS (`/agent/chats/{id}/seen`) in genau der Reihenfolge,
+     * in der die App es meint. Zwei getrennte Anfragen (unsichtbar beim
+     * Verlassen, sichtbar beim neuen Anzeigen) konnten sich überholen; dann
+     * galt der offene Chat am NAS als nicht zu sehen, und die Antwort ging als
+     * Mitteilung hinaus (derselbe Fehler wie im Web vor 0.86).
+     */
+    private val seenLock = kotlinx.coroutines.sync.Mutex()
+
+    /** Wie viele Oberflächen einen Chat gerade zeigen (Fenster und Leiste am Arbeitsplatz). */
+    private val viewers = HashMap<String, Int>()
 
     private var streamJob: Job? = null
     private var retries = 0
@@ -716,7 +751,7 @@ class AgentModel(
                 live = Live()
                 if (fresh != null) {
                     if (fresh.state == ChatState.IDLE) buzz(40)
-                    fresh.entries.lastOrNull { it.role == "assistant" && !it.content.isNullOrBlank() }?.let { onAnswer(it) }
+                    fresh.entries.lastOrNull { it.role == "assistant" && !it.content.isNullOrBlank() }?.let { answered(it) }
                     seen(id)
                     if (fresh.titling) followTitle(id)
                 }
@@ -749,12 +784,39 @@ class AgentModel(
         chats = if (old == null) listOf(info) + chats else chats.map { if (it.id == chat.id) info.copy(preview = info.preview ?: old.preview, unread = false) else it }
     }
 
-    /** Der Chat ist zu sehen (alle 15 s, solange er offen ist); unsichtbar beim Verlassen. */
+    /** Der Chat ist zu sehen (alle 15 s, solange er offen ist); unsichtbar beim Verlassen. In Reihenfolge, eine nach der anderen. */
     fun seen(id: String, visible: Boolean = true) {
-        scope.launch {
-            try { api.seen(id, visible) } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+        // UNDISPATCHED: lock() kommt noch in diesem Aufruf an die Reihe; die Mutex ist fair (zuerst gefragt, zuerst dran).
+        scope.launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) {
+            seenLock.lock()
+            try {
+                try { api.seen(id, visible) } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+            } finally {
+                seenLock.unlock()
+            }
             if (visible) chats = chats.map { if (it.id == id) it.copy(unread = false) else it }
         }
+    }
+
+    /** Eine Oberfläche zeigt den Chat [id] ab jetzt: sofort „zu sehen“ ans NAS. */
+    fun showing(id: String) {
+        viewers[id] = (viewers[id] ?: 0) + 1
+        seen(id, true)
+    }
+
+    /**
+     * Eine Oberfläche zeigt den Chat [id] nicht mehr. „Nicht mehr zu sehen“
+     * erst, wenn ihn keine mehr zeigt (Fenster und Leiste am Arbeitsplatz,
+     * eine neue Oberfläche desselben Chats nach dem Wiederöffnen).
+     */
+    fun hidden(id: String) {
+        val left = (viewers[id] ?: 1) - 1
+        if (left > 0) {
+            viewers[id] = left
+            return
+        }
+        viewers.remove(id)
+        seen(id, false)
     }
 
     /**
