@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import io.github.ra5on.titanos.ui.components.SwipeDefaults
 import io.github.ra5on.titanos.net.ApiException
 import io.github.ra5on.titanos.net.CertificateChangedException
 import io.github.ra5on.titanos.ui.components.Divider
@@ -376,16 +377,20 @@ fun SwipeRow(leading: Swipe?, trailing: List<Swipe>, enabled: Boolean = true, co
                         onDragStart = { dragging = true },
                         onDragEnd = {
                             dragging = false
+                            // Dieselbe Schwelle wie in allen Listen (core-ui SwipeDefaults): weit durchziehen
+                            // führt aus; links stehen hier mehrere Knöpfe, also erst hinter ihnen.
+                            val extra = with(density) { SwipeDefaults.RUN_EXTRA_DP.dp.toPx() }
+                            val reveal = with(density) { SwipeDefaults.REVEAL_DP.dp.toPx() }
                             when {
-                                leading != null && offset > width * 0.25f -> { leading.run(); offset = 0f }
-                                trailing.isNotEmpty() && offset < -width * 0.6f -> { trailing.first().run(); offset = 0f }
+                                leading != null && offset >= SwipeDefaults.runAt(width, reveal, extra) -> { leading.run(); offset = 0f }
+                                trailing.isNotEmpty() && -offset >= SwipeDefaults.runAt(width, open, extra) -> { trailing.first().run(); offset = 0f }
                                 offset < -open / 2 -> offset = -open
                                 else -> offset = 0f
                             }
                         },
                         onDragCancel = { dragging = false; offset = 0f },
                     ) { _, drag ->
-                        offset = (offset + drag).coerceIn(if (trailing.isEmpty()) 0f else -width, if (leading == null) 0f else width * 0.5f)
+                        offset = (offset + drag).coerceIn(if (trailing.isEmpty()) 0f else -width, if (leading == null) 0f else width * 0.9f)
                     }
                 },
             ),
@@ -423,10 +428,7 @@ private fun SwipeLabel(s: Swipe) {
 
 /** „Animationen entfernen“ in den Bedienungshilfen bzw. Animationsskala 0: dann nichts bewegen. */
 @Composable
-fun reduceMotion(): Boolean {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    return remember { android.provider.Settings.Global.getFloat(ctx.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
-}
+fun reduceMotion(): Boolean = io.github.ra5on.titanos.ui.components.reduceMotion()
 
 /** Eine echte Tastatur ist angeschlossen (Desktop-Modus, Tastatur-Hülle): dann gelten die Tastenkürzel. */
 @Composable

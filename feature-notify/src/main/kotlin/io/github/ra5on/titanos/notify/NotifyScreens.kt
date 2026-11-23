@@ -33,6 +33,16 @@ import io.github.ra5on.titanos.ui.components.Problem
 import io.github.ra5on.titanos.ui.components.RowIcon
 import io.github.ra5on.titanos.ui.components.SectionHeader
 import io.github.ra5on.titanos.ui.components.Toggle
+import io.github.ra5on.titanos.ui.components.Divider
+import io.github.ra5on.titanos.ui.components.PullRefresh
+import io.github.ra5on.titanos.ui.components.SwipeAction
+import io.github.ra5on.titanos.ui.components.SwipeRow
+import io.github.ra5on.titanos.ui.generated.IconSquareColors
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import io.github.ra5on.titanos.ui.components.TopBar
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanIcons
@@ -102,7 +112,12 @@ fun glyphFor(n: Note): Pair<String, String> {
     }
 }
 
-/** Mitteilungen (Entwurf 70): Filter Alle/NAS/Mail/Termine, nach Tagen. */
+/**
+ * Mitteilungen (Entwurf 70): Filter Alle/NAS/Mail/Termine, nach Tagen. Seit
+ * 1.01 (Entwurf 10) wischen: nach links löschen, nach rechts gelesen bzw.
+ * ungelesen; lange drücken zeigt dieselben Aktionen; herunterziehen lädt neu.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun NotificationsScreen(
     view: NotesView,
@@ -114,6 +129,10 @@ fun NotificationsScreen(
     zone: ZoneId = ZoneId.systemDefault(),
     today: LocalDate = LocalDate.now(zone),
     bottomBar: (@Composable () -> Unit)? = null,
+    onRead: ((Note, Boolean) -> Unit)? = null,
+    onDelete: ((Note) -> Unit)? = null,
+    onActions: ((Note) -> Unit)? = null,
+    onRefresh: (suspend () -> Unit)? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val time = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
@@ -132,7 +151,10 @@ fun NotificationsScreen(
         modifier = modifier,
         bottomBar = bottomBar,
         overlay = overlay,
+        scroll = false,
     ) {
+      PullRefresh(onRefresh, Modifier.fillMaxSize()) {
+      Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         FlowRow(
             Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -162,23 +184,41 @@ fun NotificationsScreen(
                 day.notes.forEachIndexed { i, n ->
                     val at = if (n.millis > 0) Instant.ofEpochMilli(n.millis).atZone(zone).toLocalTime().format(time) else ""
                     val isUnread = n.id !in view.read
-                    ListRow(
-                        n.title,
-                        modifier = if (isUnread) Modifier.semantics { contentDescription = n.title + ", " + unread } else Modifier,
-                        sub = when {
-                            n.text.isBlank() -> at
-                            at.isEmpty() -> n.text
-                            else -> stringResource(R.string.notify_line, n.text, at)
-                        },
-                        icon = { NoteIcon(n) },
-                        right = if (isUnread) ({ UnreadDot() }) else null,
-                        divider = i > 0,
-                        onClick = { onNote(n) },
-                    )
+                    val read = onRead?.let { f ->
+                        SwipeAction(
+                            stringResource(if (isUnread) R.string.notify_swipe_read else R.string.notify_swipe_unread),
+                            if (isUnread) TitanIcons.check else TitanIcons.mail,
+                            IconSquareColors.blue,
+                        ) { f(n, isUnread) }
+                    }
+                    val delete = onDelete?.let { f -> SwipeAction(stringResource(R.string.notify_swipe_delete), TitanIcons.trash, IconSquareColors.red) { f(n) } }
+                    val more = stringResource(R.string.notify_actions, n.title)
+                    if (i > 0) Divider()
+                    SwipeRow(start = read, end = delete) {
+                        ListRow(
+                            n.title,
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onClick = { onNote(n) },
+                                    onLongClick = onActions?.let { f -> { f(n) } },
+                                    onLongClickLabel = more,
+                                )
+                                .then(if (isUnread) Modifier.semantics { contentDescription = n.title + ", " + unread } else Modifier),
+                            sub = when {
+                                n.text.isBlank() -> at
+                                at.isEmpty() -> n.text
+                                else -> stringResource(R.string.notify_line, n.text, at)
+                            },
+                            icon = { NoteIcon(n) },
+                            right = if (isUnread) ({ UnreadDot() }) else null,
+                        )
+                    }
                 }
             }
         }
         Spacer(Modifier.height(8.dp))
+      }
+      }
     }
 }
 

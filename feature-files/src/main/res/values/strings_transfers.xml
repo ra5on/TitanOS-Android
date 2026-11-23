@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dateien 1.01: Rückmeldung bei Übertragungen (Entwürfe 20–23) und Wischen (Entwurf 11). -->
+<resources>
+    <string name="tr_channel">Übertragungen</string>
+    <string name="tr_channel_text">Laufende Downloads und Uploads mit Fortschritt, danach je Datei eine ruhige Meldung.</string>
+    <plurals name="tr_n_downloading">
+        <item quantity="one">%d Datei wird geladen</item>
+        <item quantity="other">%d Dateien werden geladen</item>
+    </plurals>
+    <plurals name="tr_n_uploading">
+        <item quantity="one">%d Datei wird hochgeladen</item>
+        <item quantity="other">%d Dateien werden hochgeladen</item>
+    </plurals>
+    <plurals name="tr_n_running">
+        <item quantity="one">%d Übertragung läuft</item>
+        <item quantity="other">%d Übertragungen laufen</item>
+    </plurals>
+    <plurals name="tr_and_more">
+        <item quantity="one">%1$s und %2$d weitere</item>
+        <item quantity="other">%1$s und %2$d weitere</item>
+    </plurals>
+    <string name="tr_of">%1$s von %2$s</string>
+    <string name="tr_downloaded_title">%1$s heruntergeladen</string>
+    <string name="tr_uploaded_title">%1$s hochgeladen</string>
+    <string name="tr_in_downloads">In Downloads</string>
+    <string name="tr_to_place">nach %1$s</string>
+    <string name="tr_failed_title">%1$s nicht übertragen</string>
+    <string name="tr_failed_text">Mehr unter Übertragungen.</string>
+    <string name="tr_open">Öffnen</string>
+    <string name="tr_show">Im Ordner zeigen</string>
+    <string name="tr_show_short">Zeigen</string>
+    <string name="tr_retry_short">Erneut</string>
+    <string name="tr_saved">In Downloads gespeichert</string>
+    <string name="tr_open_failed">Keine App zum Öffnen dieser Datei gefunden.</string>
+    <string name="tr_row_downloading">Wird geladen · %1$s von %2$s</string>
+    <string name="tr_row_uploading">Wird hochgeladen · %1$s von %2$s</string>
+    <string name="tr_row_waiting">Wartet · %1$s</string>
+    <string name="tr_mark_downloads">in Downloads</string>
+    <string name="tr_mark_phone">auf dem Handy</string>
+    <string name="tr_cancel_named">%1$s abbrechen</string>
+    <string name="tr_ring_running">Übertragungen, %1$s geschafft</string>
+    <string name="tr_ring_done">Übertragungen, alle fertig</string>
+    <string name="tr_filter_all">Alle</string>
+    <string name="tr_filter_downloads">Downloads</string>
+    <string name="tr_filter_uploads">Uploads</string>
+    <string name="tr_filter_photos">Fotos</string>
+    <string name="tr_filter_none">Nichts in dieser Auswahl.</string>
+    <string name="tr_footer">Erreichbar über den Ring oben in Dateien, das Seitenmenü und die Mitteilung. Einträge bleiben 7 Tage.</string>
+    <plurals name="tr_backup_photos">
+        <item quantity="one">%d Foto</item>
+        <item quantity="other">%d Fotos</item>
+    </plurals>
+    <plurals name="tr_backup_videos">
+        <item quantity="one">%d Video</item>
+        <item quantity="other">%d Videos</item>
+    </plurals>
+    <string name="tr_backup_and">%1$s und %2$s</string>
+    <string name="tr_backup_title">%1$s (Foto-Sicherung)</string>
+    <string name="tr_backup_sub">nach %1$s · %2$s</string>
+    <string name="tr_downloaded_short">in Downloads · %1$s</string>
+    <string name="files_swipe_trash">Papierkorb</string>
+    <string name="files_swipe_delete">Löschen</string>
+    <string name="tr_just_now">gerade eben</string>
+</resources>

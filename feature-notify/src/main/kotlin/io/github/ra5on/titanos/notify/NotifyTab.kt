@@ -24,6 +24,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.ra5on.titanos.ui.components.Card
+import io.github.ra5on.titanos.ui.components.SnackAction
+import io.github.ra5on.titanos.ui.components.Snackbar
+import io.github.ra5on.titanos.ui.theme.dangerInk
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import io.github.ra5on.titanos.ui.components.ListRow
 import io.github.ra5on.titanos.ui.components.RowIcon
 import io.github.ra5on.titanos.ui.components.Sheet
@@ -110,8 +117,34 @@ fun NotifyTab(nav: @Composable () -> Unit) {
     DisposableEffect(Unit) {
         onDispose {
             val inbox = NotifyRuntime.inbox(context)
-            inbox.update { s -> Inbox.markRead(s, s.items.map { it.id }) to Unit }
+            // Bewusst als ungelesen Markiertes bleibt ungelesen (Wischen, Entwurf 10).
+            inbox.update { s -> Inbox.markSeen(s) to Unit }
         }
+    }
+    var undo by remember { mutableStateOf<NoteUndo?>(null) }
+    var actionsFor by remember { mutableStateOf<Note?>(null) }
+    fun setRead(n: Note, read: Boolean) {
+        NotifyRuntime.inbox(context).update { s -> (if (read) Inbox.markRead(s, listOf(n.id)) else Inbox.markUnread(s, listOf(n.id))) to Unit }
+        if (read) Poster.cancel(context, Poster.tagOf(NotifyRuntime.active(), n))
+        NotifyRuntime.changed()
+        undo = NoteUndo(if (read) NoteUndo.Kind.Read else NoteUndo.Kind.Unread, listOf(n), if (read) emptySet() else setOf(n.id))
+    }
+    fun delete(n: Note) {
+        val before = NotifyRuntime.inbox(context).snapshot()
+        NotifyRuntime.inbox(context).update { s -> Inbox.delete(s, listOf(n.id), System.currentTimeMillis()) to Unit }
+        Poster.cancel(context, Poster.tagOf(NotifyRuntime.active(), n))
+        NotifyRuntime.changed()
+        undo = NoteUndo(NoteUndo.Kind.Deleted, listOf(n), before.read)
+    }
+    fun revert(u: NoteUndo) {
+        NotifyRuntime.inbox(context).update { s ->
+            when (u.kind) {
+                NoteUndo.Kind.Deleted -> Inbox.restore(s, u.notes, u.read)
+                NoteUndo.Kind.Read -> Inbox.markUnread(s, u.notes.map { it.id })
+                NoteUndo.Kind.Unread -> Inbox.markRead(s, u.notes.map { it.id })
+            } to Unit
+        }
+        NotifyRuntime.changed()
     }
     Box {
         NotificationsScreen(
@@ -127,7 +160,51 @@ fun NotifyTab(nav: @Composable () -> Unit) {
             },
             onMenu = { menu = true },
             bottomBar = nav,
+            onRead = ::setRead,
+            onDelete = ::delete,
+            onActions = { actionsFor = it },
+            onRefresh = { NotifyRuntime.fetch(context) },
         ) {
+            undo?.let { u ->
+                Snackbar(
+                    text = stringResource(
+                        when (u.kind) {
+                            NoteUndo.Kind.Deleted -> R.string.notify_deleted
+                            NoteUndo.Kind.Read -> R.string.notify_marked_read
+                            NoteUndo.Kind.Unread -> R.string.notify_marked_unread
+                        },
+                    ),
+                    actions = listOf(SnackAction(stringResource(io.github.ra5on.titanos.ui.R.string.ui_undo)) { revert(u) }),
+                    onDismiss = { if (undo == u) undo = null },
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp),
+                )
+            }
+            actionsFor?.let { n ->
+                val unreadNow = n.id !in state.read
+                Sheet(onDismiss = { actionsFor = null }) {
+                    Card(background = Titan.colors.bg) {
+                        ListRow(stringResource(R.string.notify_open), icon = { RowIcon(TitanIcons.chev) }, onClick = {
+                            actionsFor = null
+                            NotifyRuntime.inbox(context).update { Inbox.markRead(it, listOf(n.id)) to Unit }
+                            NotifyRuntime.changed()
+                            NotifyRuntime.requestOpen(n.link)
+                        })
+                        ListRow(
+                            stringResource(if (unreadNow) R.string.notify_mark_read else R.string.notify_mark_unread),
+                            icon = { RowIcon(if (unreadNow) TitanIcons.check else TitanIcons.mail) },
+                            divider = true,
+                            onClick = { actionsFor = null; setRead(n, unreadNow) },
+                        )
+                        ListRow(
+                            stringResource(R.string.notify_swipe_delete),
+                            icon = { RowIcon(TitanIcons.trash, tint = Titan.colors.dangerInk) },
+                            titleColor = Titan.colors.dangerInk,
+                            divider = true,
+                            onClick = { actionsFor = null; delete(n) },
+                        )
+                    }
+                }
+            }
             if (menu) {
                 Sheet(onDismiss = { menu = false }) {
                     Card(background = Titan.colors.bg) {
@@ -152,4 +229,9 @@ fun NotifyTab(nav: @Composable () -> Unit) {
             }
         }
     }
+}
+
+/** Was „Rückgängig“ zurücknimmt: gelöschte Mitteilungen (mit Gelesen-Stand) oder ein Wechsel gelesen/ungelesen. */
+internal data class NoteUndo(val kind: Kind, val notes: List<Note>, val read: Set<String>) {
+    enum class Kind { Deleted, Read, Unread }
 }

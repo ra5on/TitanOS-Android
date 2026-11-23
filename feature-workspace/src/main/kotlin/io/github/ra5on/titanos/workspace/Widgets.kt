@@ -309,7 +309,7 @@ internal fun WidgetBody(state: WorkspaceState, w: Widget) {
                         Muted("$used / $total")
                     }
                     Meter(v.used.toDouble() / maxOf(1L, v.size), v.name)
-                    if (v.state != "ok") Text(t("desktop.widget.volumeState", "state" to v.state), style = TitanType.small, color = c.warnInk)
+                    if (v.state != "ok") Text(t("desktop.widget.volumeState", "state" to io.github.ra5on.titanos.compute.tOr("state.${v.state}", v.state)), style = TitanType.small, color = c.warnInk)
                 }
             }
         }

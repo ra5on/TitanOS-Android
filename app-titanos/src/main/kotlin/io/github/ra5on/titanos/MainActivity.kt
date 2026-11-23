@@ -112,6 +112,11 @@ class MainActivity : ComponentActivity() {
         if (intent?.getBooleanExtra(io.github.ra5on.titanos.update.UpdateWorker.EXTRA_OPEN_ABOUT, false) == true) {
             (application as TitanApp).graph.openAbout = true
         }
+        // Mitteilung einer Übertragung (laufend, fertig, gescheitert): Dateien › Übertragungen.
+        if (intent?.getBooleanExtra(io.github.ra5on.titanos.files.TransferNotices.EXTRA_OPEN_TRANSFERS, false) == true) {
+            intent.removeExtra(io.github.ra5on.titanos.files.TransferNotices.EXTRA_OPEN_TRANSFERS)
+            graph.openTransfers = true
+        }
         if (intent?.getBooleanExtra(io.github.ra5on.titanos.widgets.PhotosWidget.EXTRA_OPEN_PHOTOS, false) == true) {
             (application as TitanApp).graph.openPhotos = true
         }

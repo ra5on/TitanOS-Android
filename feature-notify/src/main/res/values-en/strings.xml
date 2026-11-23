@@ -52,4 +52,14 @@
     <string name="notify_live_channel_text">Quiet, ongoing notification while “Directly to the NAS” is on</string>
     <string name="notify_live_title">Connected to the NAS</string>
     <string name="notify_live_text">For notifications without Google</string>
+    <string name="notify_swipe_read">Read</string>
+    <string name="notify_swipe_unread">Unread</string>
+    <string name="notify_swipe_delete">Delete</string>
+    <string name="notify_mark_read">Mark as read</string>
+    <string name="notify_mark_unread">Mark as unread</string>
+    <string name="notify_open">Open</string>
+    <string name="notify_deleted">Notification deleted</string>
+    <string name="notify_marked_read">Marked as read</string>
+    <string name="notify_marked_unread">Marked as unread</string>
+    <string name="notify_actions">Actions for %1$s</string>
 </resources>

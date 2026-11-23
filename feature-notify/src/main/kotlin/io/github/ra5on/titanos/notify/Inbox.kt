@@ -15,6 +15,10 @@ data class InboxState(
     val read: Set<String> = emptySet(),
     /** Einmal abgeglichen: erst danach wird Neues als Android-Mitteilung gezeigt. */
     val primed: Boolean = false,
+    /** Am Handy gelöscht (Wischen, 1.01) mit der Zeit der Mitteilung: kommt sie wieder, bleibt sie weg. */
+    val deleted: Map<String, Long> = emptyMap(),
+    /** Bewusst als ungelesen markiert: bleibt es auch beim Verlassen der Liste. */
+    val keptUnread: Set<String> = emptySet(),
 )
 
 /** Ergebnis eines Abgleichs: der neue Stand und was davon klingeln darf. */
@@ -40,7 +44,7 @@ object Inbox {
      */
     fun merge(state: InboxState, incoming: List<Note>, latest: String, quiet: Boolean, now: Long): Merged {
         val known = state.items.mapTo(HashSet()) { it.id }
-        val added = incoming.filter { known.add(it.id) }
+        val added = incoming.filter { it.id !in state.deleted && known.add(it.id) }
         val cut = now - KEEP_MILLIS
         val items = (state.items + added)
             .filter { it.millis == 0L || it.millis >= cut }
@@ -53,13 +57,54 @@ object Inbox {
         }
         val marker = if (latest.isEmpty()) state.marker else Marker.newer(state.marker, latest)
         return Merged(
-            InboxState(marker = marker, items = items, read = state.read.filterTo(HashSet()) { it in ids }, primed = true),
+            InboxState(
+                marker = marker,
+                items = items,
+                read = state.read.filterTo(HashSet()) { it in ids },
+                primed = true,
+                // Gelöschte merken, solange eine Mitteilung dieses Alters noch käme.
+                deleted = state.deleted.filterValues { it == 0L || it >= cut },
+                keptUnread = state.keptUnread.filterTo(HashSet()) { it in ids },
+            ),
             ring,
         )
     }
 
     fun markRead(state: InboxState, ids: Collection<String>): InboxState =
-        state.copy(read = state.read + ids.filter { id -> state.items.any { it.id == id } })
+        state.copy(read = state.read + ids.filter { id -> state.items.any { it.id == id } }, keptUnread = state.keptUnread - ids.toSet())
+
+    /** Gesehen beim Verlassen der Liste: alles gelesen, außer bewusst ungelesen Markiertem. */
+    fun markSeen(state: InboxState): InboxState =
+        state.copy(read = state.read + state.items.map { it.id }.filter { it !in state.keptUnread })
+
+    /** Wischen nach rechts auf eine gelesene (Entwurf 10): wieder ungelesen, und es bleibt so. */
+    fun markUnread(state: InboxState, ids: Collection<String>): InboxState =
+        state.copy(read = state.read - ids.toSet(), keptUnread = state.keptUnread + ids.filter { id -> state.items.any { it.id == id } })
+
+    /** Am Handy löschen; das NAS kennt kein Löschen, deshalb merkt sich die App die Marke. */
+    fun delete(state: InboxState, ids: Collection<String>, now: Long): InboxState {
+        val gone = state.items.filter { it.id in ids }
+        if (gone.isEmpty()) return state
+        val set = ids.toSet()
+        return state.copy(
+            items = state.items.filter { it.id !in set },
+            read = state.read - set,
+            keptUnread = state.keptUnread - set,
+            deleted = state.deleted + gone.associate { it.id to (if (it.millis > 0) it.millis else now) },
+        )
+    }
+
+    /** „Rückgängig“ nach dem Löschen: die Mitteilungen wieder an ihrer Stelle, mit ihrem Gelesen-Stand. */
+    fun restore(state: InboxState, notes: List<Note>, read: Set<String>): InboxState {
+        val known = state.items.mapTo(HashSet()) { it.id }
+        val back = notes.filter { it.id !in known }
+        if (back.isEmpty()) return state
+        return state.copy(
+            items = (state.items + back).sortedBy { it.millis },
+            read = state.read + back.map { it.id }.filter { it in read },
+            deleted = state.deleted - back.map { it.id }.toSet(),
+        )
+    }
 
     fun unread(state: InboxState): Int = state.items.count { it.id !in state.read }
 }

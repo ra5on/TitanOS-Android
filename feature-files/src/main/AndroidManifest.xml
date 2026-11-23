@@ -1,13 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Downloads und Uploads als Vordergrund-Auftrag (WorkManager, setForeground) mit laufender Mitteilung. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- DLNA: Fernseher und Lautsprecher im Heimnetz finden (SSDP). -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <application>
+        <!--
+            Übertragungen (Entwurf 22): WorkManager hebt einen laufenden Download oder Upload
+            in den Vordergrund. Android 14 verlangt den Typ am Dienst; dataSync passt
+            (Daten zwischen Handy und NAS übertragen, vom Nutzer angestoßen).
+        -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+        <!-- „Abbrechen“ in der laufenden Mitteilung. -->
+        <receiver
+            android:name="io.github.ra5on.titanos.files.TransferCancelReceiver"
+            android:exported="false" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

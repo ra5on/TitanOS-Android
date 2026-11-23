@@ -156,6 +156,14 @@ private fun WorkspaceRoutes(graph: AppGraph, state: WorkspaceState) {
         graph.openTab = null
     }
     LaunchedEffect(graph.openPhotos) { if (graph.openPhotos) { state.open("app:photos"); graph.openPhotos = false } }
+    // Mitteilung einer Übertragung: Dateien mit der Seite „Übertragungen“.
+    LaunchedEffect(graph.openTransfers) {
+        if (graph.openTransfers) {
+            state.open("app:files")
+            graph.files?.let { f -> if (f.route != io.github.ra5on.titanos.files.FilesRoute.Transfers) f.push(io.github.ra5on.titanos.files.FilesRoute.Transfers) }
+            graph.openTransfers = false
+        }
+    }
     LaunchedEffect(graph.openAbout) { if (graph.openAbout) { state.open("app:about"); graph.openAbout = false } }
     LaunchedEffect(graph.openVpn) { if (graph.openVpn) { state.open("app:vpn"); graph.openVpn = false } }
     // Startbildschirm und Dock der Handy-Gestaltung (PLAN 117): hier als Fenster; die App-Einstellungen gibt es nur am Handy.
@@ -249,6 +257,7 @@ private fun FilesWindow(graph: AppGraph, win: Win) {
         val root = queryValue(win.href, "root")
         if (root != null) model.openAt(root, queryValue(win.href, "path").orEmpty())
     }
+    if (model !== shared) androidx.compose.runtime.DisposableEffect(model) { onDispose { model.dispose() } }
     io.github.ra5on.titanos.files.FilesTab(model, nav = {})
 }
 

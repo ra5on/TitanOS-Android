@@ -51,6 +51,9 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.session)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }
 
 // Ein hängender Test beendet den Lauf, statt einen der zwei Gradle-Plätze der VM zu halten.

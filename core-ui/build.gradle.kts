@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
@@ -42,4 +44,14 @@ dependencies {
     implementation(libs.androidx.window)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit)
+    // Wischen und Meldungen (Swipe.kt) als Compose-Tests in Robolectric.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
+}
+
+// Ein hängender Test beendet den Lauf, statt einen der zwei Gradle-Plätze der VM zu halten.
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(10))
 }

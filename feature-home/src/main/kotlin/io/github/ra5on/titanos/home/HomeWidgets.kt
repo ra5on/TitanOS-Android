@@ -46,7 +46,7 @@ internal fun WidgetBody(kind: String, state: HomeState, photos: String?, onPhoto
                             Text(stringResource(R.string.home_storage_sub, v.name, v.level.uppercase().replace("RAID", "RAID ")), style = TitanType.body, color = c.text)
                             Text(stringResource(R.string.home_storage_of, used, total), style = TitanType.small, color = c.muted)
                             Bar(v.usedBytes.toFloat() / v.sizeBytes, Modifier.padding(top = 6.dp))
-                            if (v.state != "ok") Text(stringResource(R.string.home_widget_volume_state, v.state), style = TitanType.small, color = c.warnInk, modifier = Modifier.padding(top = 4.dp))
+                            if (v.state != "ok") Text(stringResource(R.string.home_widget_volume_state, volumeStateText(v.state)), style = TitanType.small, color = c.warnInk, modifier = Modifier.padding(top = 4.dp))
                         }
                     }
                 }
@@ -82,6 +82,20 @@ internal fun WidgetBody(kind: String, state: HomeState, photos: String?, onPhoto
         }
         else -> Unit
     }
+}
+
+/** Zustand eines Volumes in Worten wie in der Verwaltung; ein unbekannter bleibt wie er ist. */
+@Composable
+internal fun volumeStateText(state: String): String = when (state) {
+    "checking" -> stringResource(R.string.home_volume_state_checking)
+    "degraded" -> stringResource(R.string.home_volume_state_degraded)
+    "failed" -> stringResource(R.string.home_volume_state_failed)
+    "missing" -> stringResource(R.string.home_volume_state_missing)
+    "ok" -> stringResource(R.string.home_volume_state_ok)
+    "rebuilding" -> stringResource(R.string.home_volume_state_rebuilding)
+    "reshaping" -> stringResource(R.string.home_volume_state_reshaping)
+    "syncing" -> stringResource(R.string.home_volume_state_syncing)
+    else -> state
 }
 
 /** Glyphe und Verlauf des Widgets unter „Hinzufügen“ (wie die Programmsymbole). */

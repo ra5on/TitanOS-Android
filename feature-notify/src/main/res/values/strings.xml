@@ -52,4 +52,15 @@
     <string name="notify_live_channel_text">Ruhige, dauerhafte Mitteilung, solange „Direkt zum NAS“ an ist</string>
     <string name="notify_live_title">Mit dem NAS verbunden</string>
     <string name="notify_live_text">Für Mitteilungen ohne Google</string>
+    <!-- Wischen (Entwurf 10): links löschen, rechts gelesen/ungelesen; alles auch im Menü der Zeile. -->
+    <string name="notify_swipe_read">Gelesen</string>
+    <string name="notify_swipe_unread">Ungelesen</string>
+    <string name="notify_swipe_delete">Löschen</string>
+    <string name="notify_mark_read">Als gelesen markieren</string>
+    <string name="notify_mark_unread">Als ungelesen markieren</string>
+    <string name="notify_open">Öffnen</string>
+    <string name="notify_deleted">Mitteilung gelöscht</string>
+    <string name="notify_marked_read">Als gelesen markiert</string>
+    <string name="notify_marked_unread">Als ungelesen markiert</string>
+    <string name="notify_actions">Aktionen für %1$s</string>
 </resources>

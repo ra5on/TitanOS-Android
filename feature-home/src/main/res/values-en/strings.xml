@@ -107,6 +107,14 @@
     <string name="home_widget_stopped">stopped</string>
     <string name="home_widget_more">and %1$d more</string>
     <string name="home_widget_volume_state">State: %1$s</string>
+    <string name="home_volume_state_checking">Checking</string>
+    <string name="home_volume_state_degraded">Degraded</string>
+    <string name="home_volume_state_failed">Failed</string>
+    <string name="home_volume_state_missing">Not found</string>
+    <string name="home_volume_state_ok">In sync</string>
+    <string name="home_volume_state_rebuilding">Rebuilding</string>
+    <string name="home_volume_state_reshaping">Reshaping</string>
+    <string name="home_volume_state_syncing">First sync</string>
     <string name="home_web_title">Web setup</string>
     <string name="home_web_text">The home screen currently shows the web\'s phone setup. To edit it, the app takes it over as its own; the web\'s setup stays as it is.</string>
     <string name="home_web_do">Take over as own</string>

@@ -319,5 +319,4 @@ internal fun AppSettingsPage(
 }
 
 /** Ob Android Animationen aus hat („Animationen entfernen“): dann wackelt nichts. */
-internal fun reduceMotion(context: android.content.Context): Boolean =
-    android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+internal fun reduceMotion(context: android.content.Context): Boolean = io.github.ra5on.titanos.ui.components.reduceMotion(context)

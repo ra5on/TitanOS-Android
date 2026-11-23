@@ -18,6 +18,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -86,6 +87,59 @@ class FilesModel(
             val f = folder
             if (f != null && f.location.root.id == root && f.location.path == dir) scope.launch { reload() }
         }
+        FilesRuntime.cancelApp = { id -> cancel(id) }
+    }
+
+    /** Fertig geladen: Meldung „In Downloads gespeichert“ (Entwurf 21), Ring kurz mit grünem Punkt. Endet mit [scope]. */
+    private val onTransfer = object : (Transfer?, Transfer) -> Unit {
+        override fun invoke(before: Transfer?, after: Transfer) {
+            if (!scope.isActive) {
+                transfers.unlisten(this)
+                return
+            }
+            if (before?.active == true && !after.active && after.direction != Direction.Share && !after.backup) {
+                if (transfers.summary().count == 0) ringDoneAt = System.currentTimeMillis()
+                if (after.openable) saved = after
+            }
+        }
+    }
+
+
+    /** Hört nicht mehr auf Übertragungen (weiteres Fenster am Arbeitsplatz geschlossen). */
+    fun dispose() {
+        transfers.unlisten(onTransfer)
+    }
+
+    /** Übertragungen › Lauf der Foto-Sicherung: der Reiter Fotos (setzt die App). */
+    var openPhotos: (() -> Unit)? = null
+
+    /** Zuletzt in Downloads gespeichert; die App zeigt die Meldung mit „Öffnen“ und „Zeigen“, solange sie vorn ist. */
+    var saved by mutableStateOf<Transfer?>(null)
+
+    /** Wann die letzte Übertragung fertig wurde (grüner Punkt am Ring, kurz). */
+    var ringDoneAt by mutableStateOf(0L)
+
+    init {
+        transfers.listen(onTransfer)
+    }
+
+    /** Eine fertig geladene Datei mit einer anderen App öffnen; false ohne passende App. */
+    fun openDownloaded(t: Transfer): Boolean {
+        val uri = t.uri?.let(Uri::parse) ?: return false
+        return try {
+            context.startActivity(TransferNotices.viewIntent(uri, t.name))
+            true
+        } catch (e: android.content.ActivityNotFoundException) {
+            false
+        }
+    }
+
+    /** Die Downloads in der Dateien-App des Systems. */
+    fun showDownloads(): Boolean = try {
+        context.startActivity(TransferNotices.showIntent())
+        true
+    } catch (e: android.content.ActivityNotFoundException) {
+        false
     }
     var roots by mutableStateOf(RootsState())
         private set
@@ -261,7 +315,7 @@ class FilesModel(
     private fun handOver(location: Location, entries: List<FileEntry>, chooserTitle: String, view: Boolean, via: TitanApi? = null) {
         if (entries.isEmpty()) return
         val label = if (entries.size == 1) entries[0].name else entries.joinToString(", ") { it.name }
-        val t = transfers.add(Transfer(0, label, Direction.Share, location.place, location.root.id, location.path, total = entries.sumOf { it.size }))
+        val t = transfers.add(Transfer(0, label, Direction.Share, location.place, location.root.id, location.path, total = entries.sumOf { it.size }, runner = TransferSource.App))
         run(t) {
             val dir = File(context.cacheDir, "shared/${t.id}").apply { mkdirs() }
             var before = 0L
@@ -373,16 +427,19 @@ class FilesModel(
     }
 
     fun cancel(id: Long) {
-        // Teilen läuft im Speicher, alles andere als Auftrag.
+        // Teilen und ZIP laufen im Speicher, alles andere als Auftrag.
         jobs.remove(id)?.cancel()
-        if (transfers.get(id)?.direction == Direction.Share) {
+        val t = transfers.get(id)
+        if (t?.direction == Direction.Share || t?.runner == TransferSource.App) {
             transfers.update(id) { it.copy(state = TransferState.Cancelled, finishedAtMs = System.currentTimeMillis()) }
         } else {
             TransferQueue.cancel(context, id, api)
         }
     }
 
-    fun retry(id: Long) = TransferQueue.retry(context, id)
+    fun retry(id: Long) {
+        if (transfers.get(id)?.retryable == true) TransferQueue.retry(context, id)
+    }
 
     // ---------- offline ----------
 
@@ -595,7 +652,7 @@ class FilesModel(
         if (entries.isEmpty()) return
         val base = single?.name ?: location.segments.lastOrNull() ?: location.root.name
         val name = cleanZipName(base)
-        val t = transfers.add(Transfer(0, name, Direction.Download, location.place, location.root.id, location.path, total = entries.sumOf { it.size }))
+        val t = transfers.add(Transfer(0, name, Direction.Download, location.place, location.root.id, location.path, total = entries.sumOf { it.size }, runner = TransferSource.App))
         run(t) {
             val values = android.content.ContentValues().apply {
                 put(android.provider.MediaStore.Downloads.DISPLAY_NAME, name)
@@ -607,6 +664,7 @@ class FilesModel(
             try {
                 resolver.openOutputStream(uri)!!.use { out -> files!!.zipTo(location.root.id, entries.map { location.full(it.name) }, name, out) { progress(t.id, it, -1) } }
                 resolver.update(uri, android.content.ContentValues().apply { put(android.provider.MediaStore.Downloads.IS_PENDING, 0) }, null, null)
+                transfers.update(t.id) { it.copy(uri = uri.toString()) }
             } catch (e: Exception) {
                 resolver.delete(uri, null, null)
                 throw e

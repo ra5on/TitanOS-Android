@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files 1.01: feedback on transfers (drafts 20–23) and swiping (draft 11). -->
+<resources>
+    <string name="tr_channel">Transfers</string>
+    <string name="tr_channel_text">Running downloads and uploads with progress, then a quiet note per file.</string>
+    <plurals name="tr_n_downloading">
+        <item quantity="one">%d file downloading</item>
+        <item quantity="other">%d files downloading</item>
+    </plurals>
+    <plurals name="tr_n_uploading">
+        <item quantity="one">%d file uploading</item>
+        <item quantity="other">%d files uploading</item>
+    </plurals>
+    <plurals name="tr_n_running">
+        <item quantity="one">%d transfer running</item>
+        <item quantity="other">%d transfers running</item>
+    </plurals>
+    <plurals name="tr_and_more">
+        <item quantity="one">%1$s and %2$d more</item>
+        <item quantity="other">%1$s and %2$d more</item>
+    </plurals>
+    <string name="tr_of">%1$s of %2$s</string>
+    <string name="tr_downloaded_title">%1$s downloaded</string>
+    <string name="tr_uploaded_title">%1$s uploaded</string>
+    <string name="tr_in_downloads">In Downloads</string>
+    <string name="tr_to_place">to %1$s</string>
+    <string name="tr_failed_title">%1$s not transferred</string>
+    <string name="tr_failed_text">More under Transfers.</string>
+    <string name="tr_open">Open</string>
+    <string name="tr_show">Show in folder</string>
+    <string name="tr_show_short">Show</string>
+    <string name="tr_retry_short">Retry</string>
+    <string name="tr_saved">Saved to Downloads</string>
+    <string name="tr_open_failed">No app found to open this file.</string>
+    <string name="tr_row_downloading">Downloading · %1$s of %2$s</string>
+    <string name="tr_row_uploading">Uploading · %1$s of %2$s</string>
+    <string name="tr_row_waiting">Waiting · %1$s</string>
+    <string name="tr_mark_downloads">in Downloads</string>
+    <string name="tr_mark_phone">on this phone</string>
+    <string name="tr_cancel_named">Cancel %1$s</string>
+    <string name="tr_ring_running">Transfers, %1$s done</string>
+    <string name="tr_ring_done">Transfers, all finished</string>
+    <string name="tr_filter_all">All</string>
+    <string name="tr_filter_downloads">Downloads</string>
+    <string name="tr_filter_uploads">Uploads</string>
+    <string name="tr_filter_photos">Photos</string>
+    <string name="tr_filter_none">Nothing in this filter.</string>
+    <string name="tr_footer">Reachable from the ring at the top of Files, the side menu and the notification. Entries stay for 7 days.</string>
+    <plurals name="tr_backup_photos">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+    <plurals name="tr_backup_videos">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
+    <string name="tr_backup_and">%1$s and %2$s</string>
+    <string name="tr_backup_title">%1$s (photo backup)</string>
+    <string name="tr_backup_sub">to %1$s · %2$s</string>
+    <string name="tr_downloaded_short">in Downloads · %1$s</string>
+    <string name="files_swipe_trash">Trash</string>
+    <string name="files_swipe_delete">Delete</string>
+    <string name="tr_just_now">just now</string>
+</resources>

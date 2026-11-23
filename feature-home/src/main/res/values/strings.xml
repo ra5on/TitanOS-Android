@@ -108,6 +108,15 @@
     <string name="home_widget_stopped">gestoppt</string>
     <string name="home_widget_more">und %1$d weitere</string>
     <string name="home_widget_volume_state">Zustand: %1$s</string>
+    <!-- Zustand eines Volumes wie in der Verwaltung (state.* im Web). -->
+    <string name="home_volume_state_checking">Prüfung</string>
+    <string name="home_volume_state_degraded">Eingeschränkt</string>
+    <string name="home_volume_state_failed">Ausgefallen</string>
+    <string name="home_volume_state_missing">Nicht gefunden</string>
+    <string name="home_volume_state_ok">Synchron</string>
+    <string name="home_volume_state_rebuilding">Wiederaufbau</string>
+    <string name="home_volume_state_reshaping">Umbau</string>
+    <string name="home_volume_state_syncing">Erstabgleich</string>
     <string name="home_web_title">Einrichtung des Webs</string>
     <string name="home_web_text">Der Startbildschirm zeigt gerade die Einrichtung des Webs am Handy. Zum Bearbeiten übernimmt die App sie als eigene; die des Webs bleibt, wie sie ist.</string>
     <string name="home_web_do">Als eigene übernehmen</string>

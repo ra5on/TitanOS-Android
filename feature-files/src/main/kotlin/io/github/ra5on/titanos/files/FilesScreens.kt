@@ -101,6 +101,8 @@ fun FilesHomeScreen(
     jobsRunning: Int = 0,
     onSettings: () -> Unit = {},
     onUsb: (() -> Unit)? = null,
+    summary: TransferSummary = TransferSummary(0, 0, 0, 0, 0, null),
+    ringDoneAt: Long = 0,
 ) {
     val c = Titan.colors
     Page(
@@ -110,6 +112,7 @@ fun FilesHomeScreen(
                     stringResource(R.string.files_title),
                     icon = { AppIcon("files", "orange", 30.dp) },
                     actions = {
+                        TransferRing(summary, ringDoneAt, onTransfers)
                         IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), onSearch)
                         IconButton(TitanIcons.gear, stringResource(R.string.fs_title), onSettings)
                     },
@@ -278,97 +281,4 @@ fun BoxScope.DeleteDialog(name: String, withTrash: Boolean, onDo: () -> Unit, on
         ),
         onDismiss = onDismiss,
     )
-}
-
-/** Übertragungen (Entwurf 23), einfache Fassung. */
-@Composable
-fun TransfersScreen(
-    items: List<Transfer>,
-    onBack: () -> Unit,
-    onCancel: (Long) -> Unit,
-    onRetry: (Long) -> Unit = {},
-    onClear: () -> Unit = {},
-    now: Instant = Instant.now(),
-) {
-    val c = Titan.colors
-    Page(topBar = { Box(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.tr_title), onBack = onBack, backLabel = stringResource(UiR.string.ui_back)) } }) {
-        val running = items.filter { it.state == TransferState.Running }
-        val waiting = items.filter { it.state == TransferState.Waiting }
-        val finished = items.filter { it.state == TransferState.Done || it.state == TransferState.Failed || it.state == TransferState.Cancelled }
-        if (items.isEmpty()) {
-            EmptyState(stringResource(R.string.tr_title), stringResource(R.string.tr_none), Modifier.padding(top = 40.dp))
-        }
-        if (running.isNotEmpty()) {
-            SectionHeader(stringResource(R.string.tr_running), top = 14.dp)
-            Card {
-                running.forEachIndexed { i, t ->
-                    val (done, total) = Format.bytes(t.done) to Format.bytes(t.total)
-                    ListRow(
-                        title = t.name,
-                        sub = stringResource(if (t.direction == Direction.Upload) R.string.tr_to else R.string.tr_from, t.place, done, total),
-                        icon = { RowIcon(if (t.direction == Direction.Upload) TitanIcons.upload else TitanIcons.download) },
-                        right = { IconButton(TitanIcons.x, stringResource(R.string.tr_cancel), { onCancel(t.id) }, size = 20.dp, tint = c.muted) },
-                        divider = i > 0,
-                        bottom = { Bar(t.fraction, Modifier.padding(top = 8.dp)) },
-                    )
-                }
-            }
-        }
-        if (waiting.isNotEmpty()) {
-            SectionHeader(stringResource(R.string.tr_waiting), top = if (running.isEmpty()) 14.dp else 18.dp)
-            Card {
-                waiting.forEachIndexed { i, t ->
-                    val why = when (t.waiting) {
-                        WaitReason.Network -> stringResource(R.string.tr_wait_network)
-                        WaitReason.Nas -> stringResource(R.string.tr_wait_nas)
-                        WaitReason.None -> stringResource(R.string.tr_waiting_start)
-                    }
-                    ListRow(
-                        t.name,
-                        sub = "${t.place} · $why",
-                        icon = { RowIcon(TitanIcons.cloud) },
-                        right = { IconButton(TitanIcons.x, stringResource(R.string.tr_cancel), { onCancel(t.id) }, size = 20.dp, tint = c.muted) },
-                        divider = i > 0,
-                    )
-                }
-            }
-        }
-        if (finished.isNotEmpty()) {
-            SectionHeader(stringResource(R.string.tr_done), top = if (running.isEmpty() && waiting.isEmpty()) 14.dp else 18.dp)
-            Card {
-                finished.forEachIndexed { i, t ->
-                    val ok = t.state == TransferState.Done
-                    val whenText = t.finishedAt?.let { Format.shortDate(it, stringResource(R.string.files_today), stringResource(R.string.files_yesterday)) }.orEmpty()
-                    val sub = when {
-                        t.state == TransferState.Cancelled -> stringResource(R.string.tr_cancelled)
-                        !ok && t.offline -> stringResource(R.string.tr_failed_offline)
-                        !ok -> stringResource(R.string.tr_failed, t.reason.orEmpty())
-                        t.direction == Direction.Upload -> stringResource(R.string.tr_uploaded, t.place, Format.bytes(t.total), whenText)
-                        t.direction == Direction.Download -> stringResource(R.string.tr_downloaded, whenText)
-                        else -> stringResource(R.string.tr_shared, whenText)
-                    }
-                    ListRow(
-                        title = t.name,
-                        sub = sub,
-                        icon = {
-                            Icon(
-                                if (ok) TitanIcons.check else TitanIcons.warn,
-                                stringResource(if (ok) R.string.tr_state_done else R.string.tr_state_failed),
-                                tint = if (ok) c.okInk else c.warnInk,
-                                modifier = Modifier.size(22.dp),
-                            )
-                        },
-                        right = if (t.state == TransferState.Failed && t.direction != Direction.Share) {
-                            { IconButton(TitanIcons.restart, stringResource(R.string.tr_retry), { onRetry(t.id) }, size = 20.dp, tint = c.muted) }
-                        } else null,
-                        divider = i > 0,
-                    )
-                }
-            }
-            Box(Modifier.padding(top = 12.dp)) {
-                io.github.ra5on.titanos.ui.components.TitanButton(stringResource(R.string.tr_clear), onClear)
-            }
-        }
-        Box(Modifier.navigationBarsPadding())
-    }
 }

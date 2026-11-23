@@ -99,6 +99,8 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.r
             }
         }
         Outbox.prune(this, graph.transfers)
+        // Übertragungen: laufende Mitteilung mit Fortschritt, danach je Datei eine (Entwurf 22).
+        io.github.ra5on.titanos.files.TransferNotifier(this, graph.transfers).attach()
         io.github.ra5on.titanos.update.UpdateCheck.schedule(this)
         // Widgets: je Widget ein NAS (WidgetNasActivity), ohne Wahl das gewählte.
         WidgetRuntime.api = { id -> graph.link(id)?.api() }
@@ -229,6 +231,9 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
 
     /** Vom Widget „Fotos“ geöffnet: der Reiter Fotos. */
     var openPhotos by mutableStateOf(false)
+
+    /** Aus der Mitteilung einer Übertragung: Dateien › Übertragungen. */
+    var openTransfers by mutableStateOf(false)
 
     /**
      * Ein Wunsch an den KI-Agenten von außen (Teilen → „Agent fragen“, Widget,

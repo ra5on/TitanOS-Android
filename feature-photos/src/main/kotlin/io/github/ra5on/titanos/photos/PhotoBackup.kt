@@ -101,11 +101,29 @@ class PhotoBackup(
                 val last = uploaded.result(System.currentTimeMillis())
                 store.update { it.copy(lastBatch = last) }
                 runCatching { UploadNotice.post(context, nas, last) }
+                // Auch unter Übertragungen (Filter „Fotos“, Entwurf 23), mit dem Zielordner.
+                runCatching { recordRun(last) }
             }
             store.flush()
             PhotosRuntime.report(Progress())
             PhotosRuntime.changed()
         }
+    }
+
+    private fun recordRun(last: LastBatch) {
+        val store = io.github.ra5on.titanos.files.FilesRuntime.store ?: return
+        val (folder, _) = summaryFolder(last.folders)
+        store.add(
+            io.github.ra5on.titanos.files.Transfer(
+                0, "", io.github.ra5on.titanos.files.Direction.Upload, folder, "", "",
+                state = io.github.ra5on.titanos.files.TransferState.Done,
+                finishedAtMs = last.at,
+                nas = nas,
+                runner = io.github.ra5on.titanos.files.TransferSource.Backup,
+                photos = last.photos,
+                videos = last.videos,
+            ),
+        )
     }
 
     /** Ort relativ zum Ordner der Sicherung, z. B. `2026/11/IMG_1.jpg`. */

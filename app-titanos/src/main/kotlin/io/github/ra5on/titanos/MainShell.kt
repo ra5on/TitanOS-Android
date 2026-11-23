@@ -12,6 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -162,6 +166,22 @@ internal fun MainShell(graph: AppGraph) {
         graph.openHomeSettings = false
     }
 
+    /** Dateien › Übertragungen (Seitenmenü, Mitteilung). */
+    fun showTransfers() {
+        closeAll()
+        shell.tab = Tab.Files
+        files.toRoot()
+        files.push(io.github.ra5on.titanos.files.FilesRoute.Transfers)
+    }
+    LaunchedEffect(graph.openTransfers) {
+        if (graph.openTransfers) {
+            showTransfers()
+            graph.openTransfers = false
+        }
+    }
+    // Übertragungen › Lauf der Foto-Sicherung: der Reiter Fotos.
+    LaunchedEffect(files) { files.openPhotos = { closeAll(); shell.tab = Tab.Photos } }
+
     val later = stringResource(R.string.app_later_toast)
     val toastLater = { Toast.makeText(context, later, Toast.LENGTH_SHORT).show() }
 
@@ -256,13 +276,25 @@ internal fun MainShell(graph: AppGraph) {
                 graph,
                 onDismiss = { shell.drawer = false },
                 onSettings = { closeAll(); graph.openAppSettings = true },
-                onTransfers = {
-                    closeAll()
-                    shell.tab = Tab.Files
-                    files.toRoot()
-                    files.push(io.github.ra5on.titanos.files.FilesRoute.Transfers)
-                },
+                onTransfers = ::showTransfers,
                 onAbout = { closeAll(); graph.openAbout = true },
+            )
+        }
+        // Fertig geladen, während die App vorn ist (Entwurf 21): „In Downloads gespeichert“ mit Öffnen und Zeigen.
+        files.saved?.let { t ->
+            val noApp = stringResource(io.github.ra5on.titanos.files.R.string.tr_open_failed)
+            io.github.ra5on.titanos.ui.components.Snackbar(
+                text = t.name,
+                sub = stringResource(io.github.ra5on.titanos.files.R.string.tr_saved),
+                done = true,
+                actions = listOf(
+                    io.github.ra5on.titanos.ui.components.SnackAction(stringResource(io.github.ra5on.titanos.files.R.string.tr_open)) {
+                        if (!files.openDownloaded(t)) Toast.makeText(context, noApp, Toast.LENGTH_SHORT).show()
+                    },
+                    io.github.ra5on.titanos.ui.components.SnackAction(stringResource(io.github.ra5on.titanos.files.R.string.tr_show_short)) { files.showDownloads() },
+                ),
+                onDismiss = { if (files.saved == t) files.saved = null },
+                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = if (shellDock) 88.dp else 16.dp),
             )
         }
         if (shell.confirmUnpair) {
