@@ -22,10 +22,6 @@
     <string name="upd_test">Include test versions</string>
     <string name="upd_test_text">Also offer pre-releases before 1.00</string>
     <string name="upd_agent">Agent app</string>
-    <string name="upd_agent_missing">not installed</string>
-    <string name="upd_agent_update">Version %1$s · %2$s is available</string>
-    <string name="upd_agent_current">Version %1$s · up to date</string>
-    <string name="upd_agent_get">Get</string>
     <string name="upd_install">Install</string>
     <string name="upd_downloading">Downloading %1$s of %2$s …</string>
     <string name="upd_installing">Installing …</string>
@@ -35,4 +31,7 @@
     <string name="upd_note_text">Tap to install the new version.</string>
     <string name="upd_confirm_title">Update ready</string>
     <string name="upd_confirm_text">Android still asks whether to install the new version.</string>
+    <string name="upd_agent_old">Agent app %1$s</string>
+    <string name="upd_agent_old_text">No longer updated. The AI agent is now fully part of this app, with Share → “Ask agent”, widget, voice input and assistant. You can uninstall the Agent app.</string>
+    <string name="upd_agent_info">Open app info</string>
 </resources>

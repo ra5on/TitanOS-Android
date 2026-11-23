@@ -24,7 +24,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.util.Locale
 
 /**
- * Bildtests „Mehrere NAS“: Umschalter, Seite „NAS und Konten“, Wahl des NAS
+ * Bildtests „Mehrere NAS“: Seitenmenü (ersetzt den Umschalter, PLAN 117), Seite „NAS und Konten“, Wahl des NAS
  * für ein Widget – hell und dunkel, 390 dp, 200 % Schrift und 1280 dp.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -72,8 +72,8 @@ class NasScreenshotTest {
     }
 
     @Test
-    fun n01_switcher() = shot("300-nas-umschalter") {
-        Box(Modifier.fillMaxSize()) { NasSwitcherSheet(graph, {}, {}, {}) }
+    fun n01_switcher() = shot("300-seitenmenue") {
+        Box(Modifier.fillMaxSize()) { SideMenu(graph, {}, {}, {}, {}) }
     }
 
     @Test
@@ -83,8 +83,8 @@ class NasScreenshotTest {
     fun n03_list_big() = big("302-nas-und-konten-schrift-200") { NasListPage(graph, {}, {}, {}) }
 
     @Test
-    fun n04_switcher_big() = big("303-nas-umschalter-schrift-200") {
-        Box(Modifier.fillMaxSize()) { NasSwitcherSheet(graph, {}, {}, {}) }
+    fun n04_switcher_big() = big("303-seitenmenue-schrift-200") {
+        Box(Modifier.fillMaxSize()) { SideMenu(graph, {}, {}, {}, {}) }
     }
 
     @Test

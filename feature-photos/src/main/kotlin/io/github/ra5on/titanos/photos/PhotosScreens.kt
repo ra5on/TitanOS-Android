@@ -1,6 +1,7 @@
 package io.github.ra5on.titanos.photos
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -89,6 +90,8 @@ data class PhotosView(
     val loading: Boolean = false,
     /** Über die Schnelleinstellung pausiert (alle NAS), bis man fortsetzt. */
     val paused: Boolean = false,
+    /** Was zuletzt hochgeladen wurde und wohin (1.01). */
+    val lastBatch: LastBatch? = null,
 )
 
 @Composable
@@ -153,6 +156,7 @@ fun PhotosScreen(
     bottomBar: (@Composable () -> Unit)? = null,
     onGallery: (() -> Unit)? = null,
     onResume: () -> Unit = {},
+    onTile: ((Tile) -> Unit)? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val c = Titan.colors
@@ -194,7 +198,7 @@ fun PhotosScreen(
         if (view.access == Access.None) {
             TitanButton(stringResource(R.string.photos_allow), onAllowAccess, Modifier.fillMaxWidth().padding(top = 12.dp), ButtonKind.Primary)
         }
-        Grid(view.tiles, thumb)
+        Grid(view.tiles, thumb, onTile)
         if (view.tiles.isEmpty() && !view.loading && view.access != Access.None) {
             Text(stringResource(R.string.photos_none_yet), style = TitanType.body, color = c.muted, modifier = Modifier.padding(top = 20.dp))
         }
@@ -242,6 +246,14 @@ private fun StatusCard(view: PhotosView, onSetUp: () -> Unit) {
                     }
                 }
                 Text(sub, style = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize), color = c.muted, modifier = Modifier.padding(top = 2.dp))
+                // Wohin zuletzt hochgeladen wurde, so wie man den Ordner in den Dateien findet.
+                val last = view.lastBatch
+                if (s.enabled && s.hasTarget && last != null && last.count > 0) {
+                    Text(
+                        stringResource(R.string.photos_last_batch, batchText(androidx.compose.ui.platform.LocalContext.current.resources, last)),
+                        style = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize), color = c.muted, modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
         if (!s.enabled || !s.hasTarget) {
@@ -284,7 +296,7 @@ private fun IconChip(icon: ImageVector, text: String) {
 }
 
 @Composable
-private fun Grid(tiles: List<Tile>, thumb: @Composable (Tile, Modifier) -> Unit) {
+private fun Grid(tiles: List<Tile>, thumb: @Composable (Tile, Modifier) -> Unit, onTile: ((Tile) -> Unit)? = null) {
     val c = Titan.colors
     val zone = ZoneId.systemDefault()
     val today = LocalDate.now(zone)
@@ -292,6 +304,7 @@ private fun Grid(tiles: List<Tile>, thumb: @Composable (Tile, Modifier) -> Unit)
     var first = true
     val savedLabel = stringResource(R.string.photos_saved_badge)
     val waitingLabel = stringResource(R.string.photos_waiting_badge)
+    val openLabel = stringResource(R.string.photos_view_open)
     for ((day, list) in groups) {
         val title = when (day) {
             today -> stringResource(R.string.photos_today)
@@ -315,6 +328,7 @@ private fun Grid(tiles: List<Tile>, thumb: @Composable (Tile, Modifier) -> Unit)
                 for (t in row) {
                     Box(
                         Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(4.dp))
+                            .then(if (onTile != null) Modifier.clickable(onClickLabel = openLabel, role = androidx.compose.ui.semantics.Role.Image) { onTile(t) } else Modifier)
                             .semantics { stateDescription = if (t.saved) savedLabel else waitingLabel },
                     ) {
                         thumb(t, Modifier.fillMaxSize())

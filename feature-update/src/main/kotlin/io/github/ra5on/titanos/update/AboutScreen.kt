@@ -71,11 +71,18 @@ fun AboutScreen(nasVersion: String?, onBack: () -> Unit) {
     val on = stringResource(UiR.string.ui_on)
     val off = stringResource(UiR.string.ui_off)
     val mineName = Installer.versionName(context, AppKind.TitanOS).orEmpty()
-    val agentName = Installer.versionName(context, AppKind.Agent)
+    // Die alte Agent-App (bis 1.00), falls noch installiert: wird nicht mehr aktualisiert.
+    val agentName = remember { runCatching { context.packageManager.getPackageInfo(AppKind.OLD_AGENT_PACKAGE, 0).versionName }.getOrNull() }
     LaunchedEffect(Unit) { UpdateCheck.run(context) }
+    // Haftungsausschluss (Inhaber 23.11.2026) als eigene Seite.
+    var disclaimer by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    if (disclaimer) {
+        io.github.ra5on.titanos.ui.components.DisclaimerPage(onBack = { disclaimer = false })
+        return
+    }
 
     fun install(kind: AppKind) {
-        val release = (if (kind == AppKind.Agent) UpdateState.agentAvailable else UpdateState.available) ?: return
+        val release = UpdateState.available ?: return
         if (!Installer.canInstall(context)) {
             context.startActivity(Installer.allowInstallIntent(context))
             return
@@ -147,25 +154,34 @@ fun AboutScreen(nasVersion: String?, onBack: () -> Unit) {
                 right = { Toggle(test, { test = it; settings.includeTest = it; scope.launch { UpdateCheck.run(context) } }, on, off) },
                 divider = true,
             )
-            val agentNew = UpdateState.agentAvailable
+        }
+        // Ab 1.01 ist der KI-Agent ganz in dieser App; die Agent-App bekommt keine Updates mehr.
+        if (agentName != null) {
+            SectionHeader(stringResource(R.string.upd_agent))
+            Card {
+                ListRow(
+                    stringResource(R.string.upd_agent_old, agentName),
+                    sub = stringResource(R.string.upd_agent_old_text),
+                    icon = { InstalledIcon(AppKind.OLD_AGENT_PACKAGE, 30.dp) { AppIcon("agent", "ember", 30.dp) } },
+                )
+                Box(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp)) {
+                    TitanButton(stringResource(R.string.upd_agent_info), {
+                        runCatching {
+                            context.startActivity(
+                                Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${AppKind.OLD_AGENT_PACKAGE}"))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        }
+                    }, Modifier.fillMaxWidth())
+                }
+            }
+        }
+        Card(Modifier.padding(top = 18.dp)) {
             ListRow(
-                stringResource(R.string.upd_agent),
-                sub = when {
-                    agentName == null -> stringResource(R.string.upd_agent_missing)
-                    agentNew != null -> stringResource(R.string.upd_agent_update, agentName, agentNew.versionName)
-                    else -> stringResource(R.string.upd_agent_current, agentName)
-                },
-                icon = { InstalledIcon(AppKind.Agent.packageName, 30.dp) { AppIcon("agent", "ember", 30.dp) } },
-                right = when {
-                    agentName == null -> ({
-                        TitanButton(stringResource(R.string.upd_agent_get), {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES_PAGE)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                        })
-                    })
-                    agentNew != null -> ({ TitanButton(stringResource(R.string.upd_install), { install(AppKind.Agent) }, kind = ButtonKind.Primary) })
-                    else -> null
-                },
-                divider = true,
+                stringResource(UiR.string.ui_disclaimer_title),
+                icon = { RowIcon(TitanIcons.info) },
+                chevron = true,
+                onClick = { disclaimer = true },
             )
         }
         Text(stringResource(R.string.upd_signature), style = TitanType.small, color = c.muted, modifier = Modifier.padding(top = 12.dp, start = 4.dp))

@@ -62,7 +62,8 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
     val context = LocalContext.current
     val settings = remember { WorkspaceSettings.of(context) }
     val width = LocalConfiguration.current.screenWidthDp
-    val external = context.display?.displayId?.let { it != Display.DEFAULT_DISPLAY } == true
+    // Ein Kontext ohne Bildschirm (Robolectric, umgebaute Kontexte) wirft hier; dann gilt der eingebaute.
+    val external = runCatching { context.display }.getOrNull()?.displayId?.let { it != Display.DEFAULT_DISPLAY } == true
     val state = remember(pairing) {
         WorkspaceState(
             ComputeAccess.forPairing(graph.shared, pairing, graph.sessions),
@@ -155,8 +156,19 @@ private fun WorkspaceRoutes(graph: AppGraph, state: WorkspaceState) {
         graph.openTab = null
     }
     LaunchedEffect(graph.openPhotos) { if (graph.openPhotos) { state.open("app:photos"); graph.openPhotos = false } }
+    // Mitteilung einer Übertragung: Dateien mit der Seite „Übertragungen“.
+    LaunchedEffect(graph.openTransfers) {
+        if (graph.openTransfers) {
+            state.open("app:files")
+            graph.files?.let { f -> if (f.route != io.github.ra5on.titanos.files.FilesRoute.Transfers) f.push(io.github.ra5on.titanos.files.FilesRoute.Transfers) }
+            graph.openTransfers = false
+        }
+    }
     LaunchedEffect(graph.openAbout) { if (graph.openAbout) { state.open("app:about"); graph.openAbout = false } }
     LaunchedEffect(graph.openVpn) { if (graph.openVpn) { state.open("app:vpn"); graph.openVpn = false } }
+    // Startbildschirm und Dock der Handy-Gestaltung (PLAN 117): hier als Fenster; die App-Einstellungen gibt es nur am Handy.
+    LaunchedEffect(graph.openHomeSettings) { if (graph.openHomeSettings) { state.open("app:homedock"); graph.openHomeSettings = false } }
+    LaunchedEffect(graph.openAppSettings) { graph.openAppSettings = false }
     val openList by NotifyRuntime.openList.collectAsStateWithLifecycle()
     LaunchedEffect(openList) { if (openList) { state.open("app:notifications"); NotifyRuntime.listOpened() } }
     val openLink by NotifyRuntime.openLink.collectAsStateWithLifecycle()
@@ -207,6 +219,13 @@ internal fun WorkspaceProgram(graph: AppGraph, win: Win, close: () -> Unit) {
         id == "security" -> SettingsProgram(graph, "settings", close, start = win.href.ifEmpty { "/settings/firewall" })
         id == "backup" -> SettingsProgram(graph, "settings", close, start = win.href.ifEmpty { "/settings/backups" })
         id == WORKSPACE_SETTINGS -> io.github.ra5on.titanos.workspace.WorkspaceSettingsPage(close)
+        id == "homedock" -> HomeDockSettingsHost(
+            graph,
+            rememberHomeStore(graph),
+            io.github.ra5on.titanos.home.homePrograms(io.github.ra5on.titanos.home.ALL_PROGRAMS.filter { it.id in graph.paletteProgramIds }),
+            onEdit = close,
+            onBack = close,
+        )
         id == "naslist" -> NasListPage(graph, onBack = close, onAdd = { close(); graph.beginAdd() }, onPhotos = { graph.openPhotos = true })
         else -> Later()
     }
@@ -238,6 +257,7 @@ private fun FilesWindow(graph: AppGraph, win: Win) {
         val root = queryValue(win.href, "root")
         if (root != null) model.openAt(root, queryValue(win.href, "path").orEmpty())
     }
+    if (model !== shared) androidx.compose.runtime.DisposableEffect(model) { onDispose { model.dispose() } }
     io.github.ra5on.titanos.files.FilesTab(model, nav = {})
 }
 
@@ -282,9 +302,9 @@ internal fun openAgentIn(context: android.content.Context, chatId: String?) {
 internal const val EXTRA_AGENT_CHAT = "chat"
 
 /**
- * Der KI-Agent in der TitanOS-App wie das Agent-Fenster im Web: dieselben
- * Bildschirme wie die Agent-App (feature-agent), über die Kopplung dieser App.
- * Die Agent-App bleibt eigenständig. [href] `/agent?chat=<id>` öffnet einen Chat.
+ * Der KI-Agent in der TitanOS-App wie das Agent-Fenster im Web (feature-agent),
+ * über die Kopplung dieser App. Seit 1.01 der einzige Ort des Agenten am Handy;
+ * die Agent-App wird nicht weiterentwickelt. [href] `/agent?chat=<id>` öffnet einen Chat.
  */
 @Composable
 internal fun AgentWindow(graph: AppGraph, href: String = "") {
@@ -294,8 +314,9 @@ internal fun AgentWindow(graph: AppGraph, href: String = "") {
     var open by remember(href) { mutableStateOf(if (href.contains("chat=")) href.substringAfter("chat=").substringBefore('&') else null) }
     AgentRoot(
         model,
-        ask = null,
-        onAskTaken = {},
+        // „Agent fragen“ von außen (Teilen, Widget, Kurzbefehl): nur ins Eingabefeld eines neuen Chats.
+        ask = graph.pendingAsk,
+        onAskTaken = { graph.pendingAsk = null },
         open = open,
         onOpenTaken = { open = null },
         versionName = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty() }.getOrDefault(""),

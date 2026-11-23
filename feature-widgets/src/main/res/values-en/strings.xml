@@ -15,7 +15,6 @@
     <string name="w_photos">Photos</string>
     <string name="w_photos_open">Open the app to set up the photo backup</string>
     <string name="w_agent">Ask the agent</string>
-    <string name="w_agent_missing">The Agent app is not installed. Tap for “About the app”.</string>
     <string name="w_agent_write">Type</string>
     <string name="w_agent_speak">Talk</string>
     <plurals name="w_problem">

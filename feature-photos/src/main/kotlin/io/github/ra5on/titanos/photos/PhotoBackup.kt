@@ -51,6 +51,8 @@ class PhotoBackup(
         PhotosRuntime.report(Progress(running = true, total = todo.size, nas = nas))
         var done = 0
         val made = HashSet<String>()
+        // Was das NAS in diesem Lauf abgeschlossen hat, und wohin (Mitteilung und Karte).
+        val uploaded = BatchCounter()
         try {
             for (batch in todo.chunked(BATCH)) {
                 if (stopped()) return@withContext Outcome.RetryLater
@@ -77,7 +79,7 @@ class PhotoBackup(
                     } else {
                         PhotosRuntime.report(Progress(running = true, done = done, total = todo.size, current = item.media.name, nas = nas))
                         try {
-                            upload(item, sha, size, made, device)
+                            upload(item, sha, size, made, device, uploaded)
                         } catch (_: java.io.FileNotFoundException) {
                             // Am Handy gelöscht, während sie wartete: nichts zu sichern.
                         }
@@ -95,10 +97,33 @@ class PhotoBackup(
             store.update { it.copy(problem = problem, lastRun = System.currentTimeMillis()) }
             if (problem == Problem.Failed) Outcome.Done else Outcome.RetryLater
         } finally {
+            if (uploaded.count > 0) {
+                val last = uploaded.result(System.currentTimeMillis())
+                store.update { it.copy(lastBatch = last) }
+                runCatching { UploadNotice.post(context, nas, last) }
+                // Auch unter Übertragungen (Filter „Fotos“, Entwurf 23), mit dem Zielordner.
+                runCatching { recordRun(last) }
+            }
             store.flush()
             PhotosRuntime.report(Progress())
             PhotosRuntime.changed()
         }
+    }
+
+    private fun recordRun(last: LastBatch) {
+        val store = io.github.ra5on.titanos.files.FilesRuntime.store ?: return
+        val (folder, _) = summaryFolder(last.folders)
+        store.add(
+            io.github.ra5on.titanos.files.Transfer(
+                0, "", io.github.ra5on.titanos.files.Direction.Upload, folder, "", "",
+                state = io.github.ra5on.titanos.files.TransferState.Done,
+                finishedAtMs = last.at,
+                nas = nas,
+                runner = io.github.ra5on.titanos.files.TransferSource.Backup,
+                photos = last.photos,
+                videos = last.videos,
+            ),
+        )
     }
 
     /** Ort relativ zum Ordner der Sicherung, z. B. `2026/11/IMG_1.jpg`. */
@@ -142,7 +167,7 @@ class PhotoBackup(
         store.update { it.copy(skipped = it.skipped + (m.id to Saved(m.size, m.modified, sha, settings.targetOf(m.kind), path)), uploads = it.uploads - m.id) }
     }
 
-    private suspend fun upload(item: MediaItem, sha: String, size: Long, made: MutableSet<String>, device: String) {
+    private suspend fun upload(item: MediaItem, sha: String, size: Long, made: MutableSet<String>, device: String, batch: BatchCounter) {
         val kind = item.media.kind
         val root = settings.rootOf(kind)
         val (sub, name) = pathInTarget(settings, item.media, device)
@@ -169,6 +194,7 @@ class PhotoBackup(
             // Bei gleichem Namen mit anderem Inhalt vergibt das NAS „IMG_1 (2).jpg“ (collisionName).
             val finished = photos.finish(sent.id, sha)
             mark(item, finished.sha256, finished.path)
+            batch.add(kind, shownFolder(settings.rootNameOf(kind), root, finished.path.ifEmpty { "$dir/$name" }))
         } catch (e: ApiException) {
             if (e.status == 409 && e.code == "upload_hash_mismatch") {
                 // Die Aufnahme hat sich beim Hochladen geändert: neu, mit neuer Prüfsumme.

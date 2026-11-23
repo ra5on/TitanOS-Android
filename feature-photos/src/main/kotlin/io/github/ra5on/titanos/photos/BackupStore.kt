@@ -19,6 +19,16 @@ data class Hashed(val size: Long, val modified: Long, val sha256: String)
 @Serializable
 data class Started(val id: String, val dir: String, val name: String, val size: Long, val sha256: String)
 
+/**
+ * Was der letzte Lauf hochgeladen hat, der etwas hochgeladen hat (vom NAS
+ * abgeschlossen, nicht nur am NAS gefunden): Anzahl je Art und die Ordner,
+ * wie man sie in den Dateien sieht („Fotos/Handy Zeus/2026/11“).
+ */
+@Serializable
+data class LastBatch(val photos: Int = 0, val videos: Int = 0, val folders: List<String> = emptyList(), val at: Long = 0) {
+    val count: Int get() = photos + videos
+}
+
 @Serializable
 data class StateFile(
     val saved: Map<Long, Saved> = emptyMap(),
@@ -33,6 +43,8 @@ data class StateFile(
     /** Letzter Lauf, Millisekunden. */
     val lastRun: Long = 0,
     val problem: Problem? = null,
+    /** Zuletzt hochgeladen: wie viele und wohin. */
+    val lastBatch: LastBatch? = null,
 )
 
 /**

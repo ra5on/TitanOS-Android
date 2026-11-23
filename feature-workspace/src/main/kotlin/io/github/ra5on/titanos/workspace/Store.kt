@@ -136,7 +136,8 @@ class DesktopStore(
             appearance = all?.get("appearance") as? JsonObject
             kind = if (settings.own) "androiddesktop" else "desktop"
             prefs = if (settings.own) {
-                val stored = all?.get("androiddesktop")?.takeIf { it is JsonObject }
+                // Nur `phone` (der Startbildschirm der App, PLAN 117) ist noch keine eigene Einrichtung des Arbeitsplatzes.
+                val stored = (all?.get("androiddesktop") as? JsonObject)?.takeIf(::hasDesktopFields)
                     ?: settings.localDesktop(key)?.let { runCatching { Json.parseToJsonElement(it) }.getOrNull() }
                 // Noch nichts Eigenes: die Einrichtung des Webs als Anfang.
                 sanitizeDesktop(stored ?: all?.get("desktop"))
@@ -171,7 +172,10 @@ class DesktopStore(
         try {
             if (target == "androiddesktop") {
                 val all = access.tree("GET", "/preferences") as? JsonObject
-                val merged = mergeDesktop(all?.get("androiddesktop")?.takeIf { it is JsonObject } ?: prefs.toJson(), prefs, fields)
+                // Steht dort bisher nur der Startbildschirm der App (`phone`), kommt die ganze Einrichtung dazu; `phone` bleibt.
+                val stored = all?.get("androiddesktop") as? JsonObject
+                val base = if (stored != null && hasDesktopFields(stored)) stored else JsonObject(prefs.toJson() + stored.orEmpty())
+                val merged = mergeDesktop(base, prefs, fields)
                 try {
                     access.tree("PUT", "/preferences/androiddesktop", merged)
                 } catch (e: ApiException) {

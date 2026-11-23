@@ -72,7 +72,8 @@ jobs:
           major=${BASH_REMATCH[1]} minor=${BASH_REMATCH[2]}
           want_name=$(printf '%d.%02d' "$major" "$minor")
           want_code=$((major * 100 + minor))
-          for app in app-titanos app-agent app-watch; do
+          # Ab 1.01 ohne die Agent-App: ihr Agent steckt in der TitanOS-App, ihre letzte Fassung 1.00 bleibt auf GitHub.
+          for app in app-titanos app-watch; do
             name=$(sed -nE 's/^\s*versionName = "([^"]+)".*/\1/p' $app/build.gradle.kts)
             code=$(sed -nE 's/^\s*versionCode = ([0-9]+).*/\1/p' $app/build.gradle.kts)
             if [ "$name" != "$want_name" ] || [ "$code" != "$want_code" ]; then
@@ -81,7 +82,7 @@ jobs:
           done
       - name: Tests und Lint
         # testDebugUnitTest läuft nur in Modulen ohne Bauvarianten; die App TitanOS hat github/play.
-        run: ./gradlew --no-daemon testDebugUnitTest :app-titanos:testGithubDebugUnitTest lint :app-titanos:lintPlayDebug :app-agent:lintPlayDebug :lint-rules:test
+        run: ./gradlew --no-daemon testDebugUnitTest :app-titanos:testGithubDebugUnitTest lint :app-titanos:lintPlayDebug :lint-rules:test
 
   publish:
     needs: test
@@ -107,7 +108,7 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0" "build-tools;37.0.0"
       # Gradle baut unsigniert und sieht den Schlüssel nie; signiert wird danach nur mit apksigner.
       - name: Bauen (unsigniert)
-        run: ./gradlew --no-daemon :app-titanos:assembleGithubRelease :app-agent:assembleGithubRelease :app-watch:assembleRelease :app-titanos:bundlePlayRelease :app-agent:bundlePlayRelease
+        run: ./gradlew --no-daemon :app-titanos:assembleGithubRelease :app-watch:assembleRelease :app-titanos:bundlePlayRelease
       # Probelauf: nie der Produktionsschlüssel, sondern ein Wegwerfschlüssel aus diesem Lauf.
       - name: Signieren
         env:
@@ -133,7 +134,7 @@ jobs:
             printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$ks"
           fi
           # Ausgabe je Modul: die Apps mit Bauvarianten unter apk/github/release, die Uhr ohne.
-          for pair in "app-titanos:github/release:app-titanos-github-release" "app-agent:github/release:app-agent-github-release" "app-watch:release:app-watch-release"; do
+          for pair in "app-titanos:github/release:app-titanos-github-release" "app-watch:release:app-watch-release"; do
             module=${pair%%:*} rest=${pair#*:}
             dir=$module/build/outputs/apk/${rest%%:*} base=${rest#*:}
             [ -f "$dir/$base-unsigned.apk" ] || continue
@@ -149,11 +150,11 @@ jobs:
           bt="$ANDROID_HOME/build-tools/37.0.0"
           mkdir -p out
           # Ab 1.00 auch die Uhr-App (Wear OS, io.github.ra5on.titanos.watch), gleicher Schlüssel.
-          for pair in "app-titanos:github/release:TitanOS-Android" "app-agent:github/release:TitanOS-Agent" "app-watch:release:TitanOS-Watch"; do
+          # Ab 1.01 ohne die Agent-App (TitanOS-Agent-X.YY.apk): Updates sucht die App nur noch für sich und die Uhr.
+          for pair in "app-titanos:github/release:TitanOS-Android" "app-watch:release:TitanOS-Watch"; do
             module=${pair%%:*} rest=${pair#*:} prefix=${pair##*:}
             apk=$module/build/outputs/apk/${rest%%:*}/$module-release.apk
-            # Die Agent-App ist erst ab 0.03 dabei; fehlt sie, bleibt es bei der TitanOS-App.
-            [ -f "$apk" ] || { [ "$module" = app-agent ] && continue; echo "::error::$apk fehlt"; exit 1; }
+            [ -f "$apk" ] || { echo "::error::$apk fehlt"; exit 1; }
             "$bt/apksigner" verify --print-certs "$apk" | tee signer.txt
             grep -q "certificate SHA-256 digest: ${PROBE_CERT_SHA256:-$CERT_SHA256}" signer.txt || { echo "::error::falsches Signaturzertifikat ($module)"; exit 1; }
             name=$("$bt/aapt2" dump badging "$apk" | sed -nE "s/.*versionName='([^']+)'.*/\1/p")
@@ -171,7 +172,6 @@ jobs:
           name: titanos-android-play
           path: |
             app-titanos/build/outputs/bundle/playRelease/*.aab
-            app-agent/build/outputs/bundle/playRelease/*.aab
           if-no-files-found: error
       - name: Veröffentlichen
         if: github.event_name == 'push' || (inputs.dry_run == false && startsWith(github.ref, 'refs/tags/v'))

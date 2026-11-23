@@ -10,4 +10,8 @@
     <string name="compute_actions_for">Aktionen für %1$s</string>
     <string name="compute_refresh">Aktualisieren</string>
     <string name="compute_admin_only">Nur Besitzer und Administratoren sehen diesen Bereich.</string>
+    <!-- Wischen (Entwurf 12): Rückfrage vor Starten und Stoppen. -->
+    <string name="compute_ask_start">%1$s starten?</string>
+    <string name="compute_ask_stop">%1$s stoppen?</string>
+    <string name="compute_ask_shutdown">%1$s herunterfahren?</string>
 </resources>

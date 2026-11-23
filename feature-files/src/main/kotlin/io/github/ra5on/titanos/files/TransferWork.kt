@@ -2,6 +2,7 @@ package io.github.ra5on.titanos.files
 
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
@@ -9,6 +10,7 @@ import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
+import androidx.work.ForegroundInfo
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
@@ -42,6 +44,10 @@ object FilesRuntime {
     @Volatile var activeNas: () -> String = { "" }
     /** Die Verbindung zu einem bestimmten NAS (leer: die alte Kopplung); null ohne diese Kopplung. */
     @Volatile var apiFor: (String) -> TitanApi? = { api() }
+    /** Wie [apiFor], aber immer das gekoppelte NAS selbst, auch mit gewähltem Cluster-Knoten. */
+    @Volatile var pairedApiFor: (String) -> TitanApi? = { apiFor(it) }
+    /** Bricht eine Übertragung ab, die im Speicher der App läuft (ZIP); setzt das Modell der Dateien. */
+    @Volatile var cancelApp: ((Long) -> Unit)? = null
 }
 
 /** Uploads und „In Downloads speichern“ als WorkManager-Aufträge. */
@@ -74,9 +80,9 @@ object TransferQueue {
         return t.id
     }
 
-    fun enqueueDownload(context: Context, root: String, dir: String, place: String, name: String, size: Long): Long {
+    fun enqueueDownload(context: Context, root: String, dir: String, place: String, name: String, size: Long, paired: Boolean = false): Long {
         val store = FilesRuntime.store ?: error("FilesRuntime.store not set")
-        val t = store.add(Transfer(0, name, Direction.Download, place, root, dir, total = size, nas = FilesRuntime.activeNas()))
+        val t = store.add(Transfer(0, name, Direction.Download, place, root, dir, total = size, nas = FilesRuntime.activeNas(), paired = paired))
         schedule(context, t.id, userInitiated = true)
         return t.id
     }
@@ -127,11 +133,12 @@ class TransferWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val store = FilesRuntime.store ?: return Result.retry()
         val t = store.get(id) ?: return Result.failure()
         if (t.state == TransferState.Cancelled || t.state == TransferState.Done) return Result.success()
-        val api = FilesRuntime.apiFor(t.nas) ?: run {
+        val api = (if (t.paired) FilesRuntime.pairedApiFor(t.nas) else FilesRuntime.apiFor(t.nas)) ?: run {
             fail(store, id, "not paired", offline = false)
             return Result.failure()
         }
         store.update(id) { it.copy(state = TransferState.Running, waiting = WaitReason.None) }
+        promote(store)
         return try {
             when (t.direction) {
                 Direction.Upload -> upload(store, api, t)
@@ -166,6 +173,34 @@ class TransferWorker(context: Context, params: WorkerParameters) : CoroutineWork
             }
         }
     }
+
+    /**
+     * Als Vordergrund-Auftrag (Typ dataSync) mit der gemeinsamen laufenden
+     * Mitteilung, damit Android ihn beim Verlassen der App nicht beendet. Aus
+     * dem Hintergrund (ein neuer Versuch nach Netzwechsel) erlaubt Android
+     * das ab 12 nicht immer; dann läuft er als gewöhnlicher Auftrag weiter.
+     */
+    private suspend fun promote(store: TransferStore) {
+        try {
+            setForeground(foregroundInfo(store))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // ForegroundServiceStartNotAllowedException oder IllegalStateException: ohne Vordergrund weiter.
+        }
+    }
+
+    private fun foregroundInfo(store: TransferStore): ForegroundInfo {
+        TransferNotices.channel(applicationContext)
+        return ForegroundInfo(
+            TransferNotices.ONGOING_ID,
+            TransferNotices.ongoing(applicationContext, store.summary()),
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+        )
+    }
+
+    override suspend fun getForegroundInfo(): ForegroundInfo =
+        foregroundInfo(FilesRuntime.store ?: TransferStore(null))
 
     private fun retryable(e: ApiException) = e.status >= 500 || e.status == 423 || e.status == 429 || e.status == 401
 
@@ -214,6 +249,8 @@ class TransferWorker(context: Context, params: WorkerParameters) : CoroutineWork
                 api.download(t.root, path, out) { d, all -> store.update(t.id) { it.copy(done = d, total = if (all > 0) all else it.total) } }
             }
             resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
+            // Android benennt bei gleichem Namen um („x (1).pdf“): Öffnen und Zeigen brauchen die Adresse selbst.
+            store.update(t.id) { it.copy(uri = uri.toString()) }
         } catch (e: Throwable) {
             resolver.delete(uri, null, null)
             throw e

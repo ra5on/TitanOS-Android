@@ -22,10 +22,6 @@
     <string name="upd_test">Testfassungen einbeziehen</string>
     <string name="upd_test_text">Vorab-Versionen vor 1.00 ebenfalls anbieten</string>
     <string name="upd_agent">Agent-App</string>
-    <string name="upd_agent_missing">nicht installiert</string>
-    <string name="upd_agent_update">Version %1$s · %2$s ist da</string>
-    <string name="upd_agent_current">Version %1$s · aktuell</string>
-    <string name="upd_agent_get">Laden</string>
     <string name="upd_install">Installieren</string>
     <string name="upd_downloading">Lädt %1$s von %2$s …</string>
     <string name="upd_installing">Wird installiert …</string>
@@ -35,4 +31,7 @@
     <string name="upd_note_text">Tippen, um die neue Version zu installieren.</string>
     <string name="upd_confirm_title">Update bereit</string>
     <string name="upd_confirm_text">Android fragt noch, ob die neue Version installiert werden soll.</string>
+    <string name="upd_agent_old">Agent-App %1$s</string>
+    <string name="upd_agent_old_text">Wird nicht mehr aktualisiert. Den KI-Agenten gibt es jetzt ganz in dieser App, mit Teilen → „Agent fragen“, Widget, Spracheingabe und Assistent. Du kannst die Agent-App deinstallieren.</string>
+    <string name="upd_agent_info">App-Info öffnen</string>
 </resources>

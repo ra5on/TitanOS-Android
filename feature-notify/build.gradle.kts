@@ -41,4 +41,9 @@ dependencies {
     implementation(libs.androidx.work)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // Wischen in der Liste (Entwurf 10) als Compose-Test.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

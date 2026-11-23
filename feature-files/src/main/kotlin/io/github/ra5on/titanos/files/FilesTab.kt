@@ -116,11 +116,23 @@ fun FilesTab(model: FilesModel, nav: @Composable () -> Unit) {
                 jobsRunning = model.nasJobs.count { it.running },
                 onSettings = { model.push(FilesRoute.Settings) },
                 onUsb = if (model.isAdmin) { { model.push(FilesRoute.Usb) } } else null,
+                summary = model.transfers.summary(),
+                ringDoneAt = model.ringDoneAt,
             )
         }
         FilesRoute.Transfers -> {
             BackHandler { model.pop() }
-            TransfersScreen(model.transfers.items, onBack = { model.pop() }, onCancel = model::cancel, onRetry = model::retry, onClear = { model.transfers.clearFinished() })
+            LaunchedEffect(Unit) { model.transfers.prune() }
+            val noApp = stringResource(R.string.tr_open_failed)
+            TransfersScreen(
+                model.transfers.items,
+                onBack = { model.pop() },
+                onCancel = model::cancel,
+                onRetry = model::retry,
+                onClear = { model.transfers.clearFinished() },
+                onOpen = { t -> if (!model.openDownloaded(t)) Toast.makeText(context, noApp, Toast.LENGTH_SHORT).show() },
+                onBackup = model.openPhotos?.let { open -> { _: Transfer -> open() } },
+            )
         }
         FilesRoute.Offline -> {
             BackHandler { model.pop() }
@@ -397,6 +409,10 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
         offlinePaths = model.offline.pins.filter { it.root == location.root.id }.map { it.path }.toSet(),
         cursor = cursor,
         previewing = model.previewing,
+        transfers = model.transfers.items.filter { it.root == location.root.id && it.dir == location.path && it.direction != Direction.Share && !it.backup }
+            .groupBy { it.name }.mapValues { it.value.first() },
+        summary = model.transfers.summary(),
+        ringDoneAt = model.ringDoneAt,
     )
     val callbacks = FolderCallbacks(
         back = up,
@@ -423,9 +439,19 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
         },
         dropClipboard = { model.clipboard = null },
         jobs = { model.push(FilesRoute.Jobs) },
-        undo = { scope.launch { model.undoLast() } },
+        undo = { val u = model.undo; scope.launch { model.undoLast(u) } },
         dismissUndo = { model.undo = null },
         secondary = fsNow.rightClickMenu,
+        transfers = { model.push(FilesRoute.Transfers) },
+        cancelTransfer = model::cancel,
+        refresh = { model.reload() },
+        // Wischen nach links: mit Papierkorb und sichtbarem „Rückgängig“ sofort, sonst mit Rückfrage.
+        swipeTrash = { e ->
+            if (fsNow.showUndo && model.hasTrash(location, e.name)) scope.launch { model.deleteMany(location, listOf(e)) }
+            else overlay = FolderOverlay.Delete(listOf(e))
+        },
+        swipeShare = { e -> model.share(location, e, chooser) },
+        hasTrash = { e -> model.hasTrash(location, e.name) },
         drag = if (!fsNow.dragAndDrop) null else { e -> DragDrop.transfer(context, location, if (e.name in model.selection) selectedEntries else listOf(e)) },
         drop = { event, target ->
             val into = target?.let { location.child(it.name) } ?: location

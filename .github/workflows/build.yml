@@ -47,10 +47,10 @@ jobs:
       # Beide Bauvarianten (github, play): assembleDebug baut beide; die Tests der App TitanOS
       # heißen mit Variante (testDebugUnitTest läuft nur in Modulen ohne Varianten).
       - name: Bauen, Unit-Tests, Lint
-        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest :app-titanos:testGithubDebugUnitTest lint :app-titanos:lintPlayDebug :app-agent:lintPlayDebug :lint-rules:test
+        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest :app-titanos:testGithubDebugUnitTest lint :app-titanos:lintPlayDebug :lint-rules:test
 
       - name: Play-Variante als AAB (unsigniert, nicht veröffentlicht)
-        run: ./gradlew --no-daemon :app-titanos:bundlePlayRelease :app-agent:bundlePlayRelease
+        run: ./gradlew --no-daemon :app-titanos:bundlePlayRelease
 
       - name: Bildtests aufnehmen
         run: ./gradlew --no-daemon recordRoborazziDebug :app-titanos:recordRoborazziGithubDebug
@@ -76,4 +76,3 @@ jobs:
           name: titanos-play-aab
           path: |
             app-titanos/build/outputs/bundle/playRelease/*.aab
-            app-agent/build/outputs/bundle/playRelease/*.aab

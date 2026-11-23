@@ -121,6 +121,16 @@ class NasConnection(
         fun forPairing(shared: OkHttpClient, pairing: Pairing, sessions: SessionManager): NasConnection =
             NasConnection(Endpoint.forPairing(shared, pairing), sessions) { VpnRoute.owns(pairing) }
 
+        /**
+         * Immer das gekoppelte NAS selbst, auch wenn in der App ein anderer
+         * Knoten des Clusters gewählt ist. Für die Foto-Sicherung: Ordner,
+         * Upload in Stücken (`/files/…`) und Prüfen, Abschließen, Bestätigen
+         * (`/app/photos/…`) müssen dasselbe NAS treffen. Vorher gingen die
+         * Dateirouten an den Knoten und der Abschluss ans gekoppelte NAS.
+         */
+        fun toPairedNas(shared: OkHttpClient, pairing: Pairing, sessions: SessionManager?): NasConnection =
+            NasConnection(Endpoint.forPairing(shared, pairing.withoutNode()), sessions) { VpnRoute.owns(pairing) }
+
         const val USER_AGENT = "TitanOS-Android/0.01"
     }
 }

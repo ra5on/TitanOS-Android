@@ -56,7 +56,6 @@ object Poster {
     /** Kennung der angetippten Mitteilung: sie gilt danach in der Liste als gelesen (Auftrag I3). */
     const val EXTRA_ID = "io.github.ra5on.titanos.notify.ID"
     private const val GROUP = "notify"
-    private const val AGENT_PACKAGE = "io.github.ra5on.titanos.agent"
 
     /** Kanäle aller gekoppelten NAS (je NAS eine Gruppe mit dem NAS-Namen) und der ruhige Kanal der Dauerverbindung. */
     fun ensureChannels(context: Context) {
@@ -106,23 +105,15 @@ object Poster {
     fun tagOf(nas: String, note: Note): String = if (nas == NasRegistry.LEGACY_ID) note.notificationTag else "$nas|" + note.notificationTag
 
     /**
-     * Öffnet die App an der passenden Stelle: Antworten des KI-Agenten in der
-     * Agent-App, wenn sie installiert ist, sonst die Liste der Mitteilungen
-     * des NAS [nas] (die App wechselt dorthin).
+     * Öffnet die App an der passenden Stelle des NAS [nas] (die App wechselt
+     * dorthin): mit Link das Programm dort, sonst die Liste der Mitteilungen.
+     * Antworten des KI-Agenten öffnen seit 1.01 den Agenten in dieser App,
+     * auch wenn die alte Agent-App noch installiert ist (sie wird nicht mehr
+     * weiterentwickelt).
      */
     fun openIntent(context: Context, note: Note?, nas: String? = null): PendingIntent? {
         val pm = context.packageManager
-        val agent = note?.app == "agent" || note?.kind == Category.Agent
         val code = note?.let { tagOf(nas ?: NasRegistry.LEGACY_ID, it) }?.hashCode() ?: 0
-        // Die Agent-App ist eine andere App: ein unsichtbarer Zwischenschritt dieser App merkt die
-        // Mitteilung als gelesen und öffnet dann die Agent-App (Activity-Zwischenschritte sind erlaubt).
-        if (agent && note != null && pm.getLaunchIntentForPackage(AGENT_PACKAGE) != null) {
-            val hop = Intent(context, OpenAgentActivity::class.java)
-                .putExtra(EXTRA_ID, note.id)
-                .putExtra(EXTRA_NAS, nas ?: NasRegistry.LEGACY_ID)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
-            return PendingIntent.getActivity(context, code, hop, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        }
         val intent = pm.getLaunchIntentForPackage(context.packageName)?.apply {
             putExtra(EXTRA_OPEN, true)
             note?.link?.let { putExtra(EXTRA_LINK, it) }
@@ -131,13 +122,6 @@ object Poster {
         } ?: return null
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         return PendingIntent.getActivity(context, code, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-    }
-
-    /** Agent-App öffnen (nach [OpenAgentActivity]); falsch, wenn sie fehlt. */
-    internal fun launchAgent(context: Context): Boolean {
-        val launch = context.packageManager.getLaunchIntentForPackage(AGENT_PACKAGE) ?: return false
-        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        return runCatching { context.startActivity(launch) }.isSuccess
     }
 
     fun post(context: Context, nas: NotifyNas, notes: List<Note>, settings: NotifySettings) {
@@ -191,25 +175,6 @@ object Poster {
 
     /** Alle Mitteilungen einer Kopplung haben dieselbe Nummer; unterschieden wird am Tag. */
     private const val ID = 0x7116_0100
-}
-
-/**
- * Angetippte Mitteilung des KI-Agenten: ohne eigene Oberfläche in der Liste als
- * gelesen merken, dann die Agent-App öffnen (fehlt sie inzwischen, die Liste).
- */
-class OpenAgentActivity : android.app.Activity() {
-    override fun onCreate(savedInstanceState: android.os.Bundle?) {
-        super.onCreate(savedInstanceState)
-        val id = intent.getStringExtra(Poster.EXTRA_ID)
-        val nas = intent.getStringExtra(Poster.EXTRA_NAS) ?: NasRegistry.LEGACY_ID
-        if (id != null) NotifyRuntime.markRead(this, nas, id)
-        if (!Poster.launchAgent(this)) {
-            packageManager.getLaunchIntentForPackage(packageName)?.let {
-                startActivity(it.putExtra(Poster.EXTRA_OPEN, true).putExtra(Poster.EXTRA_NAS, nas).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP))
-            }
-        }
-        finish()
-    }
 }
 
 /** „Gelesen“ an einer Mitteilung: in der Liste als gelesen merken und aus der Leiste nehmen. */

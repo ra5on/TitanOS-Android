@@ -90,6 +90,7 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.r
         FilesRuntime.api = { graph.api }
         FilesRuntime.activeNas = { graph.activeId }
         FilesRuntime.apiFor = { id -> graph.link(id.ifEmpty { NasRegistry.LEGACY_ID })?.api() }
+        FilesRuntime.pairedApiFor = { id -> graph.link(id.ifEmpty { NasRegistry.LEGACY_ID })?.backupApi() }
         // Dateien, Fotos und Office: eigene Verbindung über dieselbe Kopplung und Sitzung (je Kopplung einmal).
         var filesAccess: io.github.ra5on.titanos.files.FilesAccess? = null
         FilesRuntime.access = {
@@ -98,6 +99,8 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.r
             }
         }
         Outbox.prune(this, graph.transfers)
+        // Übertragungen: laufende Mitteilung mit Fortschritt, danach je Datei eine (Entwurf 22).
+        io.github.ra5on.titanos.files.TransferNotifier(this, graph.transfers).attach()
         io.github.ra5on.titanos.update.UpdateCheck.schedule(this)
         // Widgets: je Widget ein NAS (WidgetNasActivity), ohne Wahl das gewählte.
         WidgetRuntime.api = { id -> graph.link(id)?.api() }
@@ -106,7 +109,8 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.r
         WidgetRefresh.onRefreshed = { ctx -> QuickTiles.refresh(ctx) }
         if (graph.pairing != null) OfflineSync.schedule(this, graph.offline)
         // Foto-Sicherung je NAS: Worker laufen ohne Activity und holen sich hier die Verbindung des NAS.
-        PhotosRuntime.titan = { id -> graph.link(id)?.api() }
+        // Immer das gekoppelte NAS, nie der gewählte Cluster-Knoten (backupApi).
+        PhotosRuntime.titan = { id -> graph.link(id)?.backupApi() }
         PhotosRuntime.photos = { id -> graph.link(id)?.photosApi() }
         PhotosRuntime.nasIds = { graph.registry.profiles.map { it.id } }
         PhotosRuntime.nasName = { id -> graph.registry.profile(id)?.name.orEmpty() }
@@ -187,7 +191,15 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
         fun pairing(): Pairing? = registry.profile(id)?.pairing
         fun connection(client: okhttp3.OkHttpClient = shared): NasConnection? = pairing()?.let { NasConnection.forPairing(client, it, sessions) }
         fun api(): TitanApi? = connection()?.let(::TitanApi)
-        fun photosApi(): PhotosApi? = connection(photosClient)?.let(::PhotosApi)
+
+        /**
+         * Foto-Sicherung: immer dieses NAS, auch mit gewähltem Cluster-Knoten
+         * (Ordner, Upload, Prüfen, Abschließen, Bestätigen, Ziel wählen und die
+         * Galerie „Auf dem NAS“). Der Dateimanager folgt weiter dem Knoten.
+         */
+        fun backupConnection(client: okhttp3.OkHttpClient = shared): NasConnection? = pairing()?.let { NasConnection.toPairedNas(client, it, sessions) }
+        fun backupApi(): TitanApi? = backupConnection()?.let(::TitanApi)
+        fun photosApi(): PhotosApi? = backupConnection(photosClient)?.let(::PhotosApi)
         fun notifyApi(): NotifyApi? = connection(notifyClient)?.let(::NotifyApi)
     }
 
@@ -220,6 +232,16 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
     /** Vom Widget „Fotos“ geöffnet: der Reiter Fotos. */
     var openPhotos by mutableStateOf(false)
 
+    /** Aus der Mitteilung einer Übertragung: Dateien › Übertragungen. */
+    var openTransfers by mutableStateOf(false)
+
+    /**
+     * Ein Wunsch an den KI-Agenten von außen (Teilen → „Agent fragen“, Widget,
+     * Kurzbefehl, Schnittstelle ASK): füllt nur das Eingabefeld eines neuen
+     * Chats, gesendet wird erst nach Tippen. Bis 1.00 gab es das nur in der Agent-App.
+     */
+    var pendingAsk by mutableStateOf<io.github.ra5on.titanos.agent.chat.AskRequest?>(null)
+
     /** „Über die App“ offen (Menü oder Mitteilung „Version … ist da“). */
     var openAbout by mutableStateOf(false)
 
@@ -239,6 +261,10 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
 
     /** Seite „NAS und Konten“ offen. */
     var openNasList by mutableStateOf(false)
+
+    /** App-Einstellungen bzw. darin „Startbildschirm und Dock“ (Seitenmenü, Schnell finden; PLAN 117). */
+    var openAppSettings by mutableStateOf(false)
+    var openHomeSettings by mutableStateOf(false)
 
     /** „Schnell finden“ (Befehlspalette wie im Web, Strg/⌘+K oder das Suchfeld) offen. */
     var openPalette by mutableStateOf(false)
@@ -314,7 +340,9 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
         FilesRuntime.offline = offline
         files = FilesModel(app, a, transfers, scope, offline)
         photosApi = l.photosApi()
-        photos = photosApi?.let { PhotosModel(app, a, it, scope, p.id) }
+        // Ziel, Galerie und Sicherung am gekoppelten NAS, auch mit gewähltem Cluster-Knoten.
+        val here = l.backupConnection()
+        photos = photosApi?.let { PhotosModel(app, TitanApi(here!!), it, scope, p.id, gallery = io.github.ra5on.titanos.files.FilesApi(here)) }
         notifyApi = l.notifyApi()
     }
 
@@ -367,6 +395,8 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
         programLink = null
         openAbout = false
         openVpn = false
+        openAppSettings = false
+        openHomeSettings = false
         nasEpoch++
         NotifyRuntime.activeChanged()
         WidgetRefresh.now(app)
@@ -515,6 +545,8 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
             agent = null
         }
         io.github.ra5on.titanos.workspace.WorkspaceSettings.of(app).forgetNas(id)
+        // Startbildschirm dieses NAS (Einrichtung eines NAS vor 1.19, zuletzt gesehener Stand).
+        io.github.ra5on.titanos.home.HomeLocal(app).forgetNas(id)
         val link = synchronized(links) { links.remove(id) }
         val account = pimName(profile)
         // Die Foto-Sicherung gehört zu diesem NAS: Aufträge, Stand und Einstellungen weg.

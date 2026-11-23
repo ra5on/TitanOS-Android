@@ -29,12 +29,9 @@ object UpdateCheck {
             val source = ReleaseSource(client)
             val all = source.releases()
             val own = AppKind.own(context.packageName)
+            // Nur die eigene App; die Agent-App bekommt ab 1.01 keine Updates mehr (ihr Agent ist in dieser App).
             val mine = ReleaseSource.pick(all, Installer.versionCode(context, own), settings.includeTest, own)
-            val agentCode = Installer.versionCode(context, AppKind.Agent)
-            // Die Agent-App nur, wenn sie installiert ist (installieren wäre eine eigene Entscheidung).
-            val agent = if (agentCode > 0 && own != AppKind.Agent) ReleaseSource.pick(all, agentCode, settings.includeTest, AppKind.Agent) else null
             UpdateState.available = mine
-            UpdateState.agentAvailable = agent
             UpdateState.lastError = null
             UpdateState.lastCheckMs = System.currentTimeMillis()
             mine

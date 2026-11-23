@@ -49,7 +49,6 @@ include(
     ":feature-settings",
     ":feature-account",
     ":app-titanos",
-    ":app-agent",
     ":app-watch",
     ":lint-rules",
 )

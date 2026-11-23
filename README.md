@@ -2,7 +2,7 @@
 
 Die nativen Android-Apps zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-Betriebssystem, das vom USB-Stick bootet und im RAM läuft. Alles, was TitanOS im Browser kann, geht auch in der App, im selben Stil wie die Weboberfläche und mit dem, was nur eine App kann: Foto-Sicherung im Hintergrund, Kontakte und Kalender in den Apps des Handys, Mitteilungen ohne Google, eigenes VPN, Widgets.
 
-**Version 1.00.** Sie braucht ein NAS mit **TitanOS 1.19**.
+**Version 1.01.** Sie braucht ein NAS mit **TitanOS 1.19**.
 
 <p>
 <img src="docs/screenshots/01-willkommen-dunkel.png" width="200" alt="Willkommen">
@@ -11,20 +11,21 @@ Die nativen Android-Apps zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS
 <img src="docs/screenshots/20-dateien-freigaben-dunkel.png" width="200" alt="Freigaben">
 </p>
 
-## Drei Apps
+## Zwei Apps
 
 | App | Datei | Wofür |
 |---|---|---|
 | **TitanOS** (`io.github.ra5on.titanos`) | `TitanOS-Android-X.YY.apk` | das NAS am Handy, Tablet oder Monitor: Dateien, Fotos, Office, Mail, Kalender, Kontakte, Verwaltung, Docker, VMs, NVR, Terminal, Systemsteuerung, Mein Konto, VPN |
-| **Agent** (`io.github.ra5on.titanos.agent`) | `TitanOS-Agent-X.YY.apk` | der KI-Agent deines NAS wie die Handy-Seite des Agenten im Web, auch als digitaler Assistent von Android |
 | **Uhr** (`io.github.ra5on.titanos.watch`) | `TitanOS-Watch-X.YY.apk` | Zustand, Agent per Sprache, Schalten und Kameras auf einer Wear-OS-Uhr |
 
-Die Agent-App ist eigenständig; den Agenten gibt es auch in der TitanOS-App (als Programm, am Arbeitsplatz und als Panel in Mail, Kalender und Kontakte). Alle drei sind mit demselben Schlüssel signiert.
+Den KI-Agenten gibt es in der TitanOS-App: als Programm, am Arbeitsplatz und als Panel in Mail, Kalender und Kontakte, dazu Teilen → „Agent fragen“, Widget, Assistent, Notizen-App und Android Auto. Beide Apps sind mit demselben Schlüssel signiert.
+
+**Die Agent-App (`io.github.ra5on.titanos.agent`) wird nicht mehr weiterentwickelt.** Ihre letzte Fassung `TitanOS-Agent-1.00.apk` liegt im Release 1.00; ab 1.01 kann alles, was sie konnte, die TitanOS-App. Wer sie noch hat, kann sie deinstallieren (**Seitenmenü › Über die App** öffnet ihre App-Info).
 
 ## Was du brauchst
 
 - **Handy oder Tablet** mit Android 13 oder neuer. Für die Uhr Wear OS 4 oder neuer.
-- **NAS mit TitanOS 1.19.** Auf einem älteren NAS gehen Koppeln, Dateien (ab 1.16), Foto-Sicherung (ab 1.17) und Mitteilungen (ab 1.18). Was 1.19 braucht, sagt die App: eine Kopplung für beide Apps, Kontakte und Kalender im Handy, das eigene VPN, die Uhr, die eigene Einrichtung des Arbeitsplatzes.
+- **NAS mit TitanOS 1.19.** Auf einem älteren NAS gehen Koppeln, Dateien (ab 1.16), Foto-Sicherung (ab 1.17) und Mitteilungen (ab 1.18). Was 1.19 braucht, sagt die App: eine Kopplung für beide Apps, Kontakte und Kalender im Handy, das eigene VPN, die Uhr, die eigene Einrichtung des Arbeitsplatzes und des Startbildschirms am NAS.
 - **Erreichbarkeit:** zu Hause über das Heimnetz, unterwegs über das eigene VPN der App, über Tailscale oder eine Adresse mit öffentlichem Zertifikat.
 - **Keine Google-Dienste:** kein Google Play Services, kein Firebase, kein ML Kit.
 
@@ -32,7 +33,7 @@ Die Agent-App ist eigenständig; den Agenten gibt es auch in der TitanOS-App (al
 
 1. **APK laden** von der Seite [Releases](https://github.com/ra5on/TitanOS-Android/releases). Wer prüfen will: `sha256sum -c SHA256SUMS`.
 2. **Installieren:** Die APK auf dem Handy öffnen. Beim ersten Mal fragt Android, ob der Browser bzw. die Dateien-App „unbekannte Apps installieren“ darf. Erlauben, dann „Installieren“.
-3. **Updates** holt die App danach selbst: **Menü › Über die App** sucht täglich auf GitHub (abschaltbar), installiert erst nach deinem Tipp und nur, was mit demselben Schlüssel signiert ist und zur Prüfsumme passt. Die Agent-App aktualisiert sie mit.
+3. **Updates** holt die App danach selbst: **Seitenmenü › Über die App** sucht täglich auf GitHub (abschaltbar), installiert erst nach deinem Tipp und nur, was mit demselben Schlüssel signiert ist und zur Prüfsumme passt.
 
 Eine Fassung für Google Play ist vorbereitet, aber nicht veröffentlicht.
 
@@ -46,9 +47,7 @@ Eine Fassung für Google Play ist vorbereitet, aber nicht veröffentlicht.
 3. **Bestätigen:** Der Browser fragt „<Name> möchte sich anmelden“. Mit deinem Kontopasswort bestätigen, dann macht die App von selbst weiter.
 4. **Berechtigungen:** Danach fragt die App nach Fotos, Kontakten, Kalender, Mitteilungen und „Geräte im Heimnetz finden“. Alles lässt sich später ändern.
 
-**Die Agent-App** musst du nicht eigens koppeln: Ist die TitanOS-App gekoppelt, holt sie beim ersten Start einen Einmal-Code für die Agent-App. Unter Android 17 fragt die Agent-App vorher, ob sie Geräte im lokalen Netzwerk erreichen darf; ohne diese Erlaubnis findet sie das NAS zu Hause nicht. Die Agent-App ist am NAS ein eigenes Gerät.
-
-**Mehrere NAS oder Konten:** **Menü › NAS und Konten › NAS hinzufügen**, derselbe Ablauf mit eigenem Schlüssel. Oben auf der Startseite schaltest du um. Mitteilungen, Foto-Sicherung (auch an mehrere NAS gleichzeitig), Widgets und Kontakte/Kalender stellst du je NAS ein. Die Agent-App folgt dem gewählten NAS. Ein Kopplungslink aus dem Browser fügt ein weiteres NAS nur nach Nachfrage hinzu. In einem Cluster verwaltest du andere Knoten wie im Web über das gewählte NAS.
+**Mehrere NAS oder Konten:** **Seitenmenü › NAS hinzufügen**, derselbe Ablauf mit eigenem Schlüssel. Umgeschaltet wird im Seitenmenü (oben links auf der Startseite oder Tippen auf den Namen des NAS), dort stehen auch die Knoten eines Clusters. Namen, Mitteilungen und Foto-Sicherung je NAS: **Seitenmenü › App-Einstellungen › NAS und Konten**. Mitteilungen, Foto-Sicherung (auch an mehrere NAS gleichzeitig), Widgets und Kontakte/Kalender stellst du je NAS ein. Der KI-Agent folgt dem gewählten NAS. Ein Kopplungslink aus dem Browser fügt ein weiteres NAS nur nach Nachfrage hinzu. In einem Cluster verwaltest du andere Knoten wie im Web über das gewählte NAS; die Foto-Sicherung geht dabei immer an das gekoppelte NAS selbst.
 
 **Die Uhr** koppelst du über das Handy, siehe [Uhr](#uhr-wear-os).
 
@@ -62,6 +61,9 @@ Unter **Mein Konto › Geräte** siehst du jede gekoppelte App und Uhr. Mit „B
 ## Was die App TitanOS kann
 
 - **Alle Programme der Weboberfläche nativ:** Dateien mit Betrachtern und Office (T-Word, T-Exel, T-PDF, T-Deck …, eingebettet), Fotos mit Zeitleiste, Mail, Kalender, Kontakte, Speicher, Freigaben, Benutzer, Plugins, Werkzeuge, Docker, VMs mit eigenem Bildschirm, LXC, NVR, Terminal, Systemsteuerung und Mein Konto. Links zwischen den Programmen führen wie im Web ins andere Programm. **Schnell finden** (Suchfeld der Startseite, Strg/⌘ + K) findet wie im Web jede Seite, jedes Programm und jede einzelne Einstellung.
+- **Startbildschirm und Dock nach eigenem Wunsch:** Lange drücken auf eine freie Stelle oder ein Symbol, dann verschieben (auch auf die nächste Seite), aufeinanderziehen für einen Ordner, × nimmt ein Programm vom Startbildschirm (es bleibt unter „Hinzufügen“), Widgets (Zustand, Speicher, Foto-Sicherung, Container, VMs) halb oder ganz breit. Jeder Schritt geht auch ohne Ziehen („Bewegen …“, TalkBack-Aktionen). Unten das Dock mit bis zu fünf Plätzen (ab Werk Start, Dateien, Fotos, Mitteilungen, Docker), ab Werk auch in den Programmen sichtbar: „Start“ führt sofort zurück, ein zweites Tippen auf das gewählte Programm an seinen Anfang. Gespeichert je Konto am NAS (`androiddesktop`, ab TitanOS 1.19; ein älteres NAS behält es auf dem Gerät); wahlweise zeigt die App die Einrichtung des Webs am Handy. **Seitenmenü › App-Einstellungen › Startbildschirm und Dock.**
+- **Wischen wie in Mail-Apps:** In Mitteilungen nach links löschen, nach rechts gelesen/ungelesen; in Dateien nach links in den Papierkorb, nach rechts teilen; bei Docker, VMs und Systemcontainern nach rechts starten, nach links stoppen bzw. herunterfahren (mit Rückfrage). Kurz ziehen zeigt den Knopf, weit durchziehen führt aus, danach „Rückgängig“. Jede Aktion steht auch im Menü der Zeile und für TalkBack bereit; Herunterziehen lädt neu. Die Fotoansicht (am Handy und „Auf dem NAS“) blättert mit Wischen, zoomt mit zwei Fingern oder Doppeltippen, schließt nach unten und zeigt unten die Nachbarbilder.
+- **Rückmeldung bei Übertragungen:** Fortschritt und Abbrechen in der Zeile der Datei, ein Ring oben in Dateien, eine laufende Android-Mitteilung (läuft auch weiter, wenn du die App verlässt) und danach je Datei eine mit „Öffnen“, „Teilen“ und „Im Ordner zeigen“. In der App sagt eine kurze Meldung „In Downloads gespeichert“. **Übertragungen** (Ring, Seitenmenü, Mitteilung) zeigt Downloads, Uploads und die Läufe der Foto-Sicherung mit ihrem Zielordner, sieben Tage lang.
 - **Foto-Sicherung im Hintergrund** in eine frei wählbare Freigabe und Ablage (Jahr, Monat, Tag, Album, eigenes Muster), Doppelte erkennt das NAS am Inhalt; „Speicher freigeben“ löscht nur, was das NAS bestätigt, und nur auf Knopfdruck.
 - **Kontakte und Kalender** als Konto „TitanOS“ in den Apps des Handys, Abgleich in beide Richtungen.
 - **Mitteilungen ohne Google:** dieselben Meldungen wie im Browser, über eine eigene sparsame Verbindung zum NAS oder alle 15 Minuten.
@@ -73,7 +75,7 @@ Unter **Mein Konto › Geräte** siehst du jede gekoppelte App und Uhr. Mit „B
 
 ## VPN
 
-Die App hat ein eigenes VPN mit dem WireGuard-Server von TitanOS, ohne Tailscale-App (**Menü › VPN**, braucht TitanOS 1.19 mit eingeschaltetem WireGuard).
+Die App hat ein eigenes VPN mit dem WireGuard-Server von TitanOS, ohne Tailscale-App (**Seitenmenü › App-Einstellungen › VPN**, braucht TitanOS 1.19 mit eingeschaltetem WireGuard).
 
 - **Zugang je Handy:** Die App legt ihn selbst an. Der private Schlüssel entsteht am Handy und bleibt dort. Unter WireGuard im Web steht der Zugang als „Android-App von <Konto>“. Anlegen dürfen Besitzer und Administratoren.
 - **Ab Werk automatisch:** außerhalb des Heim-WLANs an, zu Hause aus. Den Namen des WLANs nennt Android nur mit Standort-Erlaubnis; damit es auch bei geschlossener App klappt, in Android beim Standort „Immer zulassen“ wählen. Ohne WLAN-Namen gilt die Einstellung „WLAN ohne erkennbaren Namen“.
@@ -89,9 +91,9 @@ Die App hat ein eigenes VPN mit dem WireGuard-Server von TitanOS, ohne Tailscale
 
 Einzelheiten zur Schnittstelle stehen in [`docs/ANDROID-APP.md`](https://github.com/ra5on/TitanOS/blob/main/docs/ANDROID-APP.md) im Repo TitanOS.
 
-## Agent-App
+## KI-Agent
 
-Die Agent-App bringt den KI-Agenten deines NAS aufs Handy, in der Gestaltung der Handy-Seite des Agenten im Web. Nötig ist der eingeschaltete KI-Agent, freigegeben für dein Konto.
+Die TitanOS-App bringt den KI-Agenten deines NAS aufs Handy, in der Gestaltung der Handy-Seite des Agenten im Web. Nötig ist der eingeschaltete KI-Agent, freigegeben für dein Konto. Bis 1.00 gab es dafür eine eigene Agent-App; sie wird nicht mehr weiterentwickelt.
 
 <p>
 <img src="docs/screenshots/agent-14-start-dunkel.png" width="160" alt="Agent: Startseite">
@@ -104,11 +106,12 @@ Die Agent-App bringt den KI-Agenten deines NAS aufs Handy, in der Gestaltung der
 - **Wie im Web:** Startseite mit Übersicht, arbeitende Figur, Chat mit allen Blättern, Karten und Freigaben, Suche, „/“-Befehle, Gedächtnis, Wissen, Geplant, Projekte, Notizen, alle Einstellungen.
 - **Funktionen:** Papierkram, Fristen, Ransomware-Wächter, Notfallhandbuch, Notfallzugang, Hardware-Berater, Durchspielen, Backup-Buddy, Skill-Katalog.
 - **Sprechmodus** mit Whisper und Piper am NAS, sonst Spracheingabe und -ausgabe des Handys.
-- **Entwürfe „Öffnen und bearbeiten“** für Mail, Termin, Kontakt und Aufgabe öffnen sich in der App; Office-Dateien im Office der TitanOS-App.
-- **Digitaler Assistent:** Beide Apps sind in Android unter „Standard-Apps › Digitaler Assistent und Spracheingabe“ wählbar (empfohlen die Agent-App). Bildschirminhalt nur nach Einstellung (Nie, Jedes Mal fragen – ab Werk –, Immer) und nur ans eigene NAS.
+- **Entwürfe „Öffnen und bearbeiten“** für Mail, Termin, Kontakt und Aufgabe öffnen sich in der App; Office-Dateien im Office der App.
+- **Digitaler Assistent:** Die App ist in Android unter „Standard-Apps › Digitaler Assistent und Spracheingabe“ wählbar. Bildschirminhalt nur nach Einstellung (Nie, Jedes Mal fragen – ab Werk –, Immer) und nur ans eigene NAS.
 - **Notizen-App** des Systems (ab Android 14).
 - **Android Auto:** Antworten erscheinen als Nachricht mit „Antworten“ per Sprache und „Gelesen“. Ohne Play Store muss in den Entwickleroptionen von Android Auto „Unbekannte Quellen“ an sein.
-- **Teilen → „Agent fragen“:** Text oder ein Bild aus einer anderen App landen in einem neuen Chat.
+- **Teilen → „Agent fragen“:** Text oder ein Bild aus einer anderen App landen in einem neuen Chat. Dasselbe öffnen das Widget „Agent fragen“, die Kachel und der Kurzbefehl am App-Symbol.
+- **Mitteilungen:** Für die Antwort in einem Chat, der gerade offen und zu sehen ist, kommt keine Mitteilung. Eine angetippte Mitteilung öffnet den Chat in dieser App.
 - **Ohne NAS** zeigt die Chatliste den letzten Stand; Senden scheitert sofort mit einer klaren Meldung.
 
 ## Uhr (Wear OS)
@@ -117,7 +120,7 @@ Die Uhr-App „TitanOS“ (`io.github.ra5on.titanos.watch`, Datei `TitanOS-Watch
 
 - **Installieren:** Ohne Play Store kommt die APK per ADB auf die Uhr (Entwickleroptionen › ADB-Debugging bzw. Debugging über WLAN): `adb -s <uhr> install TitanOS-Watch-X.YY.apk`. Danach aktualisiert sie sich selbst unter Einstellungen › Update, geprüft wie bei den Handy-Apps (Prüfsumme aus `SHA256SUMS`, derselbe Signaturschlüssel).
 - **Koppeln, angestoßen vom Handy:**
-  1. In der TitanOS-App am Handy **Menü › Uhr koppeln** öffnen. Dort stehen die Adressen des NAS.
+  1. In der TitanOS-App am Handy **Seitenmenü › App-Einstellungen › Uhr koppeln** öffnen. Dort stehen die Adressen des NAS.
   2. Auf der Uhr **Adresse eingeben** und eine davon eintippen oder sprechen.
   3. Die Uhr zeigt **sechs Ziffern**. Diese am Handy eingeben und „Uhr koppeln“ tippen.
   - Die Ziffern hängen am Schlüssel der Uhr und am Zertifikat, das die Uhr sieht. Sitzt jemand dazwischen, passen sie nicht. Die Uhr ist danach ein **eigenes Gerät** unter Mein Konto › Geräte und lässt sich dort einzeln beenden.
@@ -127,6 +130,12 @@ Die Uhr-App „TitanOS“ (`io.github.ra5on.titanos.watch`, Datei `TitanOS-Watch
   - **Schalten** nach den Rechten des Kontos: Geräte von Home Assistant, Container und VMs starten und stoppen. Stoppen fragt vorher nach.
   - **Kameras:** Standbild und letzte Ereignisse des NVR.
 - **Akku:** keine Dauerverbindung. Die Uhr fragt nur, solange eine Seite sichtbar ist, und wenn Android Kachel oder Komplikation neu zeichnet (höchstens alle 15 bzw. 30 Minuten).
+
+## Haftungsausschluss
+
+TitanOS und die Apps sind ein privates, nicht kommerzielles Projekt, kostenlos und ohne jede Gewähr; die Nutzung geschieht auf eigenes Risiko. Den ganzen Text (Deutsch und Englisch) enthält [`DISCLAIMER.md`](DISCLAIMER.md). Die App zeigt ihn unter **Seitenmenü › Über die App** und fragt einmal danach: beim ersten Koppeln vor dem Koppeln, eine schon gekoppelte App beim ersten Start nach dem Update. Mitteilungen und Foto-Sicherung laufen davon unabhängig weiter.
+
+*Part of TitanOS, a private, non-commercial project, provided free of charge and without warranty; use it at your own risk. See [DISCLAIMER.md](DISCLAIMER.md).*
 
 ## Testgeräte
 
@@ -143,16 +152,17 @@ Die Uhr-App „TitanOS“ (`io.github.ra5on.titanos.watch`, Datei `TitanOS-Watch
 - **Offline-Kopien** öffnen andere Apps nur zum Lesen; Änderungen gehen nicht zurück aufs NAS.
 - **Ein VPN gleichzeitig:** Mit mehreren NAS gehört der Tunnel dem NAS, auf dem der Zugang angelegt wurde.
 - **UnifiedPush** (z. B. ntfy) kommt später.
+- **Wischen** gibt es in Dateien nur in der Listenansicht (nicht im Raster) und bei Docker nur in der Liste (nicht in den Karten). Videos der Fotoansicht am Handy spielt eine andere App ab.
 - **Google-Entwicklerprüfung:** Ab 2027 lassen sich Apps nicht registrierter Entwickler auf zertifizierten Geräten nur per ADB installieren und aktualisieren. Die Registrierung des Projekts läuft.
 
 ## Schnittstelle für andere Apps
 
-Die Agent-App öffnet einen neuen Chat und legt Text ins Eingabefeld:
+Die TitanOS-App öffnet den KI-Agenten mit einem neuen Chat und legt Text ins Eingabefeld (bis 1.00 tat das die Agent-App mit `setPackage("io.github.ra5on.titanos.agent")`; die Aktion heißt weiter so):
 
 ```kotlin
 context.startActivity(
     Intent("io.github.ra5on.titanos.agent.ASK")
-        .setPackage("io.github.ra5on.titanos.agent")
+        .setPackage("io.github.ra5on.titanos")
         .putExtra("text", "Wie warm ist die Platte?") // optional, String
         .putExtra("voice", true)                       // optional, Boolean: gleich die Spracheingabe starten
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
@@ -165,7 +175,7 @@ context.startActivity(
 - **Gesendet wird nie von selbst**, auch nicht mit `voice`: Jede App kann den Intent auslösen, deshalb schickt erst das Tippen auf Senden etwas ans NAS.
 - „Teilen“ nutzt `ACTION_SEND` mit `text/*` oder `image/*`. Ein Bild wird sofort in den Speicher der App kopiert und mit der Nachricht als Anhang hochgeladen, höchstens 20 MB.
 
-**Office in der TitanOS-App öffnen** (Entwurf „Öffnen und bearbeiten“, Dateien des Agenten): Die Agent-App ruft die TitanOS-App mit dieser Aktion auf. Die Namen stehen in `core-model` (`io.github.ra5on.titanos.model.OfficeIntent`), damit beide Seiten dieselben benutzen:
+**Office in der TitanOS-App öffnen** (Entwurf „Öffnen und bearbeiten“, Dateien des Agenten): Die Agent-App bis 1.00 ruft die TitanOS-App mit dieser Aktion auf; die Aktion bleibt für sie bestehen. Die Namen stehen in `core-model` (`io.github.ra5on.titanos.model.OfficeIntent`), damit beide Seiten dieselben benutzen:
 
 ```kotlin
 context.startActivity(
@@ -193,15 +203,15 @@ export ANDROID_HOME=/pfad/zu/android-sdk
 ./gradlew assembleDebug testDebugUnitTest :app-titanos:testGithubDebugUnitTest lint :lint-rules:test
 ```
 
-Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/github/debug/` (und `…/play/debug/`), `app-agent/build/outputs/apk/github/debug/` und `app-watch/build/outputs/apk/debug/`.
+Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/github/debug/` (und `…/play/debug/`) und `app-watch/build/outputs/apk/debug/`. Die Quellen der Agent-App bis 1.00 stehen im Tag `v1.0.0` (`app-agent/`).
 
-- **Bauvarianten:** Die Apps TitanOS und Agent gibt es als `github` (Standard, mit Selbst-Update, wird veröffentlicht) und `play` (für Google Play vorbereitet, ohne Selbst-Update). Die Unterschiede der Play-Variante stehen in `app-titanos/src/play/AndroidManifest.xml` mit den Quellen der Play-Richtlinien: kein `feature-update`, kein Standort im Hintergrund (das VPN erkennt das Heim-WLAN dann nur bei offener App), keine direkte Frage nach der Akku-Ausnahme. `./gradlew :app-titanos:bundlePlayRelease :app-agent:bundlePlayRelease` baut die AABs unsigniert. Die Uhr gibt es nur als GitHub-Fassung.
+- **Bauvarianten:** Die App TitanOS gibt es als `github` (Standard, mit Selbst-Update, wird veröffentlicht) und `play` (für Google Play vorbereitet, ohne Selbst-Update). Die Unterschiede der Play-Variante stehen in `app-titanos/src/play/AndroidManifest.xml` mit den Quellen der Play-Richtlinien: kein `feature-update`, kein Standort im Hintergrund (das VPN erkennt das Heim-WLAN dann nur bei offener App), keine direkte Frage nach der Akku-Ausnahme. `./gradlew :app-titanos:bundlePlayRelease` baut das AAB unsigniert. Die Uhr gibt es nur als GitHub-Fassung.
 
-- **Bildtests:** `./gradlew recordRoborazziDebug :app-titanos:recordRoborazziGithubDebug` schreibt alle Bildschirme in 412 dp Breite, hell und dunkel, nach `app-titanos/build/outputs/roborazzi/`. Die Agent-App (`AgentScreenshotTest`) zeigt jeden Bildschirm in 390 dp wie die Aufnahmen des Webs, hell und dunkel, dazu die Figur als Bildserie, 1280 dp breit und Schrift 200 %; die App spricht dabei mit einem MockWebServer mit den Testdaten des Webs. Bilder nach `feature-agent/build/outputs/roborazzi/`. Die Uhr (`WatchScreenshotTest`) zeigt jeden Bildschirm rund (227 dp) und eckig (198 dp), mit normaler und doppelter Schrift, und meldet abgeschnittene oder getrennte Wörter und namenlose Bedienelemente; Bilder nach `app-watch/build/outputs/roborazzi/`.
+- **Bildtests:** `./gradlew recordRoborazziDebug :app-titanos:recordRoborazziGithubDebug` schreibt alle Bildschirme in 412 dp Breite, hell und dunkel, nach `app-titanos/build/outputs/roborazzi/`. Der KI-Agent (`AgentScreenshotTest`) zeigt jeden Bildschirm in 390 dp wie die Aufnahmen des Webs, hell und dunkel, dazu die Figur als Bildserie, 1280 dp breit und Schrift 200 %; die App spricht dabei mit einem MockWebServer mit den Testdaten des Webs. Bilder nach `feature-agent/build/outputs/roborazzi/`. Die Uhr (`WatchScreenshotTest`) zeigt jeden Bildschirm rund (227 dp) und eckig (198 dp), mit normaler und doppelter Schrift, und meldet abgeschnittene oder getrennte Wörter und namenlose Bedienelemente; Bilder nach `app-watch/build/outputs/roborazzi/`.
 - **Release:** Ein Tag `vX.Y.0` startet `.github/workflows/release.yml`.
   - **Version:** angezeigt X.YY, `versionCode` X·100+Y. Der Workflow prüft, dass `build.gradle.kts` dazu passt.
   - **Signieren:** nur im Job „publish“ der Umgebung `release`. Die Umgebung lässt nur Tags `v*` zu und wartet auf die Freigabe des Inhabers. Der Schlüssel liegt dort als Secret.
-  - **Prüfung vor dem Veröffentlichen:** Jede APK muss das Zertifikat mit dem SHA-256 `636b5723…725c` tragen, sonst bricht der Lauf ab. Danach kommen die drei APKs und `SHA256SUMS` als Release auf GitHub; vor 1.00 waren es Vorab-Releases, ab `v1.0.0` normale.
+  - **Prüfung vor dem Veröffentlichen:** Jede APK muss das Zertifikat mit dem SHA-256 `636b5723…725c` tragen, sonst bricht der Lauf ab. Danach kommen die APKs (ab 1.01 TitanOS und Uhr, bis 1.00 auch die Agent-App) und `SHA256SUMS` als Release auf GitHub; vor 1.00 waren es Vorab-Releases, ab `v1.0.0` normale.
   - **Versionshinweise** stehen in `docs/releases/vX.Y.0.md`; der Workflow nimmt die Datei als Text des Releases und bricht ohne sie ab.
   - **Google Play:** Die AABs der Play-Variante liegen unsigniert im Artefakt `titanos-android-play` des Laufs und werden nicht veröffentlicht.
   - **Lokal** signiert man über die Umgebungsvariablen `TITANOS_KEYSTORE` (Pfad zum Keystore) und `TITANOS_KEYSTORE_PASSWORD`, Alias `titanos-release`. Ohne sie bleibt `assembleRelease` unsigniert.
@@ -234,15 +244,8 @@ Die Debug-APKs liegen danach unter `app-titanos/build/outputs/apk/github/debug/`
 | `:feature-settings`, `:feature-account` | Systemsteuerung, Mein Konto; Texte und Suchindex aus dem Web |
 | `:feature-agent` | KI-Agent: Chat, Funktionen, Sprechmodus, Assistent |
 | `:app-titanos` | die App „TitanOS“ (`io.github.ra5on.titanos`); Links zwischen den Programmen in `Links.kt` |
-| `:app-agent` | die App „Agent“ (`io.github.ra5on.titanos.agent`) |
 | `:app-watch` | die Uhr-App (`io.github.ra5on.titanos.watch`, Wear OS) |
 | `:lint-rules` | Lint-Regel gegen abgeschnittenen Text |
-
-## Haftungsausschluss
-
-Die Android-Apps gehören zu TitanOS, einem privaten, nicht kommerziellen Projekt. Es wird kostenlos und ohne Gewähr bereitgestellt, die Nutzung geschieht auf eigenes Risiko. RAID und Snapshots ersetzen keine Datensicherung. Den vollständigen Hinweis auf Deutsch und Englisch enthält [DISCLAIMER.md](DISCLAIMER.md).
-
-*Part of TitanOS, a private, non-commercial project, provided free of charge and without warranty; use it at your own risk. See [DISCLAIMER.md](DISCLAIMER.md).*
 
 ## Lizenz
 

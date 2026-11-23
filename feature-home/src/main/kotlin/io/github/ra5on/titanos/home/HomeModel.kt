@@ -71,6 +71,18 @@ val ADMIN_TOOL_PROGRAMS = setOf("plugins", "monitor", "logs", "planner")
 
 enum class HomeProblem { Offline, NotReady, Locked, Certificate }
 
+/** Eine Zeile der Widgets „Container“ und „VMs“: Name und ob es läuft (in Worten angezeigt). */
+data class WidgetItem(val key: String, val label: String, val running: Boolean)
+
+/**
+ * Programme, die es nur auf der Startseite der App gibt: Dateien und Fotos sind
+ * zugleich Plätze im Dock (ab Werk nicht im Raster, unter „Hinzufügen“).
+ */
+val HOME_ONLY_PROGRAMS = listOf(Program("files", "files", "orange"), Program("photos", "photos", "green"))
+
+/** Die Programme des Startbildschirms: Dateien, Fotos und die nach Rolle und Diensten erlaubten. */
+fun homePrograms(programs: List<Program>): List<Program> = HOME_ONLY_PROGRAMS + programs
+
 data class HomeState(
     val hostname: String = "",
     val loading: Boolean = true,
@@ -79,6 +91,9 @@ data class HomeState(
     val volumes: List<Volume>? = null,
     val uptimeSeconds: Long? = null,
     val programs: List<Program> = emptyList(),
+    /** Für die Widgets „Container“ und „VMs“ (nur geladen, wenn eines davon auf dem Startbildschirm steht); null: noch nicht. */
+    val docker: List<WidgetItem>? = null,
+    val vms: List<WidgetItem>? = null,
 ) {
     val volumesWithProblems: Int get() = volumes?.count { it.state != "ok" } ?: 0
 
@@ -95,7 +110,11 @@ class HomeModel(
     private val api: TitanApi,
     private val role: () -> String,
     hostname: String,
+    /** Listen für die Widgets „docker“ und „vms“ (über die App, sie kennt die Rechenprogramme); null: keine. */
+    private val lists: (suspend (String) -> List<WidgetItem>?)? = null,
 ) : ViewModel() {
+    /** Welche Widgets gerade auf dem Startbildschirm stehen; nur deren Daten werden geholt. */
+    var widgetKinds: Set<String> = emptySet()
     var state by mutableStateOf(HomeState(hostname = hostname))
         private set
     private var poll: Job? = null
@@ -114,6 +133,11 @@ class HomeModel(
         poll?.cancel()
     }
 
+    /** Ein Widget kam dazu: gleich neu laden statt bis zur nächsten Runde zu warten. */
+    fun refresh() {
+        viewModelScope.launch { load() }
+    }
+
     suspend fun load() {
         try {
             val system = viewModelScope.async { api.system() }
@@ -125,8 +149,13 @@ class HomeModel(
                     if (e.status == 403) null else throw e
                 }
             }
+            val kinds = widgetKinds
+            val docker = viewModelScope.async { if ("docker" in kinds) runCatching { lists?.invoke("docker") }.getOrNull() else null }
+            val vms = viewModelScope.async { if ("vms" in kinds) runCatching { lists?.invoke("vms") }.getOrNull() else null }
             val s = system.await()
             state = state.copy(
+                docker = docker.await() ?: state.docker,
+                vms = vms.await() ?: state.vms,
                 hostname = s.hostname.ifBlank { state.hostname },
                 uptimeSeconds = s.uptimeSeconds,
                 volumes = storage.await(),

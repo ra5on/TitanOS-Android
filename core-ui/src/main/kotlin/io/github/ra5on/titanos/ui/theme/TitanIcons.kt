@@ -32,6 +32,7 @@ object TitanIcons {
     val search: ImageVector by lazy { line("search", "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM20 20l-4.2-4.2") }
     val bell: ImageVector by lazy { line("bell", "M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15ZM10 20a2 2 0 0 0 4 0") }
     val more: ImageVector by lazy { line("more", "M5 12h.01M12 12h.01M19 12h.01") }
+    val menu: ImageVector by lazy { line("menu", "M4 7h16M4 12h16M4 17h16") }
     val home: ImageVector by lazy { line("home", "M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1Z") }
     val folder: ImageVector by lazy { line("folder", "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z") }
     val photo: ImageVector by lazy { line("photo", "M4 6h16v12H4ZM4 15l4-4 4 4 3-3 5 5M15.5 9.5h.01") }

@@ -182,13 +182,13 @@ class AgentTile : TileService() {
         tile.label = getString(R.string.tile_agent)
         tile.subtitle = getString(R.string.tile_agent_sub)
         tile.icon = Icon.createWithResource(this, R.drawable.ic_sc_agent)
-        tile.state = if (Shortcuts.askAgent(this) != null) Tile.STATE_INACTIVE else Tile.STATE_UNAVAILABLE
+        tile.state = Tile.STATE_INACTIVE
         tile.updateTile()
     }
 
     override fun onClick() {
         super.onClick()
-        val ask = Shortcuts.askAgent(this) ?: return
+        val ask = Shortcuts.askAgent(this)
         with(QuickTiles) { open(ask) }
     }
 }

@@ -9,6 +9,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import io.github.ra5on.titanos.net.PairLink
 import io.github.ra5on.titanos.ui.theme.TitanTheme
 
@@ -50,6 +52,48 @@ class MainActivity : ComponentActivity() {
         take(intent)
     }
 
+    /**
+     * Ein Wunsch an den Agenten: neuer Chat, Text ins Feld, ein Bild als Anhang.
+     * Gesendet wird nie von selbst (jede App kann den Intent auslösen). Die
+     * Leseerlaubnis für ein Bild endet mit der Activity: sofort in den Cache.
+     */
+    private fun takeAsk(intent: Intent) {
+        val graph = (application as TitanApp).graph
+        fun open(ask: io.github.ra5on.titanos.agent.chat.AskRequest) {
+            graph.pendingAsk = ask
+            graph.programLink = "/agent"
+            graph.openProgram = "agent"
+        }
+        if (intent.action == ACTION_ASK) {
+            open(io.github.ra5on.titanos.agent.chat.AskRequest(text = intent.getStringExtra(EXTRA_ASK_TEXT).orEmpty().take(MAX_ASK_TEXT), voice = intent.getBooleanExtra(EXTRA_ASK_VOICE, false)))
+            return
+        }
+        val text = listOfNotNull(
+            intent.getStringExtra(Intent.EXTRA_SUBJECT)?.takeIf { it.isNotBlank() },
+            intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()?.takeIf { it.isNotBlank() },
+        ).joinToString("\n\n").take(MAX_ASK_TEXT)
+        val uri = androidx.core.content.IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, android.net.Uri::class.java)
+        val type = intent.type
+        if (uri == null || type?.startsWith("image/") != true) {
+            open(io.github.ra5on.titanos.agent.chat.AskRequest(text = text))
+            return
+        }
+        lifecycleScope.launch {
+            val a = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { io.github.ra5on.titanos.agent.chat.copyToCache(this@MainActivity, uri, type) }
+            open(io.github.ra5on.titanos.agent.chat.AskRequest(text = text, attachments = listOfNotNull(a), failed = a == null))
+        }
+    }
+
+    companion object {
+        /** „Agent fragen“ wie bisher in der Agent-App (README › Schnittstelle): Extras [EXTRA_ASK_TEXT], [EXTRA_ASK_VOICE]. */
+        const val ACTION_ASK = io.github.ra5on.titanos.widgets.AgentWidget.ASK_ACTION
+        const val EXTRA_ASK_TEXT = "text"
+        const val EXTRA_ASK_VOICE = "voice"
+
+        /** Grenze für Text von außen (Zeichen); das NAS nimmt je Nachricht höchstens 32 KiB. */
+        private const val MAX_ASK_TEXT = 32_000
+    }
+
     private fun take(intent: Intent?) {
         val graph = (application as TitanApp).graph
         // Widget, Kachel, Gerätesteuerung oder Mitteilung eines bestimmten NAS: dorthin wechseln, bevor sich etwas öffnet.
@@ -68,6 +112,11 @@ class MainActivity : ComponentActivity() {
         if (intent?.getBooleanExtra(io.github.ra5on.titanos.update.UpdateWorker.EXTRA_OPEN_ABOUT, false) == true) {
             (application as TitanApp).graph.openAbout = true
         }
+        // Mitteilung einer Übertragung (laufend, fertig, gescheitert): Dateien › Übertragungen.
+        if (intent?.getBooleanExtra(io.github.ra5on.titanos.files.TransferNotices.EXTRA_OPEN_TRANSFERS, false) == true) {
+            intent.removeExtra(io.github.ra5on.titanos.files.TransferNotices.EXTRA_OPEN_TRANSFERS)
+            graph.openTransfers = true
+        }
         if (intent?.getBooleanExtra(io.github.ra5on.titanos.widgets.PhotosWidget.EXTRA_OPEN_PHOTOS, false) == true) {
             (application as TitanApp).graph.openPhotos = true
         }
@@ -80,6 +129,11 @@ class MainActivity : ComponentActivity() {
             val graph = (application as TitanApp).graph
             graph.programLink = if (chat.isEmpty()) "/agent" else "/agent?chat=$chat"
             graph.openProgram = "agent"
+        }
+        // „Agent fragen“: Widget, Kurzbefehl, Kachel, andere Apps (ACTION_ASK) und Teilen (Alias AskShare).
+        if (intent?.action == ACTION_ASK || intent?.action == Intent.ACTION_SEND) {
+            takeAsk(intent)
+            return
         }
         // Tippen auf eine Mitteilung: die Liste der Mitteilungen.
         io.github.ra5on.titanos.notify.NotifyRuntime.take(intent, this)

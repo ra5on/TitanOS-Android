@@ -78,7 +78,27 @@ class RulesTest {
         assertEquals(Wait.NasUnreachable, w(p = Problem.NasUnreachable))
         // Ohne WLAN wartet es auf WLAN, auch wenn das NAS zuletzt fehlte.
         assertEquals(Wait.Wifi, w(d = mobile, p = Problem.NasUnreachable))
+        // 1.01: Ein gescheiterter Lauf bleibt sichtbar, auch wenn gerade kein WLAN da ist;
+        // vorher galt das als „wartet aufs WLAN“ und die Karte sagte „Sicherung ist aktuell“.
+        assertEquals(Wait.Failed, w(d = mobile, p = Problem.Failed))
+        assertEquals(Wait.Failed, w(d = wifiCharging.copy(charging = false), p = Problem.Failed))
         assertEquals(Wait.Android, w())
+    }
+
+    @Test
+    fun uploadSummaryNamesTheFolder() {
+        assertEquals("Fotos/Handy Zeus/2026/11", shownFolder("Fotos", "share/Fotos", "Handy Zeus/2026/11/IMG_1.jpg"))
+        assertEquals("Fotos", shownFolder("", "share/Fotos", "IMG_1.jpg"))
+        assertEquals("Fotos/Handy Zeus/2026/11" to 1, summaryFolder(listOf("Fotos/Handy Zeus/2026/11")))
+        // Ein Lauf über zwei Monate: der gemeinsame Anfang und wie viele Ordner.
+        assertEquals("Fotos/Handy Zeus/2026" to 2, summaryFolder(listOf("Fotos/Handy Zeus/2026/11", "Fotos/Handy Zeus/2026/10")))
+        // Videos in eine andere Freigabe: nichts gemeinsam, dann der erste.
+        assertEquals("Fotos/Handy" to 2, summaryFolder(listOf("Fotos/Handy", "Videos/Handy")))
+        val b = BatchCounter()
+        b.add(Kind.Photo, "Fotos/H")
+        b.add(Kind.Photo, "Fotos/H")
+        b.add(Kind.Video, "Fotos/H")
+        assertEquals(LastBatch(2, 1, listOf("Fotos/H"), 5), b.result(5))
     }
 
     @Test

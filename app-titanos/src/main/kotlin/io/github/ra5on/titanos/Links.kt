@@ -23,9 +23,6 @@ internal sealed interface LinkTarget {
     /** Eine Adresse im Netz (Angebote, Hilfeseiten): der Browser des Handys. */
     data class External(val url: String) : LinkTarget
 
-    /** Der KI-Agent: die Agent-App, solange die TitanOS-App ihn nicht selbst zeigt. */
-    data class Agent(val link: String) : LinkTarget
-
     /** Gibt es nur in der Weboberfläche (Einrichtung `/welcome`, unbekannte Adressen). */
     data object WebOnly : LinkTarget
 }
@@ -58,8 +55,8 @@ internal fun linkTarget(raw: String): LinkTarget {
     val p = normalize(path)
     val first = p.removePrefix("/").substringBefore('?').substringBefore('#').substringBefore('/')
     return when (first) {
+        // Auch der KI-Agent („agent“ in PROGRAMS): seit 1.01 nur noch in dieser App, nie die alte Agent-App.
         in SETTINGS_PROGRAMS, in PROGRAMS, in ADMIN_PROGRAMS, in COMPUTE_PROGRAMS, FILES_PROGRAM -> LinkTarget.Program(first, p)
-        "agent" -> LinkTarget.Agent(p)
         else -> LinkTarget.WebOnly
     }
 }
@@ -95,15 +92,9 @@ internal fun openLink(context: Context, graph: AppGraph, path: String, webOnly: 
         is LinkTarget.External -> runCatching {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target.url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }.onFailure { webOnly() }
-        is LinkTarget.Agent -> {
-            val launch = context.packageManager.getLaunchIntentForPackage(AGENT_PACKAGE)
-            if (launch != null) context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) else webOnly()
-        }
         LinkTarget.WebOnly -> webOnly()
     }
 }
-
-private const val AGENT_PACKAGE = "io.github.ra5on.titanos.agent"
 
 /**
  * Den Dateimanager an einer Ablage (`share/Fotos`, `volume/data`) und einem

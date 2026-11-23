@@ -406,6 +406,12 @@ private fun GroupRow(env: ComputeEnv, state: DockerState, g: DockerGroup, divide
     val actionsTitle = t("docker.actionsFor", "name" to g.name)
     Column(Modifier.fillMaxWidth()) {
         if (divider) Divider()
+        // Wischen (Entwurf 12): rechts starten, links stoppen, je mit Rückfrage; belegt: nichts.
+        io.github.ra5on.titanos.compute.StartStopRow(
+            g.name,
+            start = if (!busy && !g.on) ({ groupAction(state, ui, g, "start") }) else null,
+            stop = if (!busy && g.on) ({ groupAction(state, ui, g, "stop") }) else null,
+        ) {
         Row(
             Modifier.fillMaxWidth()
                 .onSecondaryClick { ui.menu(actionsTitle, entries) }
@@ -446,6 +452,7 @@ private fun GroupRow(env: ComputeEnv, state: DockerState, g: DockerGroup, divide
             }
             IconButton(TitanIcons.more, actionsTitle, { ui.menu(actionsTitle, entries) })
         }
+        }
     }
 }
 
@@ -465,6 +472,11 @@ internal fun groupMenu(env: ComputeEnv, state: DockerState, g: DockerGroup, ui: 
     if (chosen != null && primary == null) out += MenuEntry(ui.text("docker.primaryMissing", "service" to chosen), null, enabled = false) {}
     if (primary != null) {
         for (link in webLinks(primary, host)) out += MenuEntry(if (link.text == "WebUI") ui.text("docker.table.open") else link.url, if (link.text == "WebUI") TitanIcons.globe else TitanIcons.share) { openUrl(context, link.url) }
+    }
+    // Starten und Stoppen auch im Menü (jede Wischgeste hat einen zweiten Weg).
+    if (g.members.size == 1) {
+        if (g.on) out += MenuEntry(ui.text("docker.stop"), TitanIcons.stop) { groupAction(state, ui, g, "stop") }
+        else out += MenuEntry(ui.text("docker.start"), TitanIcons.play) { groupAction(state, ui, g, "start") }
     }
     out += MenuEntry(ui.text("docker.restart"), TitanIcons.restart, enabled = g.on) { groupAction(state, ui, g, "restart") }
     if (g.on && g.members.size > 1) out += MenuEntry(ui.text("docker.stopAll"), TitanIcons.stop) { askStopAll(state, ui, g) }

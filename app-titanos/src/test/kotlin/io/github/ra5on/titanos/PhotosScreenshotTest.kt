@@ -94,6 +94,8 @@ class PhotosScreenshotTest {
         pending = mapOf(Kind.Photo to 0, Kind.Video to 4),
         waits = mapOf(Kind.Photo to Wait.None, Kind.Video to Wait.Charging),
         tiles = tiles,
+        // 1.01: wohin zuletzt hochgeladen wurde.
+        lastBatch = io.github.ra5on.titanos.photos.LastBatch(14, 0, listOf("Fotos/Handy Zeus/2026/11"), 0),
     )
     private val folders = listOf(
         LocalFolder("DCIM/Camera/", "Camera", 12_380),
@@ -175,7 +177,7 @@ class PhotosScreenshotTest {
                     volumes = listOf(Volume("Data", "raid1", "btrfs", "ok", true, 8_000_000_000_000, 4_100_000_000_000)),
                     uptimeSeconds = 3 * 86_400L, programs = visiblePrograms("owner", emptyMap()),
                 ),
-                {}, {}, {}, {}, Modifier.weight(1f), photos = homeTileText(view),
+                io.github.ra5on.titanos.home.PhonePrefs(), null, {}, {}, {}, {}, {}, {}, Modifier.weight(1f), photos = homeTileText(view),
             )
             NavBar()
         }

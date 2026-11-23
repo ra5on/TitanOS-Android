@@ -39,6 +39,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -260,12 +261,15 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
     // alle 15 s sagt die App es dem NAS. Das NAS schickt für einen sichtbaren Chat keine Mitteilung
     // (TitanOS 0.86); vorher kam die erste Meldung erst nach 15 s, und eine schnelle Antwort ging
     // trotzdem als Mitteilung hinaus. Im Hintergrund meldet die App eine Antwort selbst (AgentRoot).
+    // „Nicht mehr zu sehen“ meldet das Modell erst, wenn keine Oberfläche den Chat mehr zeigt, und alle
+    // Meldungen gehen in Reihenfolge ans NAS (1.01: vorher konnte „unsichtbar“ das neue „sichtbar“ überholen).
     val openId = model.current?.id
     LaunchedEffect(openId, model.author) {
         if (openId == null || model.author != null) return@LaunchedEffect
+        model.showing(openId)
         try {
-            while (isActive) { model.seen(openId, true); delay(15_000) }
-        } finally { model.seen(openId, false) }
+            while (isActive) { delay(15_000); model.seen(openId, true) }
+        } finally { model.hidden(openId) }
     }
     // Welcher Chat gerade vorne zu sehen ist (nur solange die App vorne ist): die TitanOS-App zeigt
     // für ihn keine Mitteilung des NAS und nimmt vorhandene aus der Leiste (wie das Web).
@@ -277,10 +281,10 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
             try { kotlinx.coroutines.awaitCancellation() } finally { AgentVisible.hide(openId) }
         }
     }
-    // Eine neue Antwort vorlesen, wenn gewünscht (Darstellung).
-    LaunchedEffect(Unit) {
-        val before = model.onAnswer
-        model.onAnswer = { e -> before(e); if (model.look.read && nav.layer != Layer.Talk) speech.speak(e.id, e.content.orEmpty()) }
+    // Eine neue Antwort vorlesen, wenn gewünscht (Darstellung); nur solange diese Oberfläche da ist.
+    DisposableEffect(model, speech) {
+        val off = model.onAnswer { e -> if (model.look.read && nav.layer != Layer.Talk) speech.speak(e.id, e.content.orEmpty()) }
+        onDispose { off() }
     }
 
     // Anhänge: Foto, Datei vom Gerät.

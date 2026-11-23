@@ -78,6 +78,14 @@ import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
 import io.github.ra5on.titanos.ui.theme.dangerInk
+import io.github.ra5on.titanos.ui.theme.okInk
+import io.github.ra5on.titanos.ui.components.SnackAction
+import io.github.ra5on.titanos.ui.components.Snackbar
+import io.github.ra5on.titanos.ui.components.SwipeAction
+import io.github.ra5on.titanos.ui.components.SwipeRow
+import io.github.ra5on.titanos.ui.generated.IconSquareColors
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 /** Was die Ordneransicht zeigt; alles Weitere kommt über [FolderCallbacks]. */
 data class FolderUi(
@@ -96,6 +104,11 @@ data class FolderUi(
     val cursor: String? = null,
     /** Datei in der Vorschau daneben (ab Split). */
     val previewing: String? = null,
+    /** Die neueste Übertragung je Datei dieses Ordners (Fortschritt in der Zeile, „in Downloads“). */
+    val transfers: Map<String, Transfer> = emptyMap(),
+    /** Alle laufenden Übertragungen (Ring oben) und wann die letzte fertig wurde. */
+    val summary: TransferSummary = TransferSummary(0, 0, 0, 0, 0, null),
+    val ringDoneAt: Long = 0,
 ) {
     val selecting: Boolean get() = selected.isNotEmpty()
     val writable: Boolean get() = state.location.root.writable
@@ -126,6 +139,16 @@ class FolderCallbacks(
     val drop: ((DragAndDropEvent, FileEntry?) -> Boolean)? = null,
     /** Rechtsklick öffnet das Menü. */
     val secondary: Boolean = true,
+    /** Ring oben: die Seite „Übertragungen“. */
+    val transfers: () -> Unit = {},
+    val cancelTransfer: (Long) -> Unit = {},
+    /** Herunterziehen lädt neu (null: aus). */
+    val refresh: (suspend () -> Unit)? = null,
+    /** Wischen (Entwurf 11): nach links in den Papierkorb bzw. löschen, nach rechts teilen; null: aus. */
+    val swipeTrash: ((FileEntry) -> Unit)? = null,
+    val swipeShare: ((FileEntry) -> Unit)? = null,
+    /** Ob ein Eintrag in den Papierkorb geht (sonst heißt die Aktion „Löschen“ und fragt). */
+    val hasTrash: (FileEntry) -> Boolean = { true },
 )
 
 @Composable
@@ -190,6 +213,7 @@ fun FolderScreen(
                         )
                     } else {
                         TopBar(title, onBack = on.back, backLabel = stringResource(UiR.string.ui_back), actions = {
+                            TransferRing(ui.summary, ui.ringDoneAt, on.transfers)
                             IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), on.search)
                             IconButton(TitanIcons.more, stringResource(UiR.string.ui_more), on.menu)
                         })
@@ -243,21 +267,23 @@ fun FolderScreen(
             }
             val entries = ui.entries
             val extraUploads = ui.uploads.filter { u -> entries.none { it.name == u.name } }
+            RefreshBox(on.refresh) {
+            // Auch ohne Einträge scrollbar, damit Herunterziehen neu lädt.
+            val still = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             when {
-                ui.state.entries == null && ui.state.error == null -> Column {
+                ui.state.entries == null && ui.state.error == null -> Column(still) {
                     header()
                     Text(stringResource(UiR.string.ui_loading), style = TitanType.body, color = c.muted)
                 }
-                ui.state.entries == null -> header()
-                entries.isEmpty() && extraUploads.isEmpty() -> Column {
+                ui.state.entries == null -> Column(still) { header() }
+                entries.isEmpty() && extraUploads.isEmpty() -> Column(still) {
                     header()
                     EmptyState(stringResource(R.string.files_empty), if (ui.writable) stringResource(R.string.files_empty_text) else "")
                 }
                 ui.view == FileView.List -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
                     item(key = "_header") { header() }
                     items(entries, key = { "e:" + it.name }) { e ->
-                        val up = ui.uploads.firstOrNull { it.name == e.name }
-                        EntryListRow(api, location, e, up, e.name in ui.selected, ui.selecting, location.full(e.name) in ui.offlinePaths, on, first = e == entries.first(), cursor = ui.cursor == e.name || ui.previewing == e.name)
+                        EntryListRow(api, location, e, ui.transfers[e.name], e.name in ui.selected, ui.selecting, location.full(e.name) in ui.offlinePaths, on, first = e == entries.first(), cursor = ui.cursor == e.name || ui.previewing == e.name)
                     }
                     items(extraUploads, key = { "u:" + it.id }) { u -> UploadRow(u) }
                 }
@@ -272,6 +298,7 @@ fun FolderScreen(
                         items(extraUploads, key = { "u:" + it.id }, span = { GridItemSpan(maxLineSpan) }) { u -> UploadRow(u) }
                     }
                 }
+            }
             }
         }
         ui.undo?.let { u -> UndoBar(u, on.undo, on.dismissUndo, Modifier.align(Alignment.BottomCenter).padding(bottom = 140.dp)) }
@@ -366,7 +393,7 @@ private fun EntryListRow(
     api: FilesApi?,
     location: Location,
     e: FileEntry,
-    upload: Transfer?,
+    transfer: Transfer?,
     selected: Boolean,
     selecting: Boolean,
     offline: Boolean,
@@ -376,36 +403,73 @@ private fun EntryListRow(
 ) {
     val c = Titan.colors
     val date = entryDate(e.modified)
-    val sub = listOfNotNull(if (e.dir) null else Format.bytes(e.size), date, if (offline) stringResource(R.string.files_offline_short) else null).joinToString(" · ")
+    val active = transfer?.takeIf { it.active }
+    // Fertig geladen bzw. offline am Handy: grüner Vermerk mit Haken statt des Datums (Entwurf 20/21).
+    val mark = when {
+        active != null -> null
+        transfer?.openable == true -> stringResource(R.string.tr_mark_downloads)
+        offline -> stringResource(R.string.tr_mark_phone)
+        else -> null
+    }
+    val sub = listOfNotNull(if (e.dir) null else Format.bytes(e.size), if (mark == null) date else null).joinToString(" · ")
     val hover = remember { MutableInteractionSource() }
     val hovered by hover.collectIsHoveredAsState()
     var hot by remember { mutableStateOf(false) }
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-            .background(rowTint(selected, cursor, hot, hovered))
-            .then(if (cursor) Modifier.border(2.dp, c.accent, RoundedCornerShape(10.dp)) else Modifier)
-            .hoverable(hover)
-            .entryDrag(e, on, selected) { hot = it }
-            .semantics { this.selected = selected },
-    ) {
+    val tint = rowTint(selected, cursor, hot, hovered)
+    val trash = on.swipeTrash?.takeIf { location.root.writable }?.let { f ->
+        val bin = on.hasTrash(e)
+        SwipeAction(stringResource(if (bin) R.string.files_swipe_trash else R.string.files_swipe_delete), TitanIcons.trash, IconSquareColors.red) { f(e) }
+    }
+    val share = on.swipeShare?.takeIf { !e.dir }?.let { f -> SwipeAction(stringResource(R.string.files_share), TitanIcons.share, IconSquareColors.blue) { f(e) } }
+    Column(Modifier.fillMaxWidth()) {
         if (!first) Divider()
-        Row(
-            Modifier.fillMaxWidth().entryClicks(e, selecting, on).heightIn(min = 60.dp).padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (selecting) SelectMark(selected)
-            if (!e.dir && Kinds.hasThumb(e.name)) {
-                NasThumb(api, location.root.id, location.full(e.name), e.modified, Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)), size = 160) { EntryIcon(e) }
-            } else {
-                EntryIcon(e)
+        SwipeRow(start = share, end = trash, enabled = !selecting && active == null, background = tint) {
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                    .background(tint)
+                    .then(if (cursor) Modifier.border(2.dp, c.accent, RoundedCornerShape(10.dp)) else Modifier)
+                    .hoverable(hover)
+                    .entryDrag(e, on, selected) { hot = it }
+                    .semantics { this.selected = selected },
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().entryClicks(e, selecting, on).heightIn(min = 60.dp).padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    if (selecting) SelectMark(selected)
+                    if (!e.dir && Kinds.hasThumb(e.name)) {
+                        NasThumb(api, location.root.id, location.full(e.name), e.modified, Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)), size = 160) { EntryIcon(e) }
+                    } else {
+                        EntryIcon(e)
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(e.name, style = TitanType.rowTitle, color = c.text)
+                        if (active != null) {
+                            val (done, total) = Format.bytes(active.done) to Format.bytes(maxOf(active.total, e.size))
+                            val line = when {
+                                active.state == TransferState.Waiting -> stringResource(R.string.tr_row_waiting, stringResource(if (active.waiting == WaitReason.Network) R.string.tr_wait_network else R.string.tr_waiting_start))
+                                active.direction == Direction.Upload -> stringResource(R.string.tr_row_uploading, done, total)
+                                else -> stringResource(R.string.tr_row_downloading, done, total)
+                            }
+                            Text(line, style = TitanType.rowSub, color = c.muted, modifier = Modifier.padding(top = 2.dp))
+                            Bar(active.fraction, Modifier.padding(top = 8.dp, end = 8.dp))
+                        } else {
+                            FlowRow(Modifier.padding(top = 2.dp), verticalArrangement = Arrangement.Center, itemVerticalAlignment = Alignment.CenterVertically) {
+                                if (sub.isNotEmpty()) Text(sub + if (mark != null) " · " else "", style = TitanType.rowSub, color = c.muted)
+                                if (mark != null) {
+                                    Icon(TitanIcons.check, null, tint = c.okInk, modifier = Modifier.size(14.dp))
+                                    Text(" $mark", style = TitanType.rowSub, color = c.okInk)
+                                }
+                            }
+                        }
+                    }
+                    when {
+                        active != null -> IconButton(TitanIcons.x, stringResource(R.string.tr_cancel_named, e.name), { on.cancelTransfer(active.id) }, size = 20.dp, tint = c.muted)
+                        !selecting -> IconButton(TitanIcons.more, stringResource(R.string.files_actions, e.name), { on.entryMenu(e) }, size = 20.dp, tint = c.muted)
+                    }
+                }
             }
-            Column(Modifier.weight(1f)) {
-                Text(e.name, style = TitanType.rowTitle, color = c.text)
-                if (sub.isNotEmpty()) Text(sub, style = TitanType.rowSub, color = c.muted, modifier = Modifier.padding(top = 2.dp))
-                upload?.let { Text(stringResource(R.string.files_uploading, Format.percent(it.fraction.toDouble())), style = TitanType.small, color = c.muted) }
-            }
-            if (!selecting) IconButton(TitanIcons.more, stringResource(R.string.files_actions, e.name), { on.entryMenu(e) }, size = 20.dp, tint = c.muted)
         }
     }
 }
@@ -481,33 +545,25 @@ private fun JobBar(job: Job, running: Int, onClick: () -> Unit) {
     }
 }
 
+/** „Rückgängig“ nach Papierkorb, Verschieben, Umbenennen (Entwurf 11), als Meldung unten. */
 @Composable
 private fun UndoBar(u: UndoOffer, onUndo: () -> Unit, onDismiss: () -> Unit, modifier: Modifier) {
-    val c = Titan.colors
-    val shape = RoundedCornerShape(14.dp)
-    Row(
-        modifier.padding(horizontal = 16.dp).fillMaxWidth().clip(shape).background(c.text).padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            when (u.kind) {
-                UndoKind.Trash -> pluralStringResource(R.plurals.undo_trash, u.count, u.count)
-                UndoKind.Move -> pluralStringResource(R.plurals.undo_move, u.count, u.count)
-                UndoKind.Rename -> stringResource(R.string.undo_rename)
-            },
-            style = TitanType.body,
-            color = c.bg,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            stringResource(R.string.undo_do),
-            style = TitanType.button,
-            color = c.bg,
-            modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onUndo).padding(horizontal = 12.dp, vertical = 10.dp),
-        )
-        IconButton(TitanIcons.x, stringResource(UiR.string.ui_close), onDismiss, size = 18.dp, tint = c.bg)
-    }
+    Snackbar(
+        text = when (u.kind) {
+            UndoKind.Trash -> pluralStringResource(R.plurals.undo_trash, u.count, u.count)
+            UndoKind.Move -> pluralStringResource(R.plurals.undo_move, u.count, u.count)
+            UndoKind.Rename -> stringResource(R.string.undo_rename)
+        },
+        actions = listOf(SnackAction(stringResource(R.string.undo_do), onUndo)),
+        onDismiss = onDismiss,
+        modifier = modifier,
+    )
 }
+
+/** Herunterziehen lädt neu (Entwurf 11). */
+@Composable
+private fun RefreshBox(refresh: (suspend () -> Unit)?, content: @Composable () -> Unit) =
+    io.github.ra5on.titanos.ui.components.PullRefresh(refresh, Modifier.fillMaxSize(), content)
 
 /** Titel eines Auftrags in Worten. */
 @Composable

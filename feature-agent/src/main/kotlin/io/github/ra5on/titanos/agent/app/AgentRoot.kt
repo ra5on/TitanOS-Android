@@ -113,11 +113,11 @@ fun AgentRoot(
     }
 
     // Eine Antwort, während die App nicht vorne ist: als Mitteilung (MessagingStyle, auch Android Auto).
+    // Angemeldet nur, solange diese Oberfläche da ist, mit ihrem Lebenszyklus (1.01: vorher blieb die
+    // Anmeldung einer beendeten Activity hängen und meldete auch Antworten im offenen Chat).
     val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(Unit) {
-        val read = model.onAnswer
-        model.onAnswer = { e ->
-            read(e)
+    DisposableEffect(model, lifecycle) {
+        val off = model.onAnswer { e ->
             val chat = model.current
             if (chat != null && !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
                 val q = chat.entries.lastOrNull { it.role == "user" }?.content
@@ -129,6 +129,7 @@ fun AgentRoot(
                 io.github.ra5on.titanos.agent.system.AnswerNotifier.post(context, tr, chat.id, chat.title, q, e.content.orEmpty(), intent)
             }
         }
+        onDispose { off() }
     }
 
     // Beim Öffnen: was die Einstellung „Beim Öffnen“ sagt (letzter Chat oder das Menü).

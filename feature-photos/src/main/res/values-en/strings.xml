@@ -134,4 +134,27 @@
     </plurals>
     <string name="photos_paused">Photo backup is paused (quick setting). Nothing is backed up to any NAS until you resume.</string>
     <string name="photos_resume">Resume</string>
+    <!-- Where the backup uploaded to (1.01): notification after a run and a line in the card. -->
+    <plurals name="photos_uploaded_photos">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+    <plurals name="photos_uploaded_videos">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
+    <string name="photos_uploaded_and">%1$s and %2$s</string>
+    <string name="photos_uploaded_to">%1$s uploaded to %2$s</string>
+    <string name="photos_uploaded_more">%1$s uploaded to %2$s (%3$d folders)</string>
+    <string name="photos_last_batch">Last run: %1$s</string>
+    <string name="photos_done_title">Photo backup</string>
+    <string name="photos_done_channel">Photo backup: uploaded</string>
+    <string name="photos_done_channel_text">After a run: how many pictures were uploaded and where to</string>
+    <string name="photos_view_saved">on the NAS</string>
+    <string name="photos_view_waiting">only on this phone</string>
+    <string name="photos_view_play">Play video</string>
+    <string name="photos_view_share">Share</string>
+    <string name="photos_view_failed">The picture cannot be loaded.</string>
+    <string name="photos_view_open">View</string>
+    <string name="photos_view_none">No app found to play this.</string>
 </resources>

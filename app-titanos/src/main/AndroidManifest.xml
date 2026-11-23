@@ -34,7 +34,31 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="titanos" android:host="pair" />
             </intent-filter>
+            <!-- „Agent fragen“ (README › Schnittstelle; bis 1.00 in der Agent-App): Extras text (String),
+                 voice (Boolean). Füllt nur das Eingabefeld eines neuen Chats; gesendet wird nie von selbst. -->
+            <intent-filter>
+                <action android:name="io.github.ra5on.titanos.agent.ASK" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
+        <!-- „Teilen → Agent fragen“: Text oder ein Bild in einen neuen Chat des Agenten (bis 1.00 in der Agent-App). -->
+        <activity-alias
+            android:name=".AskShare"
+            android:exported="true"
+            android:label="@string/agent_share_label"
+            android:icon="@mipmap/ic_launcher"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity-alias>
         <!-- „Teilen → Auf TitanOS speichern“: Dateien aus anderen Apps aufs NAS. -->
         <activity
             android:name=".ShareActivity"
@@ -157,14 +181,8 @@
                 tools:node="remove" />
         </provider>
 
-        <!-- KI-Agent aus feature-agent: der Assistent gilt in beiden Apps; Notizen-Rolle und
-             Android Auto nur in der Agent-App (Entscheidung 22.11.2026). ReplyReceiver bleibt:
-             Antworten des Agenten in dieser App kommen als Mitteilung mit Antworten/Gelesen. -->
-        <meta-data
-            android:name="com.google.android.gms.car.application"
-            tools:node="remove" />
-        <activity
-            android:name="io.github.ra5on.titanos.agent.system.NotesActivity"
-            tools:node="remove" />
+        <!-- KI-Agent aus feature-agent mit allem, was bis 1.00 nur die Agent-App hatte (Inhaber 23.11.2026:
+             der Agent komplett in dieser App): Assistent, Spracherkennung, Notizen-Rolle, Android Auto
+             (Antworten als Mitteilung mit Antworten/Gelesen, ReplyReceiver). -->
     </application>
 </manifest>

@@ -23,8 +23,8 @@ android {
         // Wie die Handy-Apps: ab Android 13, also Wear OS 4.
         minSdk = 33
         targetSdk = 37
-        versionCode = 100
-        versionName = "1.00"
+        versionCode = 101
+        versionName = "1.01"
     }
     signingConfigs {
         if (releaseKeystore != null && releasePassword != null) {

@@ -15,7 +15,6 @@
     <string name="w_photos">Fotos</string>
     <string name="w_photos_open">App öffnen, um die Foto-Sicherung einzurichten</string>
     <string name="w_agent">Agent fragen</string>
-    <string name="w_agent_missing">Die Agent-App ist nicht installiert. Tippen für „Über die App“.</string>
     <string name="w_agent_write">Schreiben</string>
     <string name="w_agent_speak">Sprechen</string>
     <plurals name="w_problem">
