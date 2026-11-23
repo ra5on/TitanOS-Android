@@ -26,6 +26,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -63,39 +65,117 @@ fun dockLabels(perItem: Float, widestNormal: Float, widestSmall: Float): DockLab
     else -> DockLabels.None
 }
 
+/** So viele Plätze zeigt das Dock auf einmal (weitere auf den nächsten Seiten). */
+const val DOCK_PER_PAGE = 5
+
+/** Lage des Docks im Fenster und welche Seite zu sehen ist (für das Ablegen von der Startseite). */
+class DockGeometry {
+    var rect: androidx.compose.ui.geometry.Rect = androidx.compose.ui.geometry.Rect.Zero
+    var page: Int = 0
+    var count: Int = 0
+
+    /**
+     * Platz unter [window] (Fensterkoordinaten, etwas über dem Dock zählt mit),
+     * sonst null: auf der sichtbaren Seite der Platz unter dem Finger, höchstens
+     * hinter dem letzten.
+     */
+    fun slotAt(window: androidx.compose.ui.geometry.Offset, reach: Float): Int? {
+        if (rect.width <= 0f) return null
+        if (window.x < rect.left || window.x > rect.right || window.y < rect.top - reach || window.y > rect.bottom + reach) return null
+        val per = rect.width / DOCK_PER_PAGE
+        val i = ((window.x - rect.left) / per).toInt().coerceIn(0, DOCK_PER_PAGE - 1)
+        return (page * DOCK_PER_PAGE + i).coerceAtMost(count)
+    }
+}
+
 /**
- * Das Dock (PLAN 117, Entwürfe 02 und 06): schwebende Leiste mit bis zu fünf
- * Plätzen. Der gewählte Platz hat einen Punkt darunter und fette Schrift (nie
- * nur Farbe), Mitteilungen eine Zahl. [labels] aus: nur Symbole.
+ * Das Dock (PLAN 117, Entwürfe 02 und 06): schwebende Leiste. Bis zu fünf
+ * Plätze stehen nebeneinander; mehr (1.02, bis 15) stehen auf Seiten zu je
+ * fünf, die man zur Seite wischt, mit Punkten darunter („Seite 1 von 3“), der
+ * gewählte Platz ist immer zu sehen. Der gewählte Platz hat einen Punkt
+ * darunter und fette Schrift (nie nur Farbe), Mitteilungen eine Zahl.
+ * [labels] aus: nur Symbole. [dropSlot]: beim Ziehen von der Startseite ein
+ * Platzhalter an dieser Stelle.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun DockBar(items: List<DockItem>, selected: String?, labels: Boolean, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
+fun DockBar(
+    items: List<DockItem>,
+    selected: String?,
+    labels: Boolean,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    dropSlot: Int? = null,
+    geometry: DockGeometry? = null,
+) {
     val c = Titan.colors
     val measurer = rememberTextMeasurer()
     val normal = TitanType.nav.copy(fontWeight = FontWeight.SemiBold)
     val small = normal.copy(fontSize = 11.sp, lineHeight = 14.sp)
     val dockName = stringResource(R.string.ui_dock)
+    val ghost = DockItem(DROP_KEY, "", androidx.compose.ui.graphics.vector.ImageVector.Builder("drop", 1.dp, 1.dp, 1f, 1f).build())
+    val shown = if (dropSlot != null) items.toMutableList().also { it.add(dropSlot.coerceIn(0, it.size), ghost) } else items
+    val paged = shown.size > DOCK_PER_PAGE
+    val pages = if (paged) shown.chunked(DOCK_PER_PAGE) else listOf(shown)
     Box(modifier.fillMaxWidth().navigationBarsPadding().padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
         val shape = RoundedCornerShape(26.dp)
         BoxWithConstraints(
             Modifier.widthIn(max = 560.dp).fillMaxWidth()
                 .shadow(10.dp, shape, ambientColor = Color.Black.copy(alpha = .3f), spotColor = Color.Black.copy(alpha = .3f))
                 .clip(shape).background(c.surface).border(1.dp, c.border, shape)
-                .semantics { contentDescription = dockName }
+                .then(if (geometry != null) Modifier.onGloballyPositioned { geometry.rect = it.boundsInWindow(); geometry.count = items.size } else Modifier)
                 .padding(horizontal = 4.dp, vertical = 6.dp),
         ) {
             val gap = with(LocalDensity.current) { 6.dp.toPx() }
-            val per = constraints.maxWidth.toFloat() / maxOf(1, items.size) - gap
+            // Mit Seiten hat jeder Platz ein Fünftel: nur ganze Plätze, nichts angeschnitten.
+            val per = constraints.maxWidth.toFloat() / (if (paged) DOCK_PER_PAGE else maxOf(1, shown.size)) - gap
             fun widest(style: TextStyle) = items.flatMap { io.github.ra5on.titanos.ui.hyphenPieces(it.label) }
                 .maxOfOrNull { measurer.measure(it, style, softWrap = false).size.width.toFloat() } ?: 0f
             val fit = if (labels) dockLabels(per, widest(normal), widest(small)) else DockLabels.None
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                for (item in items) {
-                    DockTab(item, item.key == selected, if (fit == DockLabels.Small) small else normal, fit != DockLabels.None, Modifier.weight(1f)) { onSelect(item.key) }
+            val style = if (fit == DockLabels.Small) small else normal
+            val row: @Composable (List<DockItem>) -> Unit = { list ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                    for (item in list) {
+                        if (item.key == DROP_KEY) {
+                            DropSlot(Modifier.weight(1f))
+                        } else {
+                            DockTab(item, item.key == selected, style, fit != DockLabels.None, Modifier.weight(1f)) { onSelect(item.key) }
+                        }
+                    }
+                    if (paged) repeat(DOCK_PER_PAGE - list.size) { Box(Modifier.weight(1f)) }
+                }
+            }
+            if (!paged) {
+                Box(Modifier.semantics { contentDescription = dockName }) { row(shown) }
+            } else {
+                val pager = androidx.compose.foundation.pager.rememberPagerState { pages.size }
+                geometry?.page = pager.currentPage
+                // Der gewählte Platz ist immer zu sehen.
+                val at = shown.indexOfFirst { it.key == selected }
+                androidx.compose.runtime.LaunchedEffect(at / DOCK_PER_PAGE, at >= 0) { if (at >= 0) pager.animateScrollToPage(at / DOCK_PER_PAGE) }
+                val pageLabel = stringResource(R.string.ui_dock_page, pager.currentPage + 1, pages.size)
+                Column(Modifier.semantics { contentDescription = dockName; stateDescription = pageLabel }) {
+                    androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.fillMaxWidth(), key = { it }) { i -> row(pages[i]) }
+                    Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.Center) {
+                        for (i in pages.indices) {
+                            val on = i == pager.currentPage
+                            Box(Modifier.padding(horizontal = 3.dp).size(if (on) 7.dp else 5.dp).clip(CircleShape).background(if (on) c.text else c.muted.copy(alpha = .6f)))
+                        }
+                    }
                 }
             }
         }
     }
+}
+
+private const val DROP_KEY = "\u0000drop"
+
+/** Platzhalter im Dock beim Ziehen von der Startseite. */
+@Composable
+private fun DropSlot(modifier: Modifier) {
+    val c = Titan.colors
+    val shape = RoundedCornerShape(16.dp)
+    Box(modifier.padding(horizontal = 4.dp).heightIn(min = 48.dp).clip(shape).background(c.accent.copy(alpha = .16f)).border(2.dp, c.accent, shape))
 }
 
 @Composable

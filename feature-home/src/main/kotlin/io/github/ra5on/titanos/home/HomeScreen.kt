@@ -146,6 +146,8 @@ fun HomeScreen(
     menuBadge: Boolean = false,
     /** Hinweis unter der Leiste (neue Version), null: keiner. */
     banner: (@Composable () -> Unit)? = null,
+    /** Das Dock als Ziel beim Ziehen im Bearbeiten (die App zeichnet es). */
+    dockDrop: DockDrop? = null,
     /** Stand der Foto-Sicherung in Worten für Zustand und Widget; null: kommt später. */
     photos: String? = null,
     onPhotos: (() -> Unit)? = null,
@@ -186,12 +188,12 @@ fun HomeScreen(
             val cells = PHONE_COLUMNS * rows
             val shownLayout = remember(prefs, keys, cells) { phoneLayout(prefs, keys, cells) }
             // Im Bearbeiten die Seiten wie gespeichert (auch leere neue Seiten), ohne Umbruch: nichts springt beim Ziehen.
-            val pages: List<List<String>> = if (draft != null) editPages(draft, keys) else shownLayout.pages
+            val pages: List<List<String?>> = if (draft != null) editPages(draft, keys) else shownLayout.pages
             val folders = if (draft != null) phoneLayout(draft, keys, 10_000).folders + draft.folders.filter { f -> f.apps.none { it in keys } } else shownLayout.folders
             val current = draft ?: prefs
             val pageCount = rememberUpdatedState(pages.size)
             val pager = rememberPagerState { pageCount.value }
-            SyncGrid(grid, draft, pages, stringResource(R.string.home_folder_default)) { onDraft(it) }
+            SyncGrid(grid, draft, pages, stringResource(R.string.home_folder_default), dockDrop) { onDraft(it) }
             LaunchedEffect(firstPage) { if (firstPage > 0) pager.animateScrollToPage(0) }
             fun startEdit() {
                 if (editing) return
@@ -244,6 +246,7 @@ fun HomeScreen(
                     PageContent(
                         page = page,
                         index = index,
+                        rows = rows,
                         prefs = current,
                         folders = folders,
                         byKey = byKey,
@@ -289,7 +292,7 @@ fun HomeScreen(
                 if (d == null) {
                     sheet = null
                 } else {
-                    ItemSheet(key, d, pages, folders, byKey, onChange = { onDraft(it) }, onDismiss = { sheet = null }, onOpenFolder = { folderOpen = it })
+                    ItemSheet(key, d, pages, rows, folders, byKey, onChange = { onDraft(it) }, onDismiss = { sheet = null }, onOpenFolder = { folderOpen = it })
                 }
             }
             folderOpen?.let { id ->
@@ -336,12 +339,12 @@ fun HomeScreen(
     }
 }
 
-/** Die Seiten im Bearbeiten: wie gespeichert, nur was die App zeigen kann. */
-internal fun editPages(draft: PhonePrefs, keys: List<String>): List<List<String>> {
+/** Die Seiten im Bearbeiten: wie gespeichert (mit Lücken), nur was die App zeigen kann; anderes lässt seine Zelle leer. */
+internal fun editPages(draft: PhonePrefs, keys: List<String>): List<List<String?>> {
     val known = keys.toSet()
     val folders = draft.folders.filter { f -> f.apps.any { it in known } }.map { "folder:" + it.id }.toSet()
     val widgets = draft.widgets.filter { it.kind in HOME_WIDGET_KINDS }.map { "widget:" + it.id }.toSet()
-    return draft.pages.map { page -> page.filter { it in known || it in folders || it in widgets } }.ifEmpty { listOf(emptyList()) }
+    return draft.pages.map { page -> page.map { k -> k?.takeIf { it in known || it in folders || it in widgets } }.trimEnd() }.ifEmpty { listOf(emptyList()) }
 }
 
 @Composable

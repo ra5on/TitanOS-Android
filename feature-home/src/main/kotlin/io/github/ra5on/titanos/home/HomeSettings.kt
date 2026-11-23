@@ -115,7 +115,7 @@ fun HomeDockSettingsPage(
     }
 }
 
-/** „Programme im Dock“: bis zu fünf Plätze wählen und ordnen; Start bleibt immer. */
+/** „Programme im Dock“: bis zu 15 Plätze (je fünf auf einer Seite des Docks) wählen und ordnen; Start bleibt immer. */
 @Composable
 private fun DockAppsPage(prefs: PhonePrefs, entries: List<String>, choices: List<DockChoice>, onChange: (PhonePrefs) -> Unit, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
@@ -140,7 +140,7 @@ private fun DockAppsPage(prefs: PhonePrefs, entries: List<String>, choices: List
                 )
             }
         }
-        Note(stringResource(R.string.hs_dock_start), Modifier.padding(top = 10.dp))
+        Note(stringResource(R.string.hs_dock_start) + " " + stringResource(R.string.hs_dock_pages), Modifier.padding(top = 10.dp))
         val more = choices.filter { it.key !in entries }
         if (more.isNotEmpty()) {
             SectionHeader(stringResource(R.string.hs_dock_more))

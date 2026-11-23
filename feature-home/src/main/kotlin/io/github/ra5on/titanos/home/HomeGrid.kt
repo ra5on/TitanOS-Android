@@ -1,10 +1,16 @@
 package io.github.ra5on.titanos.home
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -39,21 +45,29 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -61,8 +75,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import io.github.ra5on.titanos.ui.components.AppIcon
 import io.github.ra5on.titanos.ui.components.Chip
 import io.github.ra5on.titanos.ui.rememberWidestWord
@@ -83,9 +100,11 @@ internal sealed interface GridRow {
 }
 
 /**
- * Teilt eine Seite in Zeilen: Programme und Ordner füllen Zeilen zu [columns],
- * ein Widget „ganz“ hat eine Zeile für sich, zwei „halbe“ teilen sich eine
- * (bei weniger als drei Spalten – große Schrift – steht jedes Widget allein).
+ * Teilt eine Seite in Zeilen, wenn weniger als vier Spalten passen (große
+ * Schrift): Programme und Ordner füllen Zeilen zu [columns], ein Widget
+ * „ganz“ hat eine Zeile für sich, zwei „halbe“ teilen sich eine (bei weniger
+ * als drei Spalten steht jedes Widget allein). Freie Plätze gibt es dann
+ * nicht, die Lesereihenfolge bleibt.
  */
 internal fun gridRows(page: List<String>, prefs: PhonePrefs, columns: Int): List<GridRow> {
     val out = mutableListOf<GridRow>()
@@ -113,57 +132,104 @@ internal fun gridRows(page: List<String>, prefs: PhonePrefs, columns: Int): List
     return out
 }
 
+/** Lage des Rasters einer Seite: Spaltenbreite, Abstand, Oberkante und Höhe jeder Zeile (Pixel in der Seite). */
+internal class PageGeometry {
+    var coords: LayoutCoordinates? = null
+    var colWidth = 0f
+    var gap = 0f
+    var rowTops = FloatArray(0)
+    var rowHeights = FloatArray(0)
+
+    /** Mitte des Symbols unter der Oberkante der Zelle. */
+    var iconCenter = 0f
+
+    /** Mitte der Zelle [index] für einen Eintrag der Breite [w] (Koordinaten der Startseite). */
+    fun cellCenter(root: LayoutCoordinates, index: Int, w: Int): Offset? {
+        val c = coords ?: return null
+        if (!c.isAttached || !root.isAttached) return null
+        val row = index / PHONE_COLUMNS
+        if (row !in rowTops.indices) return null
+        val x = index % PHONE_COLUMNS * (colWidth + gap) + (w * colWidth + (w - 1) * gap) / 2f
+        val y = rowTops[row] + iconCenter
+        return root.localPositionOf(c, Offset(x, y))
+    }
+
+    /** Zelle unter [pos] (Koordinaten der Startseite) oder null außerhalb des Rasters. */
+    fun cellAt(root: LayoutCoordinates, pos: Offset, w: Int): Int? {
+        val c = coords ?: return null
+        if (!c.isAttached || !root.isAttached || rowTops.isEmpty() || colWidth <= 0f) return null
+        val local = c.localPositionOf(root, pos)
+        if (local.x < -colWidth || local.x > c.size.width + colWidth) return null
+        val col = ((local.x - (w - 1) * (colWidth + gap) / 2f) / (colWidth + gap)).toInt().coerceIn(0, PHONE_COLUMNS - w)
+        var row = rowTops.lastIndex
+        for (i in rowTops.indices) {
+            if (local.y < rowTops[i] + rowHeights[i] + gap / 2f) {
+                row = i
+                break
+            }
+        }
+        val snapped = if (w >= PHONE_COLUMNS) 0 else col - col % w
+        return row.coerceAtLeast(0) * PHONE_COLUMNS + snapped
+    }
+}
+
 /**
- * Wo was beim Ziehen liegt. Die Lage jedes Eintrags merkt sich die Startseite
- * selbst (in Koordinaten ihrer Fläche); daraus folgt beim Loslassen, ob das
- * Symbol auf ein anderes fällt (Ordner) oder dazwischen (Verschieben).
+ * Wo was beim Ziehen liegt (1.02 mit freien Plätzen): die Zelle unter dem
+ * Finger ([target]) mit Platzhalter, nach kurzem Halten über einem Symbol der
+ * Ordner ([hover]), am Rand die Seite davor bzw. danach, unten das Dock.
  */
 @Stable
 internal class GridState {
     var root: LayoutCoordinates? = null
     val items = HashMap<String, Pair<Int, LayoutCoordinates>>()
+    val geometry = HashMap<Int, PageGeometry>()
     var dragKey by mutableStateOf<String?>(null)
     var pos by mutableStateOf(Offset.Zero)
     var grab by mutableStateOf(Offset.Zero)
+
+    /** Ziel: Seite und Zelle. */
+    var target by mutableStateOf<Pair<Int, Int>?>(null)
+
+    /** Über diesem Symbol gehalten: Ablegen ergibt einen Ordner (Ring). */
     var hover by mutableStateOf<String?>(null)
+
+    /** Über dem Dock: Platz im Dock, an den abgelegt wird. */
+    var dockSlot by mutableStateOf<Int?>(null)
+
+    /** Gerade abgelegt: das Symbol gleitet vom Finger ([from]) in seine Zelle ([to]), beides Koordinaten der Startseite. */
+    var landing by mutableStateOf<Landing?>(null)
     var edgeJob: Job? = null
+    var hoverJob: Job? = null
 
     // Der neueste Stand (die Zeiger-Routinen laufen länger als eine Komposition).
     var draft: PhonePrefs? = null
     var change: (PhonePrefs) -> Unit = {}
-    var pages: List<List<String>> = emptyList()
+    var pages: List<List<String?>> = emptyList()
     var folderName: String = "Ordner"
+    var dock: DockDrop? = null
 
-    fun rectOf(key: String): Rect? {
+    /** Zelle unter dem Finger auf Seite [page] für einen Eintrag der Breite [w]. */
+    fun cellAt(page: Int, w: Int): Int? {
         val r = root ?: return null
-        val c = items[key]?.second ?: return null
-        if (!c.isAttached || !r.isAttached) return null
-        return r.localBoundingBoxOf(c)
+        return geometry[page]?.cellAt(r, pos, w)
     }
 
-    /** Wohin [dragKey] beim Loslassen an [pos] auf Seite [page] fällt: auf einen Eintrag (Ordner) oder vor/hinter ihn. */
-    fun targetAt(page: Int): Pair<String, Boolean>? {
-        val key = dragKey ?: return null
-        val list = pages.getOrNull(page).orEmpty().filter { it != key && items[it]?.first == page }
-        for (k in list) {
-            val r = rectOf(k) ?: continue
-            val inner = Rect(r.left + r.width * .22f, r.top + r.height * .1f, r.right - r.width * .22f, r.top + r.height * .62f)
-            val folderable = !key.startsWith("folder:") && !key.startsWith("widget:") && !k.startsWith("widget:")
-            if (folderable && inner.contains(pos)) return k to true
-        }
-        return null
-    }
+    /** Programm oder Ordner an Zelle [index] von Seite [page] (für den Ordner beim Halten). */
+    fun keyAt(page: Int, index: Int): String? = pages.getOrNull(page)?.getOrNull(index)
+}
 
-    /** Der Eintrag, vor dem eingefügt wird (in Lesereihenfolge), sonst null (ans Ende). */
-    fun insertBefore(page: Int): String? {
-        val key = dragKey ?: return null
-        val list = pages.getOrNull(page).orEmpty().filter { it != key }
-        for (k in list) {
-            val r = rectOf(k) ?: continue
-            if (pos.y < r.top || (pos.y <= r.bottom && pos.x < r.center.x)) return k
-        }
-        return null
-    }
+data class Landing(val key: String, val from: Offset, val to: Offset)
+
+/** Das Dock als Ziel beim Ziehen (die App zeichnet es; Koordinaten im Fenster). */
+interface DockDrop {
+    /** Platz im Dock unter [window] (Fensterkoordinaten), sonst null. */
+    fun slotAt(window: Offset): Int?
+
+    /** Beim Ziehen darüber: Platzhalter an [slot] (null: keiner). */
+    fun hover(slot: Int?)
+
+    /** Abgelegt: [key] an Platz [slot]. */
+    fun drop(key: String, slot: Int)
 }
 
 @Composable
@@ -184,11 +250,47 @@ private fun Modifier.dashed(on: Boolean, color: androidx.compose.ui.graphics.Col
         drawRoundRect(color, cornerRadius = CornerRadius(14.dp.toPx()), style = Stroke(1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 5.dp.toPx()))))
     }
 
+/**
+ * Gleitet zur neuen Stelle, wenn ein Eintrag den Platz wechselt (Nachbarn
+ * rücken beim Ziehen, Ablegen). Ohne Bewegung ([animate] aus) springt es.
+ */
+private fun Modifier.glide(animate: Boolean, grid: GridState): Modifier = composed {
+    val scope = rememberCoroutineScope()
+    var target by remember { mutableStateOf<IntOffset?>(null) }
+    val anim = remember { mutableStateOf<Animatable<IntOffset, AnimationVector2D>?>(null) }
+    this
+        .onPlaced { c ->
+            val root = grid.root
+            val now = (if (root != null && root.isAttached) root.localPositionOf(c, Offset.Zero) else c.positionInRoot()).round()
+            val a = anim.value
+            if (!animate) {
+                anim.value = null
+            } else if (a == null) {
+                anim.value = Animatable(now, IntOffset.VectorConverter)
+            } else if (a.targetValue != now) {
+                scope.launch { a.animateTo(now, spring(stiffness = Spring.StiffnessMediumLow)) }
+            }
+            target = now
+        }
+        .offset {
+            val a = anim.value
+            val t = target
+            if (a == null || t == null) IntOffset.Zero else a.value - t
+        }
+}
+
+private fun LayoutCoordinates.positionInRoot(): Offset {
+    var c: LayoutCoordinates = this
+    while (true) c = c.parentLayoutCoordinates ?: break
+    return c.localPositionOf(this, Offset.Zero)
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun PageContent(
-    page: List<String>,
+    page: List<String?>,
     index: Int,
+    rows: Int,
     prefs: PhonePrefs,
     folders: List<PhoneFolder>,
     byKey: Map<String, Program>,
@@ -216,10 +318,24 @@ internal fun PageContent(
             else -> byKey[key]?.let { programLabel(it.id) }.orEmpty()
         }
     }
+    val keys = page.filterNotNull()
     // Ein weiches Trennzeichen („System\u00ADsteuerung“) ist eine erlaubte Trennstelle: dort zählt jedes Teilstück als Wort.
-    val labels = page.filter { !it.startsWith("widget:") }.flatMap { io.github.ra5on.titanos.ui.hyphenPieces(labelOf(it)) }
+    val labels = keys.filter { !it.startsWith("widget:") }.flatMap { io.github.ra5on.titanos.ui.hyphenPieces(labelOf(it)) }
     val widest = rememberWidestWord(labels, TitanType.appLabel)
     val density = LocalDensity.current
+    val entry: @Composable (String, Modifier) -> Unit = { key, m ->
+        val w = prefs.widgets.firstOrNull { "widget:" + it.id == key }
+        if (w != null) {
+            HomeEntry(key, index, labelOf(key), editing, wiggle, grid, onSheet, onChange, draft, pager, scope, pageCount, rows, m, onOpen = { onWidget(w.kind) }, onLongPress = onLongPress) {
+                WidgetView(w, state, photos, onPhotos, editing, onResize = { size -> draft?.let { onChange(resizeWidget(it, w.id, size)) } })
+            }
+        } else {
+            val label = labelOf(key)
+            HomeEntry(key, index, label, editing, wiggle, grid, onSheet, onChange, draft, pager, scope, pageCount, rows, m, onOpen = { onOpen(key) }, onLongPress = onLongPress) {
+                IconView(key, label, byKey, folderById, wide = false)
+            }
+        }
+    }
     BoxWithConstraints(Modifier.fillMaxSize().longPressFree(!editing, onLongPress)) {
         val gap = 6.dp
         val inner = maxWidth - 32.dp
@@ -228,32 +344,141 @@ internal fun PageContent(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(if (columns == 1) 6.dp else 18.dp),
         ) {
-            for (row in gridRows(page, prefs, columns)) {
-                when (row) {
-                    is GridRow.Widgets -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        for (key in row.keys) {
-                            val w = prefs.widgets.firstOrNull { "widget:" + it.id == key } ?: continue
-                            HomeEntry(key, index, labelOf(key), editing, wiggle, grid, onSheet, onChange, draft, pager, scope, pageCount, Modifier.weight(1f), onOpen = { onWidget(w.kind) }, onLongPress = onLongPress) {
-                                WidgetView(w, state, photos, onPhotos, editing, onResize = { size -> draft?.let { onChange(resizeWidget(it, w.id, size)) } })
-                            }
+            if (columns == PHONE_COLUMNS) {
+                FreeGrid(page, index, rows, prefs, editing, wiggle, grid, gap, entry)
+            } else {
+                // Große Schrift oder breites Fenster: der Reihe nach, ohne Lücken (die Plätze bleiben gespeichert).
+                for (row in gridRows(keys, prefs, columns)) {
+                    when (row) {
+                        is GridRow.Widgets -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            for (key in row.keys) entry(key, Modifier.weight(1f))
+                            if (row.keys.size == 1 && columns >= 3 && cellsOf(row.keys[0], prefs) == 4) Spacer(Modifier.weight(1f))
                         }
-                        if (row.keys.size == 1 && columns >= 3 && cellsOf(row.keys[0], prefs) == 4) Spacer(Modifier.weight(1f))
-                    }
-                    is GridRow.Icons -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                        for (key in row.keys) {
-                            val label = labelOf(key)
-                            HomeEntry(key, index, label, editing, wiggle, grid, onSheet, onChange, draft, pager, scope, pageCount, Modifier.weight(1f), onOpen = { onOpen(key) }, onLongPress = onLongPress) {
-                                IconView(key, label, byKey, folderById, wide = columns == 1)
+                        is GridRow.Icons -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                            for (key in row.keys) {
+                                if (columns == 1 && !key.startsWith("widget:")) {
+                                    val label = labelOf(key)
+                                    HomeEntry(key, index, label, editing, wiggle, grid, onSheet, onChange, draft, pager, scope, pageCount, rows, Modifier.weight(1f), onOpen = { onOpen(key) }, onLongPress = onLongPress) {
+                                        IconView(key, label, byKey, folderById, wide = true)
+                                    }
+                                } else {
+                                    entry(key, Modifier.weight(1f))
+                                }
                             }
+                            repeat(columns - row.keys.size) { Spacer(Modifier.weight(1f)) }
                         }
-                        repeat(columns - row.keys.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
             // Freie Fläche unten: langes Drücken beginnt auch dort das Bearbeiten, auf einer leeren Seite ebenso.
-            Spacer(Modifier.fillMaxWidth().height(if (page.isEmpty()) 240.dp else 48.dp))
+            Spacer(Modifier.fillMaxWidth().height(if (keys.isEmpty() && !editing) 240.dp else 48.dp))
         }
     }
+}
+
+/**
+ * Raster mit freien Plätzen (1.02): vier Spalten, [rows] Zeilen (im
+ * Bearbeiten so viele, wie belegt sind, und eine leere dazu). Leere Zellen
+ * bleiben leer. Beim Ziehen zeigt ein Platzhalter die Zielzelle; ist sie
+ * belegt, rücken die Nachbarn sichtbar weiter, so wie sie beim Loslassen
+ * stünden. Zeilen wachsen mit ihrem Inhalt (200 % Schrift, Widgets).
+ */
+@Composable
+private fun FreeGrid(
+    page: List<String?>,
+    index: Int,
+    rows: Int,
+    prefs: PhonePrefs,
+    editing: Boolean,
+    wiggle: Boolean,
+    grid: GridState,
+    gap: Dp,
+    entry: @Composable (String, Modifier) -> Unit,
+) {
+    val c = Titan.colors
+    val dragKey = grid.dragKey
+    val target = grid.target?.takeIf { it.first == index && dragKey != null && grid.hover == null && grid.dockSlot == null }
+    // Was beim Loslassen gälte: die Nachbarn stehen schon dort (der gezogene Eintrag als Platzhalter).
+    val preview = remember(page, prefs, target, dragKey) {
+        val d = grid.draft
+        if (target != null && d != null && dragKey != null) placeAt(d, dragKey, index, target.second).pages.getOrNull(index) else null
+    }
+    val shownRows = if (editing) maxOf(rows, rowsUsed(preview ?: page, prefs) + 1) else rows
+    val (placed, _) = remember(preview ?: page, prefs, shownRows) { arrange(preview ?: page, prefs, if (editing) shownRows else maxOf(shownRows, rowsNeeded(page, prefs))) }
+    val geo = remember(index) { PageGeometry() }.also { grid.geometry[index] = it }
+    val density = LocalDensity.current
+    val minRow = with(density) { (60.dp + 7.dp + TitanType.appLabel.lineHeight.toDp() * 2).roundToPx() }
+    val gapPx = with(density) { gap.roundToPx() }
+    val rowGap = with(density) { 18.dp.roundToPx() }
+    Layout(
+        modifier = Modifier.fillMaxWidth().onGloballyPositioned { geo.coords = it },
+        content = {
+            for (p in placed) {
+                // Je Schlüssel: der gezogene Eintrag wandert mit, ohne dass sein Ziehen abbricht.
+                androidx.compose.runtime.key(p.key) {
+                    Box(Modifier.glide(wiggle && editing, grid)) {
+                        entry(p.key, Modifier.fillMaxWidth())
+                        if (p.key == dragKey) {
+                            // Platzhalter: wo der gezogene Eintrag landet (Rahmen, darin sein blasses Bild).
+                            val shape = RoundedCornerShape(14.dp)
+                            Box(Modifier.matchParentSize().clip(shape).background(c.accent.copy(alpha = .14f)).border(2.dp, c.accent, shape))
+                        }
+                    }
+                }
+            }
+            // Leere Zellen im Bearbeiten: ein feiner Rahmen zeigt, wohin man setzen kann.
+            if (editing) {
+                for (cell in emptyCells(placed, shownRows)) {
+                    Box(Modifier.fillMaxWidth().height(with(density) { minRow.toDp() }).dashed(true, c.border))
+                }
+            }
+        },
+    ) { measurables, constraints ->
+        val width = constraints.maxWidth
+        val colW = ((width - gapPx * (PHONE_COLUMNS - 1)) / PHONE_COLUMNS).coerceAtLeast(1)
+        val empties = if (editing) emptyCells(placed, shownRows) else emptyList()
+        val items = measurables.take(placed.size).mapIndexed { i, m ->
+            val p = placed[i]
+            m.measure(Constraints.fixedWidth(colW * p.w + gapPx * (p.w - 1)))
+        }
+        val emptyItems = measurables.drop(placed.size).map { it.measure(Constraints.fixedWidth(colW)) }
+        val count = maxOf(shownRows, placed.maxOfOrNull { it.row + it.h } ?: 0)
+        val heights = IntArray(count) { minRow }
+        placed.forEachIndexed { i, p -> if (p.h == 1) heights[p.row] = maxOf(heights[p.row], items[i].height) }
+        // Ein Widget über zwei Zeilen: wächst es darüber hinaus, wird die zweite Zeile höher.
+        placed.forEachIndexed { i, p ->
+            if (p.h > 1) {
+                val span = (p.row until p.row + p.h).sumOf { heights[it] } + rowGap * (p.h - 1)
+                if (items[i].height > span) heights[p.row + p.h - 1] += items[i].height - span
+            }
+        }
+        val tops = IntArray(count)
+        for (r in 1 until count) tops[r] = tops[r - 1] + heights[r - 1] + rowGap
+        geo.colWidth = colW.toFloat()
+        geo.gap = gapPx.toFloat()
+        geo.iconCenter = 30.dp.toPx()
+        geo.rowTops = FloatArray(count) { tops[it].toFloat() }
+        geo.rowHeights = FloatArray(count) { heights[it].toFloat() }
+        val total = if (count == 0) 0 else tops[count - 1] + heights[count - 1]
+        layout(width, total) {
+            empties.forEachIndexed { i, cell -> emptyItems.getOrNull(i)?.place(cell % PHONE_COLUMNS * (colW + gapPx), tops[cell / PHONE_COLUMNS]) }
+            placed.forEachIndexed { i, p -> items[i].place(p.col * (colW + gapPx), tops[p.row]) }
+        }
+    }
+}
+
+/** Zeilen, die belegt sind. */
+private fun rowsUsed(page: List<String?>, prefs: PhonePrefs): Int {
+    var rows = 0
+    page.forEachIndexed { i, k -> if (k != null) rows = maxOf(rows, i / PHONE_COLUMNS + spanOf(k, prefs).second) }
+    return rows
+}
+
+/** Leere Zellen der ersten [rows] Zeilen. */
+private fun emptyCells(placed: List<Placed>, rows: Int): List<Int> {
+    val taken = HashSet<Int>()
+    for (p in placed) for (r in p.row until p.row + p.h) for (c in p.col until p.col + p.w) taken += r * PHONE_COLUMNS + c
+    return (0 until rows * PHONE_COLUMNS).filter { it !in taken }
 }
 
 /** Symbol eines Programms oder Ordners mit Namen darunter (bei sehr großer Schrift daneben). */
@@ -299,12 +524,16 @@ internal fun FolderIcon(folder: PhoneFolder?, byKey: Map<String, Program>, size:
     }
 }
 
+/** Kurzer Ruck beim Wechsel der Zielzelle und beim Ablegen. */
+private fun HapticFeedback.tick() = performHapticFeedback(HapticFeedbackType.SegmentTick)
+
 /**
  * Ein Eintrag der Startseite: öffnet beim Tippen, beginnt nach langem Drücken
  * das Bearbeiten. Im Bearbeiten: Wackeln (oder gestrichelt), × oben links,
- * Tippen öffnet „Bewegen …“, Ziehen verschiebt (auch an den Rand: Seite davor
- * bzw. danach), auf ein anderes Symbol ergibt einen Ordner. TalkBack bekommt
- * dieselben Aktionen ohne Ziehen.
+ * Tippen öffnet „Bewegen …“, Ziehen verschiebt an jede Zelle (auch an den
+ * Rand: Seite davor bzw. danach; nach unten: ins Dock), kurz über einem
+ * anderen Symbol halten ergibt einen Ordner. TalkBack bekommt dieselben
+ * Aktionen ohne Ziehen.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -321,6 +550,7 @@ private fun HomeEntry(
     pager: PagerState,
     scope: CoroutineScope,
     pageCount: Int,
+    rows: Int,
     modifier: Modifier,
     onOpen: () -> Unit,
     onLongPress: () -> Unit,
@@ -330,6 +560,8 @@ private fun HomeEntry(
     val dragging = grid.dragKey == key
     val hover = grid.hover == key
     val angle = wiggleAngle(editing && wiggle && !dragging, key.hashCode())
+    val grow by animateFloatAsState(if (hover) 1.14f else 1f, if (wiggle) spring() else androidx.compose.animation.core.snap(), label = "grow")
+    val haptic = LocalHapticFeedback.current
     val editLabel = stringResource(R.string.home_edit_start)
     val moveLabel = stringResource(R.string.home_move)
     val earlier = stringResource(R.string.home_move_earlier)
@@ -340,6 +572,7 @@ private fun HomeEntry(
         else -> stringResource(R.string.home_remove_named, label)
     }
     val edgePx = with(LocalDensity.current) { 28.dp.toPx() }
+    val folderable = !key.startsWith("folder:") && !key.startsWith("widget:")
     fun remove() {
         val d = grid.draft ?: return
         onChange(
@@ -350,15 +583,24 @@ private fun HomeEntry(
             },
         )
     }
+    fun clearDrag() {
+        grid.edgeJob?.cancel()
+        grid.hoverJob?.cancel()
+        grid.dragKey = null
+        grid.hover = null
+        grid.target = null
+        grid.dockSlot = null
+        grid.dock?.hover(null)
+    }
     Box(
         modifier
             .onGloballyPositioned { grid.items[key] = page to it }
             .graphicsLayer {
-                alpha = if (dragging) .3f else 1f
+                // Der gezogene Eintrag bleibt blass an seiner alten Stelle, bis er abgelegt ist.
+                alpha = if (dragging || grid.landing?.key == key) .3f else 1f
                 rotationZ = angle
-                val s = if (hover) 1.12f else 1f
-                scaleX = s
-                scaleY = s
+                scaleX = grow
+                scaleY = grow
             },
     ) {
         val interaction = if (!editing) {
@@ -369,8 +611,8 @@ private fun HomeEntry(
                 .semantics {
                     customActions = listOf(
                         CustomAccessibilityAction(moveLabel) { onSheet(key); true },
-                        CustomAccessibilityAction(earlier) { grid.draft?.let { onChange(moveBy(it, key, -1)) }; true },
-                        CustomAccessibilityAction(later) { grid.draft?.let { onChange(moveBy(it, key, +1)) }; true },
+                        CustomAccessibilityAction(earlier) { grid.draft?.let { onChange(moveBy(it, key, -1, rows * PHONE_COLUMNS)) }; true },
+                        CustomAccessibilityAction(later) { grid.draft?.let { onChange(moveBy(it, key, +1, rows * PHONE_COLUMNS)) }; true },
                         CustomAccessibilityAction(removeLabel) { remove(); true },
                     )
                 }
@@ -383,13 +625,47 @@ private fun HomeEntry(
                                 grid.dragKey = key
                                 grid.pos = r.localPositionOf(me, local)
                                 grid.grab = local
+                                grid.target = placeOf(grid.draft ?: return@detectDragGestures, key)
+                                haptic.tick()
                             }
                         },
                         onDrag = { change, amount ->
                             if (grid.dragKey != key) return@detectDragGestures
                             change.consume()
                             grid.pos += amount
-                            grid.hover = grid.targetAt(pager.targetPage)?.first
+                            val d = grid.draft ?: return@detectDragGestures
+                            val root = grid.root
+                            // Unten über dem Dock: Platzhalter im Dock statt im Raster.
+                            val dock = grid.dock
+                            val slot = if (dock != null && root != null && root.isAttached && !key.startsWith("widget:") && !key.startsWith("folder:")) dock.slotAt(root.localToWindow(grid.pos)) else null
+                            if (slot != grid.dockSlot) {
+                                grid.dockSlot = slot
+                                dock?.hover(slot)
+                                if (slot != null) haptic.tick()
+                            }
+                            if (slot == null) {
+                                val at = pager.targetPage
+                                val (w, _) = spanOf(key, d)
+                                val cell = grid.cellAt(at, w)
+                                val next = cell?.let { at to it }
+                                if (next != null && next != grid.target) {
+                                    grid.target = next
+                                    haptic.tick()
+                                    grid.hover = null
+                                    grid.hoverJob?.cancel()
+                                    // Über einem Symbol kurz halten (400 ms): Ordner statt Weiterrücken.
+                                    val other = grid.keyAt(at, next.second)
+                                    if (folderable && other != null && other != key && !other.startsWith("widget:")) {
+                                        grid.hoverJob = scope.launch {
+                                            delay(400)
+                                            if (grid.target == next && grid.dragKey == key) {
+                                                grid.hover = other
+                                                haptic.tick()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             // Am Rand gehalten: nach kurzer Zeit die Seite davor bzw. danach (am Ende eine neue).
                             val width = grid.root?.size?.width ?: 0
                             val dir = when {
@@ -417,36 +693,36 @@ private fun HomeEntry(
                             }
                         },
                         onDragEnd = {
-                            grid.edgeJob?.cancel()
                             val d = grid.draft
                             val dragged = grid.dragKey
                             if (d != null && dragged == key) {
-                                val at = pager.targetPage
-                                val target = grid.targetAt(at)
-                                val next = when {
-                                    target != null && target.second -> combine(d, key, target.first, grid.folderName, "f" + System.currentTimeMillis().toString(36))
-                                    else -> grid.insertBefore(at)?.let { moveNextTo(d, key, it) }
-                                        ?: grid.pages.getOrNull(at).orEmpty().lastOrNull { it != key }?.let { moveNextTo(d, key, it, after = true) }
-                                        ?: moveTo(d, key, at, 0)
+                                val slot = grid.dockSlot
+                                val hoverKey = grid.hover
+                                val target = grid.target
+                                when {
+                                    slot != null -> grid.dock?.drop(key, slot)
+                                    hoverKey != null -> grid.change(combine(d, key, hoverKey, grid.folderName, "f" + System.currentTimeMillis().toString(36)))
+                                    target != null -> {
+                                        val (w, _) = spanOf(key, d)
+                                        val to = grid.root?.let { r -> grid.geometry[target.first]?.cellCenter(r, target.second, w) }
+                                        if (wiggle && to != null) grid.landing = Landing(key, grid.pos, to)
+                                        grid.change(placeAt(d, key, target.first, target.second))
+                                    }
                                 }
-                                grid.change(next)
+                                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                             }
-                            grid.dragKey = null
-                            grid.hover = null
+                            clearDrag()
                             // Die Seite ganz zeigen, falls gerade geblättert wurde.
                             if (!pager.isScrollInProgress && pager.currentPageOffsetFraction != 0f) scope.launch { pager.animateScrollToPage(pager.targetPage) }
                         },
-                        onDragCancel = {
-                            grid.edgeJob?.cancel()
-                            grid.dragKey = null
-                            grid.hover = null
-                        },
+                        onDragCancel = { clearDrag() },
                     )
                 }
         }
         Box(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).dashed(editing && !wiggle, c.muted)
-                .then(if (hover) Modifier.border(2.dp, c.accent, RoundedCornerShape(14.dp)) else Modifier)
+                // Ordner beim Ablegen: Ring um das Ziel (auch ohne Bewegung zu sehen).
+                .then(if (hover) Modifier.border(3.dp, c.accent, RoundedCornerShape(14.dp)) else Modifier)
                 .then(interaction),
         ) { content() }
         if (editing) RemoveBadge(removeLabel, Modifier.align(Alignment.TopStart)) { remove() }
@@ -469,20 +745,31 @@ private fun RemoveBadge(label: String, modifier: Modifier, onClick: () -> Unit) 
     }
 }
 
-/** Das gezogene Symbol unter dem Finger. */
+/** Das gezogene Symbol unter dem Finger: vergrößert, mit Schatten; nach dem Loslassen gleitet es in seine Zelle. */
 @Composable
 internal fun BoxScope.DragOverlay(grid: GridState, byKey: Map<String, Program>, folders: List<PhoneFolder>) {
-    val key = grid.dragKey ?: return
+    val landing = grid.landing
+    val glide = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+    androidx.compose.runtime.LaunchedEffect(landing) {
+        if (landing == null) return@LaunchedEffect
+        glide.snapTo(landing.from)
+        glide.animateTo(landing.to, tween(180))
+        grid.landing = null
+    }
+    val key = grid.dragKey ?: landing?.key ?: return
+    val at = if (grid.dragKey != null) grid.pos else glide.value
     val density = LocalDensity.current
     val size = 64
     val half = with(density) { (size / 2).dp.toPx() }
+    val shape = RoundedCornerShape(percent = 23)
     Box(
-        Modifier.offset { IntOffset((grid.pos.x - half).roundToInt(), (grid.pos.y - half).roundToInt()) }
+        Modifier.offset { IntOffset((at.x - half).roundToInt(), (at.y - half).roundToInt()) }
             .graphicsLayer {
-                scaleX = 1.1f
-                scaleY = 1.1f
-                alpha = .92f
-            },
+                scaleX = 1.2f
+                scaleY = 1.2f
+                alpha = .95f
+            }
+            .shadow(14.dp, shape),
     ) {
         when {
             key.startsWith("folder:") -> FolderIcon(folders.firstOrNull { "folder:" + it.id == key }, byKey, size)
@@ -494,12 +781,13 @@ internal fun BoxScope.DragOverlay(grid: GridState, byKey: Map<String, Program>, 
 
 /** Hält den Stand für die Zeiger-Routinen aktuell. */
 @Composable
-internal fun SyncGrid(grid: GridState, draft: PhonePrefs?, pages: List<List<String>>, folderName: String, onChange: (PhonePrefs) -> Unit) {
+internal fun SyncGrid(grid: GridState, draft: PhonePrefs?, pages: List<List<String?>>, folderName: String, dock: DockDrop?, onChange: (PhonePrefs) -> Unit) {
     SideEffect {
         grid.draft = draft
         grid.pages = pages
         grid.folderName = folderName
         grid.change = onChange
+        grid.dock = dock
     }
 }
 

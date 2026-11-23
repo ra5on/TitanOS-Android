@@ -83,6 +83,9 @@ internal class Shell(tab: Tab = Tab.Home, admin: String? = null, compute: String
 
     /** Blatt des NAS-Knopfs auf der Startseite (1.02). */
     var nasSheet by mutableStateOf(false)
+
+    /** Beim Ziehen von der Startseite ins Dock: Platzhalter an dieser Stelle (1.02). */
+    var dockSlot by mutableStateOf<Int?>(null)
     var confirmUnpair by mutableStateOf(false)
 
     /** Startbildschirm im Bearbeiten (null: nicht). */
@@ -137,7 +140,24 @@ internal fun MainShell(graph: AppGraph) {
     val shown = store.shown
     val programs = homePrograms(home.state.programs)
     val programKeys = programs.map { programKey(it.id) }
-    val entries = dockEntries(shown.dock, listOf(DOCK_NOTIFICATIONS) + programKeys)
+    // Im Bearbeiten das Dock des Entwurfs (Ablegen von der Startseite gilt sofort, gespeichert mit „Fertig“).
+    val entries = dockEntries((shell.draft ?: shown).dock, listOf(DOCK_NOTIFICATIONS) + programKeys)
+    val dockGeometry = remember { io.github.ra5on.titanos.ui.components.DockGeometry() }
+    val reach = with(androidx.compose.ui.platform.LocalDensity.current) { 32.dp.toPx() }
+    val currentEntries by androidx.compose.runtime.rememberUpdatedState(entries)
+    val dockDrop = remember(dockGeometry) {
+        object : io.github.ra5on.titanos.home.DockDrop {
+            override fun slotAt(window: androidx.compose.ui.geometry.Offset): Int? =
+                if (currentEntries.size >= io.github.ra5on.titanos.home.DOCK_MAX) null else dockGeometry.slotAt(window, reach)
+            override fun hover(slot: Int?) {
+                shell.dockSlot = slot
+            }
+            override fun drop(key: String, slot: Int) {
+                shell.dockSlot = null
+                shell.draft?.let { shell.draft = io.github.ra5on.titanos.home.dockInsert(it, currentEntries, key, slot) }
+            }
+        }
+    }
 
     // Widgets, deren Daten die Startseite holt (Container und VMs nur, wenn sie dort stehen).
     val kinds = (shell.draft ?: shown).widgets.map { it.kind }.toSet()
@@ -261,7 +281,7 @@ internal fun MainShell(graph: AppGraph) {
     val unread = remember(changes, graph.activeId) { runCatching { Inbox.unread(NotifyRuntime.inbox(context).snapshot()) }.getOrDefault(0) }
     val choices = dockChoices(programs).associateBy { it.key }
     val dockItems = entries.mapNotNull { k -> choices[k]?.let { DockItem(k, it.label, it.icon, if (k == DOCK_NOTIFICATIONS) unread else 0) } }
-    val dock = @Composable { DockBar(dockItems, active, shown.dock.labels, ::onDock) }
+    val dock = @Composable { DockBar(dockItems, active, shown.dock.labels, ::onDock, dropSlot = shell.dockSlot, geometry = dockGeometry) }
 
     // Dock immer (ab Werk) auch in Programmen; aus: nur auf der Startseite, und wie in 1.00 auf den
     // ersten Seiten von Dateien, Fotos und Mitteilungen (die zeichnen es dann selbst).
@@ -272,7 +292,7 @@ internal fun MainShell(graph: AppGraph) {
     Box(Modifier.fillMaxSize().then(if (onHome) Modifier.wallpaper(Titan.colors.dark) else Modifier.background(Titan.colors.bg))) {
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f).fillMaxWidth().then(if (shellDock) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier)) {
-                ShellContent(graph, shell, home, store, files, photos, tabNav, ::openProgram, ::closeAll, toastLater)
+                ShellContent(graph, shell, home, store, files, photos, tabNav, ::openProgram, ::closeAll, toastLater, dockDrop)
             }
             if (shellDock) dock()
         }
@@ -330,6 +350,7 @@ private fun ShellContent(
     openProgram: (String) -> Unit,
     closeAll: () -> Unit,
     toastLater: () -> Unit,
+    dockDrop: io.github.ra5on.titanos.home.DockDrop? = null,
 ) {
     val context = LocalContext.current
     // Systemsteuerung: Reiter, die sie öffnet.
@@ -550,6 +571,8 @@ private fun ShellContent(
                 onNotifications = { closeAll(); shell.tab = Tab.Notifications },
                 onMenu = { shell.drawer = true },
                 onNas = { shell.nasSheet = true },
+                // Ins Dock nur, wenn es unter der Startseite steht.
+                dockDrop = dockDrop,
                 menuBadge = io.github.ra5on.titanos.update.UpdateHint.version != null,
                 banner = io.github.ra5on.titanos.update.UpdateHint.version?.takeIf { io.github.ra5on.titanos.update.UpdateHint.banner(context) }?.let { v ->
                     {

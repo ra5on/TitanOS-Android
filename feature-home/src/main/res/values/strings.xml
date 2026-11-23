@@ -79,6 +79,14 @@
     <string name="home_move">Bewegen …</string>
     <string name="home_move_earlier">Eine Stelle nach vorn</string>
     <string name="home_move_later">Eine Stelle nach hinten</string>
+    <string name="home_move_cell">An eine Stelle …</string>
+    <string name="home_cell_page">Seite %1$d von %2$d</string>
+    <string name="home_cell_row">Zeile %1$d von %2$d</string>
+    <string name="home_cell_col">Spalte %1$d von %2$d</string>
+    <string name="home_cell_less">%1$s, weniger</string>
+    <string name="home_cell_more">%1$s, mehr</string>
+    <string name="home_cell_taken">Dort steht schon etwas; es rückt eine Stelle weiter.</string>
+    <string name="home_cell_here">Hierher setzen</string>
     <string name="home_move_page">Auf eine andere Seite</string>
     <string name="home_page_n">Seite %1$d</string>
     <string name="home_page_of">Seite %1$d von %2$d</string>
@@ -152,6 +160,7 @@
     <string name="hs_dock_remove">%1$s aus dem Dock nehmen</string>
     <string name="hs_dock_add">%1$s ins Dock</string>
     <string name="hs_dock_start">Start ist immer im Dock.</string>
-    <string name="hs_dock_full">Höchstens fünf Plätze. Nimm erst einen heraus.</string>
+    <string name="hs_dock_full">Höchstens 15 Plätze. Nimm erst einen heraus.</string>
+    <string name="hs_dock_pages">Fünf Plätze sind zu sehen; mehr stehen auf weiteren Seiten des Docks (zur Seite wischen).</string>
     <string name="home_not_loaded">Die Einrichtung des Startbildschirms ist noch nicht vom NAS geladen. Ändern geht, sobald das NAS erreichbar ist.</string>
 </resources>

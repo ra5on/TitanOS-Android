@@ -39,5 +39,6 @@
         <item quantity="other">%d ungelesen</item>
     </plurals>
     <string name="ui_dock">Dock</string>
+    <string name="ui_dock_page">Seite %1$d von %2$d</string>
     <string name="ui_undo">Rückgängig</string>
 </resources>
