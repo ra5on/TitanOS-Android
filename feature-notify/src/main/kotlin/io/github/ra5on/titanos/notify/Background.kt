@@ -12,9 +12,7 @@ import android.net.Network
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import android.provider.Settings
 import androidx.core.app.NotificationCompat
-import androidx.core.net.toUri
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -27,8 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
@@ -63,7 +61,7 @@ object NotifyScheduler {
     /** Dauerverbindung nur, wenn an und Android Mitteilungen erlaubt; sonst reicht der Auftrag für die Liste. */
     fun wantsLive(context: Context): Boolean {
         val s = NotifySettingsStore(context).load()
-        return s.enabled && s.live && Poster.permitted(context)
+        return s.enabled && s.live && Poster.permitted(context) && NotifyRuntime.wanted(context).isNotEmpty()
     }
 
     fun cancel(context: Context) {
@@ -82,7 +80,8 @@ object NotifyScheduler {
     @SuppressLint("BatteryLife")
     fun askBatteryExemption(context: Context): Boolean {
         if (batteryExempt(context)) return true
-        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, ("package:" + context.packageName).toUri())
+        // Von Google Play nur die Liste der Akku-Optimierung, keine direkte Frage (core-ui Distribution).
+        val intent = io.github.ra5on.titanos.ui.Distribution.batteryExemptionIntent(context)
         if (context !is android.app.Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return try {
             context.startActivity(intent)
@@ -96,9 +95,9 @@ object NotifyScheduler {
 /** Holt neue Mitteilungen; ohne Kopplung nichts, ohne NAS beim nächsten Mal. */
 class FetchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        NotifyRuntime.fetch(applicationContext)
-        // Hat Android den Dienst beendet (Speicher, Akku), kommt er hier wieder.
-        if (NotifyScheduler.wantsLive(applicationContext) && NotifyRuntime.live.value == LiveState.Off) LiveService.start(applicationContext)
+        NotifyRuntime.fetchAll(applicationContext)
+        // Hat Android den Dienst beendet (Speicher, Akku), kommt er hier wieder (er gleicht die Ströme ab).
+        if (NotifyScheduler.wantsLive(applicationContext) && NotifyRuntime.someStreamOff(applicationContext)) LiveService.start(applicationContext)
         return Result.success()
     }
 }
@@ -117,11 +116,13 @@ fun backoffMillis(attempt: Int, random: Random = Random.Default): Long {
  */
 class LiveService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var loop: Job? = null
 
-    @Volatile
-    private var open: Response? = null
-    private val wake = Channel<Unit>(Channel.CONFLATED)
+    /** Offene Ströme je NAS, damit ein verlorenes Netz sie schließen kann. */
+    private val opens = java.util.concurrent.ConcurrentHashMap<String, Response>()
+    private val loops = HashMap<String, Job>()
+
+    /** Zählt neue Netze; jeder wartende Strom wacht dabei auf. */
+    private val wake = kotlinx.coroutines.flow.MutableStateFlow(0L)
     private var callback: ConnectivityManager.NetworkCallback? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -132,12 +133,12 @@ class LiveService : Service() {
         val cm = getSystemService(ConnectivityManager::class.java)
         callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                wake.trySend(Unit)
+                wake.value = wake.value + 1
             }
 
             override fun onLost(network: Network) {
-                // Die alte Verbindung hängt am verlorenen Netz: schließen, neu verbinden.
-                open?.close()
+                // Die alten Verbindungen hängen am verlorenen Netz: schließen, neu verbinden.
+                opens.values.forEach { runCatching { it.close() } }
             }
         }.also { cb -> runCatching { cm?.registerDefaultNetworkCallback(cb) } }
     }
@@ -163,31 +164,53 @@ class LiveService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (loop?.isActive != true) loop = scope.launch { run() }
+        sync()
         return START_STICKY
     }
 
-    private suspend fun run() {
+    /**
+     * Ein Strom je NAS, dessen Mitteilungen an sind (mehrere NAS). Kommt ein
+     * NAS dazu oder geht eins, gleicht [sync] die Ströme beim nächsten Start
+     * des Dienstes ab (NotifyScheduler.arm).
+     */
+    private fun sync() {
+        val wanted = if (NotifyScheduler.wantsLive(this)) NotifyRuntime.wanted(this).map { it.id }.filter { NotifyRuntime.api(it) != null } else emptyList()
+        synchronized(loops) {
+            for ((id, job) in loops.toMap()) if (id !in wanted || !job.isActive) {
+                job.cancel()
+                opens.remove(id)?.close()
+                loops.remove(id)
+                if (id !in wanted) NotifyRuntime.setLive(id, LiveState.Off)
+            }
+            for (id in wanted) if (loops[id] == null) loops[id] = scope.launch { run(id) }
+            if (loops.isEmpty()) {
+                NotifyRuntime.allOff()
+                stopSelf()
+            }
+        }
+    }
+
+    private suspend fun run(nas: String) {
         var attempt = 0
         while (true) {
-            val api = NotifyRuntime.api()
-            if (api == null || !NotifyScheduler.wantsLive(this)) {
-                NotifyRuntime.setLive(LiveState.Off)
-                stopSelf()
+            val api = NotifyRuntime.api(nas)
+            if (api == null || !NotifyScheduler.wantsLive(this) || !NotifyRuntime.nasOn(this, nas)) {
+                NotifyRuntime.setLive(nas, LiveState.Off)
+                done(nas)
                 return
             }
-            NotifyRuntime.setLive(if (NotifyRuntime.online(this)) LiveState.Connecting else LiveState.Waiting)
+            NotifyRuntime.setLive(nas, if (NotifyRuntime.online(this)) LiveState.Connecting else LiveState.Waiting)
             var quietUpTo = -1L
             var quietEpoch = ""
             try {
-                val since = NotifyRuntime.inbox(this).snapshot().marker
-                api.stream(since, onOpen = { open = it }) { ev ->
+                val since = NotifyRuntime.inbox(this, nas).snapshot().marker
+                api.stream(since, onOpen = { opens[nas] = it }) { ev ->
                     when (ev.event) {
                         "ready" -> {
                             attempt = 0
-                            NotifyRuntime.setLive(LiveState.Connected)
+                            NotifyRuntime.setLive(nas, LiveState.Connected)
                             val head = NotifyApi.decodeHead(ev.data)
-                            val primed = NotifyRuntime.inbox(this).snapshot().primed
+                            val primed = NotifyRuntime.inbox(this, nas).snapshot().primed
                             // Der Rückstand eines Neubeginns (reset) oder des ersten Abgleichs klingelt nicht.
                             if (head != null && (head.reset || !primed)) {
                                 Marker.parse(head.latest)?.let { quietUpTo = it.seq; quietEpoch = it.epoch }
@@ -195,40 +218,52 @@ class LiveService : Service() {
                             // Erster Abgleich: als abgeglichen merken, damit danach Neues klingelt
                             // (die Marke bleibt, bis der Rückstand da ist).
                             if (!primed) {
-                                runBlocking { NotifyRuntime.lock.withLock { NotifyRuntime.take(this@LiveService, emptyList(), "", quiet = true) } }
+                                runBlocking { NotifyRuntime.lock.withLock { NotifyRuntime.take(this@LiveService, nas, emptyList(), "", quiet = true) } }
                             }
                         }
                         "notification" -> NotifyApi.decodeNote(ev.data)?.let { note ->
                             val m = Marker.parse(note.id)
                             val quiet = m != null && m.epoch == quietEpoch && m.seq <= quietUpTo
-                            runBlocking { NotifyRuntime.lock.withLock { NotifyRuntime.take(this@LiveService, listOf(note), note.id, quiet) } }
+                            runBlocking { NotifyRuntime.lock.withLock { NotifyRuntime.take(this@LiveService, nas, listOf(note), note.id, quiet) } }
                         }
-                        "resync" -> runBlocking { NotifyRuntime.fetch(this@LiveService) }
+                        "resync" -> runBlocking { NotifyRuntime.fetch(this@LiveService, nas) }
                     }
                 }
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                // Gerät am NAS beendet, oder ein NAS ohne Mitteilungen (älter): kein Dauerversuch.
+                // Gerät am NAS beendet, oder ein NAS ohne Mitteilungen (älter): kein Dauerversuch für dieses NAS.
                 if (e is io.github.ra5on.titanos.net.DeviceUnknownException || (e is io.github.ra5on.titanos.net.ApiException && e.status in setOf(403, 404))) {
-                    NotifyRuntime.setLive(LiveState.Off)
-                    stopSelf()
+                    NotifyRuntime.setLive(nas, LiveState.Off)
+                    done(nas)
                     return
                 }
             } finally {
-                open = null
+                opens.remove(nas)
             }
-            NotifyRuntime.setLive(LiveState.Waiting)
+            NotifyRuntime.setLive(nas, LiveState.Waiting)
             // Pause, ein neues Netz weckt früher.
-            withTimeoutOrNull(backoffMillis(attempt++)) { wake.receive() }
+            val woke = wake.value
+            withTimeoutOrNull(backoffMillis(attempt++)) { wake.first { it != woke } }
             delay(500)
+        }
+    }
+
+    /** Der Strom eines NAS endet für immer (bis zum nächsten Start); ohne Ströme endet der Dienst. */
+    private fun done(nas: String) {
+        synchronized(loops) {
+            loops.remove(nas)
+            if (loops.isEmpty()) {
+                NotifyRuntime.allOff()
+                stopSelf()
+            }
         }
     }
 
     override fun onDestroy() {
         callback?.let { cb -> runCatching { getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(cb) } }
-        open?.close()
+        opens.values.forEach { runCatching { it.close() } }
         scope.cancel()
-        NotifyRuntime.setLive(LiveState.Off)
+        NotifyRuntime.allOff()
         super.onDestroy()
     }
 
@@ -261,7 +296,7 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED -> {
-                if (NotifyRuntime.api() != null) NotifyScheduler.arm(context)
+                if (NotifyRuntime.nasList().isNotEmpty()) NotifyScheduler.arm(context)
             }
         }
     }

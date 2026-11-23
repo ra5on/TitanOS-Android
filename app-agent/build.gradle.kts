@@ -17,8 +17,8 @@ android {
         applicationId = "io.github.ra5on.titanos.agent"
         minSdk = 33
         targetSdk = 37
-        versionCode = 3
-        versionName = "0.03"
+        versionCode = 100
+        versionName = "1.00"
     }
     signingConfigs {
         if (releaseKeystore != null && releasePassword != null) {
@@ -30,6 +30,20 @@ android {
                 enableV2Signing = true
                 enableV3Signing = true
             }
+        }
+    }
+    // Bauvarianten (PLAN 116, Inhaber 21.11.2026): „github“ wie bisher mit Selbst-Update und Release auf
+    // GitHub; „play“ für Google Play ohne Selbst-Update, mit den Abweichungen aus den Play-Richtlinien
+    // (src/play: Manifest, R.bool.titan_play). Veröffentlicht wird nur github; play entsteht als AAB.
+    // versionName/versionCode stehen nur in defaultConfig (release.yml liest sie dort).
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("github") {
+            dimension = "distribution"
+            isDefault = true
+        }
+        create("play") {
+            dimension = "distribution"
         }
     }
     buildTypes {

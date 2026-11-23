@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TitanOS Office</title>
+<style>
+html, body { margin: 0; height: 100%; background: #14171c; overflow: hidden; }
+iframe { border: 0; width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+<script>
+// Rahmen der App für die Office-Programme von TitanOS (wie WebAppView.svelte
+// im Web): lädt das Programm als iframe vom NAS, gibt ihm die Datei
+// (webapp-open), speichert, was es schickt (webapp-save), mit der
+// Änderungszeit als Schutz (PUT files/content?expect=…). Fragen stellt die
+// App selbst (TitanOffice.ask); Antworten kommen über titanAnswer().
+(() => {
+  const B = window.TitanOffice;
+  if (!B) return;
+  const cfg = JSON.parse(B.config());
+  const frame = document.createElement('iframe');
+  frame.src = cfg.src;
+  frame.setAttribute('allow', 'fullscreen; clipboard-read; clipboard-write');
+  frame.referrerPolicy = 'no-referrer';
+  document.body.appendChild(frame);
+
+  let doc = cfg.path ? { path: cfg.path, mtime: null } : null;
+  // Wie das Programm das offene Dokument selbst nennt, wenn es nach „Speichern unter“ anders heißt (appName im Web).
+  let appName = '';
+  let ready = false;
+  let queue = Promise.resolve();
+  let seq = 0;
+  const asks = new Map();
+
+  const post = (msg, transfer) => { if (frame.contentWindow) frame.contentWindow.postMessage(msg, '*', transfer || []); };
+  const url = (p, q) => '/api/v1/' + p + '?' + new URLSearchParams(q).toString();
+  const base = (p) => p.split('/').pop();
+  const dirOf = (p) => (p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '');
+  const join = (d, n) => (d ? d + '/' + n : n);
+  const extOf = (n) => (n.includes('.') ? n.split('.').pop().toLowerCase() : '');
+  const same = (a, b) => a.normalize('NFC').toLowerCase() === b.normalize('NFC').toLowerCase();
+
+  function ask(kind, data) {
+    return new Promise((resolve) => { const id = ++seq; asks.set(id, resolve); B.ask(kind, JSON.stringify(data), id); });
+  }
+  window.titanAnswer = (id, value) => { const r = asks.get(id); if (r) { asks.delete(id); r(value); } };
+  window.titanCommand = (command) => post({ type: 'webapp-command', command });
+
+  function fromB64(s) {
+    const bin = atob(s); const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out.buffer;
+  }
+  function toB64(buf) {
+    const bytes = new Uint8Array(buf); let s = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  window.titanPicked = (files) => {
+    const list = (files || []).map((f) => ({ name: f.name, bytes: fromB64(f.data) }));
+    post({ type: 'webapp-picked', files: list }, list.map((f) => f.bytes));
+  };
+
+  // Wie protocol.ts mtimeNs: die Änderungszeit genau in Nanosekunden.
+  function mtimeNs(modified) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?(Z|[+-]\d{2}:\d{2})$/.exec(String(modified || '').trim());
+    if (!m) return null;
+    const [, y, mo, d, h, mi, s, frac = '', zone] = m;
+    const ms = Date.UTC(+y, +mo - 1, +d, +h, +mi, +s);
+    let offset = 0;
+    if (zone !== 'Z') { const sign = zone[0] === '-' ? -1 : 1; offset = sign * (+zone.slice(1, 3) * 60 + +zone.slice(4, 6)); }
+    const seconds = BigInt(ms / 1000 - offset * 60);
+    return (seconds * 1000000000n + BigInt(frac.padEnd(9, '0') || '0')).toString();
+  }
+
+  // Eine Anfrage; nach 401 holt die App eine neue Sitzung und es geht einmal weiter.
+  async function call(input, init) {
+    let r = await fetch(input, Object.assign({ credentials: 'same-origin' }, init || {}));
+    if (r.status === 401 && B.renew()) r = await fetch(input, Object.assign({ credentials: 'same-origin' }, init || {}));
+    return r;
+  }
+  async function errorCode(r) { try { return (await r.json()).error.code || String(r.status); } catch (e) { return String(r.status); } }
+  async function props(path) {
+    const r = await call(url('files/properties', { root: cfg.root, path }));
+    if (!r.ok) throw new Error(await errorCode(r));
+    return r.json();
+  }
+  // Speichern über die App (gepinnter Client mit Sitzung); die WebView sendet keine Anfragen mit Inhalt.
+  async function put(path, expect, bytes) {
+    let res;
+    try { res = JSON.parse(B.put(url('files/content', { root: cfg.root, path, expect }), toB64(bytes))); } catch (e) { res = { status: 503, body: '' }; }
+    const status = res.status >= 200 && res.status <= 599 ? res.status : 503;
+    return new Response([204, 205, 304].includes(status) ? null : (res.body || ''), { status, headers: { 'Content-Type': 'application/json' } });
+  }
+  async function mtimeOf(r) {
+    try { const j = await r.json(); return j.mtime ? String(j.mtime) : mtimeNs(j.modified); } catch (e) { return null; }
+  }
+
+  // Datei aus einer anderen App (Öffnen mit): Inhalt und Speichern über die App.
+  function openLocal() {
+    try {
+      const bytes = fromB64(B.readLocal());
+      post({ type: 'webapp-open', name: cfg.name, bytes }, [bytes]);
+      B.opened(bytes.byteLength);
+    } catch (e) {
+      B.error('open', String(e.message || e));
+    }
+  }
+  async function saveLocal(m) {
+    const name = String(m.name || cfg.name);
+    if (!m.saveAs && same(base(name), cfg.name) && cfg.writable) {
+      const r = B.writeLocal(toB64(m.bytes));
+      if (r === 'ok') B.saved(cfg.name);
+      else B.error('save', r);
+      post({ type: 'webapp-saved', ok: r === 'ok' });
+      return;
+    }
+    B.keepOnPhone(name, toB64(m.bytes));
+    post({ type: 'webapp-saved', ok: false });
+  }
+
+  async function openDoc() {
+    try {
+      const p = await props(doc.path);
+      doc.mtime = mtimeNs(p.modified);
+      const r = await call(url('files/download', { root: cfg.root, path: doc.path }));
+      if (!r.ok) throw new Error(await errorCode(r));
+      const bytes = await r.arrayBuffer();
+      post({ type: 'webapp-open', name: base(doc.path), bytes }, [bytes]);
+      B.opened(bytes.byteLength);
+    } catch (e) {
+      console.log('titanos-office: open failed ' + (e && e.stack || e));
+      B.error('open', String(e.message || e));
+    }
+  }
+
+  // Wie saveTarget in protocol.ts.
+  function target(name, saveAs) {
+    if (!doc) return 'dialog';
+    const own = same(base(name), base(doc.path)) || (appName !== '' && same(base(name), appName));
+    if (cfg.bridge === 'adapter') return own ? 'original' : 'dialog';
+    if (saveAs) return 'dialog';
+    const ext = extOf(name);
+    if (ext === extOf(doc.path)) return own ? 'original' : 'created';
+    return cfg.types.includes(ext) ? 'dialog' : 'created';
+  }
+
+  // Neue Datei im Ordner des Dokuments; bei gleichem Namen fragt die App.
+  async function writeNew(name, bytes, adopt) {
+    let chosen = name;
+    let expect = 'none';
+    for (let round = 0; round < 6; round++) {
+      const path = join(cfg.dir, chosen);
+      const r = await put(path, expect, bytes);
+      if (r.ok) {
+        const mtime = await mtimeOf(r);
+        if (adopt) { doc = { path, mtime }; B.adopted(path); }
+        B.saved(path);
+        return true;
+      }
+      const code = await errorCode(r);
+      if (r.status === 409) {
+        const answer = await ask('exists', { name: chosen });
+        if (answer === 'replace') { try { expect = mtimeNs((await props(path)).modified) || 'none'; } catch (e) { expect = 'none'; } continue; }
+        if (answer && answer.startsWith('name:')) { chosen = answer.slice(5); expect = 'none'; continue; }
+        return false;
+      }
+      B.error('save', code);
+      return false;
+    }
+    return false;
+  }
+
+  async function writeOriginal(bytes, expect) {
+    const r = await put(doc.path, expect || doc.mtime || 'none', bytes);
+    if (r.ok) {
+      doc.mtime = await mtimeOf(r);
+      B.saved(doc.path);
+      post({ type: 'webapp-saved', ok: true });
+      return;
+    }
+    const code = await errorCode(r);
+    if (r.status === 409) {
+      const answer = await ask('conflict', { name: base(doc.path) });
+      if (answer === 'overwrite') {
+        try { return writeOriginal(bytes, mtimeNs((await props(doc.path)).modified) || 'none'); } catch (e) { B.error('save', String(e.message || e)); }
+      } else if (answer === 'copy') {
+        const ok = await writeNew(copyName(base(doc.path)), bytes, true);
+        post({ type: 'webapp-saved', ok: false });
+        return ok;
+      }
+      post({ type: 'webapp-saved', ok: false });
+      return;
+    }
+    B.error('save', code);
+    post({ type: 'webapp-saved', ok: false });
+  }
+
+  function copyName(name) {
+    const dot = name.lastIndexOf('.');
+    const stem = dot > 0 ? name.slice(0, dot) : name;
+    const ext = dot > 0 ? name.slice(dot) : '';
+    return stem + ' (' + cfg.copyWord + ')' + ext;
+  }
+
+  async function onSave(m) {
+    const bytes = m.bytes;
+    const name = String(m.name || (doc ? base(doc.path) : 'Dokument'));
+    const t = target(name, !!m.saveAs);
+    if (t === 'original') return writeOriginal(bytes);
+    if (t === 'created') {
+      const answer = await ask('created', { name });
+      if (answer === 'nas') await writeNew(name, bytes, false);
+      else if (answer === 'phone') B.keepOnPhone(name, toB64(bytes));
+      post({ type: 'webapp-saved', ok: false });
+      return;
+    }
+    const answer = await ask('saveas', { name });
+    if (!answer) { post({ type: 'webapp-saved', ok: false }); return; }
+    const ok = await writeNew(answer, bytes, true);
+    if (ok) appName = base(name);
+    post({ type: 'webapp-saved', ok });
+  }
+
+  window.addEventListener('message', (ev) => {
+    if (ev.source !== frame.contentWindow) return;
+    const m = ev.data || {};
+    if (cfg.debug) console.log('titanos-office: ' + m.type);
+    switch (m.type) {
+      case 'webapp-ready':
+        if (ready) return;
+        ready = true;
+        B.ready();
+        if (cfg.local) openLocal();
+        else if (doc) openDoc();
+        else if (cfg.startNew) post({ type: 'webapp-command', command: 'new' });
+        break;
+      case 'webapp-save':
+        if (!(m.bytes instanceof ArrayBuffer)) return;
+        queue = queue.then(() => (cfg.local ? saveLocal(m) : onSave(m))).catch((e) => B.error('save', String(e && e.message || e)));
+        break;
+      case 'webapp-dirty':
+        B.dirty(!!m.dirty);
+        break;
+      case 'webapp-failed':
+        B.error('failed', String(m.text || ''));
+        break;
+      case 'webapp-pick':
+        B.pick(String(m.accept || ''), !!m.multiple);
+        break;
+    }
+  });
+})();
+</script>
+</body>
+</html>

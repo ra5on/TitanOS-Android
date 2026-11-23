@@ -25,13 +25,24 @@ val ALL_PROGRAMS = listOf(
     Program("storage", "storage", "dark"),
     Program("docker", "docker", "blue"),
     Program("vms", "vm", "violet"),
+    Program("lxc", "lxc", "teal"),
     Program("mail", "mail", "blue"),
     Program("calendar", "calendar", "violet"),
     Program("contacts", "contacts", "green"),
+    // KI-Agent in der TitanOS-App wie im Web (nur, wenn das NAS ihn anbietet).
+    Program("agent", "agent", "ember"),
     Program("backup", "backup", "green"),
     Program("nvr", "nvr", "red"),
     Program("terminal", "terminal", "dark"),
     Program("users", "users", "blue"),
+    // Ablage und Werkzeuge wie apps.ts: Plugins (dort im App-Center), Monitor, Protokolle, Aufgabenplaner.
+    Program("plugins", "store", "pink"),
+    Program("monitor", "monitor", "dark"),
+    Program("logs", "logs", "grey"),
+    Program("planner", "planner", "teal"),
+    // Wie apps.ts: Sicherheit (Firewall der Systemsteuerung) und Mein Konto.
+    Program("security", "shield", "green"),
+    Program("account", "account", "grey"),
     Program("settings", "settings", "grey"),
 )
 
@@ -42,18 +53,21 @@ val ALL_PROGRAMS = listOf(
  */
 fun visiblePrograms(role: String, services: Map<String, Boolean>): List<Program> {
     val admin = role == "owner" || role == "admin"
-    val adminOnly = setOf("shares", "storage", "docker", "vms", "backup", "terminal", "users")
-    val optIn = setOf("mail", "calendar", "contacts")
-    val service = mapOf("docker" to "docker", "vms" to "vms")
+    val adminOnly = setOf("shares", "storage", "docker", "vms", "lxc", "backup", "terminal", "users", "security")
+    val optIn = setOf("mail", "calendar", "contacts", "agent")
+    val service = mapOf("docker" to "docker", "vms" to "vms", "lxc" to "lxc")
     return ALL_PROGRAMS.filter { p ->
         when {
-            p.id in adminOnly && !admin -> false
+            (p.id in adminOnly || p.id in ADMIN_TOOL_PROGRAMS) && !admin -> false
             p.id in optIn -> services[p.id] == true
             service[p.id]?.let { services[it] == false } == true -> false
             else -> true
         }
     }
 }
+
+/** Programme von „Ablage und Werkzeuge“ nur für Besitzer/Administratoren (roles: ADMIN in apps.ts). */
+val ADMIN_TOOL_PROGRAMS = setOf("plugins", "monitor", "logs", "planner")
 
 enum class HomeProblem { Offline, NotReady, Locked, Certificate }
 

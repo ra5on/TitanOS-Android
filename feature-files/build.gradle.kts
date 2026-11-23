@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
@@ -45,4 +47,13 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui)
+    implementation(libs.media3.session)
+    testImplementation(libs.robolectric)
+}
+
+// Ein hängender Test beendet den Lauf, statt einen der zwei Gradle-Plätze der VM zu halten.
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(10))
 }

@@ -153,8 +153,8 @@ class PhotosScreenshotTest {
     fun s34_target() = shot("34-fotos-ziel") {
         TargetScreen(
             listOf(FileRoot("share/Fotos", "Fotos", "share", true), FileRoot("share/Media", "Media", "share", true)),
-            failed = false, root = "share/Fotos", dir = "Handy Zeus", yearMonth = true, invalid = false,
-            onRoot = {}, onDir = {}, onYearMonth = {}, onSave = {}, onBack = {},
+            failed = false, root = "share/Fotos", dir = "Handy Zeus", invalid = false,
+            onRoot = {}, onDir = {}, onSave = {}, onBack = {}, note = "Unterordner und Dateinamen stellst du in den Einstellungen ein.",
         )
     }
 

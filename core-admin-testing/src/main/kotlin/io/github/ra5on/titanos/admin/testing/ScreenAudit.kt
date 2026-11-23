@@ -1,0 +1,90 @@
+package io.github.ra5on.titanos.admin.testing
+
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.isRoot
+import androidx.compose.ui.text.TextLayoutResult
+
+/**
+ * Prüfung jedes Bildschirms der Bildtests (Idee aus feature-agent, Bildtest
+ * `schrift200`): meldet
+ * - Text, der nicht in seinen Platz passt oder mit „…“ gekürzt ist,
+ * - Platzhalter `{name}`, die nicht gefüllt sind, und rohe Schlüssel des Webs
+ *   (`storage.create` statt eines Textes),
+ * - Bedienelemente ohne Namen für TalkBack (weder Text noch Beschreibung),
+ * - Umbrüche mitten im Wort (Prüfung aus feature-storage übernommen).
+ *
+ * Prüfregel für alle Module (Abschluss I1, wie E sie ausgelegt hat): einzeilige
+ * Eingabefelder dürfen waagrecht scrollen, und Werte, die wörtlich vom
+ * nachgebauten NAS kommen ([FakeNas.served]), gelten nicht als roher Schlüssel.
+ *
+ * Funde sammeln sich in [found]; der Test schlägt am Ende mit allen fehl.
+ */
+class ScreenAudit {
+    val found = mutableListOf<String>()
+
+    fun check(compose: SemanticsNodeInteractionsProvider, name: String) {
+        for (node in compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()) {
+            val cfg = node.config
+            val named = cfg.getOrNull(SemanticsProperties.Text)?.any { it.text.isNotBlank() } == true ||
+                cfg.getOrNull(SemanticsProperties.ContentDescription)?.any { it.isNotBlank() } == true ||
+                cfg.getOrNull(SemanticsProperties.EditableText) != null
+            if (!named && node.boundsInRoot.width > 0f && node.boundsInRoot.height > 0f) found += "$name: Bedienelement ohne Namen bei ${node.boundsInRoot}"
+        }
+        for (node in compose.onAllNodes(hasAnyAncestor(isRoot()), useUnmergedTree = true).fetchSemanticsNodes()) {
+            val get = node.config.getOrNull(SemanticsActions.GetTextLayoutResult) ?: continue
+            val out = mutableListOf<TextLayoutResult>()
+            get.action?.invoke(out)
+            val r = out.firstOrNull() ?: continue
+            val text = r.layoutInput.text.text
+            // Keine Silbentrennung (Inhaber 21.11.2026 „Ganze Wörter“): automatische Trennung ist ein Fund, auch wenn sie hier nicht greift.
+            if (r.layoutInput.style.hyphens == androidx.compose.ui.text.style.Hyphens.Auto) found += "$name: Silbentrennung eingeschaltet „${text.take(60)}“"
+            // Ein Wert, der wörtlich so vom NAS kommt (Name einer Freigabe, Kennung), ist kein roher Textschlüssel.
+            if (PLACEHOLDER.containsMatchIn(text) || (RAW_KEY.matches(text.trim()) && !FakeNas.served(text.trim()))) found += "$name: Platzhalter „${text.take(80)}“"
+            // Nur zwischen ganzen Wörtern umbrechen (Vorgabe des Inhabers 21.11.2026); Maschinenwerte in
+            // Monoschrift und Kennungen (Ziffern, / _ :) dürfen überall brechen.
+            if (r.layoutInput.style.fontFamily != io.github.ra5on.titanos.ui.generated.TitanFonts.mono) {
+                for (i in 0 until r.lineCount - 1) {
+                    val end = r.getLineEnd(i)
+                    if (end in 1 until text.length && text[end - 1].isLetterOrDigit() && text[end].isLetterOrDigit() && !identifier(text, end)) {
+                        found += "$name: Umbruch im Wort „${text.substring(maxOf(0, end - 12), minOf(text.length, end + 12))}“"
+                    }
+                }
+            }
+            val widest = (0 until r.lineCount).maxOfOrNull { r.getLineRight(it) - r.getLineLeft(it) } ?: 0f
+            val bottom = if (r.lineCount > 0) r.getLineBottom(r.lineCount - 1) else 0f
+            val dots = (0 until r.lineCount).any { r.isLineEllipsized(it) }
+            // Ein einzeiliges Eingabefeld scrollt waagrecht (erlaubt: „umbrechen, scrollen oder Symbol“);
+            // dort zählt nur, dass nichts mit „…“ abgeschnitten oder unten abgeschnitten ist.
+            val editable = node.config.getOrNull(SemanticsProperties.EditableText) != null
+            if ((!editable && widest > node.size.width + 2) || bottom > node.size.height + 2 || dots) {
+                found += "$name: „${text.take(60)}“ (${widest.toInt()}×${bottom.toInt()} in ${node.size})"
+            }
+        }
+    }
+
+    /** Am Ende eines Tests: alle Funde auf einmal. */
+    fun assertClean() {
+        check(found.isEmpty()) { "Funde in den Bildtests:\n" + found.distinct().joinToString("\n") }
+    }
+
+    /** Ob die Zeichenfolge ohne Leerzeichen um [at] eine Kennung ist (Ziffern oder / _ :), kein Wort. */
+    private fun identifier(text: String, at: Int): Boolean {
+        var a = at
+        var b = at
+        while (a > 0 && !text[a - 1].isWhitespace()) a--
+        while (b < text.length && !text[b].isWhitespace()) b++
+        return text.substring(a, b).any { it.isDigit() || it == '/' || it == '_' || it == ':' }
+    }
+
+    companion object {
+        private val PLACEHOLDER = Regex("""\{[a-zA-Z]+\}""")
+        private val RAW_KEY = Regex(
+            """^(storage|share|shares|users|user|plugins|plugin|tools|ops|activity|hwcheck|smart|smartHistory|disktest|tasks|scripts|crypt|cache|btrfs|error|common|ui|taskmanager|logs|monitor|desktop|help|state|status|diskSleep|snapshots|schedule|duration|runs|sysdata|access|account|swap|nav)\.[A-Za-z0-9_.]+$""",
+        )
+    }
+}

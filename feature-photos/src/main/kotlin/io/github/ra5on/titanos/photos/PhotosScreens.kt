@@ -87,6 +87,8 @@ data class PhotosView(
     val tiles: List<Tile> = emptyList(),
     val progress: Progress = Progress(),
     val loading: Boolean = false,
+    /** Über die Schnelleinstellung pausiert (alle NAS), bis man fortsetzt. */
+    val paused: Boolean = false,
 )
 
 @Composable
@@ -135,7 +137,7 @@ fun whenLabel(w: When): String = stringResource(
 )
 
 @Composable
-private fun targetLabel(s: PhotoSettings): String =
+internal fun targetLabel(s: PhotoSettings): String =
     if (s.hasTarget) stringResource(R.string.photos_target_label, s.rootName.ifEmpty { s.root.substringAfter('/') }, s.dir.trim('/'))
     else stringResource(R.string.photos_target_none)
 
@@ -149,6 +151,8 @@ fun PhotosScreen(
     modifier: Modifier = Modifier,
     thumb: @Composable (Tile, Modifier) -> Unit = { t, m -> TilePlaceholder(t, m) },
     bottomBar: (@Composable () -> Unit)? = null,
+    onGallery: (() -> Unit)? = null,
+    onResume: () -> Unit = {},
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val c = Titan.colors
@@ -167,7 +171,22 @@ fun PhotosScreen(
         overlay = overlay,
     ) {
         Spacer(Modifier.height(14.dp))
+        if (view.paused) {
+            Problem(stringResource(R.string.photos_paused), Modifier.padding(bottom = 8.dp))
+            TitanButton(stringResource(R.string.photos_resume), onResume, Modifier.fillMaxWidth().padding(bottom = 12.dp), ButtonKind.Primary)
+        }
         StatusCard(view, onSetUp)
+        if (onGallery != null && view.settings.hasTarget) {
+            Card(Modifier.padding(top = 12.dp)) {
+                ListRow(
+                    stringResource(R.string.gallery_title),
+                    sub = stringResource(R.string.gallery_row_text, view.settings.rootName.ifEmpty { view.settings.root }, view.settings.dir),
+                    icon = { RowIcon(TitanIcons.grid, size = 24.dp) },
+                    chevron = true,
+                    onClick = onGallery,
+                )
+            }
+        }
         if (view.access == Access.Partial) {
             Problem(stringResource(R.string.photos_partial), Modifier.padding(top = 12.dp))
             TitanButton(stringResource(R.string.photos_allow_all), onAllowAccess, Modifier.fillMaxWidth().padding(top = 8.dp), ButtonKind.Primary)
@@ -323,10 +342,11 @@ fun TilePlaceholder(t: Tile, modifier: Modifier) {
 
 /** Menü ⋯ auf der Seite „Fotos“. */
 @Composable
-fun BoxScope.PhotosMenu(onNow: () -> Unit, onFree: () -> Unit, onSettings: () -> Unit, onDismiss: () -> Unit) {
+fun BoxScope.PhotosMenu(onNow: () -> Unit, onFree: () -> Unit, onSettings: () -> Unit, onDismiss: () -> Unit, onGallery: (() -> Unit)? = null) {
     Sheet(onDismiss = onDismiss) {
         Card(background = Titan.colors.bg) {
-            ListRow(stringResource(R.string.photos_now), sub = stringResource(R.string.photos_now_text), icon = { RowIcon(TitanIcons.upload) }, onClick = onNow)
+            onGallery?.let { ListRow(stringResource(R.string.gallery_title), icon = { RowIcon(TitanIcons.grid) }, chevron = true, onClick = it) }
+            ListRow(stringResource(R.string.photos_now), sub = stringResource(R.string.photos_now_text), icon = { RowIcon(TitanIcons.upload) }, divider = onGallery != null, onClick = onNow)
             ListRow(stringResource(R.string.photos_free), sub = stringResource(R.string.photos_free_text), icon = { RowIcon(TitanIcons.trash) }, divider = true, onClick = onFree)
             ListRow(stringResource(R.string.photos_settings), icon = { RowIcon(TitanIcons.gear) }, divider = true, chevron = true, onClick = onSettings)
         }
@@ -335,83 +355,7 @@ fun BoxScope.PhotosMenu(onNow: () -> Unit, onFree: () -> Unit, onSettings: () ->
 
 /** Foto-Sicherung: Einstellungen (Entwurf 31). */
 @Composable
-fun PhotosSettingsScreen(
-    settings: PhotoSettings,
-    folders: List<LocalFolder>,
-    onChange: (PhotoSettings) -> Unit,
-    onTarget: () -> Unit,
-    onFolders: () -> Unit,
-    onWhen: (Kind) -> Unit,
-    onBack: () -> Unit,
-    sample: String = "2026/11",
-    overlay: @Composable BoxScope.() -> Unit = {},
-) {
-    val on = stringResource(UiR.string.ui_on)
-    val off = stringResource(UiR.string.ui_off)
-    Page(
-        topBar = { Box(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.photos_settings_title), onBack = onBack, backLabel = stringResource(UiR.string.ui_back)) } },
-        overlay = overlay,
-    ) {
-        Spacer(Modifier.height(4.dp))
-        Card {
-            ListRow(
-                stringResource(R.string.photos_enable), sub = stringResource(R.string.photos_enable_text),
-                right = { Toggle(settings.enabled, { onChange(settings.copy(enabled = it)) }, on, off) },
-                onClick = { onChange(settings.copy(enabled = !settings.enabled)) },
-            )
-        }
-        SectionHeader(stringResource(R.string.photos_target_section))
-        Card {
-            ListRow(
-                targetLabel(settings),
-                sub = if (settings.yearMonth) stringResource(R.string.photos_year_month, sample) else stringResource(R.string.photos_no_subfolders),
-                icon = { AppIcon("shares", "yellow", 44.dp) },
-                chevron = true,
-                onClick = onTarget,
-            )
-        }
-        SectionHeader(stringResource(R.string.photos_folders_section))
-        Card {
-            val shown = folders.take(2)
-            shown.forEachIndexed { i, f ->
-                FolderRow(f, settings, onChange, divider = i > 0, all = folders)
-            }
-            val rest = folders.drop(2)
-            val next = rest.firstOrNull()?.let { folderName(it) }
-            ListRow(
-                if (next == null) stringResource(R.string.photos_more_folders_plain)
-                else stringResource(R.string.photos_more_folders, next + if (rest.size > 1) " …" else ""),
-                chevron = true,
-                divider = shown.isNotEmpty(),
-                onClick = onFolders,
-            )
-        }
-        SectionHeader(stringResource(R.string.photos_when_section))
-        Card {
-            ListRow(stringResource(R.string.photos_kind_photos), sub = whenLabel(settings.photos), chevron = true, onClick = { onWhen(Kind.Photo) })
-            ListRow(stringResource(R.string.photos_kind_videos), sub = whenLabel(settings.videos), chevron = true, divider = true, onClick = { onWhen(Kind.Video) })
-            ListRow(
-                stringResource(R.string.photos_mobile),
-                sub = stringResource(if (settings.mobileData) R.string.photos_mobile_on else R.string.photos_mobile_off),
-                right = { Toggle(settings.mobileData, { onChange(settings.copy(mobileData = it)) }, on, off) },
-                divider = true,
-                onClick = { onChange(settings.copy(mobileData = !settings.mobileData)) },
-            )
-        }
-        SectionHeader(stringResource(R.string.photos_dupes_section))
-        Card {
-            ListRow(
-                stringResource(R.string.photos_dupes), sub = stringResource(R.string.photos_dupes_text),
-                right = { Toggle(settings.skipDuplicates, { onChange(settings.copy(skipDuplicates = it)) }, on, off) },
-                onClick = { onChange(settings.copy(skipDuplicates = !settings.skipDuplicates)) },
-            )
-        }
-        Spacer(Modifier.navigationBarsPadding())
-    }
-}
-
-@Composable
-private fun folderName(f: LocalFolder): String =
+internal fun folderName(f: LocalFolder): String =
     if (f.path.trim('/') == "DCIM/Camera") stringResource(R.string.photos_camera) else f.name
 
 private fun PhotoSettings.has(f: LocalFolder): Boolean = folders?.contains(f.path) ?: defaultFolder(f.path)
@@ -423,7 +367,7 @@ internal fun PhotoSettings.toggled(f: LocalFolder, all: List<LocalFolder>): Phot
 }
 
 @Composable
-private fun FolderRow(f: LocalFolder, settings: PhotoSettings, onChange: (PhotoSettings) -> Unit, divider: Boolean, all: List<LocalFolder>) {
+internal fun FolderRow(f: LocalFolder, settings: PhotoSettings, onChange: (PhotoSettings) -> Unit, divider: Boolean, all: List<LocalFolder>) {
     val on = stringResource(UiR.string.ui_on)
     val off = stringResource(UiR.string.ui_off)
     ListRow(
@@ -496,13 +440,13 @@ fun TargetScreen(
     failed: Boolean,
     root: String,
     dir: String,
-    yearMonth: Boolean,
     invalid: Boolean,
     onRoot: (FileRoot) -> Unit,
     onDir: (String) -> Unit,
-    onYearMonth: (Boolean) -> Unit,
     onSave: () -> Unit,
     onBack: () -> Unit,
+    title: String = stringResource(R.string.photos_target_title),
+    note: String? = null,
 ) {
     val c = Titan.colors
     val on = stringResource(UiR.string.ui_on)
@@ -510,7 +454,7 @@ fun TargetScreen(
     val selected = stringResource(R.string.photos_selected)
     val notSelected = stringResource(R.string.photos_not_selected)
     Page(
-        topBar = { Box(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.photos_target_title), onBack = onBack, backLabel = stringResource(UiR.string.ui_back)) } },
+        topBar = { Box(Modifier.statusBarsPadding()) { TopBar(title, onBack = onBack, backLabel = stringResource(UiR.string.ui_back)) } },
         bottomBar = {
             Box(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp)) {
                 TitanButton(stringResource(R.string.photos_target_save), onSave, Modifier.fillMaxWidth(), ButtonKind.Primary, enabled = root.isNotEmpty() && dir.isNotBlank())
@@ -538,14 +482,7 @@ fun TargetScreen(
         SectionHeader(stringResource(R.string.photos_target_folder))
         TextInput(dir, onDir, stringResource(R.string.photos_target_folder), placeholder = stringResource(R.string.photos_target_folder_hint))
         if (invalid) Problem(stringResource(R.string.photos_target_invalid), Modifier.padding(top = 8.dp))
-        Spacer(Modifier.height(12.dp))
-        Card {
-            ListRow(
-                stringResource(R.string.photos_year_month, "2026/11"),
-                right = { Toggle(yearMonth, onYearMonth, on, off) },
-                onClick = { onYearMonth(!yearMonth) },
-            )
-        }
+        note?.let { Note(it, Modifier.padding(top = 12.dp)) }
     }
 }
 

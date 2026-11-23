@@ -33,6 +33,7 @@ dependencies {
     lintChecks(project(":lint-rules"))
     implementation(project(":core-ui"))
     implementation(project(":core-net"))
+    implementation(project(":feature-files"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

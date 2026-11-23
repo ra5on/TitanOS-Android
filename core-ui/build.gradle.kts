@@ -38,6 +38,8 @@ dependencies {
     api(libs.compose.material3)
     api(libs.compose.ui.tooling.preview)
     api(libs.androidx.activity.compose)
+    // Faltbare: Buch- und Tischhaltung (Fold.kt).
+    implementation(libs.androidx.window)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit)
 }

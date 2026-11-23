@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="compute_on">on</string>
+    <string name="compute_off">off</string>
+    <string name="compute_loading">Loading …</string>
+    <string name="compute_offline">The NAS cannot be reached right now.</string>
+    <string name="compute_certificate">The NAS certificate has changed. Pair the app again if you changed it yourself.</string>
+    <string name="compute_locked">The session is locked on the NAS. Unlock it in the browser.</string>
+    <string name="compute_more">More actions</string>
+    <string name="compute_actions_for">Actions for %1$s</string>
+    <string name="compute_refresh">Refresh</string>
+    <string name="compute_admin_only">Only owners and administrators see this area.</string>
+</resources>

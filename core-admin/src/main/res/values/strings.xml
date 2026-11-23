@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_locked">Die Sitzung ist gesperrt. Entsperre sie in der App oder im Browser.</string>
+    <string name="admin_certificate">Das Zertifikat des NAS hat sich geändert. Koppele die App neu, wenn du der Änderung traust.</string>
+    <string name="admin_offline">Keine Verbindung zum NAS.</string>
+    <string name="admin_back">Zurück</string>
+    <string name="admin_expand">Aufklappen</string>
+    <string name="admin_collapse">Zuklappen</string>
+    <string name="admin_chart">Verlauf %1$s: zuletzt %2$s, höchstens %3$s, mindestens %4$s</string>
+    <string name="admin_chart_empty">Verlauf %1$s: keine Werte</string>
+    <string name="admin_selected">Ausgewählt</string>
+    <string name="admin_not_selected">Nicht ausgewählt</string>
+    <string name="admin_on">Ein</string>
+    <string name="admin_off">Aus</string>
+    <string name="admin_password_show">Passwort zeigen</string>
+    <string name="admin_password_hide">Passwort verbergen</string>
+    <string name="admin_saved_file">Gespeichert: %1$s</string>
+</resources>

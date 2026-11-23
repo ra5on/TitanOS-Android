@@ -1,0 +1,319 @@
+{
+ "driverUpdate": {
+  "state": "sourceReady",
+  "automatic": true,
+  "canRestore": false,
+  "versions": [],
+  "chosen": "",
+  "bundled": "615.71.09",
+  "running": "615.71.09",
+  "runningLocal": false,
+  "drivers": [
+   "620.12.03",
+   "615.71.09",
+   "590.44.01",
+   "580.105.08"
+  ]
+ },
+ "volume": "Data",
+ "kernel": "6.12.115+deb13-amd64",
+ "plugins": [
+  {
+   "name": "intel-gpu-tools",
+   "title": "Intel GPU Tools",
+   "description": {
+    "de": "Werkzeuge f\u00fcr Intel-Grafik",
+    "en": "Tools for Intel graphics"
+   },
+   "version": "1.0.0",
+   "size": 24000000,
+   "kernel": "",
+   "contains": {
+    "de": [
+     "intel_gpu_top",
+     "vainfo"
+    ],
+    "en": [
+     "intel_gpu_top",
+     "vainfo"
+    ]
+   },
+   "modules": [],
+   "services": [
+    "titanos-intel-gpu-tools.service"
+   ],
+   "installed": true,
+   "enabled": true,
+   "active": true,
+   "path": "",
+   "official": true,
+   "local": false,
+   "download": false,
+   "problem": "",
+   "update": null,
+   "category": "tools"
+  },
+  {
+   "name": "tailscale",
+   "title": "Tailscale",
+   "description": {
+    "de": "Fernzugriff ohne offene Ports",
+    "en": "Remote access without open ports"
+   },
+   "version": "1.0.0",
+   "size": 24000000,
+   "kernel": "",
+   "contains": null,
+   "modules": [],
+   "services": [
+    "titanos-tailscale.service"
+   ],
+   "installed": true,
+   "enabled": true,
+   "active": true,
+   "path": "",
+   "official": true,
+   "local": false,
+   "download": false,
+   "problem": "",
+   "update": null,
+   "category": "remote"
+  },
+  {
+   "name": "netbird",
+   "title": "NetBird",
+   "description": {
+    "de": "Fernzugriff \u00fcber ein NetBird-Netz.",
+    "en": "Remote access through a NetBird network."
+   },
+   "version": "1.0.0",
+   "size": 24000000,
+   "kernel": "",
+   "contains": null,
+   "modules": [],
+   "services": [],
+   "installed": true,
+   "enabled": true,
+   "active": false,
+   "path": "",
+   "official": true,
+   "local": false,
+   "download": false,
+   "problem": "activation",
+   "update": null,
+   "category": "remote"
+  },
+  {
+   "name": "nvidia",
+   "title": "NVIDIA-Treiber",
+   "description": {
+    "de": "Treiber und Container Toolkit f\u00fcr NVIDIA-Grafikkarten",
+    "en": "NVIDIA driver and container toolkit"
+   },
+   "version": "615.71.09-1",
+   "size": 120000000,
+   "kernel": "6.12.115+deb13-amd64",
+   "contains": null,
+   "modules": [
+    "nvidia",
+    "nvidia_uvm"
+   ],
+   "services": [],
+   "installed": true,
+   "enabled": true,
+   "active": true,
+   "path": "",
+   "official": true,
+   "local": false,
+   "download": false,
+   "problem": "",
+   "update": null,
+   "category": "graphics"
+  },
+  {
+   "name": "wangxun-nic",
+   "title": "Wangxun-Netzwerkkarten",
+   "description": {
+    "de": "Wangxun-Netzwerkkarten: Beschreibung",
+    "en": "Wangxun-Netzwerkkarten: description"
+   },
+   "version": "0.31.0",
+   "size": 176128,
+   "kernel": "6.12.115+deb13-amd64",
+   "contains": null,
+   "modules": [
+    "ngbe",
+    "txgbe"
+   ],
+   "services": [],
+   "installed": false,
+   "enabled": false,
+   "active": false,
+   "path": "",
+   "official": true,
+   "local": false,
+   "download": true,
+   "problem": "",
+   "update": null,
+   "category": "network",
+   "license": "GPL-2.0-only",
+   "upstream": {
+    "name": "Linux (Debian linux-source)",
+    "url": "https://git.kernel.org/",
+    "version": "6.12.113 (Debian 6.12.113-1)"
+   },
+   "sources": [
+    "https://snapshot.debian.org/package/linux/6.12.113-1/",
+    "wangxun-nic-sources.tar.gz"
+   ],
+   "details": {
+    "de": {
+     "when": "Wenn eine Wangxun-Karte eingebaut ist.",
+     "hardware": [
+      "txgbe: Wangxun SP1000 und WX1820"
+     ],
+     "changes": "L\u00e4dt ngbe und txgbe.",
+     "limits": [
+      "Auf echter Hardware nicht gepr\u00fcft."
+     ],
+     "footprint": "Etwa 130 KB."
+    },
+    "en": {
+     "when": "When a Wangxun card is installed.",
+     "hardware": [
+      "txgbe: Wangxun SP1000 and WX1820"
+     ],
+     "changes": "Loads ngbe and txgbe.",
+     "limits": [
+      "Not tested on real hardware."
+     ],
+     "footprint": "About 130 KB."
+    }
+   },
+   "devices": [
+    {
+     "key": "pci:8088:1001",
+     "bus": "pci",
+     "address": "0000:03:00.0",
+     "name": "Wangxun Ethernet Controller RP1000 for 10GbE SFP+"
+    }
+   ],
+   "licenseUrl": "https://example.org/licenses"
+  },
+  {
+   "name": "werkzeug",
+   "title": "Werkzeug",
+   "description": {
+    "de": "Werkzeug: Beschreibung",
+    "en": "Werkzeug: description"
+   },
+   "version": "1.0.0",
+   "size": 24000000,
+   "kernel": "",
+   "contains": null,
+   "modules": [],
+   "services": [],
+   "installed": true,
+   "enabled": true,
+   "active": true,
+   "path": "",
+   "official": false,
+   "local": false,
+   "download": false,
+   "problem": "",
+   "update": {
+    "path": "/mnt/Data/media/werkzeug.plugin.json",
+    "version": "2.0",
+    "official": false
+   },
+   "category": "tools",
+   "source": "s1"
+  },
+  {
+   "name": "coral-usb",
+   "title": "Coral-USB-Helfer",
+   "description": {
+    "de": "Coral-USB-Helfer: Beschreibung",
+    "en": "Coral-USB-Helfer: description"
+   },
+   "version": "1.0.0",
+   "size": 24000000,
+   "kernel": "6.1.0",
+   "contains": null,
+   "modules": [],
+   "services": [],
+   "installed": false,
+   "enabled": false,
+   "active": false,
+   "path": "",
+   "official": true,
+   "local": false,
+   "download": true,
+   "problem": "kernel",
+   "update": null,
+   "category": "sensors"
+  },
+  {
+   "name": "community-fan",
+   "title": "L\u00fcfter-Werkzeug",
+   "description": {
+    "de": "L\u00fcfter-Werkzeug: Beschreibung",
+    "en": "L\u00fcfter-Werkzeug: description"
+   },
+   "version": "1.0.0",
+   "size": 24000000,
+   "kernel": "",
+   "contains": null,
+   "modules": [],
+   "services": [],
+   "installed": false,
+   "enabled": false,
+   "active": false,
+   "path": "",
+   "official": false,
+   "local": false,
+   "download": true,
+   "problem": "",
+   "update": null,
+   "category": "sensors",
+   "source": "s1"
+  }
+ ],
+ "catalog": {
+  "release": "1.18.0",
+  "state": "ready"
+ },
+ "recommendations": [
+  {
+   "plugin": "wangxun-nic",
+   "title": "Wangxun-Netzwerkkarten",
+   "category": "network",
+   "devices": [
+    {
+     "key": "pci:8088:1001",
+     "bus": "pci",
+     "address": "0000:03:00.0",
+     "name": "Wangxun Ethernet Controller RP1000 for 10GbE SFP+"
+    }
+   ]
+  }
+ ],
+ "dismissed": 1,
+ "sources": [
+  {
+   "id": "s1",
+   "name": "Beispiel-Quelle",
+   "url": "https://example.org/plugins/plugins.json",
+   "added": "2026-11-01T10:00:00Z",
+   "plugins": 2
+  },
+  {
+   "id": "s2",
+   "name": "Kaputte Quelle",
+   "url": "https://broken.example.org/plugins.json",
+   "added": "2026-11-02T10:00:00Z",
+   "plugins": 0,
+   "error": "HTTP 404"
+  }
+ ]
+}

@@ -1,7 +1,10 @@
 package io.github.ra5on.titanos.widgets
 
 import android.content.Context
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
 import android.content.Intent
+import io.github.ra5on.titanos.net.NasRegistry
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -18,6 +21,9 @@ import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.state.updateAppWidgetState
+import androidx.glance.currentState
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
@@ -51,11 +57,43 @@ private object W {
     val agentChip = ColorProvider(day = Color(0x33FFFFFF), night = Color(0x33FFFFFF))
 }
 
-private fun launch(context: Context, extra: String? = null): Action {
+private fun launch(context: Context, extra: String? = null, nas: String? = null): Action {
     val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: Intent()
     if (extra != null) intent.putExtra(extra, true)
+    // Tippen öffnet die App beim NAS des Widgets.
+    if (nas != null) intent.putExtra(NasRegistry.EXTRA_NAS, nas)
     return actionStartActivity(intent)
 }
+
+/** Das NAS eines Widgets und ob es auf dem Sperrbildschirm liegt (dort ohne Namen der Volumes). */
+private fun placeOf(context: Context, id: GlanceId): Pair<String, Boolean> {
+    val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }.getOrNull()
+        ?: return WidgetRuntime.active() to false
+    val options = AppWidgetManager.getInstance(context).getAppWidgetOptions(appWidgetId)
+    val category = options.getInt(AppWidgetManager.OPTION_APPWIDGET_HOST_CATEGORY, AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN)
+    return WidgetStore.nasFor(context, appWidgetId) to (category and AppWidgetProviderInfo.WIDGET_CATEGORY_KEYGUARD != 0)
+}
+
+/**
+ * Marke im Glance-Zustand jedes Widgets: [redraw] setzt sie neu, damit ein
+ * laufendes Widget wirklich neu liest (Daten außerhalb des Glance-Zustands
+ * sieht die Komposition sonst erst nach dem Ende ihrer Sitzung).
+ */
+internal val STAMP = longPreferencesKey("stamp")
+
+/** Zeichnet alle Widgets dieser Art mit neu gelesenen Daten (NAS gewählt, neuer Stand). */
+suspend fun GlanceAppWidget.redraw(context: Context) {
+    val manager = GlanceAppWidgetManager(context)
+    for (id in manager.getGlanceIds(this.javaClass)) {
+        updateAppWidgetState(context, id) { it[STAMP] = System.currentTimeMillis() }
+        update(context, id)
+    }
+}
+
+/** Mit mehreren NAS steht der Name dabei. */
+private fun severalNas(): Boolean = WidgetRuntime.nasList().size > 1
+
+private fun nasName(nas: String): String = WidgetRuntime.nasList().firstOrNull { it.id == nas }?.name.orEmpty()
 
 private fun time(atMs: Long): String = if (atMs <= 0) "" else DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(atMs))
 
@@ -70,12 +108,17 @@ private fun Card(onClick: Action, content: @Composable () -> Unit) {
 /** NAS-Zustand mit Volumes (Entwurf 82): Zustand in Worten, nie nur Farbe. */
 class NasWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val s = WidgetStore.nas(context)
-        provideContent { GlanceTheme { NasContent(context, s) } }
+        provideContent {
+            // Neu lesen, sobald redraw die Marke setzt.
+            currentState(STAMP)
+            val (nas, locked) = placeOf(context, id)
+            val s = WidgetStore.nas(context, nas)
+            GlanceTheme { NasContent(context, s, nas, locked) }
+        }
     }
 
     @Composable
-    private fun NasContent(context: Context, s: NasSnapshot) {
+    private fun NasContent(context: Context, s: NasSnapshot, nas: String, locked: Boolean) {
         val title = when (s.state) {
             "ok" -> context.getString(R.string.w_ok)
             "problem" -> context.resources.getQuantityString(R.plurals.w_problem, s.problems, s.problems)
@@ -84,10 +127,10 @@ class NasWidget : GlanceAppWidget() {
             else -> context.getString(R.string.w_offline)
         }
         val good = s.state == "ok"
-        Card(launch(context)) {
+        Card(launch(context, nas = nas)) {
             Column(GlanceModifier.fillMaxWidth()) {
                 Text(
-                    listOf(s.hostname, title).filter { it.isNotBlank() }.joinToString(" · "),
+                    listOf(s.hostname.ifBlank { nasName(nas) }, title).filter { it.isNotBlank() }.joinToString(" · "),
                     style = TextStyle(color = if (good) W.text else W.warn, fontSize = 16.sp, fontWeight = FontWeight.Bold),
                 )
                 val parts = listOfNotNull(
@@ -97,7 +140,8 @@ class NasWidget : GlanceAppWidget() {
                 )
                 if (parts.isNotEmpty()) Text(parts.joinToString(" · "), style = TextStyle(color = W.muted, fontSize = 13.sp))
                 Spacer(GlanceModifier.height(8.dp))
-                for (v in s.volumes) {
+                // Auf dem Sperrbildschirm sieht jeder das Widget: nur der Zustand, keine Namen der Volumes.
+                for (v in if (locked) emptyList() else s.volumes) {
                     Text(context.getString(R.string.w_volume, v.name, v.percent), style = TextStyle(color = W.text, fontSize = 13.sp, fontWeight = FontWeight.Medium))
                     LinearProgressIndicator(
                         progress = v.percent / 100f,
@@ -115,12 +159,15 @@ class NasWidget : GlanceAppWidget() {
 /** Foto-Sicherung (Entwurf 82): Stand in Worten, Tippen öffnet die App. */
 class PhotosWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val s = WidgetStore.photos(context)
         provideContent {
+            currentState(STAMP)
+            val (nas, _) = placeOf(context, id)
+            val s = WidgetStore.photos(context, nas)
+            val title = if (severalNas()) context.getString(R.string.w_photos_nas, nasName(nas)) else context.getString(R.string.w_photos)
             GlanceTheme {
-                Card(launch(context, EXTRA_OPEN_PHOTOS)) {
+                Card(launch(context, EXTRA_OPEN_PHOTOS, nas)) {
                     Column(GlanceModifier.fillMaxWidth()) {
-                        Text(context.getString(R.string.w_photos), style = TextStyle(color = W.text, fontSize = 16.sp, fontWeight = FontWeight.Bold))
+                        Text(title, style = TextStyle(color = W.text, fontSize = 16.sp, fontWeight = FontWeight.Bold))
                         Text(
                             if (s.line.isBlank()) context.getString(R.string.w_photos_open) else s.line,
                             style = TextStyle(color = if (s.enabled && s.upToDate) W.ok else W.muted, fontSize = 13.sp),

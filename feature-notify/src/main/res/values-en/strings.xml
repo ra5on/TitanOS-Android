@@ -28,7 +28,7 @@
     <string name="notify_battery_text">Needed so that Android does not cut the connection</string>
     <string name="notify_battery_ask">Needed so that Android does not cut the connection. Tap to allow it.</string>
     <string name="notify_unifiedpush">Use UnifiedPush</string>
-    <string name="notify_unifiedpush_text">When an app like ntfy is installed – saves battery because several apps share one connection. Comes in a later test version.</string>
+    <string name="notify_unifiedpush_text">When an app like ntfy is installed – saves battery because several apps share one connection. Comes in a later version.</string>
     <string name="notify_permission">Allow notifications</string>
     <string name="notify_permission_text">Otherwise Android shows nothing; the list in the app still fills up.</string>
     <string name="notify_permission_denied">Android declined; can be changed in the app\'s Android settings.</string>

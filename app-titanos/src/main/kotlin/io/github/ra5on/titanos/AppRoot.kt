@@ -1,5 +1,10 @@
 package io.github.ra5on.titanos
 
+import android.Manifest
+import android.provider.CalendarContract
+import android.provider.ContactsContract
+import io.github.ra5on.titanos.pim.sync.PimSync
+import io.github.ra5on.titanos.pim.sync.SyncStore
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
@@ -10,10 +15,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.glance.appwidget.updateAll
+import io.github.ra5on.titanos.widgets.redraw
 import io.github.ra5on.titanos.photos.upToDate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,19 +37,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
-import io.github.ra5on.titanos.files.DeleteDialog
-import io.github.ra5on.titanos.files.FileSheet
-import io.github.ra5on.titanos.files.FolderSheet
-import io.github.ra5on.titanos.files.FilesHomeScreen
 import io.github.ra5on.titanos.files.FilesModel
-import io.github.ra5on.titanos.files.FolderScreen
-import io.github.ra5on.titanos.files.Location
-import io.github.ra5on.titanos.files.RenameDialog
-import io.github.ra5on.titanos.files.TransferState
-import io.github.ra5on.titanos.files.TransfersScreen
 import io.github.ra5on.titanos.home.HomeModel
 import io.github.ra5on.titanos.home.HomeScreen
-import io.github.ra5on.titanos.model.FileEntry
 import io.github.ra5on.titanos.net.AddressKind
 import io.github.ra5on.titanos.net.PairLink
 import io.github.ra5on.titanos.net.ServerAddress
@@ -93,23 +91,34 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
         }
     }
     var step by rememberSaveable { mutableStateOf(SetupStep.Welcome) }
+    // Ein Kopplungslink, während schon ein NAS gekoppelt ist: erst fragen, dann ein weiteres NAS hinzufügen.
+    var addLink by remember { mutableStateOf<PairLink?>(null) }
+    var askLink by remember { mutableStateOf<PairLink?>(null) }
     LaunchedEffect(link) {
         if (link != null) {
-            pairingModel.startFromLink(link)
-            step = SetupStep.Confirm
+            if (graph.pairing == null) {
+                pairingModel.startFromLink(link)
+                step = SetupStep.Confirm
+            } else {
+                // Ein fremder Link koppelt nie still: deutlicher Hinweis vorher, das neue NAS wird nicht gewählt.
+                askLink = link
+            }
             onLinkTaken()
         }
     }
+    val adding = graph.adding
     when {
-        pairing == null -> SetupFlow(graph, pairingModel, step) { step = it }
+        pairing == null -> SetupFlow(graph, pairingModel, step, { step = it })
+        adding != null -> AddFlow(graph, adding, addLink, onLinkUsed = { addLink = null }) { if (adding.activate) permissionsPending = true }
         permissionsPending -> PermissionsRoute(
             onNext = { permissionsPending = false; step = SetupStep.Welcome },
             photoPermissions = MediaAccess.PERMISSIONS,
-            photosOn = { SettingsStore(context).load().enabled && MediaAccess.access(context) != Access.None },
+            // Je NAS eigene Einstellungen: die des gerade gekoppelten (gewählten) NAS.
+            photosOn = { SettingsStore(context, graph.activeId).load().enabled && MediaAccess.access(context) != Access.None },
             photosPartial = { MediaAccess.access(context) == Access.Partial },
             // Eingeschaltet wird hier; das Ziel wählt man danach unter Fotos.
             onPhotos = { on ->
-                graph.photos?.update(SettingsStore(context).load().copy(enabled = on)) ?: SettingsStore(context).let { it.save(it.load().copy(enabled = on)) }
+                graph.photos?.update(SettingsStore(context, graph.activeId).load().copy(enabled = on)) ?: SettingsStore(context, graph.activeId).let { it.save(it.load().copy(enabled = on)) }
             },
             // Mitteilungen ohne Google; danach die Bitte um die Akku-Ausnahme (TECHNIK §5).
             notifyOn = { notificationsOn(context) },
@@ -117,13 +126,67 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
                 setNotificationsOn(context, on)
                 if (on) NotifyScheduler.askBatteryExemption(context)
             },
+            // Kontakte und Kalender über das Android-Konto der Kopplung (feature-pim).
+            contactsPermissions = arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS),
+            calendarPermissions = arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR),
+            pimOn = { kind -> SyncStore(context, graph.activeProfile?.let(graph::pimName)).load().let { if (kind == "contacts") it.contacts else it.calendars } },
+            onPim = { kind, on ->
+                val store = SyncStore(context, graph.activeProfile?.let(graph::pimName))
+                store.save(store.load().let { if (kind == "contacts") it.copy(contacts = on) else it.copy(calendars = on) })
+                PimSync.configure(context)
+                if (on) PimSync.requestNow(context, manual = false, only = if (kind == "contacts") ContactsContract.AUTHORITY else CalendarContract.AUTHORITY)
+            },
         )
-        else -> MainShell(graph)
+        // Je NAS fängt die Oberfläche neu an (keine Seite behält die Verbindung des vorigen NAS);
+        // die Sperre beim Öffnen liegt außen, damit ein Wechsel des NAS nicht neu sperrt.
+        else -> AppLock {
+            Box(Modifier.fillMaxSize()) {
+                androidx.compose.runtime.key(graph.nasEpoch) { MainShell(graph) }
+                // „Schnell finden“ (Palette.kt): über der Startseite wie über dem Arbeitsplatz.
+                if (graph.openPalette) CommandPalette(graph) { graph.openPalette = false }
+                askLink?.let { l ->
+                    ConfirmDialog(
+                        title = stringResource(R.string.nas_link_title),
+                        text = stringResource(R.string.nas_link_text, l.addresses.joinToString(", ") { it.address.server }),
+                        actions = listOf(
+                            DialogAction(stringResource(R.string.nas_link_go)) {
+                                askLink = null
+                                if (graph.adding == null) graph.beginAdd(fromLink = true)
+                                addLink = l
+                            },
+                            DialogAction(stringResource(UiR.string.ui_cancel)) { askLink = null },
+                        ),
+                        onDismiss = { askLink = null },
+                    )
+                }
+            }
+        }
     }
 }
 
+/** „NAS hinzufügen“: derselbe Ablauf wie beim ersten Koppeln, mit eigenem Schlüssel; Zurück bricht ab. */
 @Composable
-private fun SetupFlow(graph: AppGraph, model: PairingModel, step: SetupStep, go: (SetupStep) -> Unit) {
+private fun AddFlow(graph: AppGraph, adding: io.github.ra5on.titanos.net.AddingPairingStore, link: PairLink?, onLinkUsed: () -> Unit, onPaired: () -> Unit) {
+    val context = LocalContext.current
+    val model: PairingModel = viewModel(key = "add-" + adding.id) {
+        PairingModel(graph.addingKey(adding), adding, graph.shared, defaultDeviceName(context)) { _ ->
+            graph.added(adding)
+            onPaired()
+        }
+    }
+    var step by rememberSaveable(adding.id) { mutableStateOf(SetupStep.Welcome) }
+    LaunchedEffect(link) {
+        if (link != null) {
+            model.startFromLink(link)
+            step = SetupStep.Confirm
+            onLinkUsed()
+        }
+    }
+    SetupFlow(graph, model, step, { step = it }, onCancelAdd = { graph.cancelAdd() })
+}
+
+@Composable
+private fun SetupFlow(graph: AppGraph, model: PairingModel, step: SetupStep, go: (SetupStep) -> Unit, onCancelAdd: (() -> Unit)? = null) {
     val context = LocalContext.current
     var invalidScan by remember { mutableStateOf(false) }
     val scan = rememberLauncherForActivityResult(ScanContract()) { result ->
@@ -153,20 +216,31 @@ private fun SetupFlow(graph: AppGraph, model: PairingModel, step: SetupStep, go:
         }
     }
     when (step) {
-        SetupStep.Welcome -> WelcomeScreen(
-            onScan = {
-                scan.launch(
-                    ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt(scanPrompt)
-                        .setBeepEnabled(false).setOrientationLocked(false),
-                )
-            },
-            onManual = { go(SetupStep.Manual) },
-            problem = when {
-                invalidScan -> stringResource(PairR.string.pair_scan_invalid)
-                graph.unpairedByNas -> stringResource(R.string.app_unpaired)
-                else -> null
-            },
-        )
+        SetupStep.Welcome -> Box(Modifier.fillMaxSize()) {
+            if (onCancelAdd != null) BackHandler(onBack = onCancelAdd)
+            WelcomeScreen(
+                onScan = {
+                    scan.launch(
+                        ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE).setPrompt(scanPrompt)
+                            .setBeepEnabled(false).setOrientationLocked(false),
+                    )
+                },
+                onManual = { go(SetupStep.Manual) },
+                problem = when {
+                    invalidScan -> stringResource(PairR.string.pair_scan_invalid)
+                    graph.unpairedByNas && onCancelAdd == null -> stringResource(R.string.app_unpaired)
+                    else -> null
+                },
+                title = if (onCancelAdd != null) stringResource(R.string.nas_add) else null,
+                text = if (onCancelAdd != null) stringResource(R.string.nas_add_text) else null,
+            )
+            // Weiteres NAS: sichtbarer Weg zurück (nicht nur die Zurück-Geste).
+            if (onCancelAdd != null) {
+                Box(Modifier.statusBarsPadding().padding(start = 6.dp, top = 4.dp)) {
+                    io.github.ra5on.titanos.ui.components.IconButton(TitanIcons.back, stringResource(UiR.string.ui_back), onCancelAdd)
+                }
+            }
+        }
         SetupStep.Manual -> {
             BackHandler { go(SetupStep.Welcome) }
             ManualScreen(
@@ -196,24 +270,27 @@ private fun SetupFlow(graph: AppGraph, model: PairingModel, step: SetupStep, go:
 
 private enum class Tab { Home, Files, Photos, Notifications }
 
-private sealed interface FilesRoute {
-    data object Roots : FilesRoute
-    data class Folder(val location: Location) : FilesRoute
-    data object Transfers : FilesRoute
-    data object Offline : FilesRoute
-    data class OfflineFolder(val pin: io.github.ra5on.titanos.files.OfflinePin) : FilesRoute
-}
-
 @Composable
 private fun MainShell(graph: AppGraph) {
+    // Systemsteuerung: Darstellung des Kontos (auch am Arbeitsplatz).
+    AppearanceSync(graph)
+    // Arbeitsplatz wie im Web (feature-workspace, WorkspaceHost.kt): am Monitor und in breiten Fenstern.
+    if (workspaceFirst(graph)) return
     val context = LocalContext.current
     val later = stringResource(R.string.app_later_toast)
     val toastLater = { Toast.makeText(context, later, Toast.LENGTH_SHORT).show() }
     var tab by rememberSaveable { mutableStateOf(Tab.Home) }
-    var filesRoute by remember { mutableStateOf<FilesRoute>(FilesRoute.Roots) }
     val api = graph.api ?: return
     val files = graph.files ?: return
     val photos = graph.photos ?: return
+    // Systemsteuerung: Reiter, die sie öffnet.
+    LaunchedEffect(graph.openTab) {
+        when (graph.openTab) {
+            "files" -> { tab = Tab.Files; files.push(io.github.ra5on.titanos.files.FilesRoute.Settings) }
+            "notifications" -> tab = Tab.Notifications
+        }
+        graph.openTab = null
+    }
     // Widget „Fotos“: den Stand, den die Startseite zeigt, auch dort.
     val photoLine = io.github.ra5on.titanos.photos.homeTileText(photos.view)
     LaunchedEffect(photoLine, photos.view.upToDate, photos.view.settings.enabled) {
@@ -224,7 +301,7 @@ private fun MainShell(graph: AppGraph) {
             atMs = System.currentTimeMillis(),
         )
         if (io.github.ra5on.titanos.widgets.WidgetStore.savePhotos(context, snap)) {
-            runCatching { io.github.ra5on.titanos.widgets.PhotosWidget().updateAll(context) }
+            runCatching { io.github.ra5on.titanos.widgets.PhotosWidget().redraw(context) }
         }
     }
     // Tippen auf das Widget „Fotos“ öffnet den Reiter.
@@ -246,8 +323,29 @@ private fun MainShell(graph: AppGraph) {
         ) { tab = Tab.valueOf(it) }
         Box(Modifier.navigationBarsPadding())
     }
-    // Je Kopplung ein eigenes Modell, sonst behielte es nach neuem Koppeln die alte Verbindung.
-    val home: HomeModel = viewModel(key = "home-" + graph.pairing?.device) { HomeModel(api, { graph.sessions.user?.role ?: "user" }, graph.pairing?.hostname.orEmpty()) }
+    // Je Kopplung (und Cluster-Knoten) ein eigenes Modell, sonst behielte es nach neuem Koppeln die alte Verbindung.
+    val home: HomeModel = viewModel(key = "home-" + graph.activeId + "-" + graph.pairing?.device + "-" + graph.pairing?.node) {
+        HomeModel(api, { graph.sessions.user?.role ?: "user" }, graph.pairing?.let { it.nodeName.ifBlank { it.hostname } }.orEmpty())
+    }
+    // Ein NAS aus einem Link ist dazugekommen, aber nicht gewählt: sagen, wo man es findet.
+    val quiet = graph.addedQuietly
+    if (quiet != null) {
+        val text = stringResource(R.string.nas_link_added, quiet)
+        LaunchedEffect(quiet) {
+            Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+            graph.addedQuietly = null
+        }
+    }
+    // Ein NAS hat die Kopplung beendet, andere sind noch da: sagen, welches.
+    val ended = graph.endedByNas
+    if (ended != null) {
+        val text = stringResource(R.string.nas_ended, ended)
+        LaunchedEffect(ended) {
+            Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+            graph.endedByNas = null
+        }
+    }
+
     DisposableEffect(tab) {
         if (tab == Tab.Home) {
             home.start()
@@ -265,17 +363,65 @@ private fun MainShell(graph: AppGraph) {
         val job = resumeScope.launch { NotifyRuntime.fetch(context) }
         onPauseOrDispose { job.cancel() }
     }
+    // Programme über der Leiste: Ablage und Werkzeuge (Admin.kt) und Rechnen (Compute.kt).
+    var admin by rememberSaveable { mutableStateOf<String?>(null) }
+    var compute by rememberSaveable { mutableStateOf<String?>(null) }
+    // Eine getippte Mitteilung schließt, was offen ist; sonst läge ihr Ziel dahinter.
+    fun closePrograms() {
+        admin = null
+        compute = null
+        graph.openProgram = null
+        graph.programLink = null
+    }
     // Getippte Mitteilung: zur Liste.
     val openList by NotifyRuntime.openList.collectAsStateWithLifecycle()
     LaunchedEffect(openList) {
         if (openList) {
+            closePrograms()
             tab = Tab.Notifications
             NotifyRuntime.listOpened()
         }
     }
+    // Mitteilung mit Link: das Programm an dieser Stelle öffnen, über den Router wie jeder Link (Links.kt).
+    val openLink by NotifyRuntime.openLink.collectAsStateWithLifecycle()
+    LaunchedEffect(openLink) {
+        val link = openLink ?: return@LaunchedEffect
+        closePrograms()
+        openLink(context, graph, link) { tab = Tab.Notifications }
+        NotifyRuntime.linkOpened()
+    }
+    // Ein Treffer aus „Schnell finden“: was offen ist, schließt; dann über den Router (Palette.kt, Links.kt).
+    LaunchedEffect(graph.paletteLink) {
+        val link = graph.paletteLink ?: return@LaunchedEffect
+        graph.paletteLink = null
+        closePrograms()
+        graph.openNasList = false
+        graph.openAbout = false
+        graph.openVpn = false
+        openPaletteEntry(context, graph, link, home = { tab = Tab.Home }, later = toastLater)
+    }
+    // Die Programme der Startseite (nach Rolle und Diensten) kennt auch die Palette.
+    LaunchedEffect(home.state.programs) { graph.paletteProgramIds = home.state.programs.map { it.id } }
     // Innere Seiten (Ordner, Übertragungen) haben eigene Zurück-Handler, die zuerst greifen.
     if (tab != Tab.Home) BackHandler { tab = Tab.Home }
+    // Ablage und Werkzeuge (Speicher, Freigaben, Benutzer, Plugins, Werkzeuge): eigene Seiten über der Leiste (Admin.kt).
+    admin?.let { id ->
+        AdminProgram(id, graph) { admin = null }
+        return
+    }
     var menu by remember { mutableStateOf(false) }
+    var switcher by remember { mutableStateOf(false) }
+    // „NAS und Konten“: eigene Seite über der Leiste.
+    if (graph.openNasList) {
+        BackHandler { graph.openNasList = false }
+        NasListPage(
+            graph,
+            onBack = { graph.openNasList = false },
+            onAdd = { graph.openNasList = false; graph.beginAdd() },
+            onPhotos = { graph.openNasList = false; graph.openPhotos = true },
+        )
+        return
+    }
     // „Über die App“ mit Selbst-Update; die Mitteilung „Version … ist da“ öffnet es direkt.
     if (graph.openAbout) {
         BackHandler { graph.openAbout = false }
@@ -284,19 +430,80 @@ private fun MainShell(graph: AppGraph) {
         io.github.ra5on.titanos.update.AboutScreen(nasVersion, onBack = { graph.openAbout = false })
         return
     }
+    // Eigenes VPN (feature-vpn): Seite über der Leiste.
+    if (graph.openVpn) {
+        // Android erlaubt nur ein VPN gleichzeitig: es gehört einem NAS; mit mehreren NAS steht dabei, welchem.
+        val several = graph.profiles.size > 1
+        val owner = graph.vpnOwner()
+        val access = remember { runCatching { io.github.ra5on.titanos.vpn.VpnRuntime.store.profile() != null }.getOrDefault(false) }
+        io.github.ra5on.titanos.vpn.VpnPage(
+            onBack = { graph.openVpn = false },
+            ownerNas = if (several && access && owner != null && owner.id != graph.activeId) owner.name else "",
+            forNas = if (several) (owner ?: graph.activeProfile)?.name.orEmpty() else "",
+        )
+        return
+    }
+    PimLive(graph)
+    graph.openProgram?.let { id ->
+        ProgramHost(graph, id) { graph.openProgram = null; graph.programLink = null }
+        return
+    }
     var confirmUnpair by remember { mutableStateOf(false) }
+    // „Uhr koppeln“ (Paket G): die Uhr zeigt sechs Ziffern, diese App bestätigt sie.
+    var watchPair by remember { mutableStateOf(false) }
+    if (watchPair) {
+        BackHandler { watchPair = false }
+        io.github.ra5on.titanos.pairing.WatchPairScreen(
+            addresses = graph.pairing?.addresses?.map { it.server }.orEmpty(),
+            nas = remember(graph.pairing) { graph.connection() },
+            onBack = { watchPair = false },
+        )
+        return
+    }
+    // Rechnen (Docker, VMs, LXC, NVR, Terminal): eigene Seiten über der Leiste (Compute.kt).
+    // Kurzbefehl „zuletzt geöffnet“: das Programm wie von der Startseite.
+    LaunchedEffect(graph.openShortcut) {
+        val id = graph.openShortcut ?: return@LaunchedEffect
+        graph.openShortcut = null
+        when (id) {
+            in ADMIN_PROGRAMS -> admin = id
+            in PROGRAMS -> graph.openProgram = id
+            in COMPUTE_PROGRAMS -> compute = id
+        }
+    }
+    compute?.let { id ->
+        BackHandler { compute = null }
+        ComputeProgram(id, graph) { compute = null }
+        return
+    }
     when (tab) {
         Tab.Home -> Box(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 HomeScreen(
                     home.state,
-                    onProgram = { p -> if (p.id == "shares") tab = Tab.Files else toastLater() },
-                    onSearch = toastLater,
+                    onProgram = { p ->
+                        // Zuletzt geöffnete Programme als Kurzbefehle am App-Symbol.
+                        if (p.id in ADMIN_PROGRAMS || p.id in PROGRAMS || p.id in COMPUTE_PROGRAMS) Shortcuts.opened(context, p.id)
+                        when (p.id) {
+                            // Freigaben, Speicher, Benutzer, Plugins, Werkzeuge (Ablage und Werkzeuge) wie im Web.
+                            in ADMIN_PROGRAMS -> admin = p.id
+                            // Mail, Kalender, Kontakte (feature-mail, feature-pim) in voller Größe.
+                            in PROGRAMS -> graph.openProgram = p.id
+                            in COMPUTE_PROGRAMS -> compute = p.id
+                            in SETTINGS_PROGRAMS -> graph.openProgram = p.id
+                            // Sicherung wie apps.ts: die Sicherungen der Systemsteuerung (wie am Arbeitsplatz).
+                            "backup" -> openLink(context, graph, "/settings/backups", toastLater)
+                            "security" -> openLink(context, graph, "/settings/firewall", toastLater)
+                            else -> toastLater()
+                        }
+                    },
+                    onSearch = { graph.openPalette = true },
                     onNotifications = { tab = Tab.Notifications },
                     onMenu = { menu = true },
                     modifier = Modifier.weight(1f),
                     photos = homeTileText(photos.view),
                     onPhotos = { tab = Tab.Photos },
+                    onSwitchNas = { switcher = true },
                 )
                 nav()
             }
@@ -311,6 +518,45 @@ private fun MainShell(graph: AppGraph) {
                             onClick = { menu = false; graph.openAbout = true },
                         )
                         ListRow(
+                            stringResource(R.string.nas_title),
+                            sub = stringResource(R.string.nas_manage_sub),
+                            icon = { RowIcon(TitanIcons.nodes) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; graph.openNasList = true },
+                        )
+                        ListRow(
+                            stringResource(io.github.ra5on.titanos.pim.R.string.sync_title),
+                            sub = stringResource(io.github.ra5on.titanos.pim.R.string.sync_menu_sub),
+                            icon = { RowIcon(TitanIcons.sync) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; graph.openProgram = PIM_SYNC },
+                        )
+                        ListRow(
+                            stringResource(io.github.ra5on.titanos.vpn.R.string.vpn_title),
+                            sub = stringResource(io.github.ra5on.titanos.vpn.R.string.vpn_menu_sub),
+                            icon = { RowIcon(TitanIcons.shield) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; graph.openVpn = true },
+                        )
+                        ListRow(
+                            stringResource(io.github.ra5on.titanos.workspace.R.string.ws_title),
+                            sub = stringResource(io.github.ra5on.titanos.workspace.R.string.ws_mode_hint),
+                            icon = { RowIcon(TitanIcons.grid) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; graph.openProgram = WORKSPACE_SETTINGS },
+                        )
+                        ListRow(
+                            stringResource(io.github.ra5on.titanos.pairing.R.string.pair_watch_title),
+                            icon = { RowIcon(TitanIcons.monitor) },
+                            chevron = true,
+                            divider = true,
+                            onClick = { menu = false; watchPair = true },
+                        )
+                        ListRow(
                             stringResource(HomeR.string.home_menu_unpair),
                             sub = stringResource(HomeR.string.home_menu_unpair_text),
                             icon = { RowIcon(TitanIcons.x, tint = Titan.colors.dangerInk) },
@@ -320,6 +566,14 @@ private fun MainShell(graph: AppGraph) {
                         )
                     }
                 }
+            }
+            if (switcher) {
+                NasSwitcherSheet(
+                    graph,
+                    onDismiss = { switcher = false },
+                    onAdd = { graph.beginAdd() },
+                    onManage = { graph.openNasList = true },
+                )
             }
             if (confirmUnpair) {
                 ConfirmDialog(
@@ -333,145 +587,9 @@ private fun MainShell(graph: AppGraph) {
                 )
             }
         }
-        Tab.Files -> FilesTab(files, filesRoute, { filesRoute = it }, nav, toastLater)
-        Tab.Photos -> PhotosTab(photos, nav)
+        Tab.Files -> io.github.ra5on.titanos.files.FilesTab(files, nav)
+        Tab.Photos -> PhotosTab(photos, nav, files)
         Tab.Notifications -> NotifyTab(nav)
-    }
-}
-
-@Composable
-private fun FilesTab(files: FilesModel, route: FilesRoute, go: (FilesRoute) -> Unit, nav: @Composable () -> Unit, later: () -> Unit) {
-    val scope = rememberCoroutineScope()
-    when (route) {
-        FilesRoute.Roots -> {
-            LaunchedEffect(Unit) { files.loadRoots() }
-            FilesHomeScreen(
-                files.roots,
-                running = files.transfers.running,
-                finished = files.transfers.finished,
-                offlineSummary = io.github.ra5on.titanos.files.offlineSummary(files.offline),
-                onRoot = { r -> Location(r).let { files.open(it); go(FilesRoute.Folder(it)) } },
-                onTransfers = { go(FilesRoute.Transfers) },
-                onOffline = { go(FilesRoute.Offline) },
-                onLater = later,
-                bottomBar = nav,
-            )
-        }
-        FilesRoute.Transfers -> {
-            BackHandler { go(FilesRoute.Roots) }
-            TransfersScreen(
-                files.transfers.items,
-                onBack = { go(FilesRoute.Roots) },
-                onCancel = files::cancel,
-                onRetry = files::retry,
-                onClear = { files.transfers.clearFinished() },
-            )
-        }
-        FilesRoute.Offline -> {
-            BackHandler { go(FilesRoute.Roots) }
-            val context = LocalContext.current
-            val notYet = stringResource(io.github.ra5on.titanos.files.R.string.off_open_failed)
-            val openWith = stringResource(io.github.ra5on.titanos.files.R.string.off_open_with)
-            io.github.ra5on.titanos.files.OfflineScreen(
-                files.offline,
-                onBack = { go(FilesRoute.Roots) },
-                onPin = { p ->
-                    if (p.dir) go(FilesRoute.OfflineFolder(p))
-                    else if (!files.openOffline(p.root, p.path, openWith)) Toast.makeText(context, notYet, Toast.LENGTH_SHORT).show()
-                },
-                onRemove = { p -> files.offline.unpin(p.root, p.path) },
-                onSyncNow = files::syncOfflineNow,
-                onWifiOnly = files::setOfflineWifiOnly,
-                bottomBar = nav,
-            )
-        }
-        is FilesRoute.OfflineFolder -> {
-            BackHandler { go(FilesRoute.Offline) }
-            val context = LocalContext.current
-            val notYet = stringResource(io.github.ra5on.titanos.files.R.string.off_open_failed)
-            val openWith = stringResource(io.github.ra5on.titanos.files.R.string.off_open_with)
-            io.github.ra5on.titanos.files.OfflineFolderScreen(
-                route.pin,
-                files.offline.copiesFor(route.pin),
-                onBack = { go(FilesRoute.Offline) },
-                onOpen = { cp -> if (!files.openOffline(cp.root, cp.path, openWith)) Toast.makeText(context, notYet, Toast.LENGTH_SHORT).show() },
-                bottomBar = nav,
-            )
-        }
-        is FilesRoute.Folder -> {
-            val state = files.folder ?: return
-            val location = state.location
-            val up = {
-                if (location.segments.isEmpty()) {
-                    files.close(); go(FilesRoute.Roots)
-                } else {
-                    location.upTo(location.segments.size - 1).let { files.open(it); go(FilesRoute.Folder(it)) }
-                }
-            }
-            BackHandler(onBack = up)
-            var selected by remember { mutableStateOf<FileEntry?>(null) }
-            var renaming by remember { mutableStateOf<FileEntry?>(null) }
-            var renameTo by remember { mutableStateOf("") }
-            var deleting by remember { mutableStateOf<FileEntry?>(null) }
-            var folderMenu by remember { mutableStateOf(false) }
-            val chooser = stringResource(io.github.ra5on.titanos.files.R.string.files_share_chooser)
-            val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-                uris.forEach { files.upload(location, it) }
-            }
-            val uploads = files.transfers.items.filter {
-                it.root == location.root.id && it.dir == location.path && it.direction == io.github.ra5on.titanos.files.Direction.Upload &&
-                    (it.state == TransferState.Running || it.state == TransferState.Waiting)
-            }
-            FolderScreen(
-                state,
-                uploads,
-                onBack = up,
-                onCrumb = { i -> location.upTo(i).let { files.open(it); go(FilesRoute.Folder(it)) } },
-                onEntry = { e -> if (e.dir) location.child(e.name).let { files.open(it); go(FilesRoute.Folder(it)) } else selected = e },
-                onUpload = { pick.launch(arrayOf("*/*")) },
-                onLater = later,
-                bottomBar = nav,
-                onMore = { folderMenu = true },
-            ) {
-                if (folderMenu) {
-                    val here = location.path
-                    FolderSheet(
-                        location.segments.lastOrNull() ?: location.root.name,
-                        offline = files.offline.isPinned(location.root.id, here),
-                        onOffline = { on ->
-                            if (on) files.offline.pin(location.root.id, location.root.name, here, dir = true) else files.offline.unpin(location.root.id, here)
-                            if (on) files.syncOfflineNow()
-                        },
-                        onDismiss = { folderMenu = false },
-                    )
-                }
-                selected?.let { e ->
-                    FileSheet(
-                        e,
-                        withTrash = files.hasTrash(location, e.name),
-                        writable = location.root.writable,
-                        offline = files.isOffline(location, e),
-                        onOffline = { on -> files.setOffline(location, e, on) },
-                        onShare = { selected = null; files.share(location, e, chooser) },
-                        onDownload = { selected = null; files.saveToDownloads(location, e) },
-                        onRename = { selected = null; files.actionError = null; renameTo = e.name; renaming = e },
-                        onDelete = { selected = null; deleting = e },
-                        onDismiss = { selected = null },
-                    )
-                }
-                renaming?.let { e ->
-                    RenameDialog(e.name, renameTo, { renameTo = it }, files.actionError, onDo = {
-                        scope.launch { if (renameTo.isNotBlank() && files.rename(location, e, renameTo)) renaming = null }
-                    }, onDismiss = { renaming = null })
-                }
-                deleting?.let { e ->
-                    DeleteDialog(e.name, files.hasTrash(location, e.name), onDo = {
-                        deleting = null
-                        scope.launch { files.delete(location, e) }
-                    }, onDismiss = { deleting = null })
-                }
-            }
-        }
     }
 }
 

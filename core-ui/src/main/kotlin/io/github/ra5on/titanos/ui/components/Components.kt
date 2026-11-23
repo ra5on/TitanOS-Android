@@ -24,6 +24,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +42,18 @@ import io.github.ra5on.titanos.ui.R
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -184,7 +198,8 @@ fun ListRow(
             }
             if (right != null || chevron) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    right?.invoke()
+                    // Ein Schalter rechts heißt für TalkBack wie die Zeile (sonst nur „Aus, Schalter“).
+                    if (right != null) CompositionLocalProvider(LocalToggleLabel provides title) { right() }
                     if (chevron) Icon(TitanIcons.chev, null, tint = c.muted, modifier = Modifier.size(18.dp))
                 }
             }
@@ -198,17 +213,29 @@ fun RowIcon(icon: ImageVector, tint: Color = Titan.colors.muted, size: Dp = 22.d
     Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size))
 }
 
-/** Schalter (.a-tg). Der Zustand steht auch für Bildschirmleser in Worten da. */
+/** Name eines Schalters ohne eigenes [Toggle]-label: der Titel der umgebenden [ListRow]. */
+val LocalToggleLabel = staticCompositionLocalOf<String?> { null }
+
+/**
+ * Schalter (.a-tg). Der Zustand steht auch für Bildschirmleser in Worten da;
+ * [label] sagt TalkBack, was geschaltet wird (sonst nur „Ein, Schalter“). Ohne
+ * [label] gilt in einer [ListRow] deren Titel, sobald der Schalter selbst bedienbar ist.
+ */
 @Composable
-fun Toggle(checked: Boolean, onChange: ((Boolean) -> Unit)?, stateOn: String, stateOff: String, enabled: Boolean = true) {
+fun Toggle(checked: Boolean, onChange: ((Boolean) -> Unit)?, stateOn: String, stateOff: String, enabled: Boolean = true, label: String? = null) {
     val c = Titan.colors
     val shape = RoundedCornerShape(14.dp)
+    val clickable = onChange != null && enabled
+    val name = label ?: if (clickable) LocalToggleLabel.current else null
     Box(
         Modifier.size(46.dp, 28.dp).clip(shape)
             .background(if (checked) c.accent else c.track)
             .border(1.dp, if (checked) c.accent else c.border, shape)
-            .then(if (onChange != null && enabled) Modifier.clickable(role = Role.Switch) { onChange(!checked) } else Modifier)
-            .semantics { stateDescription = if (checked) stateOn else stateOff },
+            .then(if (clickable) Modifier.clickable(role = Role.Switch) { onChange(!checked) } else Modifier)
+            .semantics {
+                stateDescription = if (checked) stateOn else stateOff
+                if (name != null) contentDescription = name
+            },
     ) {
         Box(
             Modifier.offset(x = if (checked) 21.dp else 3.dp, y = 3.dp).size(20.dp).clip(CircleShape)
@@ -307,13 +334,24 @@ fun TextInput(
 ) {
     val c = Titan.colors
     val shape = RoundedCornerShape(12.dp)
+    val focus = androidx.compose.ui.platform.LocalFocusManager.current
     BasicTextField(
         value = value,
         onValueChange = onChange,
         textStyle = style.copy(color = c.text),
         cursorBrush = SolidColor(c.accent),
         keyboardOptions = keyboard,
-        modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
+        modifier = modifier.fillMaxWidth()
+            // Tab führt mit der Tastatur zum nächsten Bedienelement, statt ein Tabzeichen einzufügen.
+            .onPreviewKeyEvent { e ->
+                if (e.key == androidx.compose.ui.input.key.Key.Tab && !e.isCtrlPressed && !e.isAltPressed) {
+                    if (e.type == androidx.compose.ui.input.key.KeyEventType.KeyDown) {
+                        focus.moveFocus(if (e.isShiftPressed) androidx.compose.ui.focus.FocusDirection.Previous else androidx.compose.ui.focus.FocusDirection.Next)
+                    }
+                    true
+                } else false
+            }
+            .semantics { contentDescription = label },
         decorationBox = { inner ->
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(shape).background(c.surface).border(1.dp, c.border, shape)
@@ -363,37 +401,113 @@ fun Fab(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifie
 
 data class NavItem(val key: String, val label: String, val icon: ImageVector)
 
-/** Leiste unten (.a-nav): Start, Dateien, Fotos, Mitteilungen. */
+/**
+ * Wie die Leiste unten aussieht: wie viele Reiter, in welcher Schrift. Alle
+ * Reiter werden gleich behandelt (Auftrag I3): jeder zeigt seine Beschriftung
+ * unter dem Symbol, umbrochen nur zwischen ganzen Wörtern. Passt das längste
+ * Wort nicht in die Breite eines Reiters, zuerst in kleinerer Schrift; reicht
+ * das nicht, stehen weitere Reiter hinter „Mehr“ (wie die Seiten im Web am Handy).
+ */
+data class NavLayout(val visible: Int, val small: Boolean)
+
+/**
+ * Wählt die Aufteilung: [count] Reiter, [widestNormal]/[widestSmall] liefern das
+ * breiteste Wort der ersten k Beschriftungen (mit „Mehr“, wenn k kleiner als
+ * [count]) in normaler bzw. kleiner Schrift; [width] ist die ganze Breite.
+ * Ergebnis: Zahl der Plätze in der Leiste (bei weniger als [count] ist der
+ * letzte „Mehr“) und ob die kleine Schrift gilt.
+ */
+fun navLayout(count: Int, width: Float, gap: Float, widestNormal: (Int) -> Float, widestSmall: (Int) -> Float): NavLayout {
+    fun fits(k: Int, widest: Float) = widest <= width / k - gap
+    if (fits(count, widestNormal(count))) return NavLayout(count, false)
+    if (fits(count, widestSmall(count))) return NavLayout(count, true)
+    for (k in count - 1 downTo 2) {
+        if (fits(k, widestNormal(k))) return NavLayout(k, false)
+        if (fits(k, widestSmall(k))) return NavLayout(k, true)
+    }
+    return NavLayout(minOf(count, 2), true)
+}
+
+/** Leiste unten (.a-nav): Start, Dateien, Fotos, Mitteilungen; in Programmen ihre Abschnitte. */
 @Composable
 fun BottomNav(items: List<NavItem>, selected: String, onSelect: (String) -> Unit) {
     val c = Titan.colors
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val more = androidx.compose.ui.res.stringResource(R.string.ui_more)
+    val normal = TitanType.nav.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+    val small = normal.copy(fontSize = 11.sp, lineHeight = 14.sp)
+    var sheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().background(c.header)) {
         Divider()
-        Row(Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 4.dp)) {
-            for (item in items) {
-                val on = item.key == selected
-                Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Tab) { onSelect(item.key) }
-                        .semantics { if (on) stateDescription = "✓" }.padding(bottom = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 4.dp)) {
+            val width = constraints.maxWidth.toFloat()
+            val gap = with(androidx.compose.ui.platform.LocalDensity.current) { 8.dp.toPx() }
+            fun labels(k: Int) = if (k >= items.size) items.map { it.label } else items.take(k - 1).map { it.label } + more
+            fun widest(k: Int, style: androidx.compose.ui.text.TextStyle): Float =
+                labels(k).flatMap { it.split(' ') }.filter { it.isNotEmpty() }.maxOfOrNull { measurer.measure(it, style).size.width.toFloat() } ?: 0f
+            val layout = navLayout(items.size, width, gap, { widest(it, normal) }, { widest(it, small) })
+            val shown = if (layout.visible >= items.size) items else items.take(layout.visible - 1)
+            val hidden = items.drop(shown.size)
+            val style = if (layout.small) small else TitanType.nav
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                for (item in shown) NavTab(item.label, item.icon, item.key == selected, style, Modifier.weight(1f)) { onSelect(item.key) }
+                if (hidden.isNotEmpty()) {
+                    // „Mehr“ ist gewählt, solange einer der Reiter dahinter offen ist.
+                    NavTab(more, TitanIcons.more, hidden.any { it.key == selected }, style, Modifier.weight(1f)) { sheet = true }
+                }
+            }
+            if (sheet && hidden.isNotEmpty()) {
+                androidx.compose.ui.window.Dialog(
+                    onDismissRequest = { sheet = false },
+                    properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
                 ) {
-                    Box(
-                        Modifier.size(60.dp, 32.dp).clip(RoundedCornerShape(16.dp))
-                            .background(if (on) c.accent.copy(alpha = .22f) else Color.Transparent),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(item.icon, null, tint = if (on) c.accent else c.muted, modifier = Modifier.size(22.dp))
+                    Box(Modifier.fillMaxSize()) {
+                        Sheet(onDismiss = { sheet = false }) {
+                            Text(more, style = TitanType.section, color = c.muted, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp).semantics { heading() })
+                            for ((i, item) in hidden.withIndex()) {
+                                val on = item.key == selected
+                                ListRow(
+                                    item.label,
+                                    modifier = Modifier.semantics { if (on) stateDescription = "✓"; this.selected = on },
+                                    icon = { RowIcon(item.icon, tint = if (on) c.accent else c.muted) },
+                                    right = if (on) ({ Icon(TitanIcons.check, null, tint = c.accent, modifier = Modifier.size(20.dp)) }) else null,
+                                    divider = i > 0,
+                                    onClick = { sheet = false; onSelect(item.key) },
+                                )
+                            }
+                        }
                     }
-                    Text(
-                        item.label,
-                        style = if (on) TitanType.nav.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) else TitanType.nav,
-                        color = if (on) c.text else c.muted,
-                        textAlign = TextAlign.Center,
-                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NavTab(label: String, icon: ImageVector, on: Boolean, base: androidx.compose.ui.text.TextStyle, modifier: Modifier, onClick: () -> Unit) {
+    val c = Titan.colors
+    val style = if (on) base.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) else base
+    Column(
+        modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.Tab, onClick = onClick)
+            .semantics(mergeDescendants = true) { if (on) stateDescription = "✓" }
+            .padding(bottom = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(
+            Modifier.size(60.dp, 32.dp).clip(RoundedCornerShape(16.dp))
+                .background(if (on) c.accent.copy(alpha = .22f) else Color.Transparent),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, null, tint = if (on) c.accent else c.muted, modifier = Modifier.size(22.dp))
+        }
+        Text(
+            label,
+            style = style.copy(hyphens = androidx.compose.ui.text.style.Hyphens.None, lineBreak = androidx.compose.ui.text.style.LineBreak.Heading),
+            color = if (on) c.text else c.muted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 2.dp),
+        )
     }
 }
 

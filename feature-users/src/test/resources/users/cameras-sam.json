@@ -1,0 +1,1 @@
+{"admin":false,"cameras":[{"id":"c1","name":"Einfahrt","live":true,"recordings":true,"names":false},{"id":"c2","name":"Garten hinten","live":true,"recordings":false},{"id":"c3","name":"Alt","live":false,"recordings":false,"deleted":true}]}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sec_choose_file">Datei wählen</string>
+    <string name="sec_push_app">Diese App</string>
+    <string name="sec_push_app_hint">Mitteilungen kommen über die TitanOS-App (ohne Google). Hier stellst du ein, wie Android sie zeigt.</string>
+    <string name="sec_push_app_settings">Mitteilungen in Android</string>
+    <string name="sec_node_web">Andere Knoten verwaltest du in der Weboberfläche über die Knotenauswahl oben.</string>
+    <string name="sec_node_switch">„Verwalten“ wählt den Knoten für die ganze App, wie die Knotenauswahl im Web. Zurück zu diesem NAS geht es über „NAS und Konten“.</string>
+    <string name="sec_required">Bitte ausfüllen: %1$s</string>
+</resources>

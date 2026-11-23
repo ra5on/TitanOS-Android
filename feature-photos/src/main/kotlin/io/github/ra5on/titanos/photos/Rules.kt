@@ -138,6 +138,8 @@ data class Media(
     val taken: Instant,
     /** DATE_MODIFIED in Sekunden. */
     val modified: Long,
+    /** Album am Handy (BUCKET_DISPLAY_NAME), etwa „Camera“. */
+    val bucket: String = "",
 )
 
 /** Was die App von einer gesicherten Aufnahme weiß. */
@@ -160,10 +162,13 @@ fun selectForUpload(
     target: String,
     kinds: Set<Kind>,
     folders: Set<String>?,
+    include: Include = Include(),
+    targetOf: (Kind) -> String = { target },
 ): List<Media> = items.asSequence()
     .filter { it.kind in kinds }
     .filter { folders?.contains(it.folder) ?: defaultFolder(it.folder) }
-    .filter { !isSaved(it, saved[it.id], target) }
+    .filter { include.accepts(it) }
+    .filter { !isSaved(it, saved[it.id], targetOf(it.kind)) }
     .sortedByDescending { it.taken }
     .toList()
 
@@ -198,3 +203,13 @@ fun mediaChanged(
     now: Map<String, Long>,
     versionsNow: Map<String, String>,
 ): Boolean = now.keys != before.keys || versionsNow != versionsBefore || now.any { (v, g) -> before[v] != g }
+
+/** Auswahl nach allen Einstellungen; übersprungene (gleicher Name) zählen wie gesichert, aber nur hier. */
+fun selectForUpload(items: List<Media>, marks: Map<Long, SavedMark>, s: PhotoSettings, kinds: Set<Kind>): List<Media> =
+    selectForUpload(items, marks, s.target, kinds.intersect(s.kindsOn()), s.folders, s.include, s::targetOf)
+
+/** Ort relativ zum Ordner der Sicherung, z. B. `2026/03/IMG_1.jpg` (für check mit path). */
+fun pathInTarget(s: PhotoSettings, m: Media, device: String, zone: java.time.ZoneId = java.time.ZoneId.systemDefault(), locale: java.util.Locale = java.util.Locale.getDefault()): Pair<String, String> {
+    val f = Facts(m.taken, m.name, m.bucket, m.folder, m.kind, device)
+    return subDir(s.layout, f, zone, locale) to fileName(s.layout, f, zone, locale)
+}

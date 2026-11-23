@@ -1,0 +1,47 @@
+{
+ "operations": [
+  {
+   "id": "op1",
+   "plugin": "werkzeug",
+   "title": "Werkzeug",
+   "action": "update",
+   "state": "failed",
+   "steps": [
+    {
+     "id": "signature",
+     "state": "done"
+    },
+    {
+     "id": "download",
+     "state": "skipped"
+    },
+    {
+     "id": "checksum",
+     "state": "done"
+    },
+    {
+     "id": "write",
+     "state": "done"
+    },
+    {
+     "id": "stop",
+     "state": "done"
+    },
+    {
+     "id": "sysext",
+     "state": "failed",
+     "error": "systemd-sysext: exit status 1"
+    },
+    {
+     "id": "rollback",
+     "state": "done"
+    }
+   ],
+   "bytes": 0,
+   "total": 0,
+   "speedBytesPerSecond": 0,
+   "started": "2026-11-20T10:00:00Z",
+   "finished": "2026-11-20T10:01:00Z"
+  }
+ ]
+}

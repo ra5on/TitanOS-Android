@@ -132,4 +132,6 @@
         <item quantity="one">%s gesichert</item>
         <item quantity="other">%s gesichert</item>
     </plurals>
+    <string name="photos_paused">Die Foto-Sicherung ist pausiert (Schnelleinstellung). Bis zum Fortsetzen wird an kein NAS gesichert.</string>
+    <string name="photos_resume">Fortsetzen</string>
 </resources>

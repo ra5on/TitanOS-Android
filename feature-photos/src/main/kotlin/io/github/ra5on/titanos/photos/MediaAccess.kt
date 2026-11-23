@@ -86,7 +86,7 @@ class MediaScanner(private val context: Context) {
                 val taken = if (!c.isNull(6) && c.getLong(6) > 0) Instant.ofEpochMilli(c.getLong(6)) else Instant.ofEpochSecond(c.getLong(7))
                 val name = c.getString(2) ?: continue
                 out += MediaItem(
-                    Media(c.getLong(0), kind, name, c.getString(3).orEmpty(), c.getLong(5), taken, c.getLong(8)),
+                    Media(c.getLong(0), kind, name, c.getString(3).orEmpty(), c.getLong(5), taken, c.getLong(8), c.getString(4).orEmpty()),
                     volume = c.getString(9) ?: MediaStore.VOLUME_EXTERNAL_PRIMARY,
                     bucket = c.getString(4).orEmpty(),
                 )

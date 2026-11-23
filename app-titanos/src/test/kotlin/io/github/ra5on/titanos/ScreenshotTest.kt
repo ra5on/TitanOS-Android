@@ -9,9 +9,10 @@ import androidx.compose.ui.res.stringResource
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.ra5on.titanos.files.DeleteDialog
 import io.github.ra5on.titanos.files.Direction
-import io.github.ra5on.titanos.files.FileSheet
 import io.github.ra5on.titanos.files.FilesHomeScreen
 import io.github.ra5on.titanos.files.FolderScreen
+import io.github.ra5on.titanos.files.EntrySheet
+import io.github.ra5on.titanos.files.FolderMenu
 import io.github.ra5on.titanos.files.FolderState
 import io.github.ra5on.titanos.files.Location
 import io.github.ra5on.titanos.files.RootsState
@@ -21,7 +22,6 @@ import io.github.ra5on.titanos.files.WaitReason
 import io.github.ra5on.titanos.files.OfflinePin
 import io.github.ra5on.titanos.files.OfflineScreen
 import io.github.ra5on.titanos.files.OfflineStore
-import io.github.ra5on.titanos.files.FolderSheet
 import io.github.ra5on.titanos.files.Incoming
 import io.github.ra5on.titanos.files.ShareModel
 import io.github.ra5on.titanos.files.ShareTargetScreen
@@ -121,7 +121,7 @@ class ScreenshotTest {
 
     @Test
     fun s04_permissions() = shot("04-berechtigungen") {
-        PermissionsScreen(PermissionsState(localNetwork = Grant.Granted, notifications = Grant.NotAsked), {}, {}, {}, onBack = {})
+        PermissionsScreen(PermissionsState(localNetwork = Grant.Granted, notifications = Grant.NotAsked, contacts = Grant.Granted, calendar = Grant.NotAsked), {}, {}, {}, onBack = {})
     }
 
     @Test
@@ -148,6 +148,22 @@ class ScreenshotTest {
         }
     }
 
+    /** Kachel-Namen bei 200 % Schrift: ganze Wörter, weniger Spalten statt Trennung. */
+    @Test
+    fun s10_home_big_font() {
+        org.robolectric.RuntimeEnvironment.setFontScale(2f)
+        try {
+            shot("10-start-schrift-200") {
+                Column(Modifier.fillMaxSize()) {
+                    HomeScreen(home, {}, {}, {}, {}, Modifier.weight(1f))
+                    NavBar("Home")
+                }
+            }
+        } finally {
+            org.robolectric.RuntimeEnvironment.setFontScale(1f)
+        }
+    }
+
     @Test
     fun s10_home_problem() = shot("10-start-befund") {
         Column(Modifier.fillMaxSize()) {
@@ -166,7 +182,7 @@ class ScreenshotTest {
     fun s20_files() = shot("20-dateien-freigaben") {
         FilesHomeScreen(
             RootsState(listOf(root("Documents", 3_900_000_000_000, 8_000_000_000_000), root("Media", 3_900_000_000_000, 8_000_000_000_000), root("Fotos", 3_900_000_000_000, 8_000_000_000_000), root("Projects", 400_000_000_000, 1_000_000_000_000))),
-            running = 1, finished = 4, offlineSummary = "3 Ordner, 14 Dateien · 1,2 GB", onRoot = {}, onTransfers = {}, onOffline = {}, onLater = {}, bottomBar = { NavBar("Files") },
+            running = 1, finished = 4, offlineSummary = "3 Ordner, 14 Dateien · 1,2 GB", onRoot = {}, onTransfers = {}, onOffline = {}, onSearch = {}, onTrash = {}, onJobs = {}, bottomBar = { NavBar("Files") },
         )
     }
 
@@ -184,19 +200,27 @@ class ScreenshotTest {
 
     @Test
     fun s21_folder() = shot("21-dateien-ordner") {
-        FolderScreen(FolderState(location, entries), listOf(upload), {}, {}, {}, {}, {}, bottomBar = { NavBar("Files") })
+        FolderScreen(folderUi(listOf(upload)), null, noCallbacks, bottomBar = { NavBar("Files") })
     }
+
+    private fun folderUi(uploads: List<Transfer> = emptyList()) = io.github.ra5on.titanos.files.FolderUi(FolderState(location, entries), entries, uploads = uploads)
+
+    private val noCallbacks = io.github.ra5on.titanos.files.FolderCallbacks({}, {}, {}, {}, {}, {}, {}, {}, {})
 
     @Test
     fun s22_actions() = shot("22-datei-aktionen") {
-        FolderScreen(FolderState(location, entries), emptyList(), {}, {}, {}, {}, {}, bottomBar = { NavBar("Files") }) {
-            FileSheet(entries[3], withTrash = true, writable = true, offline = true, onOffline = {}, onShare = {}, onDownload = {}, onRename = {}, onDelete = {}, onDismiss = {})
+        FolderScreen(folderUi(), null, noCallbacks, bottomBar = { NavBar("Files") }) {
+            EntrySheet(
+                listOf(entries[3]), withTrash = true, writable = true, offline = true, officeName = "T-PDF",
+                onOffline = {}, onOpen = {}, onOffice = {}, onOpenWith = {}, onShare = {}, onDownload = {}, onCopy = {}, onCut = {},
+                onRename = {}, onBatchRename = null, onEdit = null, onExtract = null, onProperties = {}, onDelete = {}, onDismiss = {},
+            )
         }
     }
 
     @Test
     fun s22_delete() = shot("22-datei-papierkorb") {
-        FolderScreen(FolderState(location, entries), emptyList(), {}, {}, {}, {}, {}, bottomBar = { NavBar("Files") }) {
+        FolderScreen(folderUi(), null, noCallbacks, bottomBar = { NavBar("Files") }) {
             DeleteDialog("Mietvertrag Wohnung.pdf", withTrash = true, {}, {})
         }
     }
@@ -249,8 +273,11 @@ class ScreenshotTest {
 
     @Test
     fun s24b_folder_menu() = shot("24-ordner-offline") {
-        FolderScreen(FolderState(location, entries), emptyList(), {}, {}, {}, {}, {}, bottomBar = { NavBar("Files") }) {
-            FolderSheet("Privat", offline = true, onOffline = {}, onDismiss = {})
+        FolderScreen(folderUi(), null, noCallbacks, bottomBar = { NavBar("Files") }) {
+            FolderMenu(
+                "Privat", favorite = false, offline = true, hasTrash = true, onFavorite = {}, onOffline = {}, onSelectAll = {}, onProperties = {},
+                onTrash = {}, onJobs = {}, onUsage = {}, onDuplicates = {}, onReload = {}, onDismiss = {},
+            )
         }
     }
 

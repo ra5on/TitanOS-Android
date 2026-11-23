@@ -50,6 +50,8 @@ class MainActivity : ComponentActivity() {
 
     private fun take(intent: Intent?) {
         val graph = (application as AgentApp).graph
+        // Aus einer Mitteilung der Agent-App: diesen Chat zeigen.
+        intent?.getStringExtra("chat")?.let { graph.pendingOpen = it }
         when (intent?.action) {
             Intent.ACTION_VIEW -> intent.dataString?.let(PairLink::parse)?.let { pendingLink = it }
             ACTION_ASK -> graph.pendingAsk = AskRequest(

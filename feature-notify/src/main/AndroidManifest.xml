@@ -28,6 +28,14 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Push notifications from the user's own self-hosted NAS without Google services (no FCM): keeps one long-lived connection (Server-Sent Events) to the NAS the user paired, so alerts about disks, mail, calendar and the assistant arrive in time. The user switches it on or off in the app." />
         </service>
+        <!-- Angetippte Mitteilung des KI-Agenten: als gelesen merken, dann die Agent-App öffnen (ohne Oberfläche). -->
+        <activity
+            android:name=".OpenAgentActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
         <receiver
             android:name=".ReadReceiver"
             android:exported="false" />

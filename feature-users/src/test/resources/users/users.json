@@ -1,0 +1,4 @@
+[{"name":"alex","role":"owner","created":"2026-03-02T10:00:00Z","smbReady":true,"twoFactor":true,"disabled":false},
+{"name":"maria","role":"admin","created":"2026-04-11T09:30:00Z","smbReady":true,"twoFactor":false,"disabled":false},
+{"name":"sam","role":"user","created":"2026-05-20T18:00:00Z","smbReady":true,"twoFactor":true,"disabled":false},
+{"name":"kinderzimmer-tablet","role":"user","created":"2026-09-01T12:00:00Z","smbReady":false,"twoFactor":false,"disabled":true,"disabledAt":"2026-11-19T20:15:00Z","disabledBy":"alex"}]

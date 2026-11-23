@@ -4,4 +4,7 @@
     <string name="agent_share_label">Agent fragen</string>
     <string name="agent_welcome_text">Der KI-Agent deines NAS auf dem Handy: fragen, sprechen, freigeben – mit den Rechten deines Kontos.</string>
     <string name="agent_unpaired">Das NAS kennt dieses Handy nicht mehr (beendet oder abgelaufen). Bitte neu koppeln.</string>
+    <string name="agent_local_text">Die Agent-App spricht mit deinem NAS zu Hause direkt und übernimmt dafür die Kopplung der TitanOS-App im Hintergrund. Android fragt deshalb, ob die App Geräte im lokalen Netzwerk erreichen darf. Ohne diese Erlaubnis findet sie das NAS im Heimnetz nicht, und die Kopplung über die TitanOS-App scheitert ohne Meldung.</string>
+    <string name="agent_local_note">Die App nutzt die Erlaubnis nur für die Verbindung zu deinem NAS. Ändern kannst du sie jederzeit in den Android-Einstellungen der App.</string>
+    <string name="agent_local_later">Später</string>
 </resources>

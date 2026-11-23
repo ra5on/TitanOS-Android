@@ -22,4 +22,5 @@
         <item quantity="one">%1$d volume needs attention</item>
         <item quantity="other">%1$d volumes need attention</item>
     </plurals>
+    <string name="w_photos_nas">Photos · %1$s</string>
 </resources>

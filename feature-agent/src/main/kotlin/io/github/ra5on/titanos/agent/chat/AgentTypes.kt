@@ -33,6 +33,9 @@ data class Entry(
     val sources: List<Source> = emptyList(),
     val files: List<FileRef> = emptyList(),
     val note: String? = null,
+    /** 1.13: was ein Werkzeug im Modus „Nur Vorschläge“ entwarf. */
+    val draft: JsonElement? = null,
+    val context: JsonElement? = null,
 )
 
 /** Ein Schritt, der auf die Person wartet (Freigabe). */
@@ -74,6 +77,12 @@ data class Chat(
     val think: String? = null,
     val modelOwn: Boolean = false,
     val thinkOwn: Boolean = false,
+    val titleOwn: Boolean = false,
+    val autonomy: String? = null,
+    val origin: String? = null,
+    val readOnly: Boolean = false,
+    val author: String? = null,
+    val areas: List<String> = emptyList(),
     val state: String = ChatState.IDLE,
     val error: String? = null,
     val pending: Pending? = null,
@@ -109,6 +118,7 @@ data class Project(
     val color: String? = null,
     val instructions: String? = null,
     val created: String? = null,
+    val location: String? = null,
     val members: List<String> = emptyList(),
     val owner: String? = null,
 )
@@ -127,6 +137,9 @@ data class Model(
     val capabilities: List<String> = emptyList(),
     val levels: List<String> = emptyList(),
     val defaultLevel: String? = null,
+    val family: String? = null,
+    val parameters: String? = null,
+    val contextLength: Int = 0,
 ) {
     /** Wie das Web (ModelPicker): nur Modelle mit Werkzeugen sind wählbar. */
     val usable: Boolean get() = "tools" in capabilities
@@ -147,9 +160,23 @@ data class AgentStatus(
     val error: String? = null,
     val models: List<Model> = emptyList(),
     val maxRuns: Int = 0,
+    val source: String? = null,
+    val share: String? = null,
+    val context: Int = 0,
+    val web: Boolean = false,
+    val version: String? = null,
+    val running: List<RunningModel> = emptyList(),
+    val voice: Boolean = false,
+    val vision: String? = null,
+    val provider: String? = null,
+    val cloud: Boolean = false,
+    val actions: JsonElement? = null,
 ) {
     val ready: Boolean get() = enabled && allowed && volume
 }
+
+@Serializable
+data class RunningModel(val name: String = "", val contextLength: Int = 0, val vram: Long = 0)
 
 /** Body von `POST /agent/chats` und `POST /agent/chats/{id}/messages`. */
 @Serializable
@@ -160,6 +187,7 @@ data class MessageRequest(
     val think: String? = null,
     val draft: Boolean? = null,
     val replace: String? = null,
+    val autonomy: String? = null,
 )
 
 @Serializable
@@ -169,7 +197,13 @@ data class DecideRequest(val id: String, val approve: Boolean)
 data class SeenRequest(val visible: Boolean)
 
 @Serializable
-data class PatchChat(val project: String? = null, val pinned: Boolean? = null)
+data class PatchChat(
+    val project: String? = null,
+    val pinned: Boolean? = null,
+    val archived: Boolean? = null,
+    val title: String? = null,
+    val autonomy: String? = null,
+)
 
 @Serializable
 data class Attached(val name: String = "", val size: Long = 0)

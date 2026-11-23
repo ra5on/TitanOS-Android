@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shares_sort">Sort order</string>
+    <string name="shares_descending">Sort descending</string>
+    <string name="shares_choose">Choose a share on the left to see its details.</string>
+    <string name="shares_phase_checking">Checking</string>
+    <string name="shares_phase_removing">Removing the share</string>
+    <string name="shares_phase_waiting">Waiting for other work</string>
+    <string name="shares_phase_deleting">Deleting files</string>
+    <string name="shares_phase_done">Done</string>
+    <string name="shares_phase_failed">Failed</string>
+    <string name="shares_unsaved_title">Changes not saved</string>
+</resources>

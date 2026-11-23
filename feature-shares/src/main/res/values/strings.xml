@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shares_sort">Sortierung</string>
+    <string name="shares_descending">Absteigend sortieren</string>
+    <string name="shares_choose">Wähle links eine Freigabe, um ihre Details zu sehen.</string>
+    <string name="shares_phase_checking">Wird geprüft</string>
+    <string name="shares_phase_removing">Freigabe wird entfernt</string>
+    <string name="shares_phase_waiting">Wartet auf andere Arbeit</string>
+    <string name="shares_phase_deleting">Dateien werden gelöscht</string>
+    <string name="shares_phase_done">Fertig</string>
+    <string name="shares_phase_failed">Fehlgeschlagen</string>
+    <string name="shares_unsaved_title">Änderungen nicht gespeichert</string>
+</resources>

@@ -16,11 +16,36 @@ import kotlinx.coroutines.sync.Mutex
  * Worker versuchen es später wieder.
  */
 object PhotosRuntime {
+    /** Die Verbindung zu einem NAS (Kennung aus der Liste der Kopplungen); null ohne diese Kopplung. */
     @Volatile
-    var titan: () -> TitanApi? = { null }
+    var titan: (nas: String) -> TitanApi? = { null }
 
     @Volatile
-    var photos: () -> PhotosApi? = { null }
+    var photos: (nas: String) -> PhotosApi? = { null }
+
+    /** Alle gekoppelten NAS, in der Reihenfolge der Liste. Jedes hat eigene Einstellungen. */
+    @Volatile
+    var nasIds: () -> List<String> = { emptyList() }
+
+    /** Anzeigename eines NAS für die Mitteilung „Jetzt sichern“. */
+    @Volatile
+    var nasName: (nas: String) -> String = { "" }
+
+    /**
+     * „Pausieren“ (Schnelleinstellung): hält jede Sicherung an, bis man sie
+     * fortsetzt; die Einstellungen bleiben, wie sie sind.
+     */
+    fun paused(context: Context): Boolean = context.getSharedPreferences(PAUSE, Context.MODE_PRIVATE).getBoolean("paused", false)
+
+    fun setPaused(context: Context, on: Boolean) {
+        context.getSharedPreferences(PAUSE, Context.MODE_PRIVATE).edit().putBoolean("paused", on).apply()
+        changed()
+    }
+
+    /** NAS, an die gerade gesichert wird (Foto-Sicherung eingeschaltet). */
+    fun enabledNas(context: Context): List<String> = nasIds().filter { SettingsStore(context, it).load().enabled }
+
+    private const val PAUSE = "photos-pause"
 
     /** Name des Geräts aus der Kopplung, Vorschlag für den Ordner am NAS. */
     @Volatile
@@ -51,7 +76,7 @@ object PhotosRuntime {
 }
 
 /** Fortschritt eines Laufs. */
-data class Progress(val running: Boolean = false, val done: Int = 0, val total: Int = 0, val current: String = "")
+data class Progress(val running: Boolean = false, val done: Int = 0, val total: Int = 0, val current: String = "", val nas: String = "")
 
 /** Netz und Laden, so wie Android sie gerade meldet. */
 fun deviceState(context: Context): DeviceState {

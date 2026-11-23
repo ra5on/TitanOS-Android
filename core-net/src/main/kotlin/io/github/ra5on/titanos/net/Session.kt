@@ -99,6 +99,11 @@ class SessionInterceptor(
     private fun Request.withCookie(c: SessionCookie): Request = newBuilder().header("Cookie", c.header).build()
 }
 
-/** Die Routen, mit denen die App sich koppelt und eine Sitzung holt; sie gehen ohne Cookie. */
+/**
+ * Die Routen, mit denen die App sich koppelt und eine Sitzung holt; sie gehen ohne Cookie.
+ * `pair/sibling` (Code für die andere App) und `pair/watch/confirm` (die Uhr
+ * bestätigen) brauchen die Sitzung der gekoppelten App.
+ */
 internal fun String.isAppLogin(): Boolean =
-    startsWith("/api/v1/app/pair/") || this == "/api/v1/app/challenge" || this == "/api/v1/app/session"
+    (startsWith("/api/v1/app/pair/") && this != "/api/v1/app/pair/sibling" && this != "/api/v1/app/pair/watch/confirm") ||
+        this == "/api/v1/app/challenge" || this == "/api/v1/app/session"

@@ -1,5 +1,9 @@
 package io.github.ra5on.titanos.home
 
+import io.github.ra5on.titanos.ui.rememberWidestWord
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,21 +45,32 @@ import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
 
 @Composable
-fun programLabel(id: String): String = stringResource(
+fun programLabel(id: String): String = stringResource(programLabelRes(id))
+
+/** Text-Ressource des Programmnamens (auch ohne Compose, z. B. für Kurzbefehle am App-Symbol). */
+fun programLabelRes(id: String): Int = (
     when (id) {
         "shares" -> R.string.app_shares
         "storage" -> R.string.app_storage
         "docker" -> R.string.app_docker
         "vms" -> R.string.app_vms
+        "lxc" -> R.string.app_lxc
         "mail" -> R.string.app_mail
         "calendar" -> R.string.app_calendar
         "contacts" -> R.string.app_contacts
+        "agent" -> R.string.app_agent
         "backup" -> R.string.app_backup
         "nvr" -> R.string.app_nvr
         "terminal" -> R.string.app_terminal
         "users" -> R.string.app_users
+        "plugins" -> R.string.app_plugins
+        "monitor" -> R.string.app_monitor
+        "logs" -> R.string.app_logs
+        "planner" -> R.string.app_planner
+        "security" -> R.string.app_security
+        "account" -> R.string.app_account
         else -> R.string.app_settings
-    },
+    }
 )
 
 /** Start (Entwurf 10/11): Suche, Zustandskarte, Programme im Raster. Die Leiste unten zeichnet die App. */
@@ -70,6 +85,8 @@ fun HomeScreen(
     /** Stand der Foto-Sicherung in Worten für die Kachel; null: kommt später. */
     photos: String? = null,
     onPhotos: (() -> Unit)? = null,
+    /** Mehrere NAS: Umschalter oben (Liste der NAS und Konten); null ohne. */
+    onSwitchNas: (() -> Unit)? = null,
 ) {
     val c = Titan.colors
     Column(modifier.fillMaxSize().wallpaper(c.dark)) {
@@ -79,6 +96,7 @@ fun HomeScreen(
                 flat = true,
                 icon = { AppIcon("storage", "dark", 30.dp) },
                 actions = {
+                    if (onSwitchNas != null) IconButton(TitanIcons.nodes, stringResource(R.string.home_switch_nas), onSwitchNas)
                     IconButton(TitanIcons.bell, stringResource(R.string.home_notifications), onNotifications)
                     IconButton(TitanIcons.more, stringResource(R.string.home_menu), onMenu)
                 },
@@ -134,22 +152,37 @@ private fun StatusCard(state: HomeState, photos: String?, onPhotos: (() -> Unit)
                 if (parts.isNotEmpty()) Text(parts.joinToString(" · "), style = TitanType.body, color = c.muted)
             }
         }
-        Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            val main = state.mainVolume
-            if (main != null) {
-                val (used, total) = Format.bytesOf(main.usedBytes, main.sizeBytes)
-                Tile(
-                    title = stringResource(R.string.home_storage_of, used, total),
-                    sub = stringResource(R.string.home_storage_sub, main.name, main.level.uppercase().replace("RAID", "RAID ")),
-                    fraction = main.usedBytes.toFloat() / main.sizeBytes,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            // Stand der Foto-Sicherung in Worten („12 418 gesichert“, „4 Aufnahmen warten“).
-            Tile(
-                stringResource(R.string.home_photos_title), photos ?: stringResource(R.string.home_photos_later), null,
-                Modifier.weight(1f).then(if (onPhotos != null) Modifier.clickable(role = Role.Button, onClick = onPhotos) else Modifier),
+        val main = state.mainVolume
+        val storage = main?.let {
+            val (used, total) = Format.bytesOf(it.usedBytes, it.sizeBytes)
+            Triple(
+                stringResource(R.string.home_storage_of, used, total),
+                stringResource(R.string.home_storage_sub, it.name, it.level.uppercase().replace("RAID", "RAID ")),
+                it.usedBytes.toFloat() / it.sizeBytes,
             )
+        }
+        val photosTitle = stringResource(R.string.home_photos_title)
+        val photosSub = photos ?: stringResource(R.string.home_photos_later)
+        val titleWord = rememberWidestWord(listOfNotNull(storage?.first, photosTitle), TitanType.body.copy(fontWeight = TitanType.rowTitle.fontWeight))
+        val subWord = rememberWidestWord(listOfNotNull(storage?.second, photosSub), TitanType.small)
+        val density = LocalDensity.current
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 14.dp)) {
+            // Zwei Felder nebeneinander nur, wenn jedes Wort in eine Hälfte passt; sonst untereinander.
+            val half = with(density) { ((maxWidth - 10.dp) / 2 - 24.dp).toPx() }
+            val side = storage == null || maxOf(titleWord, subWord) <= half
+            val photosClick = if (onPhotos != null) Modifier.clickable(role = Role.Button, onClick = onPhotos) else Modifier
+            if (side) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    storage?.let { (t, s, f) -> Tile(t, s, f, Modifier.weight(1f)) }
+                    // Stand der Foto-Sicherung in Worten („12 418 gesichert“, „4 Aufnahmen warten“).
+                    Tile(photosTitle, photosSub, null, Modifier.weight(1f).then(photosClick))
+                }
+            } else {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    storage?.let { (t, s, f) -> Tile(t, s, f, Modifier.fillMaxWidth()) }
+                    Tile(photosTitle, photosSub, null, Modifier.fillMaxWidth().then(photosClick))
+                }
+            }
         }
     }
 }
@@ -175,24 +208,65 @@ private fun uptime(seconds: Long): String {
     }
 }
 
+/**
+ * Kachel-Raster der Startseite. Namen brechen nur zwischen ganzen Wörtern um,
+ * nie mitten im Wort (Inhaber 21.11.2026: „Ganze Wörter“). Passt das längste
+ * Wort eines Namens nicht in eine Spalte – lange Wörter, große Schrift, schmales
+ * Fenster –, zeigt das Raster weniger Spalten; die Schrift bleibt so groß wie
+ * eingestellt, die Kachel wird höher.
+ */
 @Composable
 private fun ProgramGrid(programs: List<Program>, onProgram: (Program) -> Unit) {
     val c = Titan.colors
-    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        for (row in programs.chunked(4)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (p in row) {
-                    Column(
-                        Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { onProgram(p) },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(7.dp),
+    val labels = programs.map { programLabel(it.id) }
+    val style = TitanType.appLabel
+    val density = LocalDensity.current
+    val widest = rememberWidestWord(labels, style)
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val gap = 6.dp
+        val columns = programColumns(with(density) { maxWidth.toPx() }, with(density) { gap.toPx() }, widest.toFloat())
+        if (columns == 1) {
+            // Sehr große Schrift: Liste mit Symbol links, der Name hat die ganze Breite.
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                programs.forEachIndexed { i, p ->
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { onProgram(p) }.padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
-                        AppIcon(p.glyph, p.gradient, 60.dp)
-                        Text(programLabel(p.id), style = TitanType.appLabel, color = c.text, textAlign = TextAlign.Center)
+                        AppIcon(p.glyph, p.gradient, 48.dp)
+                        Text(labels[i], style = style, color = c.text, modifier = Modifier.weight(1f))
                     }
                 }
-                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+            return@BoxWithConstraints
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            for (row in programs.indices.chunked(columns)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                    for (i in row) {
+                        val p = programs[i]
+                        Column(
+                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button) { onProgram(p) },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(7.dp),
+                        ) {
+                            AppIcon(p.glyph, p.gradient, 60.dp)
+                            Text(labels[i], style = style, color = c.text, textAlign = TextAlign.Center)
+                        }
+                    }
+                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                }
             }
         }
     }
+}
+
+/** Höchstens vier Spalten wie im Web; weniger, bis das breiteste Wort hineinpasst (mindestens eine). */
+internal fun programColumns(width: Float, gap: Float, widestWord: Float): Int {
+    for (n in 4 downTo 2) {
+        val column = (width - gap * (n - 1)) / n
+        if (widestWord <= column) return n
+    }
+    return 1
 }

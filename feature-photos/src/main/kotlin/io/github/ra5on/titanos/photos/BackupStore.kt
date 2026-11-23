@@ -1,6 +1,8 @@
 package io.github.ra5on.titanos.photos
 
 import android.content.Context
+import io.github.ra5on.titanos.net.NasNames
+import io.github.ra5on.titanos.net.NasRegistry
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -22,6 +24,8 @@ data class StateFile(
     val saved: Map<Long, Saved> = emptyMap(),
     val hashes: Map<Long, Hashed> = emptyMap(),
     val uploads: Map<Long, Started> = emptyMap(),
+    /** Übersprungen, weil am NAS schon eine andere Datei so heißt („Überspringen“); nie für „Speicher freigeben“. */
+    val skipped: Map<Long, Saved> = emptyMap(),
     val generations: Map<String, Long> = emptyMap(),
     val versions: Map<String, String> = emptyMap(),
     /** Zuletzt etwas gesichert, Millisekunden. */
@@ -82,14 +86,17 @@ class BackupStore(private val file: File) {
     }
 
     companion object {
-        @Volatile
-        private var instance: BackupStore? = null
+        private val instances = HashMap<String, BackupStore>()
 
-        fun get(context: Context): BackupStore = instance ?: synchronized(this) {
-            instance ?: BackupStore(File(context.applicationContext.filesDir, "photos-state.json")).also { instance = it }
+        /** Stand der Sicherung an ein NAS ([nas]); die alte Kopplung behält `photos-state.json`. */
+        fun get(context: Context, nas: String = NasRegistry.LEGACY_ID): BackupStore = synchronized(instances) {
+            instances.getOrPut(nas) { BackupStore(File(context.applicationContext.filesDir, "photos-state" + NasNames.suffix(nas) + ".json")) }
         }
     }
 }
 
 /** Die Marken für die Regeln (Rules.kt). */
 fun StateFile.marks(): Map<Long, SavedMark> = saved.mapValues { (_, s) -> SavedMark(s.size, s.modified, s.sha256, s.target) }
+
+/** Für die Auswahl: gesichert oder bewusst übersprungen. */
+fun StateFile.handled(): Map<Long, SavedMark> = skipped.mapValues { (_, s) -> SavedMark(s.size, s.modified, s.sha256, s.target) } + marks()

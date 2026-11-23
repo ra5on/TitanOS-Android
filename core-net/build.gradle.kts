@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     alias(libs.plugins.android.library)
 
@@ -39,4 +41,9 @@ dependencies {
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.okhttp.tls)
     testImplementation(libs.kotlinx.coroutines.test)
+}
+
+// Ein hängender Test beendet den Lauf, statt einen der zwei Gradle-Plätze der VM zu halten.
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(10))
 }

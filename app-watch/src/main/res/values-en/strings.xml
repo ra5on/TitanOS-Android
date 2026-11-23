@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="w_app_name">TitanOS</string>
+    <string name="w_entry_done">Continue</string>
+    <string name="w_cancel">Cancel</string>
+    <string name="w_loading">Loading …</string>
+    <string name="w_err_reach">The NAS cannot be reached right now.</string>
+    <string name="w_stale">As of %1$s</string>
+    <string name="w_reload">Reload</string>
+
+    <string name="w_pair_title">Pair watch</string>
+    <string name="w_pair_intro">On the phone, open TitanOS › menu › Pair watch. Type one of the addresses shown there.</string>
+    <string name="w_pair_address">Enter address</string>
+    <string name="w_pair_address_label">Address of the NAS</string>
+    <string name="w_pair_other_address">Other address</string>
+    <string name="w_pair_again">Try again</string>
+    <string name="w_pair_connecting">Connecting to %1$s …</string>
+    <string name="w_pair_code_hint">Enter this number on the phone under “Pair watch”. It is valid for 5 minutes.</string>
+    <string name="w_pair_fingerprint">Certificate:\n%1$s</string>
+    <string name="w_pair_ended">The watch was signed out on the NAS. Please pair again.</string>
+    <string name="w_pair_err_address">That is not an address. Example: 192.168.1.20 or nas.local:8443</string>
+    <string name="w_pair_err_reach">No NAS answers at this address. Is the watch on the same network or connected to the phone?</string>
+    <string name="w_pair_err_cert">The watch sees another certificate than the NAS serves. Someone may be in between. Use another address.</string>
+    <string name="w_pair_err_expired">The number has expired. Get a new one.</string>
+    <string name="w_pair_err_limit">Too many attempts right now. Please try again shortly.</string>
+    <string name="w_pair_err_old_nas">The NAS cannot pair watches yet. It needs TitanOS 1.19.</string>
+    <string name="w_pair_err_local_network">The watch may not reach devices on the local network. Allow it, or it cannot find the NAS at home.</string>
+    <string name="w_pair_err_other">That did not work. Please try again.</string>
+
+    <string name="w_state_ok">All good</string>
+    <string name="w_state_volume">Storage needs help</string>
+    <string name="w_state_warning">New warning</string>
+    <string name="w_volume_line">%1$s: %2$s</string>
+    <string name="w_vol_degraded">degraded</string>
+    <string name="w_vol_rebuilding">rebuilding</string>
+    <string name="w_vol_checking">being checked</string>
+    <string name="w_vol_failed">failed</string>
+    <string name="w_vol_missing">missing</string>
+    <string name="w_vol_unmounted">not mounted</string>
+    <string name="w_vol_other">not all right</string>
+    <string name="w_storage_line">Storage: %1$d %% used, %2$s free</string>
+    <plurals name="w_new_messages">
+        <item quantity="one">%d new message</item>
+        <item quantity="other">%d new messages</item>
+    </plurals>
+    <string name="w_agent">Ask the agent</string>
+    <string name="w_approvals">Approvals</string>
+    <plurals name="w_approvals_waiting">
+        <item quantity="one">%d waiting</item>
+        <item quantity="other">%d waiting</item>
+    </plurals>
+    <string name="w_switch">Switch</string>
+    <string name="w_cameras">Cameras</string>
+    <string name="w_messages">Messages</string>
+    <string name="w_settings">Settings</string>
+
+    <string name="w_agent_prompt">What should the agent do?</string>
+    <string name="w_agent_speak">Speak</string>
+    <string name="w_agent_type">Type</string>
+    <string name="w_agent_listening">Listening. Tap “Done” when you are finished.</string>
+    <string name="w_agent_done">Done</string>
+    <string name="w_agent_working">The agent is working …</string>
+    <string name="w_agent_more">Ask more</string>
+    <string name="w_agent_error">The agent could not finish this.</string>
+    <string name="w_agent_err_rights">The AI agent is not enabled for this account.</string>
+    <string name="w_agent_err_whisper">Transcription is not set up on the NAS (speech services).</string>
+    <string name="w_agent_heard_nothing">I did not understand anything.</string>
+    <string name="w_agent_no_mic">Speaking needs the microphone. You can type instead.</string>
+    <string name="w_read_aloud">Read aloud</string>
+    <string name="w_allow">Allow</string>
+    <string name="w_deny">Deny</string>
+    <string name="w_approval">The agent asks</string>
+    <string name="w_approval_high">The agent asks (far-reaching)</string>
+    <string name="w_approvals_none">Nothing is waiting for you.</string>
+
+    <string name="w_switch_devices">Devices</string>
+    <string name="w_switch_containers">Containers</string>
+    <string name="w_switch_vms">VMs</string>
+    <string name="w_switch_none">Nothing to switch here, or your account may not.</string>
+    <string name="w_switch_err">Switching did not work.</string>
+    <string name="w_switch_err_rights">Your account may not switch this.</string>
+    <string name="w_run">Run</string>
+    <string name="w_on">on</string>
+    <string name="w_off">off</string>
+    <string name="w_unavailable">unavailable</string>
+    <string name="w_unknown">unknown</string>
+    <string name="w_running_tap_stop">running · tap to stop</string>
+    <string name="w_stopped_tap_start">stopped · tap to start</string>
+    <string name="w_container_stop_title">Stop “%1$s”?</string>
+    <string name="w_container_stop_text">The container stays stopped until you start it again.</string>
+    <string name="w_container_stop">Stop</string>
+    <string name="w_vm_stop_title">Shut down “%1$s”?</string>
+    <string name="w_vm_stop_text">The VM shuts down cleanly.</string>
+    <string name="w_vm_stop">Shut down</string>
+
+    <string name="w_cameras_none">No camera for your account.</string>
+    <string name="w_camera">Camera</string>
+    <string name="w_camera_picture">Still image of %1$s</string>
+    <string name="w_camera_events">Recent events</string>
+    <string name="w_camera_no_events">No events.</string>
+    <string name="w_camera_back_live">Back to the still</string>
+    <string name="w_camera_err">No image from this camera.</string>
+    <string name="w_camera_err_rights">Your account may not see this camera.</string>
+    <string name="w_label_person">Person</string>
+    <string name="w_label_car">Car</string>
+    <string name="w_label_animal">Animal</string>
+    <string name="w_label_package">Parcel</string>
+
+    <string name="w_messages_none">No messages.</string>
+    <string name="w_sev_warning">Warning</string>
+    <string name="w_sev_error">Error</string>
+
+    <string name="w_set_read_aloud">Read answers aloud</string>
+    <string name="w_set_nas_voice">Voice of the NAS</string>
+    <string name="w_set_nas_voice_sub">Read aloud with Piper on the NAS instead of the watch’s voice</string>
+    <string name="w_update">Update</string>
+    <string name="w_version">Version %1$s</string>
+    <string name="w_update_check">Check for updates</string>
+    <string name="w_update_checking">Checking …</string>
+    <string name="w_update_none">This is the newest version.</string>
+    <string name="w_update_err">Checking is not possible right now.</string>
+    <string name="w_update_found">Version %1$s is out.</string>
+    <string name="w_update_install">Install</string>
+    <string name="w_update_allow">Allow</string>
+    <string name="w_update_allow_text">Allow the app once to install updates.</string>
+    <string name="w_update_loading">Loading …</string>
+    <string name="w_update_loading_of">%1$s of %2$s</string>
+    <string name="w_update_installing">Installing …</string>
+    <string name="w_update_failed">The update did not work.</string>
+    <string name="w_pairing">Pairing</string>
+    <string name="w_paired_with">%1$s on %2$s</string>
+    <string name="w_unpair">Unpair</string>
+    <string name="w_unpair_title">Unpair?</string>
+    <string name="w_unpair_text">The watch signs out. On the NAS it stays under My account › Devices until you end it there.</string>
+
+    <string name="w_tile_label">NAS</string>
+    <string name="w_tile_open">Open TitanOS</string>
+    <string name="w_tile_unpaired">Not paired yet</string>
+    <string name="w_tile_storage">%1$d %% used\n%2$s free</string>
+    <string name="w_complication_label">NAS</string>
+    <string name="w_complication_title">NAS</string>
+    <string name="w_complication_none">not paired</string>
+    <string name="w_complication_storage">storage %1$d %% used</string>
+</resources>

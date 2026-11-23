@@ -1,0 +1,167 @@
+package io.github.ra5on.titanos.storage
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import io.github.ra5on.titanos.admin.AdminEnv
+import io.github.ra5on.titanos.admin.AdminShell
+import io.github.ra5on.titanos.admin.Polling
+import io.github.ra5on.titanos.admin.SideEntry
+import io.github.ra5on.titanos.admin.SideGroup
+import io.github.ra5on.titanos.admin.t
+import io.github.ra5on.titanos.ui.currentWidth
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+
+/** Platten und Volumes, beim NAS abgefragt (alle 4 s, solange das Programm zu sehen ist; storage.svelte.ts). */
+internal class StorageModel(val api: StorageApi) {
+    var status by mutableStateOf<StorageStatus?>(null)
+    var error by mutableStateOf<Throwable?>(null)
+    var loading by mutableStateOf(false)
+
+    /** Liest den Zustand; ein Fehler steht nur da, solange es noch keinen gibt (der erste Ladevorgang). */
+    suspend fun load() {
+        loading = true
+        try {
+            status = api.status()
+            error = null
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (status == null) error = e
+        } finally {
+            loading = false
+        }
+    }
+
+    fun sleepSaved(s: DiskSleepStatus) {
+        status = status?.copy(diskSleep = s)
+    }
+}
+
+/** Wohin das Programm gerade zeigt; Seiten wie die Seitenleiste in apps.ts. */
+/** Öffnet ein anderes Programm (AdminEnv.open) aus Bausteinen ohne eigenen Zugriff auf die Umgebung. */
+internal val LocalOpenProgram = androidx.compose.runtime.staticCompositionLocalOf<(String, String?) -> Unit> { { _, _ -> } }
+
+internal class StorageNav(start: String?) {
+    var page by mutableStateOf(pageOf(start))
+    var volume by mutableStateOf<String?>(null)
+    var mode by mutableStateOf<String?>(null)
+    var disk by mutableStateOf<String?>(null)
+
+    fun go(page: String, volume: String? = null, mode: String? = null, disk: String? = null) {
+        this.page = page
+        this.volume = volume
+        this.mode = mode
+        this.disk = disk
+    }
+
+    companion object {
+        /** Die Seite aus einem Start wie `smart?disk=sda` (Adresse `/storage/smart?disk=…` des Webs). */
+        fun pageOf(start: String?) = when (val page = start?.substringBefore('?')) {
+            "manage", "smart", "import", "replace", "memory" -> page
+            else -> "overview"
+        }
+
+        /** Ein Wert aus dem Teil hinter `?` eines Starts (`disk`). */
+        fun queryOf(start: String?, key: String): String? =
+            start?.substringAfter('?', "")?.split('&')?.firstOrNull { it.substringBefore('=') == key }
+                ?.substringAfter('=', "")?.let { java.net.URLDecoder.decode(it, "UTF-8") }?.takeIf { it.isNotEmpty() }
+    }
+}
+
+/**
+ * Das Programm „Speicher“: Übersicht, Verwalten, Platten prüfen, Importieren,
+ * Platte ersetzen, Plattenwerkzeuge (in Werkzeuge) und Einstellungen ›
+ * Arbeitsspeicher. [pollMs] ist die Abfrage des Speicher-Zustands (Tests: 0).
+ */
+@Composable
+internal fun StorageProgram(
+    env: AdminEnv,
+    start: String?,
+    onBack: () -> Unit,
+    pollMs: Long = 4000,
+    nav: StorageNav = remember(start) { StorageNav(start) },
+    overview: OverviewState = remember { OverviewState() },
+) {
+    val model = remember(env) { StorageModel(StorageApi(env.http)) }
+    val smart = remember(start) { SmartSelection().also { it.disk = StorageNav.queryOf(start, "disk") } }
+    val scope = rememberCoroutineScope()
+    val width = currentWidth()
+
+    Polling(model, pollMs) { model.load() }
+
+    val groups = listOf(
+        SideGroup(
+            null,
+            listOf(
+                SideEntry("overview", t("desktop.side.overview"), "disk"),
+                SideEntry("manage", t("desktop.side.manage"), "tool"),
+                SideEntry("smart", t("desktop.side.smart"), "activity"),
+                SideEntry("import", t("desktop.side.import"), "download"),
+                SideEntry("replace", t("desktop.side.replace"), "restart"),
+                SideEntry("diskTools", t("desktop.side.diskTools"), "disc", action = true),
+            ),
+        ),
+        SideGroup(t("desktop.side.settings"), listOf(SideEntry("memory", t("desktop.side.memory"), "chip"))),
+    )
+    val onUp: (() -> Unit)? = when {
+        width.twoPanes -> null
+        nav.page == "overview" && overview.hasDetail(model.status) -> ({ overview.closeDetail() })
+        nav.page == "smart" && smart.disk != null -> ({ smart.disk = null })
+        else -> null
+    }
+    val page = if (onUp != null && nav.page == "overview") overview.detailTitle(model.status) else null
+
+    // „Aufgeweckt durch“: der Hinweis auf die Systemdaten führt dorthin (DiskWakes, wie im Web /settings/systemdata).
+    androidx.compose.runtime.CompositionLocalProvider(LocalOpenProgram provides env.open) {
+    AdminShell(
+        glyph = "storage",
+        gradient = "dark",
+        program = t("desktop.app.storage"),
+        groups = groups,
+        current = nav.page,
+        onSelect = { id -> if (id == "diskTools") env.open("tools", "disks") else nav.go(id) },
+        onExit = onBack,
+        page = page ?: groups.flatMap { it.entries }.firstOrNull { it.id == nav.page }?.label ?: t("desktop.app.storage"),
+        onUp = onUp,
+        // Tastenkürzel: Strg+N neues Volume, F5 neu laden (die Befehle der Menüleiste des Webs).
+        onKey = { e ->
+            if (e.type != KeyEventType.KeyDown) return@AdminShell false
+            when {
+                e.isCtrlPressed && e.key == Key.N && nav.page == "overview" && env.admin -> {
+                    overview.dialog = OverviewDialog.Create
+                    true
+                }
+                e.key == Key.F5 -> {
+                    scope.launch { model.load() }
+                    true
+                }
+                else -> false
+            }
+        },
+    ) {
+        Box {
+            when (nav.page) {
+                "manage" -> ManagePage(env, model, nav)
+                "smart" -> SmartPage(env, model, nav, smart)
+                "import" -> ImportPage(env, model, nav)
+                "replace" -> ReplacePage(env, model, nav)
+                "memory" -> MemoryPage(env, if (pollMs <= 0) 0 else 5000)
+                else -> OverviewPage(env, model, nav, overview)
+            }
+        }
+    }
+    }
+    LaunchedEffect(nav.page) { if (nav.page != "smart") smart.disk = null }
+}

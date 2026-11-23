@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ws_title">Desktop</string>
+    <string name="ws_mode">Show the desktop</string>
+    <string name="ws_mode_auto">Automatic</string>
+    <string name="ws_mode_always">Always</string>
+    <string name="ws_mode_never">Never</string>
+    <string name="ws_mode_hint">Automatic: on a monitor in desktop mode and in wide windows from desktop width. Otherwise the phone layout.</string>
+    <string name="ws_own">Own setup for Android</string>
+    <string name="ws_own_hint">Off: icons, widgets, wallpaper and dock as on the web. On: a setup of its own for this account\'s Android devices.</string>
+    <string name="ws_on">On</string>
+    <string name="ws_off">Off</string>
+    <string name="ws_wallpaper_more">Own pictures and all appearance settings in the control panel.</string>
+    <string name="ws_shortcuts_menu">Ctrl + Space: menu</string>
+    <string name="ws_shortcuts_esc">Escape: close menu, folder and editing</string>
+    <string name="ws_shortcuts_back">Back: one page back in the front window, otherwise minimise</string>
+    <string name="ws_save_failed">The desktop setup could not be saved.</string>
+    <string name="ws_agent_panel">AI agent</string>
+    <string name="ws_nas_list">NAS and accounts …</string>
+</resources>

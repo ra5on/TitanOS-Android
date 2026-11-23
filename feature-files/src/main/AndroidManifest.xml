@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- DLNA: Fernseher und Lautsprecher im Heimnetz finden (SSDP). -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <application>
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -10,6 +16,79 @@
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/titanos_file_paths" />
+        </provider>
+        <!-- Ein Ordner oder eine Datei in einem weiteren Fenster. -->
+        <activity
+            android:name="io.github.ra5on.titanos.files.FilesWindowActivity"
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
+            android:documentLaunchMode="always"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density|keyboard|keyboardHidden|navigation|uiMode|colorMode"
+            android:windowSoftInputMode="adjustResize" />
+        <!-- „Öffnen mit TitanOS“: Office-Dateien aus anderen Apps in T-Word, T-Exel, T-Deck, T-PDF. -->
+        <activity
+            android:name="io.github.ra5on.titanos.files.OfficeOpenActivity"
+            android:exported="true"
+            android:label="@string/office_open_label"
+            android:resizeableActivity="true"
+            android:documentLaunchMode="intoExisting"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density|keyboard|keyboardHidden|navigation|uiMode|colorMode"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <data android:mimeType="application/msword" />
+                <data android:mimeType="application/vnd.oasis.opendocument.text" />
+                <data android:mimeType="application/rtf" />
+                <data android:mimeType="text/rtf" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                <data android:mimeType="application/vnd.ms-excel" />
+                <data android:mimeType="application/vnd.oasis.opendocument.spreadsheet" />
+                <data android:mimeType="text/csv" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.slideshow" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.template" />
+                <data android:mimeType="application/vnd.oasis.opendocument.presentation" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="image/vnd.dxf" />
+            </intent-filter>
+        </activity>
+        <!-- Musik und Ton vom NAS im Hintergrund, Steuerung in der Mitteilung und auf dem Sperrbildschirm. -->
+        <service
+            android:name="io.github.ra5on.titanos.files.NasPlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
+        <!-- Aus der Agent-App: eine Datei des NAS im eingebetteten Office öffnen (nur mit SIBLING-Signatur). -->
+        <activity
+            android:name="io.github.ra5on.titanos.files.SiblingOfficeActivity"
+            android:exported="true"
+            android:permission="io.github.ra5on.titanos.permission.SIBLING"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="io.github.ra5on.titanos.OPEN_OFFICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <!-- TitanOS in der Dateiauswahl jeder App und in „Dateien“ (Freigaben als Wurzeln). -->
+        <provider
+            android:name="io.github.ra5on.titanos.files.NasDocumentsProvider"
+            android:authorities="${applicationId}.documents"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
         </provider>
     </application>
 </manifest>

@@ -121,9 +121,11 @@ fun NotifyTab(nav: @Composable () -> Unit) {
             onNote = { n ->
                 NotifyRuntime.inbox(context).update { Inbox.markRead(it, listOf(n.id)) to Unit }
                 NotifyRuntime.changed()
-                Poster.cancel(context, n.notificationTag)
+                Poster.cancel(context, Poster.tagOf(NotifyRuntime.active(), n))
                 if (n.app == "agent" || n.kind == Category.Agent) {
-                    Poster.openIntent(context, n)?.let { runCatching { it.send() } }
+                    Poster.openIntent(context, n, NotifyRuntime.active())?.let { runCatching { it.send() } }
+                } else {
+                    NotifyRuntime.requestOpen(n.link)
                 }
             },
             onMenu = { menu = true },

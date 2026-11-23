@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Photo backup: layout, selection, gallery (English). -->
+<resources>
+    <string name="gallery_all">All</string>
+    <string name="gallery_empty">Nothing backed up yet</string>
+    <string name="gallery_empty_text">Backed-up photos and videos appear here, sorted by month.</string>
+    <string name="gallery_failed">The folder on the NAS could not be read.</string>
+    <string name="gallery_loading">Reading the folder on the NAS …</string>
+    <string name="gallery_photo">Photo %1$s</string>
+    <string name="gallery_reload">Reload</string>
+    <string name="gallery_row_text">%1$s › %2$s, by month</string>
+    <string name="gallery_title">On the NAS</string>
+    <string name="gallery_truncated">Very many folders: not everything is shown.</string>
+    <string name="gallery_video">Video %1$s</string>
+    <string name="ps_applies_new">Folders and names apply to new backups; what is already backed up stays where it is and is not uploaded again.</string>
+    <string name="ps_example">Example: %1$s</string>
+    <string name="ps_group_closed">collapsed</string>
+    <string name="ps_group_open">expanded</string>
+    <string name="ps_month">Month in the name</string>
+    <string name="ps_month_name">Name only</string>
+    <string name="ps_month_number">Number</string>
+    <string name="ps_month_number_name">Number and name</string>
+    <string name="ps_month_year_dash">Year-month</string>
+    <string name="ps_motion">Motion photos (live photos)</string>
+    <string name="ps_motion_text">Photos with a short video inside, backed up whole</string>
+    <string name="ps_name_pattern">Pattern for the name</string>
+    <string name="ps_naming">File names</string>
+    <string name="ps_naming_custom">Own pattern</string>
+    <string name="ps_naming_original">As on the phone</string>
+    <string name="ps_naming_skip_note">Note: two shots in the same second get the same name; with “Skip” the second one would not reach the NAS.</string>
+    <string name="ps_naming_taken">By time taken</string>
+    <string name="ps_naming_taken_original">Time taken and original name</string>
+    <string name="ps_nothing">Nothing</string>
+    <string name="ps_older">Older shots too</string>
+    <string name="ps_older_off">Only shots from %1$s</string>
+    <string name="ps_older_on">All shots, including earlier ones</string>
+    <string name="ps_pattern">Pattern for the folders</string>
+    <string name="ps_pattern_help">A slash separates folders. Placeholders: {Jahr} (year), {Monat} (month, in the chosen format), {MonatZahl}, {MonatName}, {Tag} (day), {Stunde}, {Minute}, {Sekunde}, {Album}, {Ordner} (phone folder), {Name}, {Art} (kind), {Gerät} (device); English names like {year} work too.</string>
+    <string name="ps_pattern_invalid">The pattern has unbalanced braces or “..”.</string>
+    <string name="ps_raw">RAW photos</string>
+    <string name="ps_raw_text">DNG, CR2, NEF, ARW and others</string>
+    <string name="ps_same">Same name on the NAS</string>
+    <string name="ps_same_rename">Keep both</string>
+    <string name="ps_same_rename_text">The new one is called “IMG_1 (2).jpg”</string>
+    <string name="ps_same_replace">Replace</string>
+    <string name="ps_same_replace_text">The file on the NAS is overwritten</string>
+    <string name="ps_same_skip">Skip</string>
+    <string name="ps_same_skip_text">The shot stays on the phone only</string>
+    <string name="ps_screenshots">Screenshots</string>
+    <string name="ps_screenshots_text">Folder “Screenshots” and names “Screenshot…”</string>
+    <string name="ps_structure">Folder structure</string>
+    <string name="ps_structure_album">By album (phone folder)</string>
+    <string name="ps_structure_album_year">Album, then year</string>
+    <string name="ps_structure_album_year_month">Album, then year and month</string>
+    <string name="ps_structure_custom">Own pattern</string>
+    <string name="ps_structure_flat">Everything in one folder</string>
+    <string name="ps_structure_flat_example">no subfolders</string>
+    <string name="ps_structure_year">Year only</string>
+    <string name="ps_structure_year_album">Year, then album</string>
+    <string name="ps_structure_year_month">Year and month</string>
+    <string name="ps_structure_year_month_album">Year, month, then album</string>
+    <string name="ps_structure_year_month_day">Year, month and day</string>
+    <string name="ps_target_note">Subfolders and file names are set in the settings under “Folder structure” and “File names”.</string>
+    <string name="ps_target_photos">Photos (and videos)</string>
+    <string name="ps_target_videos">Target for videos</string>
+    <string name="ps_video_own">Videos to their own target</string>
+    <string name="ps_video_own_text">Another share or folder</string>
+    <string name="ps_what">What is backed up</string>
+    <plurals name="gallery_count">
+        <item quantity="one">%1$d shot in %2$d folders</item>
+        <item quantity="other">%1$d shots in %2$d folders</item>
+    </plurals>
+    <plurals name="ps_folders_chosen">
+        <item quantity="one">%d folder chosen</item>
+        <item quantity="other">%d folders chosen</item>
+    </plurals>
+</resources>

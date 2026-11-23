@@ -4,6 +4,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Ohne Netz scheitert Senden sofort, statt erst nach der Zeitüberschreitung. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Spracheingabe und Sprechmodus über die Sprachdienste des NAS (Aufnahme im Handy). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Kurzes Vibrieren (Darstellung › Vibration). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- Spracheingabe über die Spracherkennung von Android (RecognizerIntent).
          Ohne diesen Eintrag sieht die App ab Android 11 keine Erkennung. -->
@@ -11,6 +15,12 @@
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
+        <!-- Vorlesen mit der Sprachausgabe des Handys. -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <!-- „Zurück zu TitanOS“ öffnet die TitanOS-App. -->
+        <package android:name="io.github.ra5on.titanos" />
     </queries>
 
     <application
@@ -24,6 +34,8 @@
         android:theme="@style/Theme.Agent">
         <activity
             android:name=".MainActivity"
+            android:resizeableActivity="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density|keyboard|keyboardHidden|navigation|uiMode|colorMode"
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">

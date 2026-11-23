@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sec_choose_file">Choose file</string>
+    <string name="sec_push_app">This app</string>
+    <string name="sec_push_app_hint">Notifications arrive through the TitanOS app (without Google). Choose here how Android shows them.</string>
+    <string name="sec_push_app_settings">Notifications in Android</string>
+    <string name="sec_node_web">Manage other nodes on the web interface with the node switcher at the top.</string>
+    <string name="sec_node_switch">“Manage” selects the node for the whole app, like the node switcher on the web. Switch back to this NAS under “NAS and accounts”.</string>
+    <string name="sec_required">Please fill in: %1$s</string>
+</resources>
