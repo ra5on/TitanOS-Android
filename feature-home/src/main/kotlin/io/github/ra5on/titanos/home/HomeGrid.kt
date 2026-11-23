@@ -662,7 +662,7 @@ private fun HomeEntry(
                                     if (folderable && other != null && other != key && !other.startsWith("widget:")) {
                                         grid.hoverJob = scope.launch {
                                             delay(400)
-                                            if (grid.target == next && grid.dragKey == key) {
+                                            if (grid.target == next && grid.dragKey == key && grid.edgeJob?.isActive != true) {
                                                 grid.hover = other
                                                 haptic.tick()
                                             }
@@ -681,6 +681,9 @@ private fun HomeEntry(
                                 grid.edgeJob?.cancel()
                                 grid.edgeJob = null
                             } else if (grid.edgeJob?.isActive != true) {
+                                // Am Rand gilt Blättern, kein Ordner mit dem Symbol am Rand.
+                                grid.hoverJob?.cancel()
+                                grid.hover = null
                                 grid.edgeJob = scope.launch {
                                     delay(650)
                                     val target = pager.targetPage + dir
@@ -690,6 +693,13 @@ private fun HomeEntry(
                                     scope.launch {
                                         delay(30)
                                         pager.animateScrollToPage(target)
+                                        // Der Rahmen steht gleich auf der neuen Seite, auch ohne dass sich der Finger bewegt.
+                                        val w = grid.draft?.let { spanOf(key, it).first } ?: 1
+                                        if (grid.dragKey == key) {
+                                            grid.hoverJob?.cancel()
+                                            grid.hover = null
+                                            grid.cellAt(target, w)?.let { grid.target = target to it }
+                                        }
                                     }
                                     delay(450)
                                     grid.edgeJob = null
