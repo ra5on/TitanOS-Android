@@ -526,9 +526,10 @@ class FilesModel(
         reload()
     }
 
-    suspend fun undoLast(): Boolean {
-        val u = undo ?: return false
-        undo = null
+    /** [offer] beim Tippen festhalten: die Meldung verschwindet gleich danach und setzt [undo] zurück. */
+    suspend fun undoLast(offer: UndoOffer? = undo): Boolean {
+        val u = offer ?: return false
+        if (undo == u) undo = null
         return act {
             files!!.undo(u.id)
             reload()

@@ -3,6 +3,8 @@ package io.github.ra5on.titanos
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -238,6 +240,47 @@ class ScreenshotTest {
 
     private fun folderUi(uploads: List<Transfer> = emptyList()) = io.github.ra5on.titanos.files.FolderUi(FolderState(location, entries), entries, uploads = uploads)
 
+    private val download = Transfer(9, "Mietvertrag Wohnung.pdf", Direction.Download, "Documents/Privat", "share/Documents", "Privat", done = 1_100_000, total = 2_400_000, state = TransferState.Running)
+
+    /** Entwurf 20: Fortschritt in der Zeile mit Abbrechen, Ring oben, „auf dem Handy“. */
+    @Test
+    fun s21c_download_running() = shot("21-dateien-download-laeuft") {
+        FolderScreen(
+            io.github.ra5on.titanos.files.FolderUi(
+                FolderState(location, entries), entries,
+                transfers = mapOf(download.name to download),
+                summary = io.github.ra5on.titanos.files.TransferSummary(1, download.done, download.total, 1, 0, download.name),
+                offlinePaths = setOf("Privat/Ausweis Scan.jpg"),
+            ),
+            null, noCallbacks, bottomBar = { NavBar("Files") },
+        )
+    }
+
+    /** Entwurf 21: fertig, Vermerk „in Downloads“, grüner Punkt am Ring, Meldung mit Öffnen und Zeigen. */
+    @Test
+    fun s21d_download_done() = shot("21-dateien-download-fertig") {
+        val done = download.copy(state = TransferState.Done, done = download.total, uri = "content://media/external/downloads/1", finishedAtMs = now.toEpochMilli())
+        FolderScreen(
+            io.github.ra5on.titanos.files.FolderUi(
+                FolderState(location, entries), entries,
+                transfers = mapOf(done.name to done),
+                ringDoneAt = System.currentTimeMillis(),
+                offlinePaths = setOf("Privat/Ausweis Scan.jpg"),
+            ),
+            null, noCallbacks, bottomBar = { NavBar("Files") },
+        ) {
+            io.github.ra5on.titanos.ui.components.Snackbar(
+                "Mietvertrag Wohnung.pdf",
+                listOf(io.github.ra5on.titanos.ui.components.SnackAction("Öffnen") {}, io.github.ra5on.titanos.ui.components.SnackAction("Zeigen") {}),
+                onDismiss = {},
+                sub = "In Downloads gespeichert",
+                done = true,
+                timeoutMs = 600_000,
+                modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomCenter).padding(bottom = 12.dp),
+            )
+        }
+    }
+
     private val noCallbacks = io.github.ra5on.titanos.files.FolderCallbacks({}, {}, {}, {}, {}, {}, {}, {}, {})
 
     @Test
@@ -266,8 +309,10 @@ class ScreenshotTest {
                 Transfer(2, "Urlaub Gardasee.zip", Direction.Upload, "Media/Reisen", "share/Media", "Reisen", 1_800_000_000, 1_800_000_000, TransferState.Done, finishedAtMs = now.toEpochMilli()),
                 Transfer(3, "Steuerbescheid.pdf", Direction.Download, "Documents", "share/Documents", "", 120_000, 120_000, TransferState.Done, finishedAtMs = now.minus(1, ChronoUnit.DAYS).toEpochMilli()),
                 Transfer(4, "Präsentation.key", Direction.Upload, "Projects", "share/Projects", "", 2_000_000, 9_000_000, TransferState.Failed, offline = true, finishedAtMs = now.toEpochMilli()),
+                Transfer(5, "Steuerbescheid 2025.pdf", Direction.Download, "Documents", "share/Documents", "", 380_000, 380_000, TransferState.Done, finishedAtMs = now.toEpochMilli(), uri = "content://media/external/downloads/2"),
+                Transfer(6, "", Direction.Upload, "Fotos/Handy Zeus/2026/11", "", "", state = TransferState.Done, finishedAtMs = now.minus(3, ChronoUnit.HOURS).toEpochMilli(), runner = io.github.ra5on.titanos.files.TransferSource.Backup, photos = 14),
             ),
-            onBack = {}, onCancel = {}, now = now,
+            onBack = {}, onCancel = {}, now = now, onBackup = {},
         )
     }
 

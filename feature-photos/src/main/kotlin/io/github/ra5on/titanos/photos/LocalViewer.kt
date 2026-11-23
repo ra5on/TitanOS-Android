@@ -66,6 +66,16 @@ fun LocalPhotoViewer(model: PhotosModel, tiles: List<Tile>, start: Int, onClose:
     val current = tiles.getOrNull(pager.currentPage)
     val item = current?.let { model.item(it.id) }
     val noApp = stringResource(R.string.photos_view_none)
+    // Auf Schwarz helle Symbole in der Statusleiste (wie die Fotoansicht der Dateien).
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val window = (view.context as? android.app.Activity)
+            ?: (view.context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
+        val ctl = window?.window?.let { androidx.core.view.WindowCompat.getInsetsController(it, view) }
+        val before = ctl?.isAppearanceLightStatusBars
+        ctl?.isAppearanceLightStatusBars = false
+        onDispose { if (before != null) ctl.isAppearanceLightStatusBars = before }
+    }
     // Auf Schwarz immer die dunkle Darstellung (helle Schrift), wie die Fotoansicht der Dateien.
     io.github.ra5on.titanos.ui.theme.TitanTheme(dark = true) {
     Box(Modifier.fillMaxSize().background(Color.Black)) {

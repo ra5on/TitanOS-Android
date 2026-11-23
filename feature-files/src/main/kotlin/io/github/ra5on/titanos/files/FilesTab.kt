@@ -439,7 +439,7 @@ private fun FolderRoute(model: FilesModel, location: Location, nav: @Composable 
         },
         dropClipboard = { model.clipboard = null },
         jobs = { model.push(FilesRoute.Jobs) },
-        undo = { scope.launch { model.undoLast() } },
+        undo = { val u = model.undo; scope.launch { model.undoLast(u) } },
         dismissUndo = { model.undo = null },
         secondary = fsNow.rightClickMenu,
         transfers = { model.push(FilesRoute.Transfers) },

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -124,7 +125,9 @@ fun SwipeRow(
     content: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current
-    val reveal = with(density) { SwipeDefaults.REVEAL_DP.dp.toPx() }
+    val minReveal = with(density) { SwipeDefaults.REVEAL_DP.dp.toPx() }
+    // Der Knopf wächst mit seinem Wort (große Schrift, „Papierkorb“): nie mitten im Wort umbrechen.
+    var backWidth by remember { mutableFloatStateOf(0f) }
     val extra = with(density) { SwipeDefaults.RUN_EXTRA_DP.dp.toPx() }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     var offset by remember { mutableFloatStateOf(0f) }
@@ -137,6 +140,8 @@ fun SwipeRow(
     val endNow by rememberUpdatedState(end)
     val live = enabled && (start != null || end != null)
     fun finish() {
+        // Beim Loslassen neu lesen (der Knopf ist inzwischen gemessen); die Geste hält die erste Fassung fest.
+        val reveal = maxOf(minReveal, backWidth)
         // Im Rechts-nach-links-Layout ist „Anfang“ rechts: die Richtung kehrt sich um.
         val logical = if (rtl) -offset else offset
         when (SwipeDefaults.outcome(logical, width, reveal, extra, startNow != null, endNow != null)) {
@@ -166,7 +171,7 @@ fun SwipeRow(
                                 val logicalStart = if (rtl) endNow != null else startNow != null
                                 val logicalEnd = if (rtl) startNow != null else endNow != null
                                 offset = SwipeDefaults.clamp(offset + dx, width, logicalStart, logicalEnd)
-                                val beyond = abs(offset) >= SwipeDefaults.runAt(width, reveal, extra)
+                                val beyond = abs(offset) >= SwipeDefaults.runAt(width, maxOf(minReveal, backWidth), extra)
                                 if (beyond != crossed) {
                                     crossed = beyond
                                     if (beyond) haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
@@ -192,10 +197,10 @@ fun SwipeRow(
         val right = if (rtl) start else end
         // Hinter der Zeile: die Aktion auf der Seite, die frei wird; antippen führt sie aus.
         if (shown > 0 && left != null) {
-            SwipeBack(left, Modifier.matchParentSize(), Alignment.CenterStart, revealed = !dragging && abs(offset) > 1f) { offset = 0f; left.run() }
+            SwipeBack(left, Modifier.matchParentSize(), Alignment.CenterStart, revealed = !dragging && abs(offset) > 1f, onWidth = { backWidth = maxOf(backWidth, it) }) { offset = 0f; left.run() }
         }
         if (shown < 0 && right != null) {
-            SwipeBack(right, Modifier.matchParentSize(), Alignment.CenterEnd, revealed = !dragging && abs(offset) > 1f) { offset = 0f; right.run() }
+            SwipeBack(right, Modifier.matchParentSize(), Alignment.CenterEnd, revealed = !dragging && abs(offset) > 1f, onWidth = { backWidth = maxOf(backWidth, it) }) { offset = 0f; right.run() }
         }
         Box(Modifier.offset { IntOffset(shown.roundToInt(), 0) }.background(background).fillMaxWidth()) {
             content()
@@ -208,10 +213,11 @@ fun SwipeRow(
 }
 
 @Composable
-private fun SwipeBack(a: SwipeAction, modifier: Modifier, align: Alignment, revealed: Boolean, onRun: () -> Unit) {
+private fun SwipeBack(a: SwipeAction, modifier: Modifier, align: Alignment, revealed: Boolean, onWidth: (Float) -> Unit, onRun: () -> Unit) {
     Box(modifier.background(a.color), contentAlignment = align) {
         Row(
-            Modifier.width(SwipeDefaults.REVEAL_DP.dp).fillMaxHeight()
+            Modifier.width(androidx.compose.foundation.layout.IntrinsicSize.Max).widthIn(min = SwipeDefaults.REVEAL_DP.dp).fillMaxHeight()
+                .onSizeChanged { onWidth(it.width.toFloat()) }
                 .then(if (revealed) Modifier.clickable(role = Role.Button, onClick = onRun) else Modifier)
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
