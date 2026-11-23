@@ -150,4 +150,12 @@
     <string name="photos_done_title">Foto-Sicherung</string>
     <string name="photos_done_channel">Foto-Sicherung: hochgeladen</string>
     <string name="photos_done_channel_text">Nach einem Lauf: wie viele Aufnahmen hochgeladen wurden und wohin</string>
+    <!-- Fotoansicht am Handy (Entwurf 13). -->
+    <string name="photos_view_saved">auf dem NAS</string>
+    <string name="photos_view_waiting">nur auf dem Handy</string>
+    <string name="photos_view_play">Video abspielen</string>
+    <string name="photos_view_share">Teilen</string>
+    <string name="photos_view_failed">Das Bild lässt sich nicht laden.</string>
+    <string name="photos_view_open">Ansehen</string>
+    <string name="photos_view_none">Keine App zum Abspielen gefunden.</string>
 </resources>

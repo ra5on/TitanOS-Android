@@ -218,6 +218,8 @@ private fun Machines(
                         onOpen = { state.choose(it) },
                         onMenu = { actions.menu(it) },
                         onRefresh = { state.load() },
+                        onStart = { actions.act(it, "start") },
+                        onStop = { actions.act(it, "shutdown") },
                     )
                 },
                 detail = {
@@ -232,7 +234,14 @@ private fun Machines(
 /** Liste der VMs mit Suche, Filter und Zahlen am Ende (VmList.svelte). */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
-fun VmListPane(state: VmsState, onOpen: (Vm) -> Unit, onMenu: (Vm) -> Unit, onRefresh: suspend () -> Unit) {
+fun VmListPane(
+    state: VmsState,
+    onOpen: (Vm) -> Unit,
+    onMenu: (Vm) -> Unit,
+    onRefresh: suspend () -> Unit,
+    onStart: ((Vm) -> Unit)? = null,
+    onStop: ((Vm) -> Unit)? = null,
+) {
     val scope = rememberCoroutineScope()
     val c = Titan.colors
     val counts = state.counts()
@@ -260,7 +269,19 @@ fun VmListPane(state: VmsState, onOpen: (Vm) -> Unit, onMenu: (Vm) -> Unit, onRe
                 if (shown.isEmpty()) Muted(t("ui.vmNoResults"), Modifier.padding(8.dp))
             }
             items(shown, key = { it.name }) { vm ->
-                VmRow(vm, selected = vm.name == state.current?.name, onOpen = { onOpen(vm) }, onMenu = { onMenu(vm) })
+                // Wischen (Entwurf 12): rechts starten, links herunterfahren, je mit Rückfrage.
+                val busy = state.isBusy(vm)
+                io.github.ra5on.titanos.compute.StartStopRow(
+                    vm.label,
+                    start = onStart?.takeIf { !busy && !vm.running && state.canStart(vm) }?.let { f -> { f(vm) } },
+                    stop = onStop?.takeIf { !busy && vm.running }?.let { f -> { f(vm) } },
+                    startLabel = t("vms.start"),
+                    stopLabel = t("vms.shutdown"),
+                    shutdown = true,
+                    background = c.bg,
+                ) {
+                    VmRow(vm, selected = vm.name == state.current?.name, onOpen = { onOpen(vm) }, onMenu = { onMenu(vm) })
+                }
             }
             item {
                 val memory = state.vms.filter { it.running }.sumOf { it.memoryMiB } * MIB

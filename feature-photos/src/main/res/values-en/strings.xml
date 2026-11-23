@@ -150,4 +150,11 @@
     <string name="photos_done_title">Photo backup</string>
     <string name="photos_done_channel">Photo backup: uploaded</string>
     <string name="photos_done_channel_text">After a run: how many pictures were uploaded and where to</string>
+    <string name="photos_view_saved">on the NAS</string>
+    <string name="photos_view_waiting">only on this phone</string>
+    <string name="photos_view_play">Play video</string>
+    <string name="photos_view_share">Share</string>
+    <string name="photos_view_failed">The picture cannot be loaded.</string>
+    <string name="photos_view_open">View</string>
+    <string name="photos_view_none">No app found to play this.</string>
 </resources>

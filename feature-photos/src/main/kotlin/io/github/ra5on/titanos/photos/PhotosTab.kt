@@ -41,6 +41,8 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit, files: io.g
     var route by rememberSaveable { mutableStateOf(Route.Main) }
     var menu by remember { mutableStateOf(false) }
     var whenFor by remember { mutableStateOf<Kind?>(null) }
+    // Fotoansicht am Handy (Entwurf 13): welche Aufnahme offen ist.
+    var viewing by rememberSaveable { mutableStateOf<Long?>(null) }
     DisposableEffect(Unit) {
         model.start()
         onDispose { model.stop() }
@@ -69,6 +71,11 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit, files: io.g
             model.message = null
         }
     }
+    val open = viewing?.let { id -> model.view.tiles.indexOfFirst { it.id == id }.takeIf { it >= 0 } }
+    if (route == Route.Main && open != null) {
+        LocalPhotoViewer(model, model.view.tiles, open, onClose = { viewing = null }) { t, m -> MediaThumb(model, t, m) }
+        return
+    }
     when (route) {
         Route.Main -> PhotosScreen(
             model.view,
@@ -79,6 +86,7 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit, files: io.g
             bottomBar = bottomBar,
             onGallery = { route = Route.Gallery },
             onResume = model::resume,
+            onTile = { viewing = it.id },
         ) {
             if (menu) {
                 PhotosMenu(

@@ -10,4 +10,7 @@
     <string name="compute_actions_for">Actions for %1$s</string>
     <string name="compute_refresh">Refresh</string>
     <string name="compute_admin_only">Only owners and administrators see this area.</string>
+    <string name="compute_ask_start">Start %1$s?</string>
+    <string name="compute_ask_stop">Stop %1$s?</string>
+    <string name="compute_ask_shutdown">Shut down %1$s?</string>
 </resources>

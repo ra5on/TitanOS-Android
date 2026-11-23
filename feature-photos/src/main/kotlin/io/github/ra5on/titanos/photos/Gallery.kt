@@ -262,5 +262,6 @@ fun GalleryRoute(model: PhotosModel, files: FilesModel?, onBack: () -> Unit) {
             info = { },
         ),
         onBack = { open = null },
+        strip = true,
     )
 }

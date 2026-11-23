@@ -217,6 +217,17 @@ private fun LxcPage(env: ComputeEnv, state: LxcState, onCreate: () -> Unit, onEd
                     items(list.containers, key = { it.name }) { c ->
                         val sel = c.name == current?.name
                         val more = t("vms.actionsFor", "name" to c.label)
+                        val free = !state.readOnly && state.busy != c.name
+                        // Wischen (Entwurf 12): rechts starten, links herunterfahren, je mit Rückfrage.
+                        io.github.ra5on.titanos.compute.StartStopRow(
+                            c.label,
+                            start = if (free && !c.running && c.job == null && c.available) ({ actions.action(c, "start") }) else null,
+                            stop = if (free && c.running) ({ actions.action(c, "stop") }) else null,
+                            startLabel = t("lxc.start"),
+                            stopLabel = t("lxc.stop"),
+                            shutdown = true,
+                            background = Titan.colors.bg,
+                        ) {
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 60.dp)
                                 .onSecondaryClick { actions.menu(c, onEdit) }
@@ -230,6 +241,7 @@ private fun LxcPage(env: ComputeEnv, state: LxcState, onCreate: () -> Unit, onEd
                                 LxcStateMark(c)
                             }
                             IconButton(TitanIcons.more, more, { actions.menu(c, onEdit) }, tint = Titan.colors.muted)
+                        }
                         }
                     }
                     item {

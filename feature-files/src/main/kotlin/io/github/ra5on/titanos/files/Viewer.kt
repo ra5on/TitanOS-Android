@@ -127,6 +127,8 @@ fun ViewerScreen(
     onPage: (Int) -> Unit = {},
     /** Neben der Liste (ab Split): kein Vollbild, Leiste immer sichtbar. */
     embedded: Boolean = false,
+    /** Fotoansicht (Entwurf 13, Galerie „Auf dem NAS“): unten die Leiste der Nachbarbilder. */
+    strip: Boolean = false,
 ) {
     val pager = rememberPagerState(initialPage = start.coerceIn(0, (files.size - 1).coerceAtLeast(0))) { files.size }
     var zoomed by remember { mutableStateOf(false) }
@@ -177,6 +179,8 @@ fun ViewerScreen(
                 }
             },
     ) {
+        // Bild nicht gezoomt: nach unten ziehen schließt (Entwurf 13).
+        DismissBox(enabled = !embedded && !zoomed && kind == FileKind.Image, onClose = onBack, modifier = Modifier.fillMaxSize()) {
         HorizontalPager(pager, Modifier.fillMaxSize(), userScrollEnabled = !zoomed, beyondViewportPageCount = 1, key = { files[it].name }) { page ->
             val e = files[page]
             val active = page == pager.currentPage
@@ -189,6 +193,21 @@ fun ViewerScreen(
                     FileKind.Pdf -> PdfPage(api, location, e, top, onZoom = { if (active) zoomed = it }, onTap = { if (!embedded) chrome = !chrome }, actions)
                     FileKind.Text -> TextPage(api, location, e, top, actions)
                     else -> OtherPage(api, location, e, top, actions)
+                }
+            }
+        }
+        }
+        if (strip && chrome && !pip && files.size > 1) {
+            ThumbStrip(
+                count = files.size,
+                current = pager.currentPage,
+                onPick = { i -> keys.launch { pager.scrollToPage(i) } },
+                label = { i -> files[i].name },
+                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding(),
+            ) { i, m ->
+                val f = files[i]
+                NasThumb(api, location.root.id, location.full(f.name), f.modified, m, size = 160) {
+                    Box(Modifier.matchParentSize().background(Color.DarkGray))
                 }
             }
         }
