@@ -295,5 +295,12 @@ fun mergeDesktop(stored: JsonElement?, prefs: DesktopPrefs, changed: Set<String>
     return JsonObject(base)
 }
 
+/**
+ * Ob [o] eine Einrichtung des Arbeitsplatzes enthält. In `androiddesktop` kann
+ * allein `phone` stehen (der Startbildschirm der App, PLAN 117); das ist noch
+ * keine eigene Einrichtung des Arbeitsplatzes.
+ */
+fun hasDesktopFields(o: JsonObject?): Boolean = o?.keys?.any { it in DESKTOP_FIELDS } == true
+
 /** Alles als ein Objekt (eigene Einrichtung für Android). */
 fun DesktopPrefs.toJson(): JsonObject = mergeDesktop(null, this, DESKTOP_FIELDS.toSet())

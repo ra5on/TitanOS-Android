@@ -194,7 +194,8 @@ fun AppearancePage(a: PageArgs) {
             s.look = look
             // Mit „eigene Einrichtung für Android“ (Arbeitsplatz) die Einrichtung, die der Arbeitsplatz zeigt.
             val kind = desktopKind(context)
-            s.desktop = (prefs[kind] as? JsonObject ?: prefs["desktop"] as? JsonObject) ?: JsonObject(emptyMap())
+            // Steht in `androiddesktop` nur der Startbildschirm der App (`phone`), gilt noch die Einrichtung des Webs.
+            s.desktop = ((prefs[kind] as? JsonObject)?.takeIf { o -> o.keys.any { it != "phone" && it != "version" } } ?: prefs["desktop"] as? JsonObject) ?: JsonObject(emptyMap())
             s.desktopBase = s.desktop
             s.loadError = null
             runCatching { TitanAppearance.takeAccount(context, org.json.JSONObject(look.toString())) }
@@ -598,7 +599,15 @@ internal fun desktopKind(context: android.content.Context): String =
  */
 internal suspend fun putDesktop(api: io.github.ra5on.titanos.settings.common.SettingsApi, kind: String, base: JsonObject?, value: JsonObject) {
     val changed = value.filter { (k, v) -> base?.get(k) != v }.keys + (base?.keys.orEmpty() - value.keys)
-    val stored = api.obj("preferences")[kind] as? JsonObject ?: (api.obj("preferences")["desktop"] as? JsonObject) ?: JsonObject(emptyMap())
+    val all = api.obj("preferences")
+    val own = all[kind] as? JsonObject
+    val web = all["desktop"] as? JsonObject ?: JsonObject(emptyMap())
+    // In `androiddesktop` kann bisher nur der Startbildschirm der App (`phone`, PLAN 117) stehen: dann die Einrichtung des Webs als Anfang, `phone` bleibt.
+    val stored = when {
+        own == null -> web
+        kind == "androiddesktop" && own.keys.none { it != "phone" && it != "version" } -> JsonObject(web + own)
+        else -> own
+    }
     val merged = JsonObject(stored.toMutableMap().apply { for (k in changed) { val v = value[k]; if (v != null) put(k, v) else remove(k) } })
     api.put("preferences/$kind", merged)
 }

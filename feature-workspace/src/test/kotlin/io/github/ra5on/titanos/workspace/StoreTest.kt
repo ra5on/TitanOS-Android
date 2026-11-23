@@ -111,6 +111,23 @@ class StoreTest {
     }
 
     @Test
+    fun theAppHomeScreenAloneIsNoOwnDesktopAndStays() = runTest {
+        // PLAN 117: der Startbildschirm der App steht schon in androiddesktop.phone.
+        android = """{"phone":{"custom":true,"pages":[["app:mail"]]}}"""
+        val s = settings().apply { chooseOwn(true) }
+        val st = store(this, s)
+        st.load()
+        // Beginnt mit der Einrichtung des Webs, nicht mit dem Werkszustand.
+        assertEquals("name", st.prefs.sort)
+        st.change("iconSize") { it.copy(iconSize = "l") }
+        st.flush()
+        val sent = Json.parseToJsonElement(android!!).jsonObject
+        assertEquals("l", sent["iconSize"]!!.jsonPrimitive.content)
+        assertEquals("name", sent["sort"]!!.jsonPrimitive.content)
+        assertEquals("""{"custom":true,"pages":[["app:mail"]]}""", sent["phone"].toString())
+    }
+
+    @Test
     fun olderNasKeepsTheOwnSetupOnTheDevice() = runTest {
         knowsAndroid = false
         val s = settings().apply { chooseOwn(true) }
