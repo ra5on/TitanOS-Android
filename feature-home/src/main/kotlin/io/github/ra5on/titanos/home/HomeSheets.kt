@@ -189,7 +189,7 @@ internal fun BoxScope.FolderSheet(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         AppIcon(p.glyph, p.gradient, 52.dp)
-                        Text(programLabel(p.id), style = TitanType.appLabel, color = c.text, textAlign = TextAlign.Center)
+                        io.github.ra5on.titanos.ui.HyphenText(programLabel(p.id), TitanType.appLabel, c.text, textAlign = TextAlign.Center)
                         if (editing) {
                             SmallButton(stringResource(R.string.home_folder_take_out), { onChange { outOfFolder(it, key, folder.id) } })
                         }

@@ -86,7 +86,7 @@ fun DockBar(items: List<DockItem>, selected: String?, labels: Boolean, onSelect:
         ) {
             val gap = with(LocalDensity.current) { 6.dp.toPx() }
             val per = constraints.maxWidth.toFloat() / maxOf(1, items.size) - gap
-            fun widest(style: TextStyle) = items.flatMap { it.label.split(' ') }.filter { it.isNotEmpty() }
+            fun widest(style: TextStyle) = items.flatMap { io.github.ra5on.titanos.ui.hyphenPieces(it.label) }
                 .maxOfOrNull { measurer.measure(it, style, softWrap = false).size.width.toFloat() } ?: 0f
             val fit = if (labels) dockLabels(per, widest(normal), widest(small)) else DockLabels.None
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -105,7 +105,7 @@ private fun DockTab(item: DockItem, on: Boolean, style: TextStyle, showLabel: Bo
     Column(
         modifier.clip(RoundedCornerShape(16.dp)).clickable(role = Role.Tab, onClick = onClick)
             .semantics(mergeDescendants = true) {
-                contentDescription = item.label
+                contentDescription = item.label.replace(io.github.ra5on.titanos.ui.SOFT_HYPHEN.toString(), "")
                 selected = on
                 stateDescription = listOfNotNull(if (on) "✓" else null, unread).joinToString(", ")
             }
@@ -126,12 +126,12 @@ private fun DockTab(item: DockItem, on: Boolean, style: TextStyle, showLabel: Bo
             }
         }
         if (showLabel) {
-            Text(
+            io.github.ra5on.titanos.ui.HyphenText(
                 item.label,
-                style = (if (on) style else style.copy(fontWeight = FontWeight.Medium)).copy(hyphens = Hyphens.None, lineBreak = LineBreak.Heading),
-                color = if (on) c.text else c.muted,
+                (if (on) style else style.copy(fontWeight = FontWeight.Medium)).copy(hyphens = Hyphens.None, lineBreak = LineBreak.Heading),
+                if (on) c.text else c.muted,
+                Modifier.padding(horizontal = 2.dp),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 2.dp),
             )
         }
         // Punkt unter dem gewählten Platz (wie im Entwurf), der Platz bleibt auch ohne ihn gleich hoch.

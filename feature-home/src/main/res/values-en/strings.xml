@@ -59,7 +59,10 @@
     <string name="app_files">Files</string>
     <string name="app_photos">Photos</string>
     <string name="home_side_menu">Side menu</string>
-    <string name="home_title_menu">%1$s, open side menu</string>
+    <string name="home_nas_switch">%1$s, choose NAS or node</string>
+    <string name="home_nas_online">connected</string>
+    <string name="home_nas_offline">not reachable</string>
+    <string name="home_nas_title">Connected to</string>
     <string name="home_edit_add">Add</string>
     <string name="home_edit_done">Done</string>
     <string name="home_edit_start">Edit home screen</string>

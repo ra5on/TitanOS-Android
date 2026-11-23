@@ -52,6 +52,33 @@ object NasNames {
     fun suffix(id: String): String = if (id == NasRegistry.LEGACY_ID || id.isEmpty()) "" else "-$id"
 
     fun keyAlias(id: String): String = KeystoreDeviceKey.DEFAULT_ALIAS + suffix(id)
+
+    private val DNS = Regex("^[a-z0-9](?:[a-z0-9-]{0,62})(?:\\.[a-z0-9-]{1,63})*\\.[a-z][a-z0-9-]{0,62}\\.?$", RegexOption.IGNORE_CASE)
+
+    /**
+     * Kurzer Name eines NAS wie im Web („titan“): von einem DNS-Namen
+     * („titan.dunker-lizard.ts.net“, „nas.local“) nur der erste Teil,
+     * Port weg; IP-Adressen und selbst gegebene Namen bleiben ganz.
+     */
+    fun short(name: String): String {
+        val n = name.trim()
+        val host = n.substringBefore(':').takeIf { n.count { it == ':' } == 1 } ?: n
+        if (!DNS.matches(host)) return n
+        if (host.trimEnd('.').split('.').all { p -> p.all(Char::isDigit) }) return n
+        return host.substringBefore('.')
+    }
+
+    /**
+     * Der Name oben auf der Startseite (Knopf wie der NAS-Umschalter im Web):
+     * der selbst gegebene Name, sonst der Rechnername, den das NAS meldet,
+     * sonst der aus der Kopplung, sonst die erste Adresse – je kurz.
+     * Mit gewähltem Cluster-Knoten (nicht das NAS selbst): „titan · nas-keller“.
+     */
+    fun display(label: String, reported: String, paired: String, address: String, node: String? = null): String {
+        val base = label.trim().ifBlank { short(reported.ifBlank { paired.ifBlank { address } }) }
+        val n = node?.trim().orEmpty()
+        return if (n.isEmpty() || n == base) base else "$base · ${short(n)}"
+    }
 }
 
 /** Ablage der Liste; im Test ein Speicher, in der App SharedPreferences. */

@@ -60,7 +60,10 @@
     <string name="app_files">Dateien</string>
     <string name="app_photos">Fotos</string>
     <string name="home_side_menu">Seitenmenü</string>
-    <string name="home_title_menu">%1$s, Seitenmenü öffnen</string>
+    <string name="home_nas_switch">%1$s, NAS oder Knoten wählen</string>
+    <string name="home_nas_online">verbunden</string>
+    <string name="home_nas_offline">nicht erreichbar</string>
+    <string name="home_nas_title">Verbunden mit</string>
     <string name="home_edit_add">Hinzufügen</string>
     <string name="home_edit_done">Fertig</string>
     <string name="home_edit_start">Startbildschirm bearbeiten</string>

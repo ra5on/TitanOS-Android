@@ -19,8 +19,8 @@ android {
         applicationId = "io.github.ra5on.titanos"
         minSdk = 33
         targetSdk = 37
-        versionCode = 101
-        versionName = "1.01"
+        versionCode = 102
+        versionName = "1.02"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {

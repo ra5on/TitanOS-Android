@@ -2,7 +2,7 @@
 
 Die nativen Android-Apps zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS-Betriebssystem, das vom USB-Stick bootet und im RAM läuft. Alles, was TitanOS im Browser kann, geht auch in der App, im selben Stil wie die Weboberfläche und mit dem, was nur eine App kann: Foto-Sicherung im Hintergrund, Kontakte und Kalender in den Apps des Handys, Mitteilungen ohne Google, eigenes VPN, Widgets.
 
-**Version 1.01.** Sie braucht ein NAS mit **TitanOS 1.19**.
+**Version 1.02.** Sie braucht ein NAS mit **TitanOS 1.19**.
 
 <p>
 <img src="docs/screenshots/01-willkommen-dunkel.png" width="200" alt="Willkommen">

@@ -217,7 +217,7 @@ internal fun PageContent(
         }
     }
     // Ein weiches Trennzeichen („System\u00ADsteuerung“) ist eine erlaubte Trennstelle: dort zählt jedes Teilstück als Wort.
-    val labels = page.filter { !it.startsWith("widget:") }.map { labelOf(it).replace('\u00AD', ' ') }
+    val labels = page.filter { !it.startsWith("widget:") }.flatMap { io.github.ra5on.titanos.ui.hyphenPieces(labelOf(it)) }
     val widest = rememberWidestWord(labels, TitanType.appLabel)
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxSize().longPressFree(!editing, onLongPress)) {
@@ -270,12 +270,12 @@ private fun IconView(key: String, label: String, byKey: Map<String, Program>, fo
     if (wide) {
         Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             icon(48)
-            Text(label, style = TitanType.appLabel, color = c.text, modifier = Modifier.weight(1f))
+            io.github.ra5on.titanos.ui.HyphenText(label, TitanType.appLabel, c.text, Modifier.weight(1f))
         }
     } else {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(7.dp)) {
             icon(60)
-            Text(label, style = TitanType.appLabel, color = c.text, textAlign = TextAlign.Center)
+            io.github.ra5on.titanos.ui.HyphenText(label, TitanType.appLabel, c.text, textAlign = TextAlign.Center)
         }
     }
 }

@@ -79,6 +79,9 @@ internal class Shell(tab: Tab = Tab.Home, admin: String? = null, compute: String
     var compute by mutableStateOf(compute)
     var watchPair by mutableStateOf(false)
     var drawer by mutableStateOf(false)
+
+    /** Blatt des NAS-Knopfs auf der Startseite (1.02). */
+    var nasSheet by mutableStateOf(false)
     var confirmUnpair by mutableStateOf(false)
 
     /** Startbildschirm im Bearbeiten (null: nicht). */
@@ -157,6 +160,7 @@ internal fun MainShell(graph: AppGraph) {
         shell.compute = null
         shell.watchPair = false
         shell.drawer = false
+        shell.nasSheet = false
         graph.openProgram = null
         graph.programLink = null
         graph.openNasList = false
@@ -271,6 +275,7 @@ internal fun MainShell(graph: AppGraph) {
             }
             if (shellDock) dock()
         }
+        if (shell.nasSheet) NasSheet(graph) { shell.nasSheet = false }
         if (shell.drawer) {
             SideMenu(
                 graph,
@@ -543,7 +548,8 @@ private fun ShellContent(
                 onSearch = { graph.openPalette = true },
                 onNotifications = { closeAll(); shell.tab = Tab.Notifications },
                 onMenu = { shell.drawer = true },
-                title = graph.activeProfile?.name ?: home.state.hostname,
+                onNas = { shell.nasSheet = true },
+                title = homeNasTitle(graph, home.state.hostname),
                 node = graph.pairing?.nodeName?.takeIf { it.isNotBlank() && graph.pairing?.node?.isNotEmpty() == true },
                 photos = homeTileText(photos.view),
                 onPhotos = { shell.tab = Tab.Photos },
