@@ -7,12 +7,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.horizontalDrag
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -259,38 +261,90 @@ fun PullRefresh(refresh: (suspend () -> Unit)?, modifier: Modifier = Modifier, c
     ) { content() }
 }
 
+/** Meldet jedes Aufsetzen eines Fingers, teilt es aber mit der Seite darunter. */
+private class OutsideTapElement(val onDown: () -> Unit) : androidx.compose.ui.node.ModifierNodeElement<OutsideTapNode>() {
+    override fun create() = OutsideTapNode(onDown)
+    override fun update(node: OutsideTapNode) {
+        node.onDown = onDown
+    }
+    override fun equals(other: Any?) = other is OutsideTapElement && other.onDown === onDown
+    override fun hashCode() = onDown.hashCode()
+}
+
+private class OutsideTapNode(var onDown: () -> Unit) : Modifier.Node(), androidx.compose.ui.node.PointerInputModifierNode {
+    override fun onPointerEvent(pointerEvent: androidx.compose.ui.input.pointer.PointerEvent, pass: androidx.compose.ui.input.pointer.PointerEventPass, bounds: androidx.compose.ui.unit.IntSize) {
+        if (pass == androidx.compose.ui.input.pointer.PointerEventPass.Initial && pointerEvent.type == androidx.compose.ui.input.pointer.PointerEventType.Press) onDown()
+    }
+    override fun onCancelPointerInput() {}
+    override fun sharePointerInputWithSiblings(): Boolean = true
+}
+
 /** Ein Knopf in einer kurzen Meldung unten („Rückgängig“, „Öffnen“, „Zeigen“). */
 data class SnackAction(val label: String, val run: () -> Unit)
 
+/** Wie lange eine kurze Meldung steht: 4 s ohne, 6 s mit Knopf („Rückgängig“). */
+const val SNACK_INFO_MS = 4_000L
+const val SNACK_ACTION_MS = 6_000L
+
 /**
- * Kurze Meldung unten (Entwurf 21): Text, darunter wahlweise ein zweiter,
- * rechts die Knöpfe. Verschwindet nach [timeoutMs] (TalkBack bekommt die von
- * Android empfohlene längere Zeit) und wird vorgelesen.
+ * Standzeit einer Meldung (1.02): [base]; nur mit TalkBack (Tastendruck-Erkunden)
+ * gilt die von Android empfohlene Zeit als Untergrenze – vorher galt sie immer
+ * und konnte mit „Zeit zum Reagieren“ Minuten betragen.
+ */
+fun snackTimeout(base: Long, talkBack: Boolean, recommended: Long): Long = if (talkBack) maxOf(base, recommended) else base
+
+/**
+ * Kurze Meldung unten (Entwurf 21, 1.02 überarbeitet): Text, darunter wahlweise
+ * ein zweiter, rechts die Knöpfe. Steht 4 s, mit Knopf 6 s ([snackTimeout]);
+ * eine neue Meldung ([key]) ersetzt sie sofort und beginnt neu. Wegwischen
+ * oder Tippen daneben schließt sie. [startedAt] (uptimeMillis): seit wann sie
+ * steht, damit ein Neuaufbau der Seite die Zeit nicht neu beginnt. Sie wird
+ * vorgelesen.
  */
 @Composable
-fun Snackbar(
+fun BoxScope.Snackbar(
     text: String,
     actions: List<SnackAction>,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     sub: String? = null,
     done: Boolean = false,
-    timeoutMs: Long = 6_000,
+    timeoutMs: Long = if (actions.isEmpty()) SNACK_INFO_MS else SNACK_ACTION_MS,
+    key: Any? = null,
+    startedAt: Long? = null,
 ) {
     val c = Titan.colors
     val context = LocalContext.current
     val wait = remember(timeoutMs) {
         val am = context.getSystemService(AccessibilityManager::class.java)
-        am?.getRecommendedTimeoutMillis(timeoutMs.toInt(), AccessibilityManager.FLAG_CONTENT_TEXT or AccessibilityManager.FLAG_CONTENT_CONTROLS)?.toLong() ?: timeoutMs
+        val recommended = am?.getRecommendedTimeoutMillis(timeoutMs.toInt(), AccessibilityManager.FLAG_CONTENT_TEXT or AccessibilityManager.FLAG_CONTENT_CONTROLS)?.toLong() ?: timeoutMs
+        snackTimeout(timeoutMs, am?.isTouchExplorationEnabled == true, recommended)
     }
     val dismiss by rememberUpdatedState(onDismiss)
-    LaunchedEffect(text, sub) {
-        delay(wait)
+    val since = remember(key, text, sub) { startedAt ?: android.os.SystemClock.uptimeMillis() }
+    LaunchedEffect(key, text, sub) {
+        delay((since + wait - android.os.SystemClock.uptimeMillis()).coerceAtLeast(0))
         dismiss()
     }
+    // Tippen daneben schließt, ohne das Tippen zu schlucken (es geht weiter an die Seite darunter).
+    Box(Modifier.matchParentSize().then(OutsideTapElement { dismiss() }))
+    var drag by remember(key, text) { mutableFloatStateOf(0f) }
+    val width = with(LocalDensity.current) { 120.dp.toPx() }
     val shape = RoundedCornerShape(16.dp)
     Row(
-        modifier.padding(horizontal = 12.dp).fillMaxWidth().clip(shape).background(c.header)
+        modifier.padding(horizontal = 12.dp).fillMaxWidth()
+            .offset { IntOffset(drag.toInt(), 0) }
+            .pointerInput(key, text) {
+                // Zur Seite wischen schließt.
+                detectHorizontalDragGestures(
+                    onDragEnd = { if (kotlin.math.abs(drag) > width) dismiss() else drag = 0f },
+                    onDragCancel = { drag = 0f },
+                ) { change, amount ->
+                    change.consume()
+                    drag += amount
+                }
+            }
+            .clip(shape).background(c.header)
             .heightIn(min = 56.dp)
             .semantics { liveRegion = LiveRegionMode.Polite }
             .padding(start = 16.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),

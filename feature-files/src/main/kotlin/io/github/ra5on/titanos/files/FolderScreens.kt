@@ -301,7 +301,7 @@ fun FolderScreen(
             }
             }
         }
-        ui.undo?.let { u -> UndoBar(u, on.undo, on.dismissUndo, Modifier.align(Alignment.BottomCenter).padding(bottom = 140.dp)) }
+        ui.undo?.let { u -> UndoBar(u, on.undo, on.dismissUndo, Modifier.align(Alignment.BottomCenter).padding(bottom = 86.dp)) }
     }
 }
 
@@ -547,7 +547,7 @@ private fun JobBar(job: Job, running: Int, onClick: () -> Unit) {
 
 /** „Rückgängig“ nach Papierkorb, Verschieben, Umbenennen (Entwurf 11), als Meldung unten. */
 @Composable
-private fun UndoBar(u: UndoOffer, onUndo: () -> Unit, onDismiss: () -> Unit, modifier: Modifier) {
+private fun BoxScope.UndoBar(u: UndoOffer, onUndo: () -> Unit, onDismiss: () -> Unit, modifier: Modifier) {
     Snackbar(
         text = when (u.kind) {
             UndoKind.Trash -> pluralStringResource(R.plurals.undo_trash, u.count, u.count)
@@ -557,6 +557,8 @@ private fun UndoBar(u: UndoOffer, onUndo: () -> Unit, onDismiss: () -> Unit, mod
         actions = listOf(SnackAction(stringResource(R.string.undo_do), onUndo)),
         onDismiss = onDismiss,
         modifier = modifier,
+        key = u,
+        startedAt = u.at,
     )
 }
 
