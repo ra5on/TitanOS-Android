@@ -21,7 +21,7 @@ const val SOFT_HYPHEN = '\u00AD'
  * die Zeile passt: „System\u00ADsteuerung“ wird zu „System-\nsteuerung“,
  * sonst zu „Systemsteuerung“. Android beachtet weiche Trennzeichen ohne
  * automatische Silbentrennung nicht und bräche das Wort irgendwo
- * („Systems|teuerung“, 1.01); `Hyphens.Auto` bleibt aus (Inhaber 21.11.2026:
+ * („Systems|teuerung“, 1.01); die automatische Silbentrennung bleibt aus (Inhaber 21.11.2026:
  * „Ganze Wörter“). [fits] sagt, ob ein Stück in die Zeile passt.
  */
 fun softHyphenate(text: String, fits: (String) -> Boolean): String {
