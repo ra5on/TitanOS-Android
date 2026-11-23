@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Suche beim Öffnen nur mit Netz (UpdateHint); die App hat das Recht schon über Dateien, Fotos und Mitteilungen. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Selbst-Update: die App installiert ihre neue Version. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
