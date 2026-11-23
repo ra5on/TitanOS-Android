@@ -22,7 +22,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
-/** Zustand der Seiten „Fotos“ und „Foto-Sicherung“ für eine Kopplung. */
+/**
+ * Zustand der Seiten „Fotos“ und „Foto-Sicherung“ für eine Kopplung.
+ * [titan] und [gallery] meinen das gekoppelte NAS selbst, auch wenn in der
+ * App ein anderer Knoten des Clusters gewählt ist (dorthin wird gesichert).
+ */
 class PhotosModel(
     private val app: Application,
     private val titan: TitanApi,
@@ -30,7 +34,12 @@ class PhotosModel(
     private val scope: CoroutineScope,
     /** Das NAS dieser Seite; jedes hat eigene Einstellungen und einen eigenen Stand. */
     val nas: String = io.github.ra5on.titanos.net.NasRegistry.LEGACY_ID,
+    /** Galerie „Auf dem NAS“ am gekoppelten NAS; null: die Verbindung des Dateimanagers. */
+    val gallery: io.github.ra5on.titanos.files.FilesApi? = null,
 ) {
+    /** Für Teilen und Öffnen aus der Galerie: dieselbe Verbindung wie die Sicherung. */
+    val pairedApi: TitanApi get() = titan
+
     private val settingsStore = SettingsStore(app, nas)
     private val store = BackupStore.get(app, nas)
     private val scanner = MediaScanner(app)
@@ -98,6 +107,7 @@ class PhotosModel(
                 progress = PhotosRuntime.progress.value.takeIf { it.nas == nas || it.nas.isEmpty() } ?: Progress(),
                 loading = false,
                 paused = PhotosRuntime.paused(app),
+                lastBatch = state.lastBatch,
             )
         }
     }

@@ -42,6 +42,8 @@ object FilesRuntime {
     @Volatile var activeNas: () -> String = { "" }
     /** Die Verbindung zu einem bestimmten NAS (leer: die alte Kopplung); null ohne diese Kopplung. */
     @Volatile var apiFor: (String) -> TitanApi? = { api() }
+    /** Wie [apiFor], aber immer das gekoppelte NAS selbst, auch mit gewähltem Cluster-Knoten. */
+    @Volatile var pairedApiFor: (String) -> TitanApi? = { apiFor(it) }
 }
 
 /** Uploads und „In Downloads speichern“ als WorkManager-Aufträge. */
@@ -74,9 +76,9 @@ object TransferQueue {
         return t.id
     }
 
-    fun enqueueDownload(context: Context, root: String, dir: String, place: String, name: String, size: Long): Long {
+    fun enqueueDownload(context: Context, root: String, dir: String, place: String, name: String, size: Long, paired: Boolean = false): Long {
         val store = FilesRuntime.store ?: error("FilesRuntime.store not set")
-        val t = store.add(Transfer(0, name, Direction.Download, place, root, dir, total = size, nas = FilesRuntime.activeNas()))
+        val t = store.add(Transfer(0, name, Direction.Download, place, root, dir, total = size, nas = FilesRuntime.activeNas(), paired = paired))
         schedule(context, t.id, userInitiated = true)
         return t.id
     }
@@ -127,7 +129,7 @@ class TransferWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val store = FilesRuntime.store ?: return Result.retry()
         val t = store.get(id) ?: return Result.failure()
         if (t.state == TransferState.Cancelled || t.state == TransferState.Done) return Result.success()
-        val api = FilesRuntime.apiFor(t.nas) ?: run {
+        val api = (if (t.paired) FilesRuntime.pairedApiFor(t.nas) else FilesRuntime.apiFor(t.nas)) ?: run {
             fail(store, id, "not paired", offline = false)
             return Result.failure()
         }

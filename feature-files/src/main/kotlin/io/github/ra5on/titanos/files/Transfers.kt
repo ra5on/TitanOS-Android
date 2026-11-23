@@ -45,6 +45,8 @@ data class Transfer(
     val waiting: WaitReason = WaitReason.None,
     /** Das NAS, zu dem die Übertragung gehört (mehrere NAS); leer: aus der Zeit davor, die alte Kopplung. */
     val nas: String = "",
+    /** Am gekoppelten NAS selbst, nicht am gewählten Cluster-Knoten (Galerie der Foto-Sicherung). */
+    val paired: Boolean = false,
 ) {
     val fraction: Float get() = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f
     val finishedAt: Instant? get() = finishedAtMs?.let(Instant::ofEpochMilli)

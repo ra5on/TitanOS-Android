@@ -213,7 +213,9 @@ fun GalleryScreen(
 /** Galerie mit Betrachter: Tippen zeigt das Bild, Wischen die übrigen desselben Ordners. */
 @Composable
 fun GalleryRoute(model: PhotosModel, files: FilesModel?, onBack: () -> Unit) {
-    val api = files?.files ?: FilesRuntime.access()?.api
+    // Die Galerie zeigt, was die Sicherung am gekoppelten NAS abgelegt hat, auch mit gewähltem Cluster-Knoten.
+    val api = model.gallery ?: files?.files ?: FilesRuntime.access()?.api
+    val paired = model.gallery != null
     val s = model.settings
     var state by remember { mutableStateOf(GalleryState()) }
     var filter by remember { mutableStateOf(GalleryFilter.All) }
@@ -254,9 +256,9 @@ fun GalleryRoute(model: PhotosModel, files: FilesModel?, onBack: () -> Unit) {
     ViewerScreen(
         api, loc, entries, siblings.indexOf(o).coerceAtLeast(0),
         ViewerActions(
-            share = { e -> files?.share(loc, e, chooser) },
-            openWith = { e -> files?.openWith(loc, e, openWith) },
-            download = { e -> files?.saveToDownloads(loc, e) },
+            share = { e -> files?.share(loc, e, chooser, via = if (paired) model.pairedApi else null) },
+            openWith = { e -> files?.openWith(loc, e, openWith, via = if (paired) model.pairedApi else null) },
+            download = { e -> files?.saveToDownloads(loc, e, paired) },
             info = { },
         ),
         onBack = { open = null },

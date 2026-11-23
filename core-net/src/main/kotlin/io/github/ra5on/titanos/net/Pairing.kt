@@ -36,7 +36,10 @@ data class Pairing(
     val hostname: String = "",
     val node: String = "",
     val nodeName: String = "",
-)
+) {
+    /** Dieselbe Kopplung ohne gewählten Cluster-Knoten: alle Anfragen meinen das gekoppelte NAS. */
+    fun withoutNode(): Pairing = if (node.isEmpty() && nodeName.isEmpty()) this else copy(node = "", nodeName = "")
+}
 
 interface PairingStore {
     fun load(): Pairing?

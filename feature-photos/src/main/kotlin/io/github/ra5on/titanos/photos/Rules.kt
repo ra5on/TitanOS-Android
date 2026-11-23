@@ -78,6 +78,9 @@ fun waitReason(
         Problem.NoVolume -> return Wait.NoVolume
         Problem.Certificate -> return Wait.Certificate
         Problem.Locked -> return Wait.Locked
+        // Der letzte Lauf scheiterte am NAS (z. B. Abschluss abgelehnt): das zuerst. Sonst hieße es
+        // ohne WLAN „wartet aufs WLAN“, und die Karte sagte „Sicherung ist aktuell“ (1.01).
+        Problem.Failed -> return Wait.Failed
         else -> Unit
     }
     unmet(need, device)?.let { return it }

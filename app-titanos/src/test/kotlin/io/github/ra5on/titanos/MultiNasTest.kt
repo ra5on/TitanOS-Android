@@ -156,6 +156,25 @@ class MultiNasTest {
         assertEquals("", graph.pairing!!.node)
     }
 
+    /**
+     * 1.01: Mit gewähltem Knoten bleibt die Foto-Sicherung beim gekoppelten NAS
+     * (Verbindung ohne ClusterRoute), der Dateimanager geht über ClusterRoute
+     * zum Knoten. Vorher gingen Ordner und Upload zum Knoten, der Abschluss nicht.
+     */
+    @Test
+    fun photoBackupStaysOnThePairedNasWithANodeChosen() {
+        oldInstall()
+        val graph = AppGraph(app, NasRegistry.prefs(app))
+        graph.setNode("b2", "nas2")
+        val link = graph.link(NasRegistry.LEGACY_ID)!!
+        fun routed(c: io.github.ra5on.titanos.net.NasConnection) = c.endpoints.any { e -> e.client.interceptors.any { it is io.github.ra5on.titanos.net.ClusterRoute } }
+        assertTrue(routed(link.connection()!!))
+        assertFalse(routed(link.backupConnection()!!))
+        assertNotNull(link.backupApi())
+        assertNotNull(link.photosApi())
+        assertNotNull(graph.photos!!.gallery)
+    }
+
     @Test
     fun twoNasWithTheSameNameGetTheirOwnContactsAccount() {
         oldInstall()

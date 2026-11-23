@@ -237,20 +237,20 @@ class FilesModel(
     suspend fun delete(location: Location, entry: FileEntry): Boolean = deleteMany(location, listOf(entry))
 
     /** In Downloads speichern (MediaStore, ohne Berechtigung) – als Auftrag, der das Schließen der App übersteht. */
-    fun saveToDownloads(location: Location, entry: FileEntry) {
-        TransferQueue.enqueueDownload(context, location.root.id, location.path, location.place, entry.name, entry.size)
+    fun saveToDownloads(location: Location, entry: FileEntry, paired: Boolean = false) {
+        TransferQueue.enqueueDownload(context, location.root.id, location.path, location.place, entry.name, entry.size, paired)
     }
 
-    /** Teilen: erst in den Cache laden, dann mit eigener Leseerlaubnis weitergeben. */
-    fun share(location: Location, entry: FileEntry, chooserTitle: String) = handOver(location, listOf(entry), chooserTitle, view = false)
+    /** Teilen: erst in den Cache laden, dann mit eigener Leseerlaubnis weitergeben; [via] statt der Verbindung des Dateimanagers. */
+    fun share(location: Location, entry: FileEntry, chooserTitle: String, via: TitanApi? = null) = handOver(location, listOf(entry), chooserTitle, view = false, via = via)
 
     /** Mehrere Dateien auf einmal teilen (ACTION_SEND_MULTIPLE). */
     fun shareMany(location: Location, entries: List<FileEntry>, chooserTitle: String) = handOver(location, entries.filter { !it.dir }, chooserTitle, view = false)
 
     /** Mit einer anderen App öffnen (ACTION_VIEW, nur lesend). */
-    fun openWith(location: Location, entry: FileEntry, chooserTitle: String) = handOver(location, listOf(entry), chooserTitle, view = true)
+    fun openWith(location: Location, entry: FileEntry, chooserTitle: String, via: TitanApi? = null) = handOver(location, listOf(entry), chooserTitle, view = true, via = via)
 
-    private fun handOver(location: Location, entries: List<FileEntry>, chooserTitle: String, view: Boolean) {
+    private fun handOver(location: Location, entries: List<FileEntry>, chooserTitle: String, view: Boolean, via: TitanApi? = null) {
         if (entries.isEmpty()) return
         val label = if (entries.size == 1) entries[0].name else entries.joinToString(", ") { it.name }
         val t = transfers.add(Transfer(0, label, Direction.Share, location.place, location.root.id, location.path, total = entries.sumOf { it.size }))
@@ -260,7 +260,7 @@ class FilesModel(
             val uris = entries.map { entry ->
                 val file = File(dir, entry.name.replace('/', '_'))
                 file.outputStream().use { out ->
-                    api.download(location.root.id, location.full(entry.name), out) { done, _ -> progress(t.id, before + done, t.total) }
+                    (via ?: api).download(location.root.id, location.full(entry.name), out) { done, _ -> progress(t.id, before + done, t.total) }
                 }
                 before += entry.size
                 FileProvider.getUriForFile(context, "${context.packageName}.files", file)

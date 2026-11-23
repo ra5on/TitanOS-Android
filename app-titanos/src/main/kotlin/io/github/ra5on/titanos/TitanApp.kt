@@ -90,6 +90,7 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.r
         FilesRuntime.api = { graph.api }
         FilesRuntime.activeNas = { graph.activeId }
         FilesRuntime.apiFor = { id -> graph.link(id.ifEmpty { NasRegistry.LEGACY_ID })?.api() }
+        FilesRuntime.pairedApiFor = { id -> graph.link(id.ifEmpty { NasRegistry.LEGACY_ID })?.backupApi() }
         // Dateien, Fotos und Office: eigene Verbindung über dieselbe Kopplung und Sitzung (je Kopplung einmal).
         var filesAccess: io.github.ra5on.titanos.files.FilesAccess? = null
         FilesRuntime.access = {
@@ -106,7 +107,8 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.r
         WidgetRefresh.onRefreshed = { ctx -> QuickTiles.refresh(ctx) }
         if (graph.pairing != null) OfflineSync.schedule(this, graph.offline)
         // Foto-Sicherung je NAS: Worker laufen ohne Activity und holen sich hier die Verbindung des NAS.
-        PhotosRuntime.titan = { id -> graph.link(id)?.api() }
+        // Immer das gekoppelte NAS, nie der gewählte Cluster-Knoten (backupApi).
+        PhotosRuntime.titan = { id -> graph.link(id)?.backupApi() }
         PhotosRuntime.photos = { id -> graph.link(id)?.photosApi() }
         PhotosRuntime.nasIds = { graph.registry.profiles.map { it.id } }
         PhotosRuntime.nasName = { id -> graph.registry.profile(id)?.name.orEmpty() }
@@ -187,7 +189,15 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
         fun pairing(): Pairing? = registry.profile(id)?.pairing
         fun connection(client: okhttp3.OkHttpClient = shared): NasConnection? = pairing()?.let { NasConnection.forPairing(client, it, sessions) }
         fun api(): TitanApi? = connection()?.let(::TitanApi)
-        fun photosApi(): PhotosApi? = connection(photosClient)?.let(::PhotosApi)
+
+        /**
+         * Foto-Sicherung: immer dieses NAS, auch mit gewähltem Cluster-Knoten
+         * (Ordner, Upload, Prüfen, Abschließen, Bestätigen, Ziel wählen und die
+         * Galerie „Auf dem NAS“). Der Dateimanager folgt weiter dem Knoten.
+         */
+        fun backupConnection(client: okhttp3.OkHttpClient = shared): NasConnection? = pairing()?.let { NasConnection.toPairedNas(client, it, sessions) }
+        fun backupApi(): TitanApi? = backupConnection()?.let(::TitanApi)
+        fun photosApi(): PhotosApi? = backupConnection(photosClient)?.let(::PhotosApi)
         fun notifyApi(): NotifyApi? = connection(notifyClient)?.let(::NotifyApi)
     }
 
@@ -314,7 +324,9 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
         FilesRuntime.offline = offline
         files = FilesModel(app, a, transfers, scope, offline)
         photosApi = l.photosApi()
-        photos = photosApi?.let { PhotosModel(app, a, it, scope, p.id) }
+        // Ziel, Galerie und Sicherung am gekoppelten NAS, auch mit gewähltem Cluster-Knoten.
+        val here = l.backupConnection()
+        photos = photosApi?.let { PhotosModel(app, TitanApi(here!!), it, scope, p.id, gallery = io.github.ra5on.titanos.files.FilesApi(here)) }
         notifyApi = l.notifyApi()
     }
 

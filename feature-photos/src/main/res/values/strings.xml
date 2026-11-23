@@ -134,4 +134,20 @@
     </plurals>
     <string name="photos_paused">Die Foto-Sicherung ist pausiert (Schnelleinstellung). Bis zum Fortsetzen wird an kein NAS gesichert.</string>
     <string name="photos_resume">Fortsetzen</string>
+    <!-- Wohin die Sicherung hochgeladen hat (1.01): Mitteilung nach einem Lauf und Zeile in der Karte. -->
+    <plurals name="photos_uploaded_photos">
+        <item quantity="one">%d Foto</item>
+        <item quantity="other">%d Fotos</item>
+    </plurals>
+    <plurals name="photos_uploaded_videos">
+        <item quantity="one">%d Video</item>
+        <item quantity="other">%d Videos</item>
+    </plurals>
+    <string name="photos_uploaded_and">%1$s und %2$s</string>
+    <string name="photos_uploaded_to">%1$s hochgeladen nach %2$s</string>
+    <string name="photos_uploaded_more">%1$s hochgeladen nach %2$s (%3$d Ordner)</string>
+    <string name="photos_last_batch">Zuletzt %1$s</string>
+    <string name="photos_done_title">Foto-Sicherung</string>
+    <string name="photos_done_channel">Foto-Sicherung: hochgeladen</string>
+    <string name="photos_done_channel_text">Nach einem Lauf: wie viele Aufnahmen hochgeladen wurden und wohin</string>
 </resources>

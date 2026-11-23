@@ -89,6 +89,8 @@ data class PhotosView(
     val loading: Boolean = false,
     /** Über die Schnelleinstellung pausiert (alle NAS), bis man fortsetzt. */
     val paused: Boolean = false,
+    /** Was zuletzt hochgeladen wurde und wohin (1.01). */
+    val lastBatch: LastBatch? = null,
 )
 
 @Composable
@@ -242,6 +244,14 @@ private fun StatusCard(view: PhotosView, onSetUp: () -> Unit) {
                     }
                 }
                 Text(sub, style = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize), color = c.muted, modifier = Modifier.padding(top = 2.dp))
+                // Wohin zuletzt hochgeladen wurde, so wie man den Ordner in den Dateien findet.
+                val last = view.lastBatch
+                if (s.enabled && s.hasTarget && last != null && last.count > 0) {
+                    Text(
+                        stringResource(R.string.photos_last_batch, batchText(androidx.compose.ui.platform.LocalContext.current.resources, last)),
+                        style = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize), color = c.muted, modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
         if (!s.enabled || !s.hasTarget) {
