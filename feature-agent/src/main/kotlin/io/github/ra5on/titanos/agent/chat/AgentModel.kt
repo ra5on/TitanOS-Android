@@ -752,7 +752,9 @@ class AgentModel(
                 if (fresh != null) {
                     if (fresh.state == ChatState.IDLE) buzz(40)
                     fresh.entries.lastOrNull { it.role == "assistant" && !it.content.isNullOrBlank() }?.let { answered(it) }
-                    seen(id)
+                    // Gelesen nur, wenn der Chat gerade zu sehen ist; vorher sagte das Ende jedes Laufs dem NAS
+                    // „zu sehen“, auch im Hintergrund (1.03).
+                    if (shows(id)) seen(id)
                     if (fresh.titling) followTitle(id)
                 }
                 loadLists()
@@ -790,13 +792,23 @@ class AgentModel(
         scope.launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) {
             seenLock.lock()
             try {
-                try { api.seen(id, visible) } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+                // „Nicht mehr zu sehen“ ist wichtig (sonst schweigt das NAS bis zu 40 s): bis zu zwei Mal
+                // nachfassen, wenn die Anfrage scheitert; die folgenden Meldungen warten in Reihenfolge.
+                val tries = if (visible) 1 else 3
+                for (attempt in 1..tries) {
+                    val ok = try { api.seen(id, visible); true } catch (e: CancellationException) { throw e } catch (_: Exception) { false }
+                    if (ok || attempt == tries) break
+                    delay(1000L * attempt)
+                }
             } finally {
                 seenLock.unlock()
             }
             if (visible) chats = chats.map { if (it.id == id) it.copy(unread = false) else it }
         }
     }
+
+    /** Ob eine Oberfläche den Chat [id] gerade zeigt (offen und vorne). */
+    fun shows(id: String): Boolean = (viewers[id] ?: 0) > 0
 
     /** Eine Oberfläche zeigt den Chat [id] ab jetzt: sofort „zu sehen“ ans NAS. */
     fun showing(id: String) {

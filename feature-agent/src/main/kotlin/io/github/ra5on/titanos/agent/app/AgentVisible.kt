@@ -1,7 +1,10 @@
 package io.github.ra5on.titanos.agent.app
 
 /**
- * Der Chat, der gerade vorne zu sehen ist (offen und die App im Vordergrund).
+ * Der Chat, der gerade vorne zu sehen ist (offen und die App im Vordergrund,
+ * Lebenszyklus RESUMED). Dieselbe Regel gilt seit 1.03 für alle drei Stellen:
+ * die Meldung „zu sehen“ ans NAS (Shell), die eigene Mitteilung der App
+ * (AgentRoot) und die Mitteilungen des NAS in der TitanOS-App (NotifyRuntime).
  * Die TitanOS-App zeigt für ihn keine Mitteilung „Antwort des KI-Agenten“ und
  * nimmt vorhandene aus der Leiste, wie das Web (`clearAgentNotifications`);
  * das NAS selbst schweigt über die Meldung „zu sehen“ (`/agent/chats/…/seen`).
@@ -35,6 +38,9 @@ object AgentVisible {
             if (chat == id && left <= 0) chat = counts.keys.lastOrNull()
         }
     }
+
+    /** Ob der Chat [id] gerade vorne zu sehen ist (auf irgendeiner Oberfläche). */
+    fun shown(id: String): Boolean = synchronized(counts) { counts.containsKey(id) }
 
     /** Ob [link] (`/agent?chat=<id>`, auch `/agent?profile=assist&chat=<id>`) einen Chat meint, der gerade zu sehen ist. */
     fun shows(link: String?): Boolean {

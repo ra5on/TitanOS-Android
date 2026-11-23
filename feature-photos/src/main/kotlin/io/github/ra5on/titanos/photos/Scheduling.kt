@@ -216,7 +216,10 @@ class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         val (gens, versions) = MediaScanner(ctx).generations()
         for (nas in enabled) {
             val state = BackupStore.get(ctx, nas).snapshot()
-            if (mediaChanged(state.generations, state.versions, gens, versions) || state.uploads.isNotEmpty() || state.problem != null) {
+            // Auch, wenn eine Nachprüfung des Gesicherten fällig ist (1.03, Recheck.kt).
+            if (mediaChanged(state.generations, state.versions, gens, versions) || state.uploads.isNotEmpty() || state.problem != null ||
+                recheckDue(state, System.currentTimeMillis())
+            ) {
                 PhotoScheduler.enqueueUploads(ctx, nas)
             }
         }

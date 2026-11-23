@@ -257,28 +257,31 @@ private fun ShellBody(model: AgentModel, nav: AgentNav, hooks: AppHooks, speech:
             quiet = if (model.checkRuns()) 0 else quiet + 1
         }
     }
-    // Der offene Chat ist zu sehen (wie das Web, agent-page.svelte.ts): sofort beim Öffnen und dann
+    // Der offene Chat ist zu sehen (wie das Web, agent-page.svelte.ts): sofort beim Erscheinen und dann
     // alle 15 s sagt die App es dem NAS. Das NAS schickt für einen sichtbaren Chat keine Mitteilung
-    // (TitanOS 0.86); vorher kam die erste Meldung erst nach 15 s, und eine schnelle Antwort ging
-    // trotzdem als Mitteilung hinaus. Im Hintergrund meldet die App eine Antwort selbst (AgentRoot).
-    // „Nicht mehr zu sehen“ meldet das Modell erst, wenn keine Oberfläche den Chat mehr zeigt, und alle
-    // Meldungen gehen in Reihenfolge ans NAS (1.01: vorher konnte „unsichtbar“ das neue „sichtbar“ überholen).
+    // (TitanOS 0.86). „Nicht mehr zu sehen“ meldet das Modell, sobald keine Oberfläche den Chat mehr zeigt;
+    // alle Meldungen gehen in Reihenfolge ans NAS (1.01).
+    // Zu sehen heißt: offen und die App vorne (RESUMED). Dieselbe Regel gilt für die eigene Mitteilung
+    // der App (AgentRoot) und die Mitteilungen des NAS in der TitanOS-App (AgentVisible). Vor 1.03 lief
+    // die Meldung „zu sehen“ auch im Hintergrund weiter, solange die Activity lebte (Home, Bildschirm
+    // aus): das NAS hielt den Chat für offen und schwieg, und kam die Antwort der App nicht an
+    // (Activity beendet, Prozess beendet), meldete sie niemand.
     val openId = model.current?.id
-    LaunchedEffect(openId, model.author) {
-        if (openId == null || model.author != null) return@LaunchedEffect
-        model.showing(openId)
-        try {
-            while (isActive) { delay(15_000); model.seen(openId, true) }
-        } finally { model.hidden(openId) }
-    }
-    // Welcher Chat gerade vorne zu sehen ist (nur solange die App vorne ist): die TitanOS-App zeigt
-    // für ihn keine Mitteilung des NAS und nimmt vorhandene aus der Leiste (wie das Web).
     val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(openId, model.author) {
         if (openId == null || model.author != null) return@LaunchedEffect
         lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            model.showing(openId)
             AgentVisible.show(openId)
-            try { kotlinx.coroutines.awaitCancellation() } finally { AgentVisible.hide(openId) }
+            // Was zu diesem Chat in der Leiste steht, ist jetzt gesehen (auch die eigene Mitteilung der App).
+            io.github.ra5on.titanos.agent.system.AnswerNotifier.cancel(context, openId)
+            AgentNotices.seen(openId)
+            try {
+                while (isActive) { delay(15_000); model.seen(openId, true) }
+            } finally {
+                AgentVisible.hide(openId)
+                model.hidden(openId)
+            }
         }
     }
     // Eine neue Antwort vorlesen, wenn gewünscht (Darstellung); nur solange diese Oberfläche da ist.

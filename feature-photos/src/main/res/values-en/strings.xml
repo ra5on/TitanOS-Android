@@ -160,4 +160,20 @@
     <string name="photos_view_failed">The picture cannot be loaded.</string>
     <string name="photos_view_open">View</string>
     <string name="photos_view_none">No app found to play this.</string>
+    <!-- 1.03: re-check what was backed up -->
+    <string name="photos_missing_one">%1$s is missing on the NAS</string>
+    <string name="photos_missing_many">%1$s are missing on the NAS</string>
+    <string name="photos_missing_text">They were backed up but are no longer on the NAS – deleted or moved. The app does not upload them again by itself.</string>
+    <string name="photos_missing_resave">Back up again</string>
+    <string name="photos_missing_ignore">Stop backing up</string>
+    <string name="photos_missing_dismiss">Hide</string>
+    <string name="photos_missing_badge">missing on the NAS</string>
+    <string name="photos_legend_missing">missing</string>
+    <string name="photos_ignored_badge">not backed up</string>
+    <plurals name="photos_ignored_title">
+        <item quantity="one">%s item is not backed up</item>
+        <item quantity="other">%s items are not backed up</item>
+    </plurals>
+    <string name="photos_ignored_text">Left out with “Stop backing up” (missing on the NAS).</string>
+    <string name="photos_ignored_undo">Back up again</string>
 </resources>

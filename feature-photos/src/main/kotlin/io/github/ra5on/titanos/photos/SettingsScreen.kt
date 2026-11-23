@@ -161,6 +161,9 @@ fun PhotosSettingsScreen(
     onWhen: (Kind) -> Unit,
     onBack: () -> Unit,
     device: String = "Handy",
+    /** Wie viele Aufnahmen „Nicht mehr sichern“ (1.03); [onUnignore] nimmt es für alle zurück. */
+    ignored: Int = 0,
+    onUnignore: () -> Unit = {},
     initiallyOpen: Set<String> = emptySet(),
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
@@ -373,6 +376,17 @@ fun PhotosSettingsScreen(
                 divider = true,
                 onClick = { onChange(settings.copy(mobileData = !settings.mobileData)) },
             )
+        }
+        // ---- Ausgelassen (1.03): „Nicht mehr sichern“ zurücknehmen ----
+        if (ignored > 0) {
+            Card(Modifier.padding(top = 14.dp)) {
+                ListRow(
+                    pluralStringResource(R.plurals.photos_ignored_title, ignored, count(ignored)),
+                    sub = stringResource(R.string.photos_ignored_text),
+                    icon = { RowIcon(TitanIcons.cloudoff) },
+                )
+            }
+            io.github.ra5on.titanos.ui.components.TitanButton(stringResource(R.string.photos_ignored_undo), onUnignore, Modifier.fillMaxWidth().padding(top = 8.dp), icon = TitanIcons.upload)
         }
         Note(stringResource(R.string.ps_applies_new), Modifier.padding(top = 14.dp))
         Spacer(Modifier.navigationBarsPadding().height(16.dp))

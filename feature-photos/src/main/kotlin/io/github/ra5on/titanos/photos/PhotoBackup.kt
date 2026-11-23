@@ -3,6 +3,7 @@ package io.github.ra5on.titanos.photos
 import android.content.Context
 import io.github.ra5on.titanos.model.PhotoCheckRequest
 import io.github.ra5on.titanos.model.PhotoItem
+import io.github.ra5on.titanos.model.PhotoVerifyRequest
 import io.github.ra5on.titanos.model.UploadStatus
 import io.github.ra5on.titanos.net.ApiException
 import io.github.ra5on.titanos.net.NasNotReadyException
@@ -89,6 +90,7 @@ class PhotoBackup(
                 }
             }
             store.update { it.copy(generations = gens, versions = versions, problem = null, lastRun = System.currentTimeMillis()) }
+            if (!stopped()) recheck(items.mapTo(HashSet()) { it.id })
             Outcome.Done
         } catch (e: CancellationException) {
             throw e
@@ -108,6 +110,14 @@ class PhotoBackup(
             PhotosRuntime.report(Progress())
             PhotosRuntime.changed()
         }
+    }
+
+    /** Gesichertes beim NAS nachprüfen (1.03, Recheck.kt); ein Fehler ändert nichts. */
+    private suspend fun recheck(present: Set<Long>) {
+        val changed = recheckSaved(store, present, System.currentTimeMillis()) { asked ->
+            photos.verify(PhotoVerifyRequest(asked)).items.associate { it.sha256 to it.state }
+        }
+        if (changed) PhotosRuntime.changed()
     }
 
     private fun recordRun(last: LastBatch) {
@@ -152,9 +162,11 @@ class PhotoBackup(
         val m = item.media
         store.update {
             it.copy(
-                saved = it.saved + (m.id to Saved(m.size, m.modified, sha, settings.targetOf(m.kind), path)),
+                saved = it.saved + (m.id to Saved(m.size, m.modified, sha, settings.targetOf(m.kind), path, verifiedAt = System.currentTimeMillis())),
                 uploads = it.uploads - m.id,
                 skipped = it.skipped - m.id,
+                missing = it.missing - m.id,
+                missingDismissed = it.missingDismissed - m.id,
                 lastSaved = System.currentTimeMillis(),
             )
         }
