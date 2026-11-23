@@ -33,18 +33,16 @@ class MainActivity : ComponentActivity() {
      * nicht selbst braucht: Terminal und VM-Bildschirm nehmen sie zuerst, die
      * Systemsteuerung setzt damit die Tastatur in ihre Suche.
      */
-    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
-        if (super.dispatchKeyEvent(event)) return true
-        if (event.action == android.view.KeyEvent.ACTION_DOWN && event.keyCode == android.view.KeyEvent.KEYCODE_K &&
-            (event.isCtrlPressed || event.isMetaPressed) && !event.isAltPressed && !event.isShiftPressed
-        ) {
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent): Boolean {
+        // Kommt nur hier an, wenn keine Ansicht die Taste genommen hat.
+        if (keyCode == android.view.KeyEvent.KEYCODE_K && (event.isCtrlPressed || event.isMetaPressed) && !event.isAltPressed && !event.isShiftPressed) {
             val graph = (application as TitanApp).graph
             if (graph.pairing != null) {
                 graph.openPalette = !graph.openPalette
                 return true
             }
         }
-        return false
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onNewIntent(intent: Intent) {

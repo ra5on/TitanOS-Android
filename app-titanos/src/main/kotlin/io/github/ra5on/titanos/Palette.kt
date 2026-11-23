@@ -296,7 +296,7 @@ internal fun CommandPalette(graph: AppGraph, onClose: () -> Unit) {
         }
     }
     val appSection = stringResource(R.string.palette_app)
-    val programs = graph.paletteProgramIds.map { it to context.getString(programLabelRes(it)) }
+    val programs = graph.paletteProgramIds.map { it to stringResource(programLabelRes(it)) }
     val static = remember(admin, programs, appPages) {
         palettePages(admin, web, index, settingsTr, programs, appPages).map { if (it.href.startsWith("app:")) it.copy(section = appSection) else it }
     }

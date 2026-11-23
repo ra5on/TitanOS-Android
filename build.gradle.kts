@@ -14,7 +14,8 @@ val noTruncatedText by tasks.registering {
     group = "verification"
     description = "Verbietet TextOverflow.Ellipsis, maxLines und ellipsize im App-Code."
     // Auch die Quellen der Bauvarianten (github, play).
-    val roots = subprojects.filter { it.name != "lint-rules" }.flatMap { p -> listOf("src/main", "src/github", "src/play").map { p.projectDir.resolve(it) } }.filter { it.exists() }
+    // lint-rules und core-admin-testing (Prüfhilfe der Bildtests) nennen die verbotenen Muster selbst.
+    val roots = subprojects.filter { it.name != "lint-rules" && it.name != "core-admin-testing" }.flatMap { p -> listOf("src/main", "src/github", "src/play").map { p.projectDir.resolve(it) } }.filter { it.exists() }
     inputs.files(roots.map { fileTree(it) })
     doLast {
         // Keine Silbentrennung mitten im Wort (Inhaber 21.11.2026 „Ganze Wörter“): auch Hyphens.Auto
