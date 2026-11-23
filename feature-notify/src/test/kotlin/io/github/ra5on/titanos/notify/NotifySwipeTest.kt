@@ -59,12 +59,12 @@ class NotifySwipeTest {
     @Test
     fun leftDeletesRightTogglesRead() {
         show()
-        rule.onNodeWithText("Volume wird warm").performTouchInput { swipeLeft(startX = 395f, endX = 40f) }
+        rule.onNodeWithText("Volume wird warm").performTouchInput { swipeLeft(startX = right - 5f, endX = left - 20f) }
         rule.waitForIdle()
-        rule.onNodeWithText("Volume wird warm").performTouchInput { swipeRight(startX = 5f, endX = 380f) }
+        rule.onNodeWithText("Volume wird warm").performTouchInput { swipeRight(startX = left + 5f, endX = right + 20f) }
         rule.waitForIdle()
         // Gelesene wird beim Wischen nach rechts wieder ungelesen.
-        rule.onNodeWithText("Sam Christensen").performTouchInput { swipeRight(startX = 5f, endX = 380f) }
+        rule.onNodeWithText("Sam Christensen").performTouchInput { swipeRight(startX = left + 5f, endX = right + 20f) }
         rule.waitForIdle()
         assertEquals(listOf("delete e-1", "read e-1", "unread e-2"), log)
     }
