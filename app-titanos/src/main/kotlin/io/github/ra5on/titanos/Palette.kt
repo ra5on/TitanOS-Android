@@ -148,7 +148,7 @@ internal fun programHref(id: String): String = when (id) {
 }
 
 /** Seiten nur der App (Menü der Startseite): VPN, NAS und Konten, Abgleich, Arbeitsplatz, Über die App. */
-internal val APP_PAGES = listOf("app:vpn", "app:naslist", "app:pimsync", "app:workspace", "app:about")
+internal val APP_PAGES = listOf("app:vpn", "app:naslist", "app:pimsync", "app:workspace", "app:homedock", "app:about")
 
 /**
  * Seiten, Programme und Bereiche der Systemsteuerung, die das Konto öffnen darf
@@ -269,6 +269,7 @@ internal fun openPaletteEntry(context: Context, graph: AppGraph, href: String, h
         "app:about" -> graph.openAbout = true
         "app:pimsync" -> { graph.programLink = null; graph.openProgram = PIM_SYNC }
         "app:workspace" -> { graph.programLink = null; graph.openProgram = WORKSPACE_SETTINGS }
+        "app:homedock" -> graph.openHomeSettings = true
         else -> openLink(context, graph, href, later)
     }
 }
@@ -292,6 +293,7 @@ internal fun CommandPalette(graph: AppGraph, onClose: () -> Unit) {
             "app:naslist" -> stringResource(R.string.nas_title)
             "app:pimsync" -> stringResource(io.github.ra5on.titanos.pim.R.string.sync_title)
             "app:workspace" -> stringResource(io.github.ra5on.titanos.workspace.R.string.ws_title)
+            "app:homedock" -> stringResource(io.github.ra5on.titanos.home.R.string.hs_title)
             else -> stringResource(io.github.ra5on.titanos.home.R.string.home_menu_about)
         }
     }

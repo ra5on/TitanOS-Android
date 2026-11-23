@@ -34,4 +34,9 @@
     <string name="ui_disclaimer_continue">Weiter</string>
     <string name="ui_disclaimer_ask">Bitte lies den Haftungsausschluss und bestätige ihn einmal. Mitteilungen und Foto-Sicherung laufen währenddessen weiter.</string>
     <string name="ui_disclaimer_needed">Zum Koppeln bitte den Haftungsausschluss bestätigen.</string>
+    <plurals name="ui_unread">
+        <item quantity="one">%d ungelesen</item>
+        <item quantity="other">%d ungelesen</item>
+    </plurals>
+    <string name="ui_dock">Dock</string>
 </resources>

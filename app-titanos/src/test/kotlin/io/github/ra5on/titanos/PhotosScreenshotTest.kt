@@ -177,7 +177,7 @@ class PhotosScreenshotTest {
                     volumes = listOf(Volume("Data", "raid1", "btrfs", "ok", true, 8_000_000_000_000, 4_100_000_000_000)),
                     uptimeSeconds = 3 * 86_400L, programs = visiblePrograms("owner", emptyMap()),
                 ),
-                {}, {}, {}, {}, Modifier.weight(1f), photos = homeTileText(view),
+                io.github.ra5on.titanos.home.PhonePrefs(), null, {}, {}, {}, {}, {}, {}, Modifier.weight(1f), photos = homeTileText(view),
             )
             NavBar()
         }

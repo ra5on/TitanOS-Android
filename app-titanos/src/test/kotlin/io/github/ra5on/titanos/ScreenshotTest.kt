@@ -97,6 +97,23 @@ class ScreenshotTest {
         ) {}
     }
 
+    /** Das Dock wie ab Werk (Entwurf 02), mit drei ungelesenen Mitteilungen. */
+    @Composable
+    private fun HomeDock(selected: String = io.github.ra5on.titanos.home.DOCK_HOME) {
+        io.github.ra5on.titanos.ui.components.DockBar(
+            listOf(
+                io.github.ra5on.titanos.ui.components.DockItem(io.github.ra5on.titanos.home.DOCK_HOME, stringResource(UiR.string.ui_nav_home), TitanIcons.home),
+                io.github.ra5on.titanos.ui.components.DockItem(io.github.ra5on.titanos.home.DOCK_FILES, stringResource(UiR.string.ui_nav_files), TitanIcons.folder),
+                io.github.ra5on.titanos.ui.components.DockItem(io.github.ra5on.titanos.home.DOCK_PHOTOS, stringResource(UiR.string.ui_nav_photos), TitanIcons.photo),
+                io.github.ra5on.titanos.ui.components.DockItem(io.github.ra5on.titanos.home.DOCK_NOTIFICATIONS, stringResource(UiR.string.ui_nav_notifications), TitanIcons.bell, badge = 3),
+                io.github.ra5on.titanos.ui.components.DockItem("app:docker", "Docker", TitanIcons.docker),
+            ),
+            selected,
+            labels = true,
+            onSelect = {},
+        )
+    }
+
     private val lanSpki = Spki.encode(byteArrayOf(0x4F, 0x2A, 0x91.toByte(), 0xC7.toByte(), 0x0E, 0x3B, 0x6D, 0x58, 0xA1.toByte(), 0xF0.toByte(), 0x22, 0xB9.toByte(), 0x7C, 0x4E, 0x1D, 0x06) + ByteArray(16) { 7 })
 
     @Test
@@ -143,8 +160,8 @@ class ScreenshotTest {
     @Test
     fun s10_home() = shot("10-start") {
         Column(Modifier.fillMaxSize()) {
-            HomeScreen(home, {}, {}, {}, {}, Modifier.weight(1f))
-            NavBar("Home")
+            HomeScreen(home, io.github.ra5on.titanos.home.PhonePrefs(), null, {}, {}, {}, {}, {}, {}, Modifier.weight(1f))
+            HomeDock()
         }
     }
 
@@ -155,8 +172,8 @@ class ScreenshotTest {
         try {
             shot("10-start-schrift-200") {
                 Column(Modifier.fillMaxSize()) {
-                    HomeScreen(home, {}, {}, {}, {}, Modifier.weight(1f))
-                    NavBar("Home")
+                    HomeScreen(home, io.github.ra5on.titanos.home.PhonePrefs(), null, {}, {}, {}, {}, {}, {}, Modifier.weight(1f))
+                    HomeDock()
                 }
             }
         } finally {
@@ -169,9 +186,9 @@ class ScreenshotTest {
         Column(Modifier.fillMaxSize()) {
             HomeScreen(
                 home.copy(volumes = listOf(Volume("Data", "raid1", "btrfs", "degraded", true, 8_000_000_000_000, 4_100_000_000_000)), programs = visiblePrograms("user", emptyMap())),
-                {}, {}, {}, {}, Modifier.weight(1f),
+                io.github.ra5on.titanos.home.PhonePrefs(), null, {}, {}, {}, {}, {}, {}, Modifier.weight(1f),
             )
-            NavBar("Home")
+            HomeDock()
         }
     }
 

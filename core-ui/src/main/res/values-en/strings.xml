@@ -34,4 +34,9 @@
     <string name="ui_disclaimer_continue">Continue</string>
     <string name="ui_disclaimer_ask">Please read the disclaimer and confirm it once. Notifications and photo backup keep running meanwhile.</string>
     <string name="ui_disclaimer_needed">To pair, please confirm the disclaimer.</string>
+    <plurals name="ui_unread">
+        <item quantity="one">%d unread</item>
+        <item quantity="other">%d unread</item>
+    </plurals>
+    <string name="ui_dock">Dock</string>
 </resources>

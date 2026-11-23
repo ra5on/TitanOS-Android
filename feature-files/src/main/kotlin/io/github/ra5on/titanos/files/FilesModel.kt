@@ -154,6 +154,14 @@ class FilesModel(
         if (route == FilesRoute.Roots) onLeaveRoots?.invoke()
     }
 
+    /** Zweites Tippen auf „Dateien“ im Dock (PLAN 117): zurück zu den Freigaben, ohne Fenster zu schließen. */
+    fun toRoot() {
+        if (stack.size <= 1) return
+        while (stack.size > 1) stack.removeAt(stack.lastIndex)
+        selection = emptySet()
+        close()
+    }
+
     /** Datei in der Vorschau neben der Liste (ab „Split“); null: keine. */
     var previewing by mutableStateOf<String?>(null)
 

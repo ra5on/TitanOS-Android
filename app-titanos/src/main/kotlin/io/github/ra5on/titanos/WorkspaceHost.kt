@@ -62,7 +62,8 @@ internal fun workspaceFirst(graph: AppGraph): Boolean {
     val context = LocalContext.current
     val settings = remember { WorkspaceSettings.of(context) }
     val width = LocalConfiguration.current.screenWidthDp
-    val external = context.display?.displayId?.let { it != Display.DEFAULT_DISPLAY } == true
+    // Ein Kontext ohne Bildschirm (Robolectric, umgebaute Kontexte) wirft hier; dann gilt der eingebaute.
+    val external = runCatching { context.display }.getOrNull()?.displayId?.let { it != Display.DEFAULT_DISPLAY } == true
     val state = remember(pairing) {
         WorkspaceState(
             ComputeAccess.forPairing(graph.shared, pairing, graph.sessions),
@@ -157,6 +158,9 @@ private fun WorkspaceRoutes(graph: AppGraph, state: WorkspaceState) {
     LaunchedEffect(graph.openPhotos) { if (graph.openPhotos) { state.open("app:photos"); graph.openPhotos = false } }
     LaunchedEffect(graph.openAbout) { if (graph.openAbout) { state.open("app:about"); graph.openAbout = false } }
     LaunchedEffect(graph.openVpn) { if (graph.openVpn) { state.open("app:vpn"); graph.openVpn = false } }
+    // Startbildschirm und Dock der Handy-Gestaltung (PLAN 117): hier als Fenster; die App-Einstellungen gibt es nur am Handy.
+    LaunchedEffect(graph.openHomeSettings) { if (graph.openHomeSettings) { state.open("app:homedock"); graph.openHomeSettings = false } }
+    LaunchedEffect(graph.openAppSettings) { graph.openAppSettings = false }
     val openList by NotifyRuntime.openList.collectAsStateWithLifecycle()
     LaunchedEffect(openList) { if (openList) { state.open("app:notifications"); NotifyRuntime.listOpened() } }
     val openLink by NotifyRuntime.openLink.collectAsStateWithLifecycle()
@@ -207,6 +211,13 @@ internal fun WorkspaceProgram(graph: AppGraph, win: Win, close: () -> Unit) {
         id == "security" -> SettingsProgram(graph, "settings", close, start = win.href.ifEmpty { "/settings/firewall" })
         id == "backup" -> SettingsProgram(graph, "settings", close, start = win.href.ifEmpty { "/settings/backups" })
         id == WORKSPACE_SETTINGS -> io.github.ra5on.titanos.workspace.WorkspaceSettingsPage(close)
+        id == "homedock" -> HomeDockSettingsHost(
+            graph,
+            rememberHomeStore(graph),
+            io.github.ra5on.titanos.home.homePrograms(io.github.ra5on.titanos.home.ALL_PROGRAMS.filter { it.id in graph.paletteProgramIds }),
+            onEdit = close,
+            onBack = close,
+        )
         id == "naslist" -> NasListPage(graph, onBack = close, onAdd = { close(); graph.beginAdd() }, onPhotos = { graph.openPhotos = true })
         else -> Later()
     }

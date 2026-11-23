@@ -83,4 +83,21 @@
     <string name="nas_link_text">A link wants to add another NAS: %1$s. Only continue if you started this yourself in the browser. The new NAS is not selected automatically.</string>
     <string name="nas_link_go">Continue</string>
     <string name="nas_link_added">“%1$s” is added. The previous NAS stays selected; switch via “NAS and accounts”.</string>
+
+    <!-- PLAN 117: side menu (draft 05) and app settings. -->
+    <string name="side_nas">NAS</string>
+    <string name="side_cluster">Cluster of %1$s</string>
+    <string name="side_node_self">this NAS</string>
+    <string name="side_node_via">managed through %1$s</string>
+    <string name="side_settings">App settings</string>
+    <string name="side_transfers">Transfers</string>
+    <string name="side_transfers_sub">%1$d running · %2$d done</string>
+    <string name="side_transfers_none">No running transfers</string>
+    <string name="side_close">Close side menu</string>
+    <string name="role_owner">Owner</string>
+    <string name="role_admin">Administrator</string>
+    <string name="role_user">User</string>
+    <string name="appset_title">App settings</string>
+    <string name="appset_home_sub">Dock, labels, editing, web setup</string>
+    <string name="appset_watch_sub">The watch shows six digits, the phone confirms them.</string>
 </resources>

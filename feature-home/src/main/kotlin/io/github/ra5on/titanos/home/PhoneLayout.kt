@@ -318,6 +318,14 @@ fun moveTo(p: PhonePrefs, key: String, page: Int, index: Int): PhonePrefs {
     return next.copy(pages = pages, hidden = next.hidden - key)
 }
 
+/** Legt [key] direkt vor [before] (Ziehen und Ablegen); [after] true: direkt dahinter. */
+fun moveNextTo(p: PhonePrefs, key: String, other: String, after: Boolean = false): PhonePrefs {
+    if (key == other) return p
+    val next = takeOut(p, key)
+    val (page, index) = placeOf(next, other) ?: return p
+    return moveTo(next, key, page, if (after) index + 1 else index)
+}
+
 /** Seite und Stelle eines Eintrags (auch eines Ordners), sonst null. */
 fun placeOf(p: PhonePrefs, key: String): Pair<Int, Int>? {
     p.pages.forEachIndexed { i, page -> page.indexOf(key).takeIf { it >= 0 }?.let { return i to it } }

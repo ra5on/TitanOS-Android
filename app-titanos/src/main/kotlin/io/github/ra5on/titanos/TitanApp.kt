@@ -257,6 +257,10 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
     /** Seite „NAS und Konten“ offen. */
     var openNasList by mutableStateOf(false)
 
+    /** App-Einstellungen bzw. darin „Startbildschirm und Dock“ (Seitenmenü, Schnell finden; PLAN 117). */
+    var openAppSettings by mutableStateOf(false)
+    var openHomeSettings by mutableStateOf(false)
+
     /** „Schnell finden“ (Befehlspalette wie im Web, Strg/⌘+K oder das Suchfeld) offen. */
     var openPalette by mutableStateOf(false)
 
@@ -386,6 +390,8 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
         programLink = null
         openAbout = false
         openVpn = false
+        openAppSettings = false
+        openHomeSettings = false
         nasEpoch++
         NotifyRuntime.activeChanged()
         WidgetRefresh.now(app)
@@ -534,6 +540,8 @@ class AppGraph(private val app: Application, val registry: NasRegistry) {
             agent = null
         }
         io.github.ra5on.titanos.workspace.WorkspaceSettings.of(app).forgetNas(id)
+        // Startbildschirm dieses NAS (Einrichtung eines NAS vor 1.19, zuletzt gesehener Stand).
+        io.github.ra5on.titanos.home.HomeLocal(app).forgetNas(id)
         val link = synchronized(links) { links.remove(id) }
         val account = pimName(profile)
         // Die Foto-Sicherung gehört zu diesem NAS: Aufträge, Stand und Einstellungen weg.
