@@ -139,4 +139,5 @@
     <string name="hs_dock_add">Add %1$s to the dock</string>
     <string name="hs_dock_start">Start is always in the dock.</string>
     <string name="hs_dock_full">At most five places. Remove one first.</string>
+    <string name="home_not_loaded">The home screen setup has not been loaded from the NAS yet. Changes are possible once the NAS can be reached.</string>
 </resources>

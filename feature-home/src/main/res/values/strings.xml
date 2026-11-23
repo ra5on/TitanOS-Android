@@ -140,4 +140,5 @@
     <string name="hs_dock_add">%1$s ins Dock</string>
     <string name="hs_dock_start">Start ist immer im Dock.</string>
     <string name="hs_dock_full">Höchstens fünf Plätze. Nimm erst einen heraus.</string>
+    <string name="home_not_loaded">Die Einrichtung des Startbildschirms ist noch nicht vom NAS geladen. Ändern geht, sobald das NAS erreichbar ist.</string>
 </resources>

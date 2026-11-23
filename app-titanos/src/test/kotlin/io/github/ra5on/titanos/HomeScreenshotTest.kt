@@ -130,6 +130,11 @@ class HomeScreenshotTest {
     @Test
     fun h02_editing() = shot("111-start-bearbeiten") { Home(arranged, draft = arranged) }
 
+    /** Tablet, aufgeklapptes Faltbares (Split/Wide): Startseite und Dock wie am Handy, Dock mittig begrenzt. */
+    @Test
+    @Config(qualifiers = "de-w900dp-h1200dp-mdpi")
+    fun h02b_wide() = shot("119-start-breit") { Home(arranged) }
+
     @Test
     fun h03_dock_in_program() = shot("112-dock-im-programm") {
         Column(Modifier.fillMaxSize()) {
@@ -214,6 +219,20 @@ class HomeScreenshotTest {
         assertEquals(listOf("widget:p-status", "app:shares", "app:docker"), draft!!.pages[0].take(3))
         compose.onNodeWithText("Fertig").performClick()
         assertTrue(saved != null && "app:storage" in saved!!.hidden)
+    }
+
+    /** Noch nicht vom NAS gelesen oder ohne Programme: kein Bearbeiten (sonst überschriebe „Fertig“ die Einrichtung). */
+    @Test
+    fun noEditingBeforeTheSetupIsLoaded() {
+        var draft by mutableStateOf<PhonePrefs?>(null)
+        compose.setContent {
+            TitanTheme(dark = true) {
+                HomeScreen(state, arranged, draft, { draft = it }, {}, {}, {}, {}, {}, title = "nas", wiggle = false, canEdit = false)
+            }
+        }
+        compose.onNodeWithText("Freigaben").performTouchInput { longClick() }
+        compose.waitForIdle()
+        assertTrue(draft == null)
     }
 
     /** Mit der Einrichtung des Webs fragt Bearbeiten erst, ob die App sie als eigene übernimmt. */

@@ -518,6 +518,7 @@ private fun ShellContent(
                 widgetsAllowed = allowed,
                 wiggle = !reduceMotion(context),
                 firstPage = shell.homeFirst,
+                canEdit = store.loaded && home.state.programs.isNotEmpty(),
             )
         }
         Tab.Files -> io.github.ra5on.titanos.files.FilesTab(files, nav)

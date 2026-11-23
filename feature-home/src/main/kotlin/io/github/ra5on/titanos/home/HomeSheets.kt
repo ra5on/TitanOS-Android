@@ -226,7 +226,14 @@ internal fun BoxScope.AddSheet(
         Tabs(tab, listOf("widgets" to stringResource(R.string.home_add_widgets), "programs" to stringResource(R.string.home_add_programs)), { tab = it }, Modifier.padding(bottom = 6.dp))
         if (tab == "widgets") {
             SectionHeader(stringResource(R.string.home_add_widgets), top = 8.dp)
-            for (row in widgetsAllowed.chunked(2)) {
+            // Zwei Karten nebeneinander nur, wenn jedes Wort in eine passt (ganze Wörter, auch bei großer Schrift).
+            val words = widgetsAllowed.flatMap { listOf(stringResource(widgetTitleRes(it)), stringResource(widgetSubRes(it))) }
+            val widest = io.github.ra5on.titanos.ui.rememberWidestWord(words, TitanType.rowTitle)
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val screen = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp
+            val half = with(density) { ((screen - 32.dp - 10.dp) / 2 - 28.dp - 52.dp).toPx() }
+            val perRow = if (widest <= half) 2 else 1
+            for (row in widgetsAllowed.chunked(perRow)) {
                 Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     for (kind in row) {
                         val (glyph, gradient) = widgetIcon(kind)
@@ -247,7 +254,7 @@ internal fun BoxScope.AddSheet(
                             }
                         }
                     }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                    if (row.size < perRow) Spacer(Modifier.weight(1f))
                 }
             }
         } else {

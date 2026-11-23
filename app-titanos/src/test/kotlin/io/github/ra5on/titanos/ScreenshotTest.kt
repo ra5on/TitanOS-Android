@@ -136,6 +136,22 @@ class ScreenshotTest {
         )
     }
 
+    /** Erstes Koppeln: „Koppeln“ erst mit dem Häkchen zum Haftungsausschluss. */
+    @Test
+    fun s03_confirm_disclaimer() = shot("03-koppeln-haftungsausschluss") {
+        ConfirmScreen(
+            ConfirmState(
+                hostname = "nas",
+                addresses = listOf(AddressCheck("192.168.1.20", AddressKind.LAN, CheckStatus.Reachable)),
+                fingerprint = Spki.displayLines(Spki.decode(lanSpki)!!).joinToString(" "),
+                deviceName = "Pixel 9 von Zeus",
+                phase = PairPhase.Ready,
+            ),
+            {}, {}, {},
+            disclaimer = false,
+        )
+    }
+
     @Test
     fun s04_permissions() = shot("04-berechtigungen") {
         PermissionsScreen(PermissionsState(localNetwork = Grant.Granted, notifications = Grant.NotAsked, contacts = Grant.Granted, calendar = Grant.NotAsked), {}, {}, {}, onBack = {})

@@ -147,6 +147,12 @@ fun HomeScreen(
     wiggle: Boolean = true,
     /** Zähler: bei jeder Änderung zurück auf die erste Seite (zweites Tippen auf „Start“). */
     firstPage: Int = 0,
+    /**
+     * Ob sich die Einrichtung ändern lässt: erst, wenn sie vom NAS gelesen ist
+     * und die Programme des Kontos bekannt sind (sonst schriebe „Fertig“ eine
+     * Anordnung ohne die Programme über die des Kontos).
+     */
+    canEdit: Boolean = true,
 ) {
     val c = Titan.colors
     val programs = remember(state.programs) { homePrograms(state.programs) }
@@ -159,6 +165,8 @@ fun HomeScreen(
     var sheet by remember { mutableStateOf<String?>(null) }
     var folderOpen by remember { mutableStateOf<String?>(null) }
     val density = LocalDensity.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val notLoaded = stringResource(R.string.home_not_loaded)
 
     val grid = rememberGridState()
     Box(modifier.fillMaxSize().wallpaper(c.dark)) {
@@ -179,6 +187,10 @@ fun HomeScreen(
             LaunchedEffect(firstPage) { if (firstPage > 0) pager.animateScrollToPage(0) }
             fun startEdit() {
                 if (editing) return
+                if (!canEdit) {
+                    android.widget.Toast.makeText(context, notLoaded, android.widget.Toast.LENGTH_LONG).show()
+                    return
+                }
                 if (prefs.useWeb) {
                     askTakeOver = true
                 } else {

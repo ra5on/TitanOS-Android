@@ -150,6 +150,7 @@ internal fun HomeDockSettingsHost(graph: AppGraph, store: HomeLayoutStore, progr
         onChange = { saveHome(context, graph, store, it) },
         onEdit = onEdit,
         onBack = onBack,
+        enabled = store.loaded && programs.size > 2,
     )
 }
 

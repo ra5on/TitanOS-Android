@@ -216,7 +216,8 @@ internal fun PageContent(
             else -> byKey[key]?.let { programLabel(it.id) }.orEmpty()
         }
     }
-    val labels = page.filter { !it.startsWith("widget:") }.map { labelOf(it) }
+    // Ein weiches Trennzeichen („System\u00ADsteuerung“) ist eine erlaubte Trennstelle: dort zählt jedes Teilstück als Wort.
+    val labels = page.filter { !it.startsWith("widget:") }.map { labelOf(it).replace('\u00AD', ' ') }
     val widest = rememberWidestWord(labels, TitanType.appLabel)
     val density = LocalDensity.current
     BoxWithConstraints(Modifier.fillMaxSize().longPressFree(!editing, onLongPress)) {
@@ -388,7 +389,7 @@ private fun HomeEntry(
                             if (grid.dragKey != key) return@detectDragGestures
                             change.consume()
                             grid.pos += amount
-                            grid.hover = grid.targetAt(pager.currentPage)?.first
+                            grid.hover = grid.targetAt(pager.targetPage)?.first
                             // Am Rand gehalten: nach kurzer Zeit die Seite davor bzw. danach (am Ende eine neue).
                             val width = grid.root?.size?.width ?: 0
                             val dir = when {
@@ -402,11 +403,15 @@ private fun HomeEntry(
                             } else if (grid.edgeJob?.isActive != true) {
                                 grid.edgeJob = scope.launch {
                                     delay(650)
-                                    val target = pager.currentPage + dir
+                                    val target = pager.targetPage + dir
                                     if (target < 0) return@launch
                                     if (target >= pageCount) grid.draft?.let { grid.change(addPage(it)) }
-                                    delay(30)
-                                    pager.animateScrollToPage(target)
+                                    // Das Blättern selbst läuft für sich: Loslassen bricht es nicht mitten auf der Seite ab.
+                                    scope.launch {
+                                        delay(30)
+                                        pager.animateScrollToPage(target)
+                                    }
+                                    delay(450)
                                     grid.edgeJob = null
                                 }
                             }
@@ -416,7 +421,7 @@ private fun HomeEntry(
                             val d = grid.draft
                             val dragged = grid.dragKey
                             if (d != null && dragged == key) {
-                                val at = pager.currentPage
+                                val at = pager.targetPage
                                 val target = grid.targetAt(at)
                                 val next = when {
                                     target != null && target.second -> combine(d, key, target.first, grid.folderName, "f" + System.currentTimeMillis().toString(36))
@@ -428,6 +433,8 @@ private fun HomeEntry(
                             }
                             grid.dragKey = null
                             grid.hover = null
+                            // Die Seite ganz zeigen, falls gerade geblättert wurde.
+                            if (!pager.isScrollInProgress && pager.currentPageOffsetFraction != 0f) scope.launch { pager.animateScrollToPage(pager.targetPage) }
                         },
                         onDragCancel = {
                             grid.edgeJob?.cancel()

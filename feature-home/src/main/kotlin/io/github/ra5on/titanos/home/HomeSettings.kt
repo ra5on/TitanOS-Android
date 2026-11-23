@@ -53,6 +53,8 @@ fun HomeDockSettingsPage(
     onChange: (PhonePrefs) -> Unit,
     onEdit: () -> Unit,
     onBack: () -> Unit,
+    /** Erst nach dem Lesen vom NAS änderbar (nie der Werkszustand über die Einrichtung des Kontos). */
+    enabled: Boolean = true,
 ) {
     val c = Titan.colors
     var dockPage by rememberSaveable { mutableStateOf(false) }
@@ -82,26 +84,27 @@ fun HomeDockSettingsPage(
             }
         },
     ) {
+        if (!enabled) Note(stringResource(R.string.home_not_loaded), Modifier.padding(top = 12.dp))
         SectionHeader(stringResource(R.string.hs_dock))
         Card {
             val always = stringResource(R.string.hs_always)
-            ListRow(always, sub = stringResource(R.string.hs_always_sub), right = { Toggle(prefs.dock.always, { onChange(prefs.copy(dock = prefs.dock.copy(always = it))) }, on, off, label = always) })
+            ListRow(always, sub = stringResource(R.string.hs_always_sub), right = { Toggle(prefs.dock.always, { onChange(prefs.copy(dock = prefs.dock.copy(always = it))) }, on, off, enabled = enabled, label = always) })
             ListRow(
                 stringResource(R.string.hs_apps),
                 sub = entries.mapNotNull { byKey[it]?.label }.joinToString(", "),
                 chevron = true,
                 divider = true,
-                onClick = { dockPage = true },
+                onClick = if (enabled) ({ dockPage = true }) else null,
             )
             val labels = stringResource(R.string.hs_labels)
-            ListRow(labels, sub = stringResource(R.string.hs_labels_sub), divider = true, right = { Toggle(prefs.dock.labels, { onChange(prefs.copy(dock = prefs.dock.copy(labels = it))) }, on, off, label = labels) })
+            ListRow(labels, sub = stringResource(R.string.hs_labels_sub), divider = true, right = { Toggle(prefs.dock.labels, { onChange(prefs.copy(dock = prefs.dock.copy(labels = it))) }, on, off, enabled = enabled, label = labels) })
         }
         SectionHeader(stringResource(R.string.hs_home))
         Card {
-            ListRow(stringResource(R.string.hs_edit), sub = stringResource(R.string.hs_edit_sub), chevron = true, onClick = onEdit)
+            ListRow(stringResource(R.string.hs_edit), sub = stringResource(R.string.hs_edit_sub), chevron = true, onClick = if (enabled) onEdit else null)
             val web = stringResource(R.string.hs_web)
-            ListRow(web, sub = stringResource(R.string.hs_web_sub), divider = true, right = { Toggle(prefs.useWeb, { onChange(prefs.copy(useWeb = it)) }, on, off, label = web) })
-            ListRow(stringResource(R.string.hs_reset), sub = stringResource(R.string.hs_reset_sub), divider = true, onClick = { confirmReset = true })
+            ListRow(web, sub = stringResource(R.string.hs_web_sub), divider = true, right = { Toggle(prefs.useWeb, { onChange(prefs.copy(useWeb = it)) }, on, off, enabled = enabled, label = web) })
+            ListRow(stringResource(R.string.hs_reset), sub = stringResource(R.string.hs_reset_sub), divider = true, onClick = if (enabled) ({ confirmReset = true }) else null)
         }
         Text(
             stringResource(if (onNas) R.string.hs_note else R.string.hs_note_local),

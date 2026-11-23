@@ -20,12 +20,12 @@ Die nativen Android-Apps zu [TitanOS](https://github.com/ra5on/TitanOS), dem NAS
 
 Den KI-Agenten gibt es in der TitanOS-App: als Programm, am Arbeitsplatz und als Panel in Mail, Kalender und Kontakte, dazu Teilen → „Agent fragen“, Widget, Assistent, Notizen-App und Android Auto. Beide Apps sind mit demselben Schlüssel signiert.
 
-**Die Agent-App (`io.github.ra5on.titanos.agent`) wird nicht mehr weiterentwickelt.** Ihre letzte Fassung `TitanOS-Agent-1.00.apk` liegt im Release 1.00; ab 1.01 kann alles, was sie konnte, die TitanOS-App. Wer sie noch hat, kann sie deinstallieren (**Menü › Über die App** öffnet ihre App-Info).
+**Die Agent-App (`io.github.ra5on.titanos.agent`) wird nicht mehr weiterentwickelt.** Ihre letzte Fassung `TitanOS-Agent-1.00.apk` liegt im Release 1.00; ab 1.01 kann alles, was sie konnte, die TitanOS-App. Wer sie noch hat, kann sie deinstallieren (**Seitenmenü › Über die App** öffnet ihre App-Info).
 
 ## Was du brauchst
 
 - **Handy oder Tablet** mit Android 13 oder neuer. Für die Uhr Wear OS 4 oder neuer.
-- **NAS mit TitanOS 1.19.** Auf einem älteren NAS gehen Koppeln, Dateien (ab 1.16), Foto-Sicherung (ab 1.17) und Mitteilungen (ab 1.18). Was 1.19 braucht, sagt die App: eine Kopplung für beide Apps, Kontakte und Kalender im Handy, das eigene VPN, die Uhr, die eigene Einrichtung des Arbeitsplatzes.
+- **NAS mit TitanOS 1.19.** Auf einem älteren NAS gehen Koppeln, Dateien (ab 1.16), Foto-Sicherung (ab 1.17) und Mitteilungen (ab 1.18). Was 1.19 braucht, sagt die App: eine Kopplung für beide Apps, Kontakte und Kalender im Handy, das eigene VPN, die Uhr, die eigene Einrichtung des Arbeitsplatzes und des Startbildschirms am NAS.
 - **Erreichbarkeit:** zu Hause über das Heimnetz, unterwegs über das eigene VPN der App, über Tailscale oder eine Adresse mit öffentlichem Zertifikat.
 - **Keine Google-Dienste:** kein Google Play Services, kein Firebase, kein ML Kit.
 
@@ -33,7 +33,7 @@ Den KI-Agenten gibt es in der TitanOS-App: als Programm, am Arbeitsplatz und als
 
 1. **APK laden** von der Seite [Releases](https://github.com/ra5on/TitanOS-Android/releases). Wer prüfen will: `sha256sum -c SHA256SUMS`.
 2. **Installieren:** Die APK auf dem Handy öffnen. Beim ersten Mal fragt Android, ob der Browser bzw. die Dateien-App „unbekannte Apps installieren“ darf. Erlauben, dann „Installieren“.
-3. **Updates** holt die App danach selbst: **Menü › Über die App** sucht täglich auf GitHub (abschaltbar), installiert erst nach deinem Tipp und nur, was mit demselben Schlüssel signiert ist und zur Prüfsumme passt.
+3. **Updates** holt die App danach selbst: **Seitenmenü › Über die App** sucht täglich auf GitHub (abschaltbar), installiert erst nach deinem Tipp und nur, was mit demselben Schlüssel signiert ist und zur Prüfsumme passt.
 
 Eine Fassung für Google Play ist vorbereitet, aber nicht veröffentlicht.
 
@@ -47,7 +47,7 @@ Eine Fassung für Google Play ist vorbereitet, aber nicht veröffentlicht.
 3. **Bestätigen:** Der Browser fragt „<Name> möchte sich anmelden“. Mit deinem Kontopasswort bestätigen, dann macht die App von selbst weiter.
 4. **Berechtigungen:** Danach fragt die App nach Fotos, Kontakten, Kalender, Mitteilungen und „Geräte im Heimnetz finden“. Alles lässt sich später ändern.
 
-**Mehrere NAS oder Konten:** **Menü › NAS und Konten › NAS hinzufügen**, derselbe Ablauf mit eigenem Schlüssel. Oben auf der Startseite schaltest du um. Mitteilungen, Foto-Sicherung (auch an mehrere NAS gleichzeitig), Widgets und Kontakte/Kalender stellst du je NAS ein. Der KI-Agent folgt dem gewählten NAS. Ein Kopplungslink aus dem Browser fügt ein weiteres NAS nur nach Nachfrage hinzu. In einem Cluster verwaltest du andere Knoten wie im Web über das gewählte NAS; die Foto-Sicherung geht dabei immer an das gekoppelte NAS selbst.
+**Mehrere NAS oder Konten:** **Seitenmenü › NAS hinzufügen**, derselbe Ablauf mit eigenem Schlüssel. Umgeschaltet wird im Seitenmenü (oben links auf der Startseite oder Tippen auf den Namen des NAS), dort stehen auch die Knoten eines Clusters. Namen, Mitteilungen und Foto-Sicherung je NAS: **Seitenmenü › App-Einstellungen › NAS und Konten**. Mitteilungen, Foto-Sicherung (auch an mehrere NAS gleichzeitig), Widgets und Kontakte/Kalender stellst du je NAS ein. Der KI-Agent folgt dem gewählten NAS. Ein Kopplungslink aus dem Browser fügt ein weiteres NAS nur nach Nachfrage hinzu. In einem Cluster verwaltest du andere Knoten wie im Web über das gewählte NAS; die Foto-Sicherung geht dabei immer an das gekoppelte NAS selbst.
 
 **Die Uhr** koppelst du über das Handy, siehe [Uhr](#uhr-wear-os).
 
@@ -61,6 +61,7 @@ Unter **Mein Konto › Geräte** siehst du jede gekoppelte App und Uhr. Mit „B
 ## Was die App TitanOS kann
 
 - **Alle Programme der Weboberfläche nativ:** Dateien mit Betrachtern und Office (T-Word, T-Exel, T-PDF, T-Deck …, eingebettet), Fotos mit Zeitleiste, Mail, Kalender, Kontakte, Speicher, Freigaben, Benutzer, Plugins, Werkzeuge, Docker, VMs mit eigenem Bildschirm, LXC, NVR, Terminal, Systemsteuerung und Mein Konto. Links zwischen den Programmen führen wie im Web ins andere Programm. **Schnell finden** (Suchfeld der Startseite, Strg/⌘ + K) findet wie im Web jede Seite, jedes Programm und jede einzelne Einstellung.
+- **Startbildschirm und Dock nach eigenem Wunsch:** Lange drücken auf eine freie Stelle oder ein Symbol, dann verschieben (auch auf die nächste Seite), aufeinanderziehen für einen Ordner, × nimmt ein Programm vom Startbildschirm (es bleibt unter „Hinzufügen“), Widgets (Zustand, Speicher, Foto-Sicherung, Container, VMs) halb oder ganz breit. Jeder Schritt geht auch ohne Ziehen („Bewegen …“, TalkBack-Aktionen). Unten das Dock mit bis zu fünf Plätzen (ab Werk Start, Dateien, Fotos, Mitteilungen, Docker), ab Werk auch in den Programmen sichtbar: „Start“ führt sofort zurück, ein zweites Tippen auf das gewählte Programm an seinen Anfang. Gespeichert je Konto am NAS (`androiddesktop`, ab TitanOS 1.19; ein älteres NAS behält es auf dem Gerät); wahlweise zeigt die App die Einrichtung des Webs am Handy. **Seitenmenü › App-Einstellungen › Startbildschirm und Dock.**
 - **Foto-Sicherung im Hintergrund** in eine frei wählbare Freigabe und Ablage (Jahr, Monat, Tag, Album, eigenes Muster), Doppelte erkennt das NAS am Inhalt; „Speicher freigeben“ löscht nur, was das NAS bestätigt, und nur auf Knopfdruck.
 - **Kontakte und Kalender** als Konto „TitanOS“ in den Apps des Handys, Abgleich in beide Richtungen.
 - **Mitteilungen ohne Google:** dieselben Meldungen wie im Browser, über eine eigene sparsame Verbindung zum NAS oder alle 15 Minuten.
@@ -72,7 +73,7 @@ Unter **Mein Konto › Geräte** siehst du jede gekoppelte App und Uhr. Mit „B
 
 ## VPN
 
-Die App hat ein eigenes VPN mit dem WireGuard-Server von TitanOS, ohne Tailscale-App (**Menü › VPN**, braucht TitanOS 1.19 mit eingeschaltetem WireGuard).
+Die App hat ein eigenes VPN mit dem WireGuard-Server von TitanOS, ohne Tailscale-App (**Seitenmenü › App-Einstellungen › VPN**, braucht TitanOS 1.19 mit eingeschaltetem WireGuard).
 
 - **Zugang je Handy:** Die App legt ihn selbst an. Der private Schlüssel entsteht am Handy und bleibt dort. Unter WireGuard im Web steht der Zugang als „Android-App von <Konto>“. Anlegen dürfen Besitzer und Administratoren.
 - **Ab Werk automatisch:** außerhalb des Heim-WLANs an, zu Hause aus. Den Namen des WLANs nennt Android nur mit Standort-Erlaubnis; damit es auch bei geschlossener App klappt, in Android beim Standort „Immer zulassen“ wählen. Ohne WLAN-Namen gilt die Einstellung „WLAN ohne erkennbaren Namen“.
@@ -117,7 +118,7 @@ Die Uhr-App „TitanOS“ (`io.github.ra5on.titanos.watch`, Datei `TitanOS-Watch
 
 - **Installieren:** Ohne Play Store kommt die APK per ADB auf die Uhr (Entwickleroptionen › ADB-Debugging bzw. Debugging über WLAN): `adb -s <uhr> install TitanOS-Watch-X.YY.apk`. Danach aktualisiert sie sich selbst unter Einstellungen › Update, geprüft wie bei den Handy-Apps (Prüfsumme aus `SHA256SUMS`, derselbe Signaturschlüssel).
 - **Koppeln, angestoßen vom Handy:**
-  1. In der TitanOS-App am Handy **Menü › Uhr koppeln** öffnen. Dort stehen die Adressen des NAS.
+  1. In der TitanOS-App am Handy **Seitenmenü › App-Einstellungen › Uhr koppeln** öffnen. Dort stehen die Adressen des NAS.
   2. Auf der Uhr **Adresse eingeben** und eine davon eintippen oder sprechen.
   3. Die Uhr zeigt **sechs Ziffern**. Diese am Handy eingeben und „Uhr koppeln“ tippen.
   - Die Ziffern hängen am Schlüssel der Uhr und am Zertifikat, das die Uhr sieht. Sitzt jemand dazwischen, passen sie nicht. Die Uhr ist danach ein **eigenes Gerät** unter Mein Konto › Geräte und lässt sich dort einzeln beenden.
@@ -127,6 +128,10 @@ Die Uhr-App „TitanOS“ (`io.github.ra5on.titanos.watch`, Datei `TitanOS-Watch
   - **Schalten** nach den Rechten des Kontos: Geräte von Home Assistant, Container und VMs starten und stoppen. Stoppen fragt vorher nach.
   - **Kameras:** Standbild und letzte Ereignisse des NVR.
 - **Akku:** keine Dauerverbindung. Die Uhr fragt nur, solange eine Seite sichtbar ist, und wenn Android Kachel oder Komplikation neu zeichnet (höchstens alle 15 bzw. 30 Minuten).
+
+## Haftungsausschluss
+
+TitanOS und die Apps sind ein privates, nicht kommerzielles Projekt, kostenlos und ohne jede Gewähr; die Nutzung geschieht auf eigenes Risiko. Den ganzen Text (Deutsch und Englisch) enthält [`DISCLAIMER.md`](DISCLAIMER.md). Die App zeigt ihn unter **Seitenmenü › Über die App** und fragt einmal danach: beim ersten Koppeln vor dem Koppeln, eine schon gekoppelte App beim ersten Start nach dem Update. Mitteilungen und Foto-Sicherung laufen davon unabhängig weiter.
 
 ## Testgeräte
 
