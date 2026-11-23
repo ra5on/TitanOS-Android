@@ -62,6 +62,8 @@ class AnswerNoticeTest {
             val path = request.url.encodedPath.removePrefix("/api/v1")
             fun ok(body: String) = MockResponse.Builder().addHeader("Content-Type", "application/json").body(body).build()
             return when {
+                path == "/agent/chats/c1/messages" -> ok("""{"id":"c1","title":"Platte","state":"running","entries":[{"id":"q","role":"user","content":"Wie warm ist die Platte?"}]}""")
+                path == "/agent/chats/c1/events" -> MockResponse.Builder().addHeader("Content-Type", "text/event-stream").body("").build()
                 path == "/agent/chats/c1" -> ok("""{"id":"c1","title":"Platte","state":"idle","entries":[{"id":"q","role":"user","content":"Wie warm ist die Platte?"},{"id":"a","role":"assistant","content":"38 Grad."}]}""")
                 path.endsWith("/seen") -> {
                     seen += path.removePrefix("/agent/chats/").removeSuffix("/seen") + ":" + request.body?.utf8()
@@ -93,12 +95,15 @@ class AnswerNoticeTest {
         model = AgentModel(AgentApi(nas), ChatCache(null), CoroutineScope(SupervisorJob() + Dispatchers.Unconfined))
         shadowOf(app).grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
         AgentVisible.reset()
+        AgentNotices.reset()
     }
 
     @After
     fun stop() {
         server.close()
         AgentVisible.reset()
+        AgentNotices.reset()
+        io.github.ra5on.titanos.agent.system.AnswerNotifier.slot = { null to it.hashCode() }
     }
 
     private fun until(ok: () -> Boolean) {
@@ -174,5 +179,77 @@ class AnswerNoticeTest {
         assertEquals(true, AgentVisible.shows("/agent?profile=assist&chat=c1"))
         AgentVisible.hide("c1")
         assertEquals(false, AgentVisible.shows("/agent?chat=c1"))
+    }
+
+    @Test
+    fun leavingTheChatTellsTheNasAtOnceAndTheHeartbeatStops() {
+        // 1.03: Home, Bildschirm aus oder aus den letzten Apps gewischt. Vorher lief „zu sehen“ alle 15 s
+        // weiter, solange die Activity lebte, und das Ende des Laufs sagte es noch einmal: das NAS schwieg.
+        val owner = Owner().apply { registry.currentState = Lifecycle.State.RESUMED }
+        compose.setContent {
+            CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+                AgentRoot(model, ask = null, onAskTaken = {}, open = "c1", versionName = "1.03", hostname = "pc", user = "alex", onUnpair = {})
+            }
+        }
+        until { seen.contains("c1:{\"visible\":true}") && AgentVisible.shown("c1") }
+        assertEquals(true, model.shows("c1"))
+
+        owner.registry.currentState = Lifecycle.State.CREATED
+        until { seen.lastOrNull() == "c1:{\"visible\":false}" }
+        assertEquals(false, AgentVisible.shown("c1"))
+        assertEquals(false, model.shows("c1"))
+        val before = seen.size
+        // Eine Minute im Hintergrund: kein „zu sehen“ mehr.
+        repeat(60) { compose.mainClock.advanceTimeBy(1_000); shadowOf(android.os.Looper.getMainLooper()).idle() }
+        Thread.sleep(200)
+        assertEquals(seen.toList().toString(), before, seen.size)
+
+        // Wieder vorne: sofort „zu sehen“.
+        owner.registry.currentState = Lifecycle.State.RESUMED
+        until { seen.lastOrNull() == "c1:{\"visible\":true}" && seen.size > before }
+        assertEquals(true, AgentVisible.shown("c1"))
+    }
+
+    @Test
+    fun theAppsNoteAndTheNasNoteShareOneSlot() {
+        // Die TitanOS-App setzt den Schlüssel der NAS-Mitteilung zum Chat (Tag agent-<chat>).
+        io.github.ra5on.titanos.agent.system.AnswerNotifier.slot = { "agent-$it" to 0x7116_0100 }
+        val tr = io.github.ra5on.titanos.agent.core.Tr("de", emptyMap())
+        val notifier = io.github.ra5on.titanos.agent.system.AnswerNotifier
+        notifier.post(app, tr, "c1", "Platte", "Wie warm?", "38 Grad.", null)
+        val nm = shadowOf(app.getSystemService(NotificationManager::class.java))
+        assertEquals(1, nm.allNotifications.size)
+        assertEquals("agent-c1", nm.activeNotifications.single().tag)
+        // Das NAS meldet denselben Lauf: bleibt still.
+        assertEquals(false, AgentNotices.claim("c1", "38 Grad.", AgentNotices.Source.Nas))
+        // Kam zuerst das NAS, meldet die App dieselbe Antwort nicht noch einmal.
+        assertEquals(true, AgentNotices.claim("c2", "Fertig.", AgentNotices.Source.Nas))
+        notifier.post(app, tr, "c2", "Backup", null, "Fertig.", null)
+        assertEquals(1, nm.allNotifications.size)
+        // „Gelesen“ und das Erscheinen des Chats nehmen sie unter demselben Schlüssel weg.
+        notifier.cancel(app, "c1")
+        assertEquals(0, nm.allNotifications.size)
+    }
+
+    @Test
+    fun theEndOfARunInTheBackgroundIsNotSeen() {
+        // Gesendet, dann weg (niemand zeigt den Chat): das Ende des Laufs meldet die Antwort, sagt dem NAS
+        // aber nicht mehr „zu sehen“ (vorher markierte es den Chat im Hintergrund als gelesen und offen).
+        val heard = Collections.synchronizedList(mutableListOf<String>())
+        model.onAnswer { heard += it.id }
+        model.open("c1")
+        // Das Öffnen selbst gilt als gesehen (der Chat erscheint gleich); danach geht die App weg.
+        until { model.current?.id == "c1" && seen.isNotEmpty() }
+        seen.clear()
+        model.send("Wie warm ist die Platte?")
+        until { heard.isNotEmpty() && !model.busy }
+        Thread.sleep(200)
+        assertEquals(emptyList<String>(), seen.toList())
+        // Zeigt eine Oberfläche den Chat, gilt die Antwort als gesehen.
+        model.showing("c1")
+        model.send("Und jetzt?")
+        until { heard.size >= 2 && !model.busy }
+        until { seen.size >= 2 }
+        assertEquals(listOf("c1:{\"visible\":true}", "c1:{\"visible\":true}"), seen.toList())
     }
 }

@@ -112,14 +112,14 @@ fun AgentRoot(
         onOpenTaken()
     }
 
-    // Eine Antwort, während die App nicht vorne ist: als Mitteilung (MessagingStyle, auch Android Auto).
-    // Angemeldet nur, solange diese Oberfläche da ist, mit ihrem Lebenszyklus (1.01: vorher blieb die
-    // Anmeldung einer beendeten Activity hängen und meldete auch Antworten im offenen Chat).
-    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(model, lifecycle) {
+    // Eine Antwort, während der Chat nicht zu sehen ist: als Mitteilung (MessagingStyle, auch Android Auto).
+    // Angemeldet nur, solange diese Oberfläche da ist (1.01: vorher blieb die Anmeldung einer beendeten
+    // Activity hängen und meldete auch Antworten im offenen Chat). „Zu sehen“ ist dieselbe Regel wie die
+    // Meldung ans NAS (AgentVisible, 1.03); meldet das NAS dieselbe Antwort, bleibt es bei einer (AgentNotices).
+    DisposableEffect(model) {
         val off = model.onAnswer { e ->
             val chat = model.current
-            if (chat != null && !lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+            if (chat != null && !AgentVisible.shown(chat.id)) {
                 val q = chat.entries.lastOrNull { it.role == "user" }?.content
                 val intent = android.app.PendingIntent.getActivity(
                     context, chat.id.hashCode(),

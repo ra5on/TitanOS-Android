@@ -67,4 +67,20 @@ class NotifyReadTest {
         v.hide("abc")
         assertFalse(v.shows("/agent?chat=abc"))
     }
+
+    @Test
+    fun theAgentsOwnNoteAndTheNasNoteAreOne() {
+        // 1.03: die App (AnswerNotifier) und das NAS melden dieselbe Antwort unter demselben Schlüssel,
+        // und die zweite Meldung klingelt nicht (TitanApp verdrahtet beides).
+        val (tag, id) = io.github.ra5on.titanos.agent.system.AnswerNotifier.slot("c7")
+        assertTrue(tag == Poster.tagOf(NotifyRuntime.active(), "agent-c7"))
+        assertTrue(id == Poster.ID)
+        org.robolectric.Shadows.shadowOf(context as android.app.Application).grantPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+        io.github.ra5on.titanos.agent.system.AnswerNotifier.post(context, io.github.ra5on.titanos.agent.core.Tr("de", emptyMap()), "c7", "Platte", "Wie warm?", "38 Grad.", null)
+        val note = Note("e-7", category = "agent", app = "agent", title = "KI-Agent: Platte", text = "38 Grad.", tag = "agent-c7", link = "/agent?chat=c7")
+        assertTrue("die Mitteilung des NAS zur selben Antwort bleibt still", NotifyRuntime.shownElsewhere(nas, note))
+        val other = Note("e-8", category = "agent", app = "agent", title = "KI-Agent: Backup", text = "Fertig.", tag = "agent-c8", link = "/agent?chat=c8")
+        assertFalse(NotifyRuntime.shownElsewhere(nas, other))
+        assertFalse(NotifyRuntime.shownElsewhere(nas, Note("e-9", title = "Platte")))
+    }
 }

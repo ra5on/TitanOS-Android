@@ -209,6 +209,16 @@ object NotifyRuntime {
     @Volatile
     var onScreen: (Note) -> Boolean = { false }
 
+    /**
+     * Mitteilungen, die schon in der Leiste stehen, weil die App sie selbst
+     * gezeigt hat: die Antwort des KI-Agenten, wenn die App dem Lauf folgte
+     * (AnswerNotifier, 1.03). Sie stehen ungelesen in der Liste, klingeln aber
+     * nicht noch einmal. Gefragt wird nur für Mitteilungen, die sonst wirklich
+     * erschienen; die TitanOS-App merkt sich dabei, was das NAS gemeldet hat.
+     */
+    @Volatile
+    var shownElsewhere: (nas: String, Note) -> Boolean = { _, _ -> false }
+
     /** Nimmt Mitteilungen eines NAS auf (Abruf oder Strom) und zeigt die neuen an; mit [lock]. */
     internal fun take(context: Context, nas: String, items: List<Note>, latest: String, quiet: Boolean) {
         val fresh = inbox(context, nas).update { state ->
@@ -217,7 +227,10 @@ object NotifyRuntime {
             (if (seen.isEmpty()) m.state else Inbox.markRead(m.state, seen.map { it.id })) to (m.fresh - seen.toSet())
         }
         if (items.isNotEmpty()) changed()
-        if (nasOn(context, nas)) Poster.post(context, NotifyNas(nas, nameOf(nas)), fresh, NotifySettingsStore(context).load())
+        if (!nasOn(context, nas) || fresh.isEmpty() || !Poster.permitted(context)) return
+        val settings = NotifySettingsStore(context).load()
+        val ring = fresh.filter { settings.rings(it.kind) }.filterNot { runCatching { shownElsewhere(nas, it) }.getOrDefault(false) }
+        Poster.post(context, NotifyNas(nas, nameOf(nas)), ring, settings)
     }
 
     /**

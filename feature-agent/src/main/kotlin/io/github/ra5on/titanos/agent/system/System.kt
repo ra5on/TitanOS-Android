@@ -199,6 +199,15 @@ object AnswerNotifier {
 
     fun allowed(context: Context) = Build.VERSION.SDK_INT < 33 || context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
+    /**
+     * Unter welchem Schlüssel (Tag, Nummer) die Antwort eines Chats in der Leiste
+     * steht. Die TitanOS-App setzt hier den Schlüssel, unter dem auch die
+     * Mitteilung des NAS zu diesem Chat steht (Tag `agent-<chat>`): kommen
+     * beide, ersetzt die zweite die erste, statt daneben zu stehen (1.03).
+     */
+    @Volatile
+    var slot: (chatId: String) -> Pair<String?, Int> = { null to it.hashCode() }
+
     private fun channel(context: Context, tr: Tr) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         if (nm.getNotificationChannel(CHANNEL) == null) {
@@ -212,6 +221,8 @@ object AnswerNotifier {
      */
     fun post(context: Context, tr: Tr, chatId: String, title: String, question: String?, answer: String, open: PendingIntent?) {
         if (!enabled(context) || !allowed(context)) return
+        // Steht die Antwort schon als Mitteilung des NAS in der Leiste, nicht noch einmal (1.03).
+        if (!io.github.ra5on.titanos.agent.app.AgentNotices.claim(chatId, answer, io.github.ra5on.titanos.agent.app.AgentNotices.Source.App)) return
         channel(context, tr)
         val me = Person.Builder().setName(tr.t("agent.you").let { if (it == "agent.you") (if (tr.de) "Ich" else "Me") else it }).build()
         val agent = Person.Builder().setName(tr.t("nav.agent")).setBot(true).setKey("agent").build()
@@ -247,11 +258,17 @@ object AnswerNotifier {
             .addAction(replyAction)
             .addAction(readAction)
             .build()
-        context.getSystemService(NotificationManager::class.java)?.notify(code, n)
+        val (tag, id) = slot(chatId)
+        try {
+            context.getSystemService(NotificationManager::class.java)?.notify(tag, id, n)
+        } catch (_: SecurityException) {
+            // Berechtigung inzwischen entzogen.
+        }
     }
 
     fun cancel(context: Context, chatId: String) {
-        context.getSystemService(NotificationManager::class.java)?.cancel(chatId.hashCode())
+        val (tag, id) = slot(chatId)
+        context.getSystemService(NotificationManager::class.java)?.cancel(tag, id)
     }
 }
 
@@ -261,7 +278,13 @@ class ReplyReceiver : BroadcastReceiver() {
         val chat = intent.getStringExtra(AnswerNotifier.EXTRA_CHAT) ?: return
         val model = context.agentHost()?.agentModel() ?: return
         when (intent.action) {
-            AnswerNotifier.ACTION_READ -> { model.seen(chat, true); AnswerNotifier.cancel(context, chat) }
+            AnswerNotifier.ACTION_READ -> {
+                // Gelesen heißt nicht „zu sehen“: gleich wieder „nicht mehr“, sonst hielte das NAS
+                // den Chat 40 s für offen und die nächste Antwort ginge nirgends hin (1.03).
+                model.seen(chat, true)
+                if (!io.github.ra5on.titanos.agent.app.AgentVisible.shown(chat)) model.seen(chat, false)
+                AnswerNotifier.cancel(context, chat)
+            }
             AnswerNotifier.ACTION_REPLY -> {
                 val text = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(AnswerNotifier.KEY_REPLY)?.toString()?.trim().orEmpty()
                 if (text.isEmpty()) return

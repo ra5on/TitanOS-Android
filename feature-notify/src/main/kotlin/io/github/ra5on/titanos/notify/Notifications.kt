@@ -102,7 +102,10 @@ object Poster {
     internal fun ownerOf(tag: String): String = OWNED.find(tag)?.groupValues?.get(1) ?: NasRegistry.LEGACY_ID
 
     /** Tag einer Mitteilung in der Leiste; je NAS eigen, damit gleiche Kennungen zweier NAS sich nicht ersetzen. */
-    fun tagOf(nas: String, note: Note): String = if (nas == NasRegistry.LEGACY_ID) note.notificationTag else "$nas|" + note.notificationTag
+    fun tagOf(nas: String, note: Note): String = tagOf(nas, note.notificationTag)
+
+    /** Tag in der Leiste zum Tag [tag] einer Mitteilung des NAS [nas] (die Antwort des KI-Agenten: `agent-<chat>`). */
+    fun tagOf(nas: String, tag: String): String = if (nas == NasRegistry.LEGACY_ID) tag else "$nas|$tag"
 
     /**
      * Öffnet die App an der passenden Stelle des NAS [nas] (die App wechselt
@@ -174,7 +177,7 @@ object Poster {
     }
 
     /** Alle Mitteilungen einer Kopplung haben dieselbe Nummer; unterschieden wird am Tag. */
-    private const val ID = 0x7116_0100
+    const val ID = 0x7116_0100
 }
 
 /** „Gelesen“ an einer Mitteilung: in der Liste als gelesen merken und aus der Leiste nehmen. */

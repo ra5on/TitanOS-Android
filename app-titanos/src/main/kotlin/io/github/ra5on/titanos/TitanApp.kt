@@ -131,6 +131,16 @@ class TitanApp : Application(), Configuration.Provider, SiblingHost, io.github.r
         io.github.ra5on.titanos.agent.app.AgentVisible.onShown = { id ->
             NotifyRuntime.readWhere(this) { n -> agentNote(n) && io.github.ra5on.titanos.agent.app.AgentVisible.chatOf(n.link) == id }
         }
+        // Eine Antwort, zwei mögliche Melder (1.03): die App selbst (AnswerNotifier, solange ihr Modell dem Lauf
+        // folgt) und das NAS. Beide stehen unter demselben Schlüssel in der Leiste (Tag `agent-<chat>` des NAS),
+        // und wer zweitens kommt, klingelt nicht noch einmal (AgentNotices).
+        io.github.ra5on.titanos.agent.system.AnswerNotifier.slot = { chat ->
+            io.github.ra5on.titanos.notify.Poster.tagOf(graph.activeId, "agent-$chat") to io.github.ra5on.titanos.notify.Poster.ID
+        }
+        NotifyRuntime.shownElsewhere = { _, n ->
+            val chat = if (agentNote(n)) io.github.ra5on.titanos.agent.app.AgentVisible.chatOf(n.link) else null
+            chat != null && !io.github.ra5on.titanos.agent.app.AgentNotices.claim(chat, n.text, io.github.ra5on.titanos.agent.app.AgentNotices.Source.Nas)
+        }
         if (graph.pairing != null) NotifyScheduler.arm(this)
         // Kontakte und Kalender des Handys: ein Konto je Kopplung; der SyncAdapter holt sich die Verbindung seines NAS.
         io.github.ra5on.titanos.pim.sync.PimRuntime.nas = { account ->
