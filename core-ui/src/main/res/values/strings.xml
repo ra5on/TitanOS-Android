@@ -16,4 +16,22 @@
     <string name="ui_nav_files">Dateien</string>
     <string name="ui_nav_photos">Fotos</string>
     <string name="ui_nav_notifications">Mitteilungen</string>
+    <!-- Haftungsausschluss (Inhaber 23.11.2026, Text = DISCLAIMER.md). Neuer Text: DISCLAIMER_VERSION in Disclaimer.kt erhöhen. -->
+    <string name="ui_disclaimer_title">Haftungsausschluss</string>
+    <string name="ui_disclaimer_intro">TitanOS und alle zugehörigen Projekte (das System, die Plugins, der App-Katalog, die T-Programme und die Android-Apps) sind ein privates, nicht kommerzielles Projekt. Sie werden kostenlos und ohne jede Gewähr bereitgestellt, so wie sie sind. Die Nutzung geschieht auf eigenes Risiko.</string>
+    <string name="ui_disclaimer_data_label">Daten:</string>
+    <string name="ui_disclaimer_data">TitanOS verwaltet Festplatten, RAID-Verbünde, Dateisysteme und Sicherungen. Fehler in der Software, in der Hardware oder bei der Bedienung können zu Datenverlust führen. RAID und Snapshots ersetzen keine Datensicherung. Sichere wichtige Daten zusätzlich an einem anderen Ort.</string>
+    <string name="ui_disclaimer_plugins_label">Plugins und Apps aus dem Katalog</string>
+    <string name="ui_disclaimer_plugins">laufen mit weitreichenden Rechten auf dem System. Software anderer Hersteller im Katalog (z. B. Docker-Apps, Treiber) stammt von diesen Herstellern und unterliegt deren Lizenzen; für ihren Inhalt und ihr Verhalten ist der jeweilige Hersteller verantwortlich.</string>
+    <string name="ui_disclaimer_remote_label">Fernzugriff, Netzwerk und Sicherheit:</string>
+    <string name="ui_disclaimer_remote">Einstellungen wie Portfreigaben, VPN, Tailscale oder Zertifikate liegen in der Verantwortung dessen, der sie vornimmt.</string>
+    <string name="ui_disclaimer_promise_label">Keine Zusage</string>
+    <string name="ui_disclaimer_promise">für Fehlerfreiheit, ständige Verfügbarkeit, Eignung für einen bestimmten Zweck oder für die Zusammenarbeit mit bestimmter Hardware.</string>
+    <string name="ui_disclaimer_liability">Die Haftung des Herausgebers ist ausgeschlossen, soweit das gesetzlich zulässig ist. Unberührt bleiben die Haftung bei Vorsatz und grober Fahrlässigkeit, bei Verletzung von Leben, Körper oder Gesundheit sowie nach zwingenden gesetzlichen Vorschriften wie dem Produkthaftungsgesetz.</string>
+    <string name="ui_disclaimer_license">Für die Nutzung gilt außerdem die Lizenz des jeweiligen Projekts (siehe LICENSE.md); dieser Hinweis ändert sie nicht.</string>
+    <string name="ui_disclaimer_check">Ich habe den Haftungsausschluss gelesen und verstanden.</string>
+    <string name="ui_disclaimer_read">Haftungsausschluss lesen</string>
+    <string name="ui_disclaimer_continue">Weiter</string>
+    <string name="ui_disclaimer_ask">Bitte lies den Haftungsausschluss und bestätige ihn einmal. Mitteilungen und Foto-Sicherung laufen währenddessen weiter.</string>
+    <string name="ui_disclaimer_needed">Zum Koppeln bitte den Haftungsausschluss bestätigen.</string>
 </resources>

@@ -107,6 +107,9 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
         }
     }
     val adding = graph.adding
+    var disclaimerOk by remember { mutableStateOf(io.github.ra5on.titanos.ui.components.DisclaimerStore.accepted(context)) }
+    // Beim Koppeln bestätigt (SetupFlow): danach nicht noch einmal fragen.
+    if (pairing != null && !disclaimerOk && io.github.ra5on.titanos.ui.components.DisclaimerStore.accepted(context)) disclaimerOk = true
     when {
         pairing == null -> SetupFlow(graph, pairingModel, step, { step = it })
         adding != null -> AddFlow(graph, adding, addLink, onLinkUsed = { addLink = null }) { if (adding.activate) permissionsPending = true }
@@ -137,6 +140,12 @@ fun AppRoot(graph: AppGraph, link: PairLink?, onLinkTaken: () -> Unit) {
                 if (on) PimSync.requestNow(context, manual = false, only = if (kind == "contacts") ContactsContract.AUTHORITY else CalendarContract.AUTHORITY)
             },
         )
+        // Bestehende Installationen (vor 1.01 gekoppelt): den Haftungsausschluss einmal bestätigen.
+        // Nur die Oberfläche wartet; Mitteilungen, Foto-Sicherung und Abgleich laufen weiter.
+        !disclaimerOk -> io.github.ra5on.titanos.ui.components.DisclaimerGate {
+            io.github.ra5on.titanos.ui.components.DisclaimerStore.accept(context)
+            disclaimerOk = true
+        }
         // Je NAS fängt die Oberfläche neu an (keine Seite behält die Verbindung des vorigen NAS);
         // die Sperre beim Öffnen liegt außen, damit ein Wechsel des NAS nicht neu sperrt.
         else -> AppLock {
@@ -257,13 +266,37 @@ private fun SetupFlow(graph: AppGraph, model: PairingModel, step: SetupStep, go:
             )
         }
         SetupStep.Confirm -> {
+            // Haftungsausschluss: einmal je Installation vor dem ersten Koppeln (Inhaber 23.11.2026).
+            var accepted by remember { mutableStateOf(io.github.ra5on.titanos.ui.components.DisclaimerStore.accepted(context)) }
+            var checked by rememberSaveable { mutableStateOf(false) }
+            var reading by rememberSaveable { mutableStateOf(false) }
+            if (reading) {
+                io.github.ra5on.titanos.ui.components.DisclaimerPage(onBack = { reading = false })
+                return
+            }
             val back = { model.cancel(); go(SetupStep.Welcome) }
             BackHandler(onBack = back)
             LaunchedEffect(Unit) {
                 val lan = model.confirm.addresses.any { it.kind == AddressKind.LAN }
                 withLocalNetwork(lan) { model.recheck() }
             }
-            ConfirmScreen(model.confirm, model::setDeviceName, model::pair, onCancel = back)
+            ConfirmScreen(
+                model.confirm,
+                model::setDeviceName,
+                onPair = {
+                    if (accepted || checked) {
+                        if (!accepted) {
+                            io.github.ra5on.titanos.ui.components.DisclaimerStore.accept(context)
+                            accepted = true
+                        }
+                        model.pair()
+                    }
+                },
+                onCancel = back,
+                disclaimer = if (accepted) null else checked,
+                onDisclaimer = { checked = it },
+                onReadDisclaimer = { reading = true },
+            )
         }
     }
 }

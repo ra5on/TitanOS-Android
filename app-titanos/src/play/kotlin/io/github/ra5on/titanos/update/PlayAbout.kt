@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -82,6 +84,12 @@ fun AboutScreen(nasVersion: String?, onBack: () -> Unit) {
     val context = LocalContext.current
     val c = Titan.colors
     val mine = versionOf(context, context.packageName).orEmpty()
+    // Haftungsausschluss (Inhaber 23.11.2026) als eigene Seite.
+    var disclaimer by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    if (disclaimer) {
+        io.github.ra5on.titanos.ui.components.DisclaimerPage(onBack = { disclaimer = false })
+        return
+    }
     Page(topBar = { Box(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.play_about_title), onBack = onBack, backLabel = stringResource(UiR.string.ui_back)) } }) {
         Column(Modifier.fillMaxWidth().padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             InstalledIcon(context.packageName, 72.dp) { AppIcon("storage", "dark", 72.dp) }
@@ -100,6 +108,14 @@ fun AboutScreen(nasVersion: String?, onBack: () -> Unit) {
             )
         }
         Note(stringResource(R.string.play_about_note), Modifier.padding(top = 12.dp))
+        Card(Modifier.padding(top = 18.dp)) {
+            ListRow(
+                stringResource(UiR.string.ui_disclaimer_title),
+                icon = { io.github.ra5on.titanos.ui.components.RowIcon(io.github.ra5on.titanos.ui.theme.TitanIcons.info) },
+                chevron = true,
+                onClick = { disclaimer = true },
+            )
+        }
         Box(Modifier.navigationBarsPadding().padding(bottom = 16.dp))
     }
 }

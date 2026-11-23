@@ -74,6 +74,12 @@ fun AboutScreen(nasVersion: String?, onBack: () -> Unit) {
     // Die alte Agent-App (bis 1.00), falls noch installiert: wird nicht mehr aktualisiert.
     val agentName = remember { runCatching { context.packageManager.getPackageInfo(AppKind.OLD_AGENT_PACKAGE, 0).versionName }.getOrNull() }
     LaunchedEffect(Unit) { UpdateCheck.run(context) }
+    // Haftungsausschluss (Inhaber 23.11.2026) als eigene Seite.
+    var disclaimer by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    if (disclaimer) {
+        io.github.ra5on.titanos.ui.components.DisclaimerPage(onBack = { disclaimer = false })
+        return
+    }
 
     fun install(kind: AppKind) {
         val release = UpdateState.available ?: return
@@ -169,6 +175,14 @@ fun AboutScreen(nasVersion: String?, onBack: () -> Unit) {
                     }, Modifier.fillMaxWidth())
                 }
             }
+        }
+        Card(Modifier.padding(top = 18.dp)) {
+            ListRow(
+                stringResource(UiR.string.ui_disclaimer_title),
+                icon = { RowIcon(TitanIcons.info) },
+                chevron = true,
+                onClick = { disclaimer = true },
+            )
         }
         Text(stringResource(R.string.upd_signature), style = TitanType.small, color = c.muted, modifier = Modifier.padding(top = 12.dp, start = 4.dp))
         Box(Modifier.navigationBarsPadding().padding(bottom = 16.dp))

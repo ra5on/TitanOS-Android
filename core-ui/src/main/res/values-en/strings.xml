@@ -16,4 +16,22 @@
     <string name="ui_nav_files">Files</string>
     <string name="ui_nav_photos">Photos</string>
     <string name="ui_nav_notifications">Notifications</string>
+    <!-- Disclaimer (owner 23.11.2026, text = DISCLAIMER.md). New text: raise DISCLAIMER_VERSION in Disclaimer.kt. -->
+    <string name="ui_disclaimer_title">Disclaimer</string>
+    <string name="ui_disclaimer_intro">TitanOS and all related projects (the system, the plugins, the app catalog, the T programs and the Android apps) are a private, non-commercial project. They are provided free of charge and without any warranty, as is. You use them at your own risk.</string>
+    <string name="ui_disclaimer_data_label">Data:</string>
+    <string name="ui_disclaimer_data">TitanOS manages disks, RAID arrays, file systems and backups. Errors in the software, the hardware or in operation can lead to data loss. RAID and snapshots are not a backup. Keep an additional copy of important data in another place.</string>
+    <string name="ui_disclaimer_plugins_label">Plugins and catalog apps</string>
+    <string name="ui_disclaimer_plugins">run with far-reaching rights on the system. Third-party software in the catalog (e.g. Docker apps, drivers) comes from its makers and is subject to their licenses; its makers are responsible for its content and behaviour.</string>
+    <string name="ui_disclaimer_remote_label">Remote access, network and security:</string>
+    <string name="ui_disclaimer_remote">settings such as port forwarding, VPN, Tailscale or certificates are the responsibility of whoever makes them.</string>
+    <string name="ui_disclaimer_promise_label">No promise</string>
+    <string name="ui_disclaimer_promise">of freedom from errors, constant availability, fitness for a particular purpose or compatibility with particular hardware.</string>
+    <string name="ui_disclaimer_liability">The publisher\'s liability is excluded to the extent permitted by law. This does not affect liability for intent and gross negligence, for injury to life, body or health, or under mandatory law such as product liability law.</string>
+    <string name="ui_disclaimer_license">The license of each project (see LICENSE.md) also applies; this notice does not change it.</string>
+    <string name="ui_disclaimer_check">I have read and understood the disclaimer.</string>
+    <string name="ui_disclaimer_read">Read the disclaimer</string>
+    <string name="ui_disclaimer_continue">Continue</string>
+    <string name="ui_disclaimer_ask">Please read the disclaimer and confirm it once. Notifications and photo backup keep running meanwhile.</string>
+    <string name="ui_disclaimer_needed">To pair, please confirm the disclaimer.</string>
 </resources>

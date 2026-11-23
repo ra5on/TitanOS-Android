@@ -203,21 +203,34 @@ fun ConfirmScreen(
     onName: (String) -> Unit,
     onPair: () -> Unit,
     onCancel: () -> Unit,
+    /**
+     * Haftungsausschluss (Inhaber 23.11.2026): null, wenn er auf diesem Gerät
+     * schon bestätigt ist; sonst ob das Häkchen gesetzt ist. Ohne Häkchen lässt
+     * sich nicht koppeln.
+     */
+    disclaimer: Boolean? = null,
+    onDisclaimer: (Boolean) -> Unit = {},
+    onReadDisclaimer: () -> Unit = {},
 ) {
     val c = Titan.colors
     val waiting = state.phase != PairPhase.Ready
     Page(
         topBar = { Box(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.pair_confirm_title), onBack = onCancel, backLabel = stringResource(UiR.string.ui_back)) } },
         bottomBar = {
-            Row(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                TitanButton(stringResource(UiR.string.ui_cancel), onCancel, Modifier.weight(1f))
-                TitanButton(
-                    stringResource(if (waiting) R.string.pair_waiting else R.string.pair_do),
-                    onPair,
-                    Modifier.weight(1.4f),
-                    ButtonKind.Primary,
-                    enabled = !waiting,
-                )
+            Column(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                if (disclaimer != null) {
+                    io.github.ra5on.titanos.ui.components.CheckRow(disclaimer, onDisclaimer, stringResource(UiR.string.ui_disclaimer_check), Modifier.padding(bottom = 6.dp))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    TitanButton(stringResource(UiR.string.ui_cancel), onCancel, Modifier.weight(1f))
+                    TitanButton(
+                        stringResource(if (waiting) R.string.pair_waiting else R.string.pair_do),
+                        onPair,
+                        Modifier.weight(1.4f),
+                        ButtonKind.Primary,
+                        enabled = !waiting && disclaimer != false,
+                    )
+                }
             }
         },
     ) {
@@ -257,6 +270,18 @@ fun ConfirmScreen(
         }
         SectionHeader(stringResource(R.string.pair_device_name))
         TextInput(state.deviceName, onName, stringResource(R.string.pair_device_name), keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
+        if (disclaimer != null) {
+            SectionHeader(stringResource(UiR.string.ui_disclaimer_title))
+            Card {
+                ListRow(
+                    stringResource(UiR.string.ui_disclaimer_read),
+                    sub = stringResource(UiR.string.ui_disclaimer_needed),
+                    icon = { RowIcon(TitanIcons.info) },
+                    chevron = true,
+                    onClick = onReadDisclaimer,
+                )
+            }
+        }
         Note(
             stringResource(if (waiting) R.string.pair_note_waiting else R.string.pair_note_before, state.deviceName),
             Modifier.padding(top = 16.dp),

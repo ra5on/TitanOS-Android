@@ -21,6 +21,7 @@ import io.github.ra5on.titanos.update.UpdateCheck
 import io.github.ra5on.titanos.update.UpdateState
 import io.github.ra5on.titanos.update.UpdateStep
 import io.github.ra5on.titanos.watch.R
+import io.github.ra5on.titanos.ui.R as UiR
 import io.github.ra5on.titanos.watch.graph
 import kotlinx.coroutines.launch
 
@@ -28,7 +29,7 @@ private fun versionName(context: Context): String =
     runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty()
 
 @Composable
-fun SettingsRoute() {
+fun SettingsRoute(onDisclaimer: () -> Unit = {}) {
     val context = LocalContext.current
     val g = context.graph
     val scope = rememberCoroutineScope()
@@ -59,6 +60,8 @@ fun SettingsRoute() {
         }
         item { Header(stringResource(R.string.w_update)) }
         item { WText(stringResource(R.string.w_version, versionName(context)), center = true) }
+        // Haftungsausschluss (Inhaber 23.11.2026), wie „Über die App“ am Handy.
+        item { RowButton(stringResource(io.github.ra5on.titanos.ui.R.string.ui_disclaimer_title), onClick = onDisclaimer, icon = TitanIcons.info) }
         when {
             step is UpdateStep.Checking -> item { Busy(stringResource(R.string.w_update_checking)) }
             step is UpdateStep.Downloading -> item {
@@ -103,4 +106,23 @@ fun SettingsRoute() {
         onConfirm = { confirmUnpair = false; g.forget() },
         onDismiss = { confirmUnpair = false },
     )
+}
+
+/** Der Haftungsausschluss zum Lesen (Text aus core-ui, wie am Handy). */
+@Composable
+fun DisclaimerRoute() {
+    Page {
+        item { Header(stringResource(UiR.string.ui_disclaimer_title)) }
+        item { WText(stringResource(UiR.string.ui_disclaimer_intro)) }
+        for ((label, text) in listOf(
+            UiR.string.ui_disclaimer_data_label to UiR.string.ui_disclaimer_data,
+            UiR.string.ui_disclaimer_plugins_label to UiR.string.ui_disclaimer_plugins,
+            UiR.string.ui_disclaimer_remote_label to UiR.string.ui_disclaimer_remote,
+            UiR.string.ui_disclaimer_promise_label to UiR.string.ui_disclaimer_promise,
+        )) {
+            item { WText("• " + stringResource(label) + " " + stringResource(text)) }
+        }
+        item { WText(stringResource(UiR.string.ui_disclaimer_liability)) }
+        item { WText(stringResource(UiR.string.ui_disclaimer_license), color = WatchColors.muted) }
+    }
 }

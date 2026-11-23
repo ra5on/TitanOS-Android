@@ -19,6 +19,7 @@ object Routes {
     const val CAMERA = "camera"
     const val NOTIFICATIONS = "notifications"
     const val SETTINGS = "settings"
+    const val DISCLAIMER = "disclaimer"
 }
 
 /** Ungekoppelt die Kopplung, sonst die Seiten der Uhr (Wischen nach rechts geht zurück). */
@@ -41,7 +42,8 @@ fun WatchRoot(graph: WatchGraph, start: String = Routes.HOME) {
                     CameraRoute(it.arguments?.getString("id").orEmpty())
                 }
                 composable(Routes.NOTIFICATIONS) { NotificationsRoute() }
-                composable(Routes.SETTINGS) { SettingsRoute() }
+                composable(Routes.SETTINGS) { SettingsRoute(onDisclaimer = { nav.navigate(Routes.DISCLAIMER) }) }
+                composable(Routes.DISCLAIMER) { DisclaimerRoute() }
             }
             if (start != Routes.HOME) {
                 androidx.compose.runtime.LaunchedEffect(start) { nav.navigate(start) }
