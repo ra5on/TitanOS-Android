@@ -275,6 +275,9 @@ class ZoomState {
     var box by mutableStateOf(IntSize.Zero)
     var maxScale by mutableFloatStateOf(8f)
 
+    /** Doppeltippen zoomt so weit (ein großes Original: bis ein Bildpixel ein Bildschirmpixel ist). */
+    var doubleTapScale by mutableFloatStateOf(2.5f)
+
     fun clamp(o: Offset, s: Float): Offset {
         val maxX = (box.width * (s - 1f)) / 2f
         val maxY = (box.height * (s - 1f)) / 2f
@@ -303,7 +306,7 @@ fun ZoomBox(zoom: ZoomState, onZoom: (Boolean) -> Unit, onTap: () -> Unit, modif
                             zoom.scale = 1f
                             zoom.offset = Offset.Zero
                         } else {
-                            val s = 2.5f
+                            val s = zoom.doubleTapScale.coerceAtMost(zoom.maxScale)
                             val center = Offset(zoom.box.width / 2f, zoom.box.height / 2f)
                             zoom.scale = s
                             zoom.offset = zoom.clamp((center - at) * (s - 1f), s)

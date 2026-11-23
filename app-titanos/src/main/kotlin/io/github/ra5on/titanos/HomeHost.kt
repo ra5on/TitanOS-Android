@@ -276,16 +276,19 @@ private fun NasChoices(graph: AppGraph, onDismiss: () -> Unit) {
     }
 }
 
-/** Kurzer Name eines gekoppelten NAS („titan“ statt „titan.dunker-lizard.ts.net“). */
-internal fun nasName(p: io.github.ra5on.titanos.net.NasProfile): String =
-    io.github.ra5on.titanos.net.NasNames.display(p.label, "", p.pairing.hostname, p.pairing.addresses.firstOrNull()?.server.orEmpty())
+/** Rechnername, den jedes gekoppelte NAS zuletzt selbst gemeldet hat (Startseite ohne gewählten Knoten), je Kopplung. */
+internal val reportedHosts = androidx.compose.runtime.mutableStateMapOf<String, String>()
 
-/** Der Name im Knopf oben auf der Startseite; [reported]: Rechnername, den das gewählte NAS meldet. */
+/** Kurzer Name eines gekoppelten NAS („titan“ statt „titan.dunker-lizard.ts.net“), wie im Knopf der Startseite. */
+internal fun nasName(p: io.github.ra5on.titanos.net.NasProfile): String =
+    io.github.ra5on.titanos.net.NasNames.display(p.label, reportedHosts[p.id].orEmpty(), p.pairing.hostname, p.pairing.addresses.firstOrNull()?.server.orEmpty())
+
+/** Der Name im Knopf oben auf der Startseite; [reported]: Rechnername, den das gewählte NAS (oder der gewählte Knoten) meldet. */
 internal fun homeNasTitle(graph: AppGraph, reported: String): String {
     val p = graph.activeProfile ?: return io.github.ra5on.titanos.net.NasNames.short(reported)
     // Ist ein Knoten gewählt, meldet die Startseite dessen Namen; oben steht trotzdem zuerst das NAS.
-    val own = if (p.pairing.node.isEmpty()) reported else ""
-    return io.github.ra5on.titanos.net.NasNames.display(p.label, own, p.pairing.hostname, p.pairing.addresses.firstOrNull()?.server.orEmpty())
+    if (p.pairing.node.isEmpty() && reported.isNotBlank() && reportedHosts[p.id] != reported) reportedHosts[p.id] = reported
+    return nasName(p)
 }
 
 /**

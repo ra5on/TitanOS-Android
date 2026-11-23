@@ -443,7 +443,10 @@ private fun FreeGrid(
         }
         val emptyItems = measurables.drop(placed.size).map { it.measure(Constraints.fixedWidth(colW)) }
         val count = maxOf(shownRows, placed.maxOfOrNull { it.row + it.h } ?: 0)
-        val heights = IntArray(count) { minRow }
+        // Zeilen, die ganz unter Widgets liegen, sind so hoch wie die Widgets (keine Lücke darunter); sonst mindestens eine Symbolzeile.
+        val covered = IntArray(count)
+        for (p in placed) if (p.h > 1) for (r in p.row until p.row + p.h) covered[r] += p.w
+        val heights = IntArray(count) { r -> if (!editing && covered[r] >= PHONE_COLUMNS) 0 else minRow }
         placed.forEachIndexed { i, p -> if (p.h == 1) heights[p.row] = maxOf(heights[p.row], items[i].height) }
         // Ein Widget über zwei Zeilen: wächst es darüber hinaus, wird die zweite Zeile höher.
         placed.forEachIndexed { i, p ->

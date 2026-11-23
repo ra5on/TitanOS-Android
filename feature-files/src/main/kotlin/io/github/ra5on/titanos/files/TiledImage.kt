@@ -224,6 +224,8 @@ fun TiledImage(source: TiledSource, preview: Bitmap?, onZoom: (Boolean) -> Unit,
     var loaded by remember(source) { mutableIntStateOf(0) }
     val fit = if (zoom.box.width > 0 && zoom.box.height > 0) min(zoom.box.width.toFloat() / sw, zoom.box.height.toFloat() / sh) else 1f
     zoom.maxScale = TileMath.maxScale(fit)
+    // Doppeltippen zeigt ein großes Original gleich in voller Auflösung (1 Bildpixel = 1 Bildschirmpixel).
+    zoom.doubleTapScale = maxOf(2.5f, 1f / fit)
 
     // Welche Kacheln gerade gebraucht werden: Stufe nach Zoom, Fläche nach Ausschnitt.
     LaunchedEffect(source) {
