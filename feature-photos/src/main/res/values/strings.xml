@@ -161,4 +161,20 @@
     <string name="photos_view_failed">Das Bild lässt sich nicht laden.</string>
     <string name="photos_view_open">Ansehen</string>
     <string name="photos_view_none">Keine App zum Abspielen gefunden.</string>
+    <!-- 1.03: Gesichertes nachprüfen -->
+    <string name="photos_missing_one">%1$s fehlt auf dem NAS</string>
+    <string name="photos_missing_many">%1$s fehlen auf dem NAS</string>
+    <string name="photos_missing_text">Sie waren gesichert, liegen aber nicht mehr auf dem NAS – gelöscht oder verschoben. Die App lädt sie nicht von selbst neu hoch.</string>
+    <string name="photos_missing_resave">Erneut sichern</string>
+    <string name="photos_missing_ignore">Nicht mehr sichern</string>
+    <string name="photos_missing_dismiss">Ausblenden</string>
+    <string name="photos_missing_badge">fehlt auf dem NAS</string>
+    <string name="photos_legend_missing">fehlt</string>
+    <string name="photos_ignored_badge">wird nicht gesichert</string>
+    <plurals name="photos_ignored_title">
+        <item quantity="one">%s Aufnahme wird nicht gesichert</item>
+        <item quantity="other">%s Aufnahmen werden nicht gesichert</item>
+    </plurals>
+    <string name="photos_ignored_text">Mit „Nicht mehr sichern“ ausgelassen (fehlten auf dem NAS).</string>
+    <string name="photos_ignored_undo">Wieder sichern</string>
 </resources>

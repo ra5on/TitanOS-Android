@@ -89,6 +89,9 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit, files: io.g
             onTile = { viewing = it.id },
             onNow = model::backupNow,
             onSettings = { route = Route.Settings },
+            onResaveMissing = model::resaveMissing,
+            onIgnoreMissing = model::ignoreMissing,
+            onDismissMissing = model::dismissMissing,
             reduceMotion = io.github.ra5on.titanos.ui.components.reduceMotion(context),
         ) {
             if (menu) {
@@ -122,6 +125,8 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit, files: io.g
                 onWhen = { whenFor = it },
                 onBack = { route = Route.Main },
                 device = PhotosRuntime.deviceName(),
+                ignored = model.view.ignored,
+                onUnignore = model::unignoreAll,
             ) {
                 whenFor?.let { kind ->
                     WhenSheet(kind, model.settings.whenOf(kind), onPick = { w ->

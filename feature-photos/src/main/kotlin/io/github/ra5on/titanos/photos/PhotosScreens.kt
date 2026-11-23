@@ -81,8 +81,11 @@ val PhotosView.upToDate: Boolean
     get() = settings.enabled && settings.hasTarget && access == Access.Full &&
         Kind.entries.all { k -> (pending[k] ?: 0) == 0 || waits[k] in WAITS_BY_CHOICE }
 
-/** Eine Kachel im Raster (Entwurf 30). */
-data class Tile(val id: Long, val kind: Kind, val saved: Boolean, val taken: Instant)
+/**
+ * Eine Kachel im Raster (Entwurf 30). [missing]: war gesichert, fehlt aber
+ * jetzt auf dem NAS; [ignored]: „Nicht mehr sichern“ (1.03).
+ */
+data class Tile(val id: Long, val kind: Kind, val saved: Boolean, val taken: Instant, val missing: Boolean = false, val ignored: Boolean = false)
 
 /** Was die Seite „Fotos“ zeigt; die App füllt es aus [PhotosModel], die Bildtests mit Beispieldaten. */
 data class PhotosView(
@@ -99,6 +102,10 @@ data class PhotosView(
     val paused: Boolean = false,
     /** Was zuletzt hochgeladen wurde und wohin (1.01). */
     val lastBatch: LastBatch? = null,
+    /** Gesichert, aber laut NAS nicht mehr dort (1.03). */
+    val missing: MissingView = MissingView(),
+    /** Wie viele Aufnahmen „nicht mehr sichern“ (1.03). */
+    val ignored: Int = 0,
 )
 
 @Composable
@@ -179,9 +186,22 @@ fun backupBadge(view: PhotosView): BackupBadge {
         view.progress.running -> BackupBadge.Uploading
         view.paused || view.access != Access.Full || !s.hasTarget -> BackupBadge.Problem
         Kind.entries.any { k -> (view.pending[k] ?: 0) > 0 && (view.waits[k] ?: Wait.None) !in CALM_WAITS } -> BackupBadge.Problem
+        // Am NAS fehlende Aufnahmen, solange man sie nicht ausgeblendet hat (1.03).
+        view.missing.warn -> BackupBadge.Problem
         view.pending.values.sum() > 0 -> BackupBadge.Waiting
         else -> BackupBadge.Done
     }
+}
+
+/** „3 Fotos und 1 Video fehlen auf dem NAS“ (1.03). */
+@Composable
+fun missingText(m: MissingView): String {
+    val res = androidx.compose.ui.platform.LocalContext.current.resources
+    val what = listOfNotNull(
+        m.photos.takeIf { it > 0 }?.let { res.getQuantityString(R.plurals.photos_uploaded_photos, it, it) },
+        m.videos.takeIf { it > 0 }?.let { res.getQuantityString(R.plurals.photos_uploaded_videos, it, it) },
+    ).let { if (it.size == 2) stringResource(R.string.photos_uploaded_and, it[0], it[1]) else it.firstOrNull().orEmpty() }
+    return stringResource(if (m.count == 1) R.string.photos_missing_one else R.string.photos_missing_many, what)
 }
 
 /** Der Stand in Worten (TalkBack-Name des Symbols und Überschrift des Blatts). */
@@ -197,6 +217,7 @@ fun badgeText(view: PhotosView): String {
         view.access == Access.None -> stringResource(R.string.photos_no_access)
         !s.hasTarget -> stringResource(R.string.photos_no_target)
         view.access == Access.Partial -> stringResource(R.string.photos_partial_title)
+        view.missing.warn -> missingText(view.missing)
         pendingTotal == 0 -> stringResource(R.string.photos_badge_done)
         else -> pluralStringResource(R.plurals.photos_pending, pendingTotal, count(pendingTotal))
     }
@@ -265,6 +286,10 @@ fun PhotosScreen(
     onTile: ((Tile) -> Unit)? = null,
     onNow: () -> Unit = {},
     onSettings: () -> Unit = {},
+    /** Am NAS fehlende Aufnahmen: erneut sichern, nicht mehr sichern, ausblenden (1.03). */
+    onResaveMissing: () -> Unit = {},
+    onIgnoreMissing: () -> Unit = {},
+    onDismissMissing: () -> Unit = {},
     /** Blatt mit dem Stand offen (Bildtests). */
     statusOpen: Boolean = false,
     reduceMotion: Boolean = false,
@@ -297,6 +322,9 @@ fun PhotosScreen(
                         onSettings = { status = false; onSettings() },
                         onResume = onResume,
                         onGallery = onGallery?.let { g -> { status = false; g() } },
+                        onResaveMissing = { status = false; onResaveMissing() },
+                        onIgnoreMissing = onIgnoreMissing,
+                        onDismissMissing = onDismissMissing,
                     )
                 }
             }
@@ -328,6 +356,9 @@ private fun StatusCard(
     onSettings: () -> Unit,
     onResume: () -> Unit,
     onGallery: (() -> Unit)?,
+    onResaveMissing: () -> Unit = {},
+    onIgnoreMissing: () -> Unit = {},
+    onDismissMissing: () -> Unit = {},
 ) {
     val c = Titan.colors
     val s = view.settings
@@ -408,6 +439,7 @@ private fun StatusCard(
                 Text(waitText(kind, n, wait), style = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize), color = c.warnInk)
             }
         }
+        if (view.missing.count > 0) MissingBlock(view.missing, onResaveMissing, onIgnoreMissing, onDismissMissing)
         TitanButton(stringResource(R.string.photos_now), onNow, Modifier.fillMaxWidth().padding(top = 16.dp), ButtonKind.Primary, icon = TitanIcons.upload)
         Card(Modifier.padding(top = 12.dp), background = c.bg) {
             if (onGallery != null) {
@@ -420,6 +452,31 @@ private fun StatusCard(
                 )
             }
             ListRow(stringResource(R.string.photos_settings), icon = { RowIcon(TitanIcons.gear) }, divider = onGallery != null, chevron = true, onClick = onSettings)
+        }
+    }
+}
+
+/**
+ * Am NAS fehlende Aufnahmen (1.03): in Worten, mit Wolke durchgestrichen, und
+ * was man tun kann. Nichts geschieht von selbst; „Nicht mehr sichern“ lässt
+ * sich in den Einstellungen zurücknehmen.
+ */
+@Composable
+private fun MissingBlock(m: MissingView, onResave: () -> Unit, onIgnore: () -> Unit, onDismiss: () -> Unit) {
+    val c = Titan.colors
+    Column(Modifier.fillMaxWidth().padding(top = 14.dp)) {
+        // Warnt das Symbol, steht die Zahl schon in der Überschrift des Blatts; ausgeblendet steht sie hier.
+        if (!m.warn) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(TitanIcons.cloudoff, null, tint = c.warnInk, modifier = Modifier.size(22.dp))
+                Text(missingText(m), style = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize), color = c.warnInk, modifier = Modifier.semantics { heading() })
+            }
+        }
+        Text(stringResource(R.string.photos_missing_text), style = TitanType.body, color = c.muted, modifier = Modifier.padding(top = 4.dp))
+        FlowRow(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            TitanButton(stringResource(R.string.photos_missing_resave), onResave, kind = ButtonKind.Normal, icon = TitanIcons.upload)
+            TitanButton(stringResource(R.string.photos_missing_ignore), onIgnore, kind = ButtonKind.Normal)
+            if (m.warn) TitanButton(stringResource(R.string.photos_missing_dismiss), onDismiss, kind = ButtonKind.Normal)
         }
     }
 }
@@ -447,6 +504,9 @@ private fun Grid(tiles: List<Tile>, thumb: @Composable (Tile, Modifier) -> Unit,
     var first = true
     val savedLabel = stringResource(R.string.photos_saved_badge)
     val waitingLabel = stringResource(R.string.photos_waiting_badge)
+    val missingLabel = stringResource(R.string.photos_missing_badge)
+    val ignoredLabel = stringResource(R.string.photos_ignored_badge)
+    val anyMissing = tiles.any { it.missing }
     val openLabel = stringResource(R.string.photos_view_open)
     for ((day, list) in groups) {
         val title = when (day) {
@@ -461,7 +521,11 @@ private fun Grid(tiles: List<Tile>, thumb: @Composable (Tile, Modifier) -> Unit,
                     Icon(TitanIcons.check, null, tint = c.muted, modifier = Modifier.size(16.dp))
                     Text(stringResource(R.string.photos_legend_saved) + " ·", style = TitanType.body, color = c.muted)
                     Icon(TitanIcons.cloud, null, tint = c.muted, modifier = Modifier.size(16.dp))
-                    Text(stringResource(R.string.photos_legend_waiting), style = TitanType.body, color = c.muted)
+                    Text(stringResource(R.string.photos_legend_waiting) + if (anyMissing) " ·" else "", style = TitanType.body, color = c.muted)
+                    if (anyMissing) {
+                        Icon(TitanIcons.cloudoff, null, tint = c.muted, modifier = Modifier.size(16.dp))
+                        Text(stringResource(R.string.photos_legend_missing), style = TitanType.body, color = c.muted)
+                    }
                 }
             }
         }
@@ -472,15 +536,32 @@ private fun Grid(tiles: List<Tile>, thumb: @Composable (Tile, Modifier) -> Unit,
                     Box(
                         Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(4.dp))
                             .then(if (onTile != null) Modifier.clickable(onClickLabel = openLabel, role = androidx.compose.ui.semantics.Role.Image) { onTile(t) } else Modifier)
-                            .semantics { stateDescription = if (t.saved) savedLabel else waitingLabel },
+                            .semantics {
+                                stateDescription = when {
+                                    t.missing -> missingLabel
+                                    t.ignored -> ignoredLabel
+                                    t.saved -> savedLabel
+                                    else -> waitingLabel
+                                }
+                            },
                     ) {
                         thumb(t, Modifier.fillMaxSize())
-                        Box(
-                            Modifier.align(Alignment.BottomEnd).padding(6.dp).size(26.dp).clip(CircleShape)
-                                .background(Color.Black.copy(alpha = .55f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(if (t.saved) TitanIcons.check else TitanIcons.cloud, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        // Ausgelassen („Nicht mehr sichern“): kein Zeichen. Fehlt am NAS: Wolke durchgestrichen auf Warnfarbe.
+                        if (!t.ignored || t.missing) {
+                            Box(
+                                Modifier.align(Alignment.BottomEnd).padding(6.dp).size(26.dp).clip(CircleShape)
+                                    .background(if (t.missing) MISSING_BADGE else Color.Black.copy(alpha = .55f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    when {
+                                        t.missing -> TitanIcons.cloudoff
+                                        t.saved -> TitanIcons.check
+                                        else -> TitanIcons.cloud
+                                    },
+                                    null, tint = Color.White, modifier = Modifier.size(16.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -489,6 +570,9 @@ private fun Grid(tiles: List<Tile>, thumb: @Composable (Tile, Modifier) -> Unit,
         }
     }
 }
+
+/** Grund des Zeichens „fehlt auf dem NAS“: dunkles Orange, weiße Wolke darauf mit mehr als 4,5:1 (hell und dunkel gleich). */
+private val MISSING_BADGE = Color(0xFF9A4A00)
 
 /** Fläche statt Vorschaubild (Bildtests, oder solange das Bild lädt). */
 @Composable

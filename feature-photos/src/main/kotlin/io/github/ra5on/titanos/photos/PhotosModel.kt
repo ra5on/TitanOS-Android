@@ -93,7 +93,10 @@ class PhotosModel(
                 waitReason(pending.getValue(k), s.enabled, access != Access.None, s.hasTarget, s.whenOf(k), s.mobileData, device, state.problem)
             }
             val chosen = media.filter { s.folders?.contains(it.folder) ?: defaultFolder(it.folder) }
-            val tiles = chosen.sortedByDescending { it.taken }.take(TILES).map { m -> Tile(m.id, m.kind, isSaved(m, marks[m.id], s.targetOf(m.kind)), m.taken) }
+            val tiles = chosen.sortedByDescending { it.taken }.take(TILES).map { m ->
+                Tile(m.id, m.kind, isSaved(m, marks[m.id], s.targetOf(m.kind)), m.taken, missing = m.id in state.missing, ignored = m.id in state.ignored)
+            }
+            val present = media.associate { it.id to it.kind }
             settings = s
             folders = scanner.folders(scanned)
             view = PhotosView(
@@ -108,6 +111,8 @@ class PhotosModel(
                 loading = false,
                 paused = PhotosRuntime.paused(app),
                 lastBatch = state.lastBatch,
+                missing = missingView(state, present),
+                ignored = state.ignored.keys.count { it in present },
             )
         }
     }
@@ -152,6 +157,45 @@ class PhotosModel(
         val s = settingsStore.load()
         val bytes = selectForUpload(items.map { it.media }, store.snapshot().handled(), s, Kind.entries.toSet()).sumOf { it.size }
         message = if (PhotoScheduler.backupNow(app, listOf(nas), bytes)) R.string.photos_now_started else R.string.photos_now_refused
+    }
+
+    /** Die fehlenden Aufnahmen, die noch auf dem Handy sind. */
+    private fun missingHere(): Set<Long> {
+        val here = items.mapTo(HashSet()) { it.id }
+        return store.snapshot().missing.keys.filterTo(HashSet()) { it in here }
+    }
+
+    /** „Erneut sichern“: die am NAS fehlenden Aufnahmen wieder in die Sicherung und gleich loslegen. */
+    fun resaveMissing() {
+        val ids = missingHere()
+        store.update { resaveMissing(it, ids) }
+        store.flush()
+        backupNow()
+        refresh()
+    }
+
+    /** „Nicht mehr sichern“: die fehlenden Aufnahmen auslassen (in den Einstellungen zurückzunehmen). */
+    fun ignoreMissing() {
+        val ids = missingHere()
+        store.update { ignoreMissing(it, ids) }
+        store.flush()
+        refresh()
+    }
+
+    /** „Ausblenden“: das Symbol oben warnt nicht mehr wegen der jetzt fehlenden Aufnahmen. */
+    fun dismissMissing() {
+        val ids = missingHere()
+        store.update { dismissMissing(it, ids) }
+        store.flush()
+        refresh()
+    }
+
+    /** Einstellungen: die ausgelassenen Aufnahmen wieder sichern. */
+    fun unignoreAll() {
+        store.update { unignoreAll(it) }
+        store.flush()
+        PhotoScheduler.enqueueUploads(app, nas)
+        refresh()
     }
 
     /** Speicher freigeben: nur, was das NAS jetzt bestätigt, nie automatisch. */

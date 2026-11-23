@@ -44,6 +44,8 @@ object TitanIcons {
     val share: ImageVector by lazy { line("share", "M12 4v11M8 8l4-4 4 4M6 12v7h12v-7") }
     val cloud: ImageVector by lazy { line("cloud", "M7 18a4 4 0 0 1-.5-8 6 6 0 0 1 11.5 1.5A3.5 3.5 0 0 1 17.5 18Z") }
     val cloudok: ImageVector by lazy { line("cloudok", "M7 18a4 4 0 0 1-.5-8 6 6 0 0 1 11.5 1.5A3.5 3.5 0 0 1 17.5 18ZM9.5 13.5l2 2 3.5-3.5") }
+    /** Wolke, durchgestrichen: gesichert, fehlt aber auf dem NAS (Foto-Sicherung, 1.03). */
+    val cloudoff: ImageVector by lazy { line("cloudoff", "M7 18a4 4 0 0 1-.5-8 6 6 0 0 1 11.5 1.5A3.5 3.5 0 0 1 17.5 18ZM4 4l16 16") }
     val pin: ImageVector by lazy { line("pin", "M12 21s-6-5.5-6-11a6 6 0 1 1 12 0c0 5.5-6 11-6 11ZM12 8v4") }
     val offline: ImageVector by lazy { line("offline", "M12 4v10M8 10l4 4 4-4M5 18h14M5 21h14") }
     val trash: ImageVector by lazy { line("trash", "M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13") }

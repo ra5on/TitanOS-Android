@@ -7,9 +7,13 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
-/** Eine gesicherte Aufnahme: Stand am Handy, Prüfsumme, Ziel und Ort am NAS. */
+/**
+ * Eine gesicherte Aufnahme: Stand am Handy, Prüfsumme, Ziel und Ort am NAS.
+ * [verifiedAt]: wann das NAS sie zuletzt bestätigt hat (hochgeladen, gefunden
+ * oder nachgeprüft, 1.03); 0 heißt noch nie nachgeprüft.
+ */
 @Serializable
-data class Saved(val size: Long, val modified: Long, val sha256: String, val target: String, val path: String)
+data class Saved(val size: Long, val modified: Long, val sha256: String, val target: String, val path: String, val verifiedAt: Long = 0)
 
 /** Zwischengespeicherte Prüfsumme je Aufnahme und Stand. */
 @Serializable
@@ -45,6 +49,16 @@ data class StateFile(
     val problem: Problem? = null,
     /** Zuletzt hochgeladen: wie viele und wohin. */
     val lastBatch: LastBatch? = null,
+    /**
+     * Gesichert, aber laut NAS nicht mehr dort (1.03, Nachprüfung im Lauf). Sie
+     * werden nicht von selbst neu hochgeladen: vielleicht hat man sie am NAS
+     * absichtlich gelöscht. „Erneut sichern“ nimmt sie wieder in die Sicherung.
+     */
+    val missing: Map<Long, Saved> = emptyMap(),
+    /** „Nicht mehr sichern“: diese Aufnahmen lässt die Sicherung aus, bis man es in den Einstellungen zurücknimmt. */
+    val ignored: Map<Long, Saved> = emptyMap(),
+    /** Fehlende, zu denen man „Ausblenden“ gewählt hat: das Symbol oben warnt nicht mehr wegen ihnen. */
+    val missingDismissed: Set<Long> = emptySet(),
 )
 
 /**
@@ -110,5 +124,9 @@ class BackupStore(private val file: File) {
 /** Die Marken für die Regeln (Rules.kt). */
 fun StateFile.marks(): Map<Long, SavedMark> = saved.mapValues { (_, s) -> SavedMark(s.size, s.modified, s.sha256, s.target) }
 
-/** Für die Auswahl: gesichert oder bewusst übersprungen. */
-fun StateFile.handled(): Map<Long, SavedMark> = skipped.mapValues { (_, s) -> SavedMark(s.size, s.modified, s.sha256, s.target) } + marks()
+/**
+ * Für die Auswahl: gesichert, bewusst übersprungen, am NAS fehlend oder „nicht
+ * mehr sichern“. Fehlende lädt die Sicherung nie von selbst neu hoch (1.03).
+ */
+fun StateFile.handled(): Map<Long, SavedMark> =
+    (skipped + ignored + missing).mapValues { (_, s) -> SavedMark(s.size, s.modified, s.sha256, s.target) } + marks()
