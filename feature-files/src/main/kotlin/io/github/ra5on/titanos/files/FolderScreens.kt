@@ -491,7 +491,7 @@ private fun EntryTile(api: FilesApi?, location: Location, e: FileEntry, selected
     ) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(c.bg), contentAlignment = Alignment.Center) {
             if (!e.dir && Kinds.hasThumb(e.name)) {
-                NasThumb(api, location.root.id, location.full(e.name), e.modified, Modifier.fillMaxSize(), size = if (large) 640 else 320) {
+                NasThumb(api, location.root.id, location.full(e.name), e.modified, Modifier.fillMaxSize()) {
                     EntryIcon(e, if (large) 64.dp else 44.dp)
                 }
             } else {

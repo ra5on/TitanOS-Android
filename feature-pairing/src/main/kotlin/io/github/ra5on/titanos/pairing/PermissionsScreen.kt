@@ -93,7 +93,7 @@ fun PermissionsScreen(
                 ListRow(
                     title = stringResource(R.string.perm_photos),
                     sub = if (state.photosPartial) stringResource(R.string.perm_photos_partial) else subFor(photos, R.string.perm_photos_text),
-                    icon = { AppIcon("photos", "pink", 40.dp) },
+                    icon = { AppIcon("photos", "green", 40.dp) },
                     right = { Toggle(photos == Grant.Granted, { onPhotos() }, on, off) },
                     onClick = onPhotos,
                 )

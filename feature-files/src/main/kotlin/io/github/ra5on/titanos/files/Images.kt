@@ -45,8 +45,33 @@ import java.security.MessageDigest
  * Betrachter, verkleinert auf die Bildschirmgröße. Zwischengespeichert im RAM
  * nach Freigabe, Pfad und Änderungszeit; das Original liegt kurz im Cache.
  */
+/**
+ * Größen der Vorschaubilder (1.02, Inhaber: „Vorschaubilder einen Ticken
+ * schärfer“). Angefragt wird die echte Pixelgröße der Kachel, aufgerundet auf
+ * feste Stufen, damit die Caches greifen. Weil die Kachel quadratisch
+ * beschnitten wird, muss die kurze Seite des Bildes die Kachel füllen: bei 4:3
+ * ist die lange Seite ein Drittel größer.
+ */
+object ThumbSizes {
+    /** Kantenlängen, die das NAS rendert (`thumbs.Sizes` im NAS: 160, 320, 640, 1280; mehr gibt es nicht). */
+    val NAS = listOf(160, 320, 640, 1280)
+
+    /** Stufen für die Vorschaubilder von Android (MediaStore). */
+    val LOCAL = listOf(256, 384, 512, 768, 1024)
+
+    /** Lange Seite, damit ein Bild im Seitenverhältnis 4:3 eine Kachel von [cellPx] beschnitten ganz füllt. */
+    fun cover(cellPx: Int): Int = (cellPx * 4 + 2) / 3
+
+    /** Stufe für eine Kachel von [cellPx] Pixeln bei Bildern vom NAS. */
+    fun nas(cellPx: Int): Int = NAS.firstOrNull { it >= cover(cellPx) } ?: NAS.last()
+
+    /** Stufe für eine Kachel von [cellPx] Pixeln bei Bildern am Handy. */
+    fun local(cellPx: Int): Int = LOCAL.firstOrNull { it >= cover(cellPx) } ?: LOCAL.last()
+}
+
 object NasImages {
-    private val memory = object : LruCache<String, Bitmap>(48 * 1024 * 1024) {
+    // Etwa ein Sechstel dessen, was Android der App gibt, höchstens 96 MB: ein Bildschirm voll scharfer Kacheln und mehr.
+    private val memory = object : LruCache<String, Bitmap>(minOf(96L * 1024 * 1024, Runtime.getRuntime().maxMemory() / 6).toInt()) {
         override fun sizeOf(key: String, value: Bitmap) = value.byteCount
     }
     private val none = java.util.Collections.synchronizedSet(HashSet<String>())
@@ -60,11 +85,22 @@ object NasImages {
 
     fun cached(root: String, path: String, modified: String, size: Int): Bitmap? = memory.get(key(root, path, modified, size))
 
-    /** Vorschaubild; null, wenn das NAS keines hat (415) oder es nicht geht. */
-    suspend fun thumb(api: FilesApi, root: String, path: String, modified: String, size: Int): Bitmap? {
+    /**
+     * Vorschaubild; null, wenn das NAS keines hat (415) oder es nicht geht.
+     * Mit [context] liegt es auch auf der Platte (`cache/thumbs`), damit
+     * Zurückscrollen und der nächste Start nicht erneut laden.
+     */
+    suspend fun thumb(api: FilesApi, root: String, path: String, modified: String, size: Int, context: Context? = null): Bitmap? {
         val k = key(root, path, modified, size)
         memory.get(k)?.let { return it }
         if (k in none) return null
+        val disk = context?.let { thumbFile(it, k) }
+        if (disk != null && disk.isFile) {
+            withContext(Dispatchers.IO) { runCatching { BitmapFactory.decodeFile(disk.path) }.getOrNull() }?.let {
+                memory.put(k, it)
+                return it
+            }
+        }
         return gate.withPermit {
             memory.get(k) ?: try {
                 val bytes = api.thumb(root, path, size, modified)
@@ -72,6 +108,7 @@ object NasImages {
                     none += k
                     null
                 } else {
+                    if (disk != null) withContext(Dispatchers.IO) { storeThumb(disk, bytes) }
                     withContext(Dispatchers.Default) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }?.also { memory.put(k, it) }
                 }
             } catch (e: CancellationException) {
@@ -121,6 +158,34 @@ object NasImages {
         return File(dir, if (ext.isEmpty()) id else "$id.$ext")
     }
 
+    private fun thumbFile(context: Context, key: String): File {
+        val id = MessageDigest.getInstance("SHA-256").digest(key.toByteArray()).take(16).joinToString("") { "%02x".format(it) }
+        return File(File(context.cacheDir, "thumbs"), id)
+    }
+
+    @Volatile private var written = 0
+
+    private fun storeThumb(file: File, bytes: ByteArray) {
+        runCatching {
+            file.parentFile?.mkdirs()
+            val tmp = File(file.parentFile, file.name + ".part")
+            tmp.writeBytes(bytes)
+            tmp.renameTo(file)
+            // Gelegentlich aufräumen: höchstens 160 MB Vorschaubilder auf der Platte.
+            if (++written % 64 == 0) trimDir(file.parentFile!!, 160L * 1024 * 1024)
+        }
+    }
+
+    private fun trimDir(dir: File, maxBytes: Long) {
+        val files = dir.listFiles()?.sortedBy { it.lastModified() } ?: return
+        var total = files.sumOf { it.length() }
+        for (f in files) {
+            if (total <= maxBytes) break
+            total -= f.length()
+            f.delete()
+        }
+    }
+
     /** Räumt den Cache der Vorschau auf, wenn er größer als [maxBytes] ist (älteste zuerst). */
     fun trim(context: Context, maxBytes: Long = 512L * 1024 * 1024) {
         val files = File(context.cacheDir, "view").listFiles()?.sortedBy { it.lastModified() } ?: return
@@ -133,7 +198,10 @@ object NasImages {
     }
 }
 
-/** Vorschaubild einer Datei am NAS; bis es da ist oder ohne Vorschau zeigt es [fallback]. */
+/**
+ * Vorschaubild einer Datei am NAS; bis es da ist oder ohne Vorschau zeigt es
+ * [fallback]. [size] 0: passend zur echten Größe der Fläche ([ThumbSizes.nas]).
+ */
 @Composable
 fun NasThumb(
     api: FilesApi?,
@@ -141,14 +209,35 @@ fun NasThumb(
     path: String,
     modified: String,
     modifier: Modifier = Modifier,
-    size: Int = 320,
+    size: Int = 0,
     contentScale: ContentScale = ContentScale.Crop,
+    fallback: @Composable BoxScope.() -> Unit,
+) {
+    if (size > 0) {
+        NasThumbSized(api, root, path, modified, modifier, size, contentScale, fallback)
+        return
+    }
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+        val edge = maxOf(constraints.maxWidth.takeIf { it != androidx.compose.ui.unit.Constraints.Infinity } ?: 0, constraints.maxHeight.takeIf { it != androidx.compose.ui.unit.Constraints.Infinity } ?: 0)
+        NasThumbSized(api, root, path, modified, Modifier.matchParentSize(), ThumbSizes.nas(if (edge > 0) edge else 320), contentScale, fallback)
+    }
+}
+
+@Composable
+private fun NasThumbSized(
+    api: FilesApi?,
+    root: String,
+    path: String,
+    modified: String,
+    modifier: Modifier,
+    size: Int,
+    contentScale: ContentScale,
     fallback: @Composable BoxScope.() -> Unit,
 ) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val bitmap by produceState(NasImages.cached(root, path, modified, size), api, root, path, modified, size) {
         if (value == null && api != null && Kinds.hasThumb(path) && FilesSettings.allowed(ctx, FilesSettings.get(ctx).thumbs)) {
-            value = NasImages.thumb(api, root, path, modified, size)
+            value = NasImages.thumb(api, root, path, modified, size, ctx.applicationContext)
         }
     }
     Box(modifier, contentAlignment = Alignment.Center) {
