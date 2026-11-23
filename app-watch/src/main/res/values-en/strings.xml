@@ -9,7 +9,7 @@
     <string name="w_reload">Reload</string>
 
     <string name="w_pair_title">Pair watch</string>
-    <string name="w_pair_intro">On the phone, open TitanOS › side menu › App settings › Pair watch. Type one of the addresses shown there.</string>
+    <string name="w_pair_intro">On the phone, open TitanOS, the app settings in the side menu and there “Pair watch”. Type one of the addresses shown there.</string>
     <string name="w_pair_address">Enter address</string>
     <string name="w_pair_address_label">Address of the NAS</string>
     <string name="w_pair_other_address">Other address</string>

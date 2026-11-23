@@ -10,7 +10,7 @@
 
     <!-- Kopplung -->
     <string name="w_pair_title">Uhr koppeln</string>
-    <string name="w_pair_intro">Öffne am Handy TitanOS › Seitenmenü › App-Einstellungen › Uhr koppeln. Tippe hier eine der Adressen ein, die dort stehen.</string>
+    <string name="w_pair_intro">Öffne am Handy TitanOS, im Seitenmenü die Einstellungen der App und dort „Uhr koppeln“. Tippe hier eine der Adressen ein, die dort stehen.</string>
     <string name="w_pair_address">Adresse eingeben</string>
     <string name="w_pair_address_label">Adresse des NAS</string>
     <string name="w_pair_other_address">Andere Adresse</string>
