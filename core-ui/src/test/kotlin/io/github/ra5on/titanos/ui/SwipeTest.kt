@@ -1,10 +1,14 @@
 package io.github.ra5on.titanos.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -138,7 +142,9 @@ class SwipeTest {
         rule.mainClock.autoAdvance = false
         rule.setContent {
             TitanTheme(dark = true) {
-                Snackbar("Mitteilung gelöscht", listOf(SnackAction("Rückgängig") { runs += "undo" }), onDismiss = { dismissed++ })
+                Box(Modifier.fillMaxSize()) {
+                    Snackbar("Mitteilung gelöscht", listOf(SnackAction("Rückgängig") { runs += "undo" }), onDismiss = { dismissed++ })
+                }
             }
         }
         rule.onNodeWithText("Rückgängig").performClick()
@@ -146,6 +152,85 @@ class SwipeTest {
         assertEquals(1, dismissed)
         // Ohne Tippen verschwindet sie von selbst.
         rule.mainClock.advanceTimeBy(7_000)
+        assertTrue(dismissed >= 2)
+    }
+
+    @Test
+    fun snackbarStandsFourSecondsAndSixWithUndo() {
+        var info = 0
+        var undo = 0
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            TitanTheme(dark = true) {
+                Box(Modifier.fillMaxSize()) {
+                    Snackbar("Ordner gelöscht", emptyList(), onDismiss = { info++ })
+                    Snackbar("In den Papierkorb", listOf(SnackAction("Rückgängig") {}), onDismiss = { undo++ })
+                }
+            }
+        }
+        rule.mainClock.advanceTimeBy(3_500)
+        assertEquals(0, info)
+        rule.mainClock.advanceTimeBy(1_000)
+        assertEquals(1, info)
+        assertEquals(0, undo)
+        rule.mainClock.advanceTimeBy(2_000)
+        assertEquals(1, undo)
+    }
+
+    @Test
+    fun aNewMessageReplacesTheOldOneAndStartsAgain() {
+        var dismissed = 0
+        var offer by androidx.compose.runtime.mutableStateOf(1)
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            TitanTheme(dark = true) {
+                // Nach 5 s die nächste Aktion (im Takt der Oberfläche).
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(5_000)
+                    offer = 2
+                }
+                Box(Modifier.fillMaxSize()) {
+                    // Gleicher Text, neue Aktion: die Zeit beginnt neu.
+                    Snackbar("1 Element im Papierkorb", listOf(SnackAction("Rückgängig") {}), onDismiss = { dismissed++ }, key = offer)
+                }
+            }
+        }
+        rule.mainClock.advanceTimeBy(9_000)
+        assertEquals(0, dismissed)
+        rule.mainClock.advanceTimeBy(2_500)
+        assertEquals(1, dismissed)
+    }
+
+    @Test
+    fun theLongerTimeOnlyWithAccessibilitySettings() {
+        // Ohne Bedienungshilfen: genau 4 bzw. 6 Sekunden.
+        assertEquals(4_000L, io.github.ra5on.titanos.ui.components.snackTimeout(4_000, talkBack = false, recommended = 4_000))
+        assertEquals(6_000L, io.github.ra5on.titanos.ui.components.snackTimeout(6_000, talkBack = false, recommended = 6_000))
+        // „Zeit zum Reagieren“ eingestellt oder TalkBack: die längere Zeit, nie kürzer als ohne.
+        assertEquals(120_000L, io.github.ra5on.titanos.ui.components.snackTimeout(4_000, talkBack = false, recommended = 120_000))
+        assertEquals(120_000L, io.github.ra5on.titanos.ui.components.snackTimeout(4_000, talkBack = true, recommended = 120_000))
+        assertEquals(6_000L, io.github.ra5on.titanos.ui.components.snackTimeout(6_000, talkBack = true, recommended = 1_000))
+    }
+
+    @Test
+    fun tapNextToItOrSwipingDismisses() {
+        var dismissed = 0
+        var tapped = 0
+        rule.setContent {
+            TitanTheme(dark = true) {
+                Box(Modifier.fillMaxSize()) {
+                    Text("Liste", Modifier.fillMaxWidth().height(200.dp).testTag("list").clickable { tapped++ })
+                    Snackbar("Gelöscht", emptyList(), onDismiss = { dismissed++ }, modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter).testTag("snack"), timeoutMs = 600_000)
+                }
+            }
+        }
+        rule.onNodeWithTag("list").performClick()
+        rule.waitForIdle()
+        // Das Tippen kommt trotzdem bei der Liste an.
+        assertEquals(1, tapped)
+        assertEquals(1, dismissed)
+        rule.onNodeWithTag("snack").performTouchInput { swipeRight(startX = left + 10f, endX = right) }
+        rule.waitForIdle()
         assertTrue(dismissed >= 2)
     }
 }

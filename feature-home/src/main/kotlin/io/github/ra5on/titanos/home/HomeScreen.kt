@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.github.ra5on.titanos.ui.Format
@@ -62,6 +63,7 @@ import io.github.ra5on.titanos.ui.rememberWidestWord
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
+import io.github.ra5on.titanos.ui.theme.okInk
 import kotlinx.coroutines.launch
 
 @Composable
@@ -113,8 +115,8 @@ internal fun widgetSubRes(kind: String): Int = when (kind) {
 }
 
 /**
- * Start (PLAN 117, Entwürfe 02–04): oben das Seitenmenü, der Name des NAS
- * (öffnet ebenfalls das Seitenmenü), Suche und Glocke; darunter Seiten mit
+ * Start (PLAN 117, Entwürfe 02–04): oben das Seitenmenü, der Knopf mit dem
+ * Namen des NAS (1.02: öffnet die Auswahl von NAS und Knoten), Suche und Glocke; darunter Seiten mit
  * Widgets, Programmen und Ordnern, Punkte für die Seiten. Langes Drücken auf
  * eine freie Stelle oder ein Symbol: Bearbeiten. Das Dock zeichnet die App.
  *
@@ -135,9 +137,17 @@ fun HomeScreen(
     onNotifications: () -> Unit,
     onMenu: () -> Unit,
     modifier: Modifier = Modifier,
-    /** Name oben; [node]: gewählter Cluster-Knoten („· titan“), sonst null. */
+    /** Name oben im Knopf; [node]: gewählter Cluster-Knoten („titan · nas-keller“), sonst null. */
     title: String = state.hostname,
     node: String? = null,
+    /** Knopf mit dem Namen: Auswahl von NAS und Cluster-Knoten (ohne: das Seitenmenü). */
+    onNas: (() -> Unit)? = null,
+    /** Punkt am Seitenmenü (eine neue Version der App ist da, 1.02). */
+    menuBadge: Boolean = false,
+    /** Hinweis unter der Leiste (neue Version), null: keiner. */
+    banner: (@Composable () -> Unit)? = null,
+    /** Das Dock als Ziel beim Ziehen im Bearbeiten (die App zeichnet es). */
+    dockDrop: DockDrop? = null,
     /** Stand der Foto-Sicherung in Worten für Zustand und Widget; null: kommt später. */
     photos: String? = null,
     onPhotos: (() -> Unit)? = null,
@@ -178,12 +188,12 @@ fun HomeScreen(
             val cells = PHONE_COLUMNS * rows
             val shownLayout = remember(prefs, keys, cells) { phoneLayout(prefs, keys, cells) }
             // Im Bearbeiten die Seiten wie gespeichert (auch leere neue Seiten), ohne Umbruch: nichts springt beim Ziehen.
-            val pages: List<List<String>> = if (draft != null) editPages(draft, keys) else shownLayout.pages
+            val pages: List<List<String?>> = if (draft != null) editPages(draft, keys) else shownLayout.pages
             val folders = if (draft != null) phoneLayout(draft, keys, 10_000).folders + draft.folders.filter { f -> f.apps.none { it in keys } } else shownLayout.folders
             val current = draft ?: prefs
             val pageCount = rememberUpdatedState(pages.size)
             val pager = rememberPagerState { pageCount.value }
-            SyncGrid(grid, draft, pages, stringResource(R.string.home_folder_default)) { onDraft(it) }
+            SyncGrid(grid, draft, pages, stringResource(R.string.home_folder_default), dockDrop) { onDraft(fitDraft(it, rows)) }
             LaunchedEffect(firstPage) { if (firstPage > 0) pager.animateScrollToPage(0) }
             fun startEdit() {
                 if (editing) return
@@ -207,9 +217,10 @@ fun HomeScreen(
                     if (editing) {
                         EditBar(onAdd = { adding = true }, onDone = ::finish)
                     } else {
-                        HomeTopBar(title, node, onMenu, onSearch, onNotifications)
+                        HomeTopBar(title, node, state.problem != HomeProblem.Offline, onMenu, onNas ?: onMenu, onSearch, onNotifications, menuBadge)
                     }
                 }
+                if (!editing) banner?.invoke()
                 state.problem?.let {
                     Problem(
                         stringResource(
@@ -235,6 +246,7 @@ fun HomeScreen(
                     PageContent(
                         page = page,
                         index = index,
+                        rows = rows,
                         prefs = current,
                         folders = folders,
                         byKey = byKey,
@@ -260,7 +272,7 @@ fun HomeScreen(
                         },
                         onPhotos = onPhotos,
                         onSheet = { sheet = it },
-                        onChange = { d -> onDraft(d) },
+                        onChange = { d -> onDraft(fitDraft(d, rows)) },
                         draft = draft,
                         pageCount = pages.size,
                         pager = pager,
@@ -280,7 +292,7 @@ fun HomeScreen(
                 if (d == null) {
                     sheet = null
                 } else {
-                    ItemSheet(key, d, pages, folders, byKey, onChange = { onDraft(it) }, onDismiss = { sheet = null }, onOpenFolder = { folderOpen = it })
+                    ItemSheet(key, d, pages, rows, folders, byKey, onChange = { onDraft(fitDraft(it, rows)) }, onDismiss = { sheet = null }, onOpenFolder = { folderOpen = it })
                 }
             }
             folderOpen?.let { id ->
@@ -293,7 +305,7 @@ fun HomeScreen(
                         byKey = byKey,
                         editing = editing,
                         onOpen = { p -> folderOpen = null; onProgram(p) },
-                        onChange = { change -> draft?.let { onDraft(change(it)) } },
+                        onChange = { change -> draft?.let { onDraft(fitDraft(change(it), rows)) } },
                         onDismiss = { folderOpen = null },
                     )
                 }
@@ -305,7 +317,7 @@ fun HomeScreen(
                     keys = keys,
                     widgetsAllowed = widgetsAllowed,
                     page = pager.currentPage,
-                    onChange = { onDraft(it) },
+                    onChange = { onDraft(fitDraft(it, rows)) },
                     onDismiss = { adding = false },
                 )
             }
@@ -327,41 +339,80 @@ fun HomeScreen(
     }
 }
 
-/** Die Seiten im Bearbeiten: wie gespeichert, nur was die App zeigen kann. */
-internal fun editPages(draft: PhonePrefs, keys: List<String>): List<List<String>> {
+/** Die Seiten im Bearbeiten: wie gespeichert (mit Lücken), nur was die App zeigen kann; anderes lässt seine Zelle leer. */
+internal fun editPages(draft: PhonePrefs, keys: List<String>): List<List<String?>> {
     val known = keys.toSet()
     val folders = draft.folders.filter { f -> f.apps.any { it in known } }.map { "folder:" + it.id }.toSet()
     val widgets = draft.widgets.filter { it.kind in HOME_WIDGET_KINDS }.map { "widget:" + it.id }.toSet()
-    return draft.pages.map { page -> page.filter { it in known || it in folders || it in widgets } }.ifEmpty { listOf(emptyList()) }
+    return draft.pages.map { page -> page.map { k -> k?.takeIf { it in known || it in folders || it in widgets } }.trimEnd() }.ifEmpty { listOf(emptyList()) }
 }
 
 @Composable
-private fun HomeTopBar(title: String, node: String?, onMenu: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit) {
-    val c = Titan.colors
-    val menuLabel = stringResource(R.string.home_title_menu, title)
+private fun HomeTopBar(title: String, node: String?, online: Boolean, onMenu: () -> Unit, onNas: () -> Unit, onSearch: () -> Unit, onNotifications: () -> Unit, menuBadge: Boolean = false) {
     Row(
         Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 6.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        IconButton(TitanIcons.menu, stringResource(R.string.home_side_menu), onMenu, size = 24.dp)
-        // Tippen auf den Namen öffnet ebenfalls das Seitenmenü (NAS und Cluster-Knoten).
-        Row(
-            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onMenu)
-                .semantics(mergeDescendants = true) { contentDescription = menuLabel }
-                .padding(horizontal = 6.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            AppIcon("storage", "dark", 30.dp)
-            Row(Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(title, style = TitanType.topTitle, color = c.text, modifier = Modifier.weight(1f, fill = false))
-                if (!node.isNullOrBlank()) Text("· $node", style = TitanType.body, color = c.muted)
-            }
-            Icon(TitanIcons.down, null, tint = c.muted, modifier = Modifier.size(18.dp))
+        Box {
+            IconButton(TitanIcons.menu, stringResource(if (menuBadge) R.string.home_side_menu_update else R.string.home_side_menu), onMenu, size = 24.dp)
+            // Neue Version: ein Punkt am Menü (der Name sagt es TalkBack).
+            if (menuBadge) Box(Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp).size(10.dp).clip(CircleShape).background(Titan.colors.accent).border(1.5.dp, Titan.colors.bg, CircleShape))
         }
+        Box(Modifier.weight(1f)) { NasPill(nasPillText(title, node), online, onNas) }
         IconButton(TitanIcons.search, stringResource(UiR.string.ui_search), onSearch)
         IconButton(TitanIcons.bell, stringResource(R.string.home_notifications), onNotifications)
+    }
+}
+
+/** „titan“ bzw. mit gewähltem Cluster-Knoten „titan · nas-keller“ (der Knoten nur, wenn er nicht das NAS selbst ist). */
+fun nasPillText(title: String, node: String?): String {
+    val n = node?.trim().orEmpty()
+    return if (n.isEmpty() || n == title || title.endsWith(" · $n")) title else "$title · $n"
+}
+
+/**
+ * Knopf mit dem Namen des verbundenen NAS (1.02, wie der Umschalter im Web:
+ * Punkt, Name, Pfeil, Rahmen in der Akzentfarbe). Antippen öffnet die Auswahl
+ * (NAS, Cluster-Knoten, NAS hinzufügen). Der Name bricht nie mitten im Wort
+ * und wird nie gekürzt: erst eine Stufe kleinere Schrift, dann Umbruch an
+ * Wortgrenzen (bei Namen ohne Leerzeichen nach „-“ oder „.“).
+ */
+@Composable
+internal fun NasPill(text: String, online: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = Titan.colors
+    val label = stringResource(R.string.home_nas_switch, text)
+    val state = stringResource(if (online) R.string.home_nas_online else R.string.home_nas_offline)
+    val big = TitanType.rowTitle
+    val small = TitanType.body.copy(fontWeight = TitanType.rowTitle.fontWeight)
+    val shape = RoundedCornerShape(22.dp)
+    BoxWithConstraints(modifier) {
+        // Platz für den Namen: Knopf ohne Punkt, Abstände und Pfeil.
+        val room = with(LocalDensity.current) { (maxWidth - 64.dp).toPx() }
+        val widest = rememberWidestWord(listOf(text), big)
+        val style = if (widest <= room) big else small
+        Row(
+            Modifier.clip(shape)
+                .background(c.accent.copy(alpha = .14f))
+                .border(1.dp, c.accent.copy(alpha = .6f), shape)
+                .clickable(role = Role.Button, onClick = onClick)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = label
+                    stateDescription = state
+                }
+                .heightIn(min = 44.dp)
+                .padding(start = 14.dp, end = 10.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // Erreichbar: voller Punkt; nicht erreichbar: Ring (nie nur Farbe).
+            Box(
+                Modifier.size(9.dp).clip(CircleShape)
+                    .then(if (online) Modifier.background(c.okInk) else Modifier.border(1.5.dp, c.muted, CircleShape)),
+            )
+            Text(io.github.ra5on.titanos.ui.breakWords(text), style = style, color = c.text, modifier = Modifier.weight(1f, fill = false))
+            Icon(TitanIcons.down, null, tint = c.muted, modifier = Modifier.size(18.dp))
+        }
     }
 }
 

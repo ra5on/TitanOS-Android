@@ -119,3 +119,20 @@ fun AboutScreen(nasVersion: String?, onBack: () -> Unit) {
         Box(Modifier.navigationBarsPadding().padding(bottom = 16.dp))
     }
 }
+
+/** Kein Hinweis auf Updates: die kommen über Google Play. */
+object UpdateHint {
+    val version: String? get() = null
+
+    @Suppress("UNUSED_PARAMETER")
+    fun banner(context: Context): Boolean = false
+
+    @Suppress("UNUSED_PARAMETER")
+    fun dismiss(context: Context) = Unit
+
+    @Suppress("UNUSED_PARAMETER")
+    fun install(context: Context, scope: kotlinx.coroutines.CoroutineScope) = Unit
+
+    @Suppress("UNUSED_PARAMETER")
+    fun onForeground(context: Context, scope: kotlinx.coroutines.CoroutineScope, now: Long = 0L) = Unit
+}

@@ -87,6 +87,9 @@ fun PhotosTab(model: PhotosModel, bottomBar: @Composable () -> Unit, files: io.g
             onGallery = { route = Route.Gallery },
             onResume = model::resume,
             onTile = { viewing = it.id },
+            onNow = model::backupNow,
+            onSettings = { route = Route.Settings },
+            reduceMotion = io.github.ra5on.titanos.ui.components.reduceMotion(context),
         ) {
             if (menu) {
                 PhotosMenu(
@@ -179,20 +182,35 @@ private fun TargetRoute(model: PhotosModel, kind: Kind, done: () -> Unit) {
     )
 }
 
-private val thumbs = object : LruCache<Long, Bitmap>(24 * 1024 * 1024) {
-    override fun sizeOf(key: Long, value: Bitmap) = value.byteCount
+// Schlüssel: Aufnahme und Stufe. Etwa ein Achtel dessen, was Android der App gibt, höchstens 64 MB (48 Kacheln à 384 px passen).
+private val thumbs = object : LruCache<String, Bitmap>(minOf(64L * 1024 * 1024, Runtime.getRuntime().maxMemory() / 8).toInt()) {
+    override fun sizeOf(key: String, value: Bitmap) = value.byteCount
 }
 
-/** Vorschaubild aus dem MediaStore, bis dahin eine Fläche. */
+/**
+ * Vorschaubild aus dem MediaStore in der Größe der Kachel (1.02: bis dahin
+ * immer 240 px, auf einem Handy mit 2,6-facher Dichte unscharf), bis dahin
+ * eine Fläche. Den Plattencache führt Android selbst.
+ */
 @Composable
 private fun MediaThumb(model: PhotosModel, t: Tile, modifier: Modifier) {
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
+        val edge = maxOf(constraints.maxWidth.takeIf { it != androidx.compose.ui.unit.Constraints.Infinity } ?: 0, constraints.maxHeight.takeIf { it != androidx.compose.ui.unit.Constraints.Infinity } ?: 0)
+        val size = io.github.ra5on.titanos.files.ThumbSizes.local(if (edge > 0) edge else 240)
+        MediaThumbSized(model, t, size, Modifier.matchParentSize())
+    }
+}
+
+@Composable
+private fun MediaThumbSized(model: PhotosModel, t: Tile, size: Int, modifier: Modifier) {
     val context = LocalContext.current
-    val bitmap by produceState(thumbs.get(t.id), t.id) {
+    val key = "${t.id}@$size"
+    val bitmap by produceState(thumbs.get(key), key) {
         if (value == null) {
             value = withContext(Dispatchers.IO) {
                 runCatching {
-                    model.item(t.id)?.let { context.contentResolver.loadThumbnail(it.uri, Size(240, 240), null) }
-                }.getOrNull()?.also { thumbs.put(t.id, it) }
+                    model.item(t.id)?.let { context.contentResolver.loadThumbnail(it.uri, Size(size, size), null) }
+                }.getOrNull()?.also { thumbs.put(key, it) }
             }
         }
     }

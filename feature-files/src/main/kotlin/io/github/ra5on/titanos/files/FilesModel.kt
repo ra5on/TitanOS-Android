@@ -57,7 +57,8 @@ data class Clip(val from: Location, val names: List<String>, val move: Boolean)
 
 enum class UndoKind { Rename, Move, Trash }
 
-data class UndoOffer(val id: String, val kind: UndoKind, val count: Int)
+/** „Rückgängig“ nach einer Aktion; [at]: seit wann die Meldung steht (uptimeMillis, eine Meldung je Aktion). */
+data class UndoOffer(val id: String, val kind: UndoKind, val count: Int, val at: Long = android.os.SystemClock.uptimeMillis())
 
 data class Notice(val text: Int)
 

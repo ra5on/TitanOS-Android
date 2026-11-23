@@ -301,7 +301,7 @@ fun FolderScreen(
             }
             }
         }
-        ui.undo?.let { u -> UndoBar(u, on.undo, on.dismissUndo, Modifier.align(Alignment.BottomCenter).padding(bottom = 140.dp)) }
+        ui.undo?.let { u -> UndoBar(u, on.undo, on.dismissUndo, Modifier.align(Alignment.BottomCenter).padding(bottom = 86.dp)) }
     }
 }
 
@@ -491,7 +491,7 @@ private fun EntryTile(api: FilesApi?, location: Location, e: FileEntry, selected
     ) {
         Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(8.dp)).background(c.bg), contentAlignment = Alignment.Center) {
             if (!e.dir && Kinds.hasThumb(e.name)) {
-                NasThumb(api, location.root.id, location.full(e.name), e.modified, Modifier.fillMaxSize(), size = if (large) 640 else 320) {
+                NasThumb(api, location.root.id, location.full(e.name), e.modified, Modifier.fillMaxSize()) {
                     EntryIcon(e, if (large) 64.dp else 44.dp)
                 }
             } else {
@@ -547,7 +547,7 @@ private fun JobBar(job: Job, running: Int, onClick: () -> Unit) {
 
 /** „Rückgängig“ nach Papierkorb, Verschieben, Umbenennen (Entwurf 11), als Meldung unten. */
 @Composable
-private fun UndoBar(u: UndoOffer, onUndo: () -> Unit, onDismiss: () -> Unit, modifier: Modifier) {
+private fun BoxScope.UndoBar(u: UndoOffer, onUndo: () -> Unit, onDismiss: () -> Unit, modifier: Modifier) {
     Snackbar(
         text = when (u.kind) {
             UndoKind.Trash -> pluralStringResource(R.plurals.undo_trash, u.count, u.count)
@@ -557,6 +557,8 @@ private fun UndoBar(u: UndoOffer, onUndo: () -> Unit, onDismiss: () -> Unit, mod
         actions = listOf(SnackAction(stringResource(R.string.undo_do), onUndo)),
         onDismiss = onDismiss,
         modifier = modifier,
+        key = u,
+        startedAt = u.at,
     )
 }
 

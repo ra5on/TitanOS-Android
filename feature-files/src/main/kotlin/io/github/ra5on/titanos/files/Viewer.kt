@@ -85,6 +85,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.ByteBuffer
@@ -294,26 +295,41 @@ private fun screenPx(): Int {
     return with(d) { maxOf(conf.screenWidthDp, conf.screenHeightDp).dp.roundToPx() }
 }
 
+/**
+ * Ein Bild vom NAS: sofort das Vorschaubild (1280 px), dann das Original aus
+ * `files/download` (auf der Platte zwischengespeichert) in voller Auflösung mit
+ * Kacheln beim Zoomen (1.02, [TiledImage]). Formate ohne Kacheln (GIF, AVIF …)
+ * zeigt es wie bisher auf die doppelte Bildschirmgröße verkleinert.
+ */
 @Composable
 private fun ImagePage(api: FilesApi?, location: Location, e: FileEntry, active: Boolean, onZoom: (Boolean) -> Unit, onTap: () -> Unit) {
     val context = LocalContext.current
     val path = location.full(e.name)
     val maxPx = (screenPx() * 2).coerceAtMost(4096)
     val thumb by produceState(NasImages.cached(location.root.id, path, e.modified, 1280), api, path) {
-        if (value == null && api != null && Kinds.hasThumb(e.name)) value = NasImages.thumb(api, location.root.id, path, e.modified, 1280)
+        if (value == null && api != null && Kinds.hasThumb(e.name)) value = NasImages.thumb(api, location.root.id, path, e.modified, 1280, context.applicationContext)
     }
     // Das Original erst für die sichtbare Seite (und ihre Nachbarn, sobald sie sichtbar werden).
     var failed by remember(path) { mutableStateOf(false) }
-    val original by produceState<Bitmap?>(null, api, path, active) {
+    val original by produceState<Any?>(null, api, path, active) {
         if (value == null && api != null && (active || thumb == null)) {
-            value = NasImages.original(context, api, location.root.id, path, e.modified, e.size, maxPx)
+            val file = NasImages.originalFile(context, api, location.root.id, path, e.modified, e.size)
+            // Ohne Abbruch öffnen und, falls die Seite inzwischen weg ist, gleich wieder schließen (Datei und Decoder).
+            val tiled = file?.let { f -> withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) { TiledSource.open(f) } }
+            if (!kotlinx.coroutines.currentCoroutineContext().isActive) {
+                tiled?.close()
+                return@produceState
+            }
+            value = tiled ?: file?.let { f -> withContext(Dispatchers.Default) { NasImages.decode(f, maxPx) } }
             if (value == null && thumb == null) failed = true
         }
     }
-    val shown = original ?: thumb
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        val o = original
         when {
-            shown != null -> ZoomImage(shown.asImageBitmap(), e.name, onZoom, onTap, Modifier.fillMaxSize())
+            o is TiledSource -> TiledImage(o, thumb, onZoom, onTap, Modifier.fillMaxSize())
+            o is Bitmap -> ZoomImage(o.asImageBitmap(), e.name, onZoom, onTap, Modifier.fillMaxSize())
+            thumb != null -> ZoomImage(thumb!!.asImageBitmap(), e.name, onZoom, onTap, Modifier.fillMaxSize())
             failed -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                 Text(
                     stringResource(if (e.size > NasImages.ORIGINAL_LIMIT) R.string.view_too_large else R.string.view_image_failed),

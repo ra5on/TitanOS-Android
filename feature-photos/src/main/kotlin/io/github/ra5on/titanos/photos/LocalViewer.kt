@@ -43,6 +43,7 @@ import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -133,21 +134,43 @@ fun LocalPhotoViewer(model: PhotosModel, tiles: List<Tile>, start: Int, onClose:
     }
 }
 
+/**
+ * Eine Aufnahme am Handy: sofort das Vorschaubild von Android in
+ * Bildschirmgröße, dann das Original in voller Auflösung mit Kacheln beim
+ * Zoomen (1.02, Inhaber: „ein geöffnetes Bild immer in Originalgröße“). Videos
+ * zeigen das Vorschaubild mit dem Knopf zum Abspielen.
+ */
 @Composable
 private fun LocalPage(model: PhotosModel, t: Tile, active: Boolean, onZoom: (Boolean) -> Unit, onTap: () -> Unit, onPlay: () -> Unit) {
     val context = LocalContext.current
     var failed by remember(t.id) { mutableStateOf(false) }
-    // Groß genug zum Zoomen, aber nicht das ganze Original (Speicher): 2048 Pixel an der langen Seite.
+    val conf = androidx.compose.ui.platform.LocalConfiguration.current
+    val screen = with(androidx.compose.ui.platform.LocalDensity.current) { maxOf(conf.screenWidthDp, conf.screenHeightDp).dp.roundToPx() }.coerceIn(720, 2560)
     val bitmap by produceState<Bitmap?>(null, t.id, active) {
         if (value == null && (active || !failed)) {
             value = withContext(Dispatchers.IO) {
-                runCatching { model.item(t.id)?.let { context.contentResolver.loadThumbnail(it.uri, Size(2048, 2048), null) } }.getOrNull()
+                runCatching { model.item(t.id)?.let { context.contentResolver.loadThumbnail(it.uri, Size(screen, screen), null) } }.getOrNull()
             }
-            if (value == null) failed = true
+            // Ohne Vorschaubild von Android zeigt ein Foto gleich das Original (unten).
+            if (value == null && t.kind == Kind.Video) failed = true
+        }
+    }
+    // Das Original erst für die sichtbare Seite; Formate ohne Kacheln bleiben beim Vorschaubild.
+    val tiled by produceState<io.github.ra5on.titanos.files.TiledSource?>(null, t.id, active) {
+        if (value == null && active && t.kind != Kind.Video) {
+            // Ohne Abbruch öffnen und, falls die Seite inzwischen weg ist, gleich wieder schließen (Datei und Decoder).
+            val opened = withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) { model.item(t.id)?.let { io.github.ra5on.titanos.files.TiledSource.open(context, it.uri) } }
+            if (!kotlinx.coroutines.currentCoroutineContext().isActive) {
+                opened?.close()
+                return@produceState
+            }
+            value = opened
+            if (value == null && bitmap == null) failed = true
         }
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val b = bitmap
+        val source = tiled
         when {
             b != null && t.kind == Kind.Video -> {
                 Image(b.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
@@ -155,6 +178,7 @@ private fun LocalPage(model: PhotosModel, t: Tile, active: Boolean, onZoom: (Boo
                     IconButton(TitanIcons.play, stringResource(R.string.photos_view_play), onPlay, size = 30.dp, tint = Color.White)
                 }
             }
+            source != null -> io.github.ra5on.titanos.files.TiledImage(source, b, onZoom, onTap, Modifier.fillMaxSize())
             b != null -> ZoomImage(b.asImageBitmap(), null, onZoom, onTap, Modifier.fillMaxSize())
             failed -> Column(Modifier.padding(24.dp)) { Text(stringResource(R.string.photos_view_failed), style = TitanType.body, color = Color.White) }
             else -> Text(stringResource(UiR.string.ui_loading), style = TitanType.body, color = Color.White)

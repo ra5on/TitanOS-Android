@@ -24,6 +24,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -144,7 +151,106 @@ internal fun targetLabel(s: PhotoSettings): String =
     if (s.hasTarget) stringResource(R.string.photos_target_label, s.rootName.ifEmpty { s.root.substringAfter('/') }, s.dir.trim('/'))
     else stringResource(R.string.photos_target_none)
 
-/** Stand der Sicherung mit Raster (Entwurf 30). */
+/** Was das kleine Symbol oben in „Fotos“ zeigt (1.02). */
+enum class BackupBadge {
+    /** Alles auf dem NAS: Haken. */
+    Done,
+
+    /** Lädt gerade hoch: Pfeil mit Zahl. */
+    Uploading,
+
+    /** Wartet nach eigener Wahl oder auf Android (WLAN, Laden, von Hand, Netz): Wolke. */
+    Waiting,
+
+    /** Sicherung aus: Wolke, durchgestrichen in Worten. */
+    Off,
+
+    /** Etwas fehlt oder ging schief (Zugriff, Ziel, NAS, Fehler, pausiert): Warnzeichen. */
+    Problem,
+}
+
+/** Gründe, die nur warten, nicht fehlen: Wolke statt Warnzeichen. */
+private val CALM_WAITS = setOf(Wait.None, Wait.Manual, Wait.Network, Wait.Wifi, Wait.Roaming, Wait.Charging, Wait.Android)
+
+fun backupBadge(view: PhotosView): BackupBadge {
+    val s = view.settings
+    return when {
+        !s.enabled -> BackupBadge.Off
+        view.progress.running -> BackupBadge.Uploading
+        view.paused || view.access != Access.Full || !s.hasTarget -> BackupBadge.Problem
+        Kind.entries.any { k -> (view.pending[k] ?: 0) > 0 && (view.waits[k] ?: Wait.None) !in CALM_WAITS } -> BackupBadge.Problem
+        view.pending.values.sum() > 0 -> BackupBadge.Waiting
+        else -> BackupBadge.Done
+    }
+}
+
+/** Der Stand in Worten (TalkBack-Name des Symbols und Überschrift des Blatts). */
+@Composable
+fun badgeText(view: PhotosView): String {
+    val s = view.settings
+    val pendingTotal = view.pending.values.sum()
+    return when {
+        !s.enabled -> stringResource(R.string.photos_off)
+        view.progress.running && view.progress.total > 0 -> stringResource(R.string.photos_running, view.progress.done, view.progress.total)
+        view.progress.running -> stringResource(R.string.photos_badge_running)
+        view.paused -> stringResource(R.string.photos_paused)
+        view.access == Access.None -> stringResource(R.string.photos_no_access)
+        !s.hasTarget -> stringResource(R.string.photos_no_target)
+        view.access == Access.Partial -> stringResource(R.string.photos_partial_title)
+        pendingTotal == 0 -> stringResource(R.string.photos_badge_done)
+        else -> pluralStringResource(R.plurals.photos_pending, pendingTotal, count(pendingTotal))
+    }
+}
+
+/**
+ * Kleines Symbol oben in „Fotos“ statt der großen Karte (1.02, Inhaber: „ich
+ * will die Fotos direkt sehen“): Haken, Pfeil mit Zahl, Wolke oder
+ * Warnzeichen; Antippen zeigt den ganzen Stand. TalkBack liest den Stand.
+ */
+@Composable
+fun BackupStatusButton(view: PhotosView, onClick: () -> Unit, reduceMotion: Boolean = false) {
+    val c = Titan.colors
+    val badge = backupBadge(view)
+    val text = badgeText(view)
+    val label = stringResource(R.string.photos_badge_label, text)
+    val icon = when (badge) {
+        BackupBadge.Done -> TitanIcons.cloudok
+        BackupBadge.Uploading -> TitanIcons.upload
+        BackupBadge.Waiting, BackupBadge.Off -> TitanIcons.cloud
+        BackupBadge.Problem -> TitanIcons.warn
+    }
+    val tint = when (badge) {
+        BackupBadge.Done -> c.okInk
+        BackupBadge.Problem -> c.warnInk
+        BackupBadge.Uploading -> c.accent
+        else -> c.muted
+    }
+    // Beim Hochladen hebt sich der Pfeil sanft (nicht bei „Animationen entfernen“).
+    val lift = if (badge == BackupBadge.Uploading && !reduceMotion) {
+        val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "upload")
+        t.animateFloat(
+            0f, -3f,
+            androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(700), androidx.compose.animation.core.RepeatMode.Reverse),
+            label = "lift",
+        ).value
+    } else {
+        0f
+    }
+    Row(
+        Modifier.clip(RoundedCornerShape(22.dp)).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = label }
+            .heightIn(min = 44.dp).padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(26.dp).graphicsLayer { translationY = lift * density })
+        if (badge == BackupBadge.Uploading && view.progress.total > 0) {
+            Text("${view.progress.done}/${view.progress.total}", style = TitanType.small, color = c.text)
+        }
+    }
+}
+
+/** Raster der Aufnahmen mit kleinem Stand der Sicherung oben (Entwurf 30, 1.02 ohne große Karte). */
 @Composable
 fun PhotosScreen(
     view: PhotosView,
@@ -157,45 +263,53 @@ fun PhotosScreen(
     onGallery: (() -> Unit)? = null,
     onResume: () -> Unit = {},
     onTile: ((Tile) -> Unit)? = null,
+    onNow: () -> Unit = {},
+    onSettings: () -> Unit = {},
+    /** Blatt mit dem Stand offen (Bildtests). */
+    statusOpen: Boolean = false,
+    reduceMotion: Boolean = false,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val c = Titan.colors
+    var status by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(statusOpen) }
     Page(
         topBar = {
             Box(Modifier.statusBarsPadding()) {
                 TopBar(
                     stringResource(R.string.photos_title),
-                    icon = { AppIcon("photos", "pink", 30.dp) },
-                    actions = { IconButton(TitanIcons.more, stringResource(R.string.photos_menu), onMenu) },
+                    icon = { AppIcon("photos", "green", 30.dp) },
+                    actions = {
+                        BackupStatusButton(view, { status = true }, reduceMotion)
+                        IconButton(TitanIcons.more, stringResource(R.string.photos_menu), onMenu)
+                    },
                 )
             }
         },
         modifier = modifier,
         bottomBar = bottomBar,
-        overlay = overlay,
-    ) {
-        Spacer(Modifier.height(14.dp))
-        if (view.paused) {
-            Problem(stringResource(R.string.photos_paused), Modifier.padding(bottom = 8.dp))
-            TitanButton(stringResource(R.string.photos_resume), onResume, Modifier.fillMaxWidth().padding(bottom = 12.dp), ButtonKind.Primary)
-        }
-        StatusCard(view, onSetUp)
-        if (onGallery != null && view.settings.hasTarget) {
-            Card(Modifier.padding(top = 12.dp)) {
-                ListRow(
-                    stringResource(R.string.gallery_title),
-                    sub = stringResource(R.string.gallery_row_text, view.settings.rootName.ifEmpty { view.settings.root }, view.settings.dir),
-                    icon = { RowIcon(TitanIcons.grid, size = 24.dp) },
-                    chevron = true,
-                    onClick = onGallery,
-                )
+        overlay = {
+            if (status) {
+                Sheet(onDismiss = { status = false }) {
+                    StatusCard(
+                        view,
+                        onSetUp = { status = false; onSetUp() },
+                        onNow = { status = false; onNow() },
+                        onSettings = { status = false; onSettings() },
+                        onResume = onResume,
+                        onGallery = onGallery?.let { g -> { status = false; g() } },
+                    )
+                }
             }
-        }
+            overlay()
+        },
+    ) {
+        // Ohne Zugriff gibt es keine Fotos zu zeigen: dann die Bitte darum statt des Rasters.
         if (view.access == Access.Partial) {
             Problem(stringResource(R.string.photos_partial), Modifier.padding(top = 12.dp))
             TitanButton(stringResource(R.string.photos_allow_all), onAllowAccess, Modifier.fillMaxWidth().padding(top = 8.dp), ButtonKind.Primary)
         }
         if (view.access == Access.None) {
+            Text(stringResource(R.string.photos_no_access_text), style = TitanType.body, color = c.muted, modifier = Modifier.padding(top = 16.dp))
             TitanButton(stringResource(R.string.photos_allow), onAllowAccess, Modifier.fillMaxWidth().padding(top = 12.dp), ButtonKind.Primary)
         }
         Grid(view.tiles, thumb, onTile)
@@ -205,35 +319,47 @@ fun PhotosScreen(
     }
 }
 
+/** Der ganze Stand der Sicherung (bis 1.01 die Karte oben, jetzt im Blatt des Symbols). */
 @Composable
-private fun StatusCard(view: PhotosView, onSetUp: () -> Unit) {
+private fun StatusCard(
+    view: PhotosView,
+    onSetUp: () -> Unit,
+    onNow: () -> Unit,
+    onSettings: () -> Unit,
+    onResume: () -> Unit,
+    onGallery: (() -> Unit)?,
+) {
     val c = Titan.colors
     val s = view.settings
-    val pendingTotal = view.pending.values.sum()
     // Wie Entwurf 30: Was nur nach der eigenen Wahl wartet (Laden, WLAN, von Hand),
     // lässt die Sicherung „aktuell“; die Zeile darunter sagt, was wartet.
     val ok = view.upToDate
-    val shape = RoundedCornerShape(18.dp)
-    Column(Modifier.fillMaxWidth().clip(shape).background(c.surface).border(1.dp, c.border, shape).padding(16.dp)) {
+    val badge = backupBadge(view)
+    Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+        if (view.paused) {
+            Problem(stringResource(R.string.photos_paused), Modifier.padding(bottom = 8.dp))
+            TitanButton(stringResource(R.string.photos_resume), onResume, Modifier.fillMaxWidth().padding(bottom = 12.dp), ButtonKind.Primary)
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.Top) {
             Icon(
-                if (ok) TitanIcons.cloudok else if (!s.enabled || view.access == Access.None) TitanIcons.cloud else TitanIcons.upload,
+                when (badge) {
+                    BackupBadge.Done -> TitanIcons.cloudok
+                    BackupBadge.Uploading -> TitanIcons.upload
+                    BackupBadge.Problem -> TitanIcons.warn
+                    else -> TitanIcons.cloud
+                },
                 null,
-                tint = if (ok) c.okInk else if (s.enabled) c.accent else c.muted,
+                tint = when (badge) {
+                    BackupBadge.Done -> c.okInk
+                    BackupBadge.Problem -> c.warnInk
+                    BackupBadge.Uploading -> c.accent
+                    else -> c.muted
+                },
                 modifier = Modifier.padding(top = 2.dp).size(40.dp),
             )
             Column(Modifier.weight(1f)) {
-                val title = when {
-                    !s.enabled -> stringResource(R.string.photos_off)
-                    view.access == Access.None -> stringResource(R.string.photos_no_access)
-                    !s.hasTarget -> stringResource(R.string.photos_no_target)
-                    view.access == Access.Partial -> stringResource(R.string.photos_partial_title)
-                    view.progress.running && view.progress.total > 0 ->
-                        stringResource(R.string.photos_running, view.progress.done, view.progress.total)
-                    ok -> stringResource(R.string.photos_up_to_date)
-                    else -> pluralStringResource(R.plurals.photos_pending, pendingTotal, count(pendingTotal))
-                }
-                Text(title, style = TitanType.state, color = c.text)
+                val title = if (ok && !view.progress.running && view.pending.values.sum() > 0) stringResource(R.string.photos_up_to_date) else badgeText(view)
+                Text(title, style = TitanType.state, color = c.text, modifier = Modifier.semantics { heading() })
                 val sub = when {
                     !s.enabled -> stringResource(R.string.photos_off_text)
                     view.access == Access.None -> stringResource(R.string.photos_no_access_text)
@@ -258,10 +384,14 @@ private fun StatusCard(view: PhotosView, onSetUp: () -> Unit) {
         }
         if (!s.enabled || !s.hasTarget) {
             TitanButton(stringResource(R.string.photos_set_up), onSetUp, Modifier.fillMaxWidth().padding(top = 14.dp), ButtonKind.Primary)
+            Card(Modifier.padding(top = 12.dp), background = c.bg) {
+                ListRow(stringResource(R.string.photos_settings), icon = { RowIcon(TitanIcons.gear) }, chevron = true, onClick = onSettings)
+            }
             return@Column
         }
         FlowRow(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            IconChip(TitanIcons.wifi, stringResource(if (s.mobileData) R.string.photos_chip_mobile else R.string.photos_chip_wifi))
+            // „Auch mobile Daten“ mit den Balken des Mobilfunks, „Nur WLAN“ mit dem WLAN-Zeichen.
+            IconChip(if (s.mobileData) TitanIcons.cell else TitanIcons.wifi, stringResource(if (s.mobileData) R.string.photos_chip_mobile else R.string.photos_chip_wifi))
             when (s.videos) {
                 When.WifiCharging -> IconChip(TitanIcons.video, stringResource(R.string.photos_chip_videos_charging))
                 When.Manual -> IconChip(TitanIcons.video, stringResource(R.string.photos_chip_manual))
@@ -277,6 +407,19 @@ private fun StatusCard(view: PhotosView, onSetUp: () -> Unit) {
                 Icon(waitIcon(wait), null, tint = c.warnInk, modifier = Modifier.size(22.dp))
                 Text(waitText(kind, n, wait), style = TitanType.body.copy(fontSize = TitanType.rowTitle.fontSize), color = c.warnInk)
             }
+        }
+        TitanButton(stringResource(R.string.photos_now), onNow, Modifier.fillMaxWidth().padding(top = 16.dp), ButtonKind.Primary, icon = TitanIcons.upload)
+        Card(Modifier.padding(top = 12.dp), background = c.bg) {
+            if (onGallery != null) {
+                ListRow(
+                    stringResource(R.string.gallery_title),
+                    sub = stringResource(R.string.gallery_row_text, s.rootName.ifEmpty { s.root }, s.dir),
+                    icon = { RowIcon(TitanIcons.grid, size = 24.dp) },
+                    chevron = true,
+                    onClick = onGallery,
+                )
+            }
+            ListRow(stringResource(R.string.photos_settings), icon = { RowIcon(TitanIcons.gear) }, divider = onGallery != null, chevron = true, onClick = onSettings)
         }
     }
 }

@@ -93,6 +93,11 @@
     <string name="side_transfers">Transfers</string>
     <string name="side_transfers_sub">%1$d running · %2$d done</string>
     <string name="side_transfers_none">No running transfers</string>
+    <string name="update_hint">TitanOS %1$s is available</string>
+    <string name="update_hint_text">The app downloads the new version from GitHub, checks it, and Android asks before installing.</string>
+    <string name="update_hint_do">Update now</string>
+    <string name="update_hint_later">Later</string>
+    <string name="update_menu_sub">New version %1$s</string>
     <string name="side_close">Close side menu</string>
     <string name="role_owner">Owner</string>
     <string name="role_admin">Administrator</string>

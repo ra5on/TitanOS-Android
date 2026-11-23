@@ -209,14 +209,19 @@ class HomeScreenshotTest {
         compose.onNodeWithContentDescription("Speicher vom Startbildschirm nehmen").performClick()
         assertTrue("app:storage" in draft!!.hidden)
         assertFalse(draft!!.pages.flatten().contains("app:storage"))
-        // Antippen öffnet „Bewegen …“: eine Stelle nach hinten.
+        // Antippen öffnet „Bewegen …“: eine Zelle nach hinten (dort ist durch × eine Lücke, nichts rückt).
+        val shares = draft!!.pages[0].indexOf("app:shares")
         compose.onNodeWithText("Freigaben").performClick()
         compose.onNodeWithText("Eine Stelle nach hinten").performClick()
-        assertEquals(listOf("widget:p-status", "app:docker", "app:shares"), draft!!.pages[0].take(3))
-        // TalkBack: dieselbe Aktion als eigene Aktion des Eintrags.
+        assertEquals(shares + 1, draft!!.pages[0].indexOf("app:shares"))
+        assertEquals(null, draft!!.pages[0][shares])
+        // TalkBack: dieselbe Aktion als eigene Aktion des Eintrags; steht dort etwas, tauschen beide.
+        val docker = draft!!.pages[0].indexOf("app:docker")
+        val next = draft!!.pages[0][docker + 1]
         val actions = compose.onNodeWithText("Docker").fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsActions.CustomActions]
         compose.runOnIdle { actions.first { it.label == "Eine Stelle nach hinten" }.action() }
-        assertEquals(listOf("widget:p-status", "app:shares", "app:docker"), draft!!.pages[0].take(3))
+        assertEquals(docker + 1, draft!!.pages[0].indexOf("app:docker"))
+        assertEquals(next, draft!!.pages[0][docker])
         compose.onNodeWithText("Fertig").performClick()
         assertTrue(saved != null && "app:storage" in saved!!.hidden)
     }
@@ -263,7 +268,9 @@ class HomeScreenshotTest {
         compose.onNodeWithText("Öffnen").performClick()
         compose.onAllNodes(androidx.compose.ui.test.hasText("Herausnehmen"))[0].performClick()
         assertEquals(listOf("app:calendar", "app:contacts"), draft!!.folders.single().apps)
-        assertTrue(draft!!.pages[0].indexOf("app:mail") == draft!!.pages[0].indexOf("folder:f1") + 1)
+        // An die erste freie Zelle hinter dem Ordner; die anderen bleiben, wo sie sind.
+        assertTrue(draft!!.pages[0].indexOf("app:mail") > draft!!.pages[0].indexOf("folder:f1"))
+        assertEquals(draft!!.pages[0].indexOf("folder:f1") + 1, draft!!.pages[0].indexOf("app:backup"))
     }
 
     @Test

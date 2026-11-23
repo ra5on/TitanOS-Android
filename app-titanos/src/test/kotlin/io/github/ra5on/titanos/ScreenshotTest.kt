@@ -1,5 +1,6 @@
 package io.github.ra5on.titanos
 
+import io.github.ra5on.titanos.ui.components.Snackbar
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -269,7 +270,7 @@ class ScreenshotTest {
             ),
             null, noCallbacks, bottomBar = { NavBar("Files") },
         ) {
-            io.github.ra5on.titanos.ui.components.Snackbar(
+            Snackbar(
                 "Mietvertrag Wohnung.pdf",
                 listOf(io.github.ra5on.titanos.ui.components.SnackAction("Öffnen") {}, io.github.ra5on.titanos.ui.components.SnackAction("Zeigen") {}),
                 onDismiss = {},

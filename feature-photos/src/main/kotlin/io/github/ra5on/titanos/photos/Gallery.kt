@@ -196,7 +196,7 @@ fun GalleryScreen(
                             Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(4.dp)).background(c.track)
                                 .clickable { onOpen(p) }.semantics { contentDescription = label },
                         ) {
-                            NasThumb(api, p.root, p.path, p.entry.modified, Modifier.fillMaxSize(), size = 320) {
+                            NasThumb(api, p.root, p.path, p.entry.modified, Modifier.fillMaxSize()) {
                                 Icon(if (p.video) TitanIcons.video else TitanIcons.image, null, tint = c.muted, modifier = Modifier.size(32.dp))
                             }
                             if (p.video) {

@@ -59,7 +59,10 @@
     <string name="app_files">Files</string>
     <string name="app_photos">Photos</string>
     <string name="home_side_menu">Side menu</string>
-    <string name="home_title_menu">%1$s, open side menu</string>
+    <string name="home_side_menu_update">Side menu, new app version</string>
+    <string name="home_nas_switch">%1$s, choose NAS or node</string>
+    <string name="home_nas_online">connected</string>
+    <string name="home_nas_offline">not reachable</string>
     <string name="home_edit_add">Add</string>
     <string name="home_edit_done">Done</string>
     <string name="home_edit_start">Edit home screen</string>
@@ -74,6 +77,14 @@
     <string name="home_move">Move …</string>
     <string name="home_move_earlier">One place earlier</string>
     <string name="home_move_later">One place later</string>
+    <string name="home_move_cell">To a spot …</string>
+    <string name="home_cell_page">Page %1$d of %2$d</string>
+    <string name="home_cell_row">Row %1$d of %2$d</string>
+    <string name="home_cell_col">Column %1$d of %2$d</string>
+    <string name="home_cell_less">%1$s, less</string>
+    <string name="home_cell_more">%1$s, more</string>
+    <string name="home_cell_taken">Something is already there; it moves one spot on.</string>
+    <string name="home_cell_here">Put it here</string>
     <string name="home_move_page">To another page</string>
     <string name="home_page_n">Page %1$d</string>
     <string name="home_page_of">Page %1$d of %2$d</string>
@@ -146,6 +157,7 @@
     <string name="hs_dock_remove">Remove %1$s from the dock</string>
     <string name="hs_dock_add">Add %1$s to the dock</string>
     <string name="hs_dock_start">Start is always in the dock.</string>
-    <string name="hs_dock_full">At most five places. Remove one first.</string>
+    <string name="hs_dock_full">At most 15 places. Remove one first.</string>
+    <string name="hs_dock_pages">Five places are visible; more are on further pages of the dock (swipe sideways).</string>
     <string name="home_not_loaded">The home screen setup has not been loaded from the NAS yet. Changes are possible once the NAS can be reached.</string>
 </resources>

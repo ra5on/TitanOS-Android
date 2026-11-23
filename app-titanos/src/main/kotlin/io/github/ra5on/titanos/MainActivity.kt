@@ -35,6 +35,12 @@ class MainActivity : ComponentActivity() {
      * nicht selbst braucht: Terminal und VM-Bildschirm nehmen sie zuerst, die
      * Systemsteuerung setzt damit die Tastatur in ihre Suche.
      */
+    /** Beim Kommen in den Vordergrund kurz nach einer neuen Version sehen (1.02; höchstens alle 6 h, 10 s Zeitgrenze). */
+    override fun onStart() {
+        super.onStart()
+        io.github.ra5on.titanos.update.UpdateHint.onForeground(this, (application as TitanApp).graph.scope)
+    }
+
     override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent): Boolean {
         // Kommt nur hier an, wenn keine Ansicht die Taste genommen hat.
         if (keyCode == android.view.KeyEvent.KEYCODE_K && (event.isCtrlPressed || event.isMetaPressed) && !event.isAltPressed && !event.isShiftPressed) {

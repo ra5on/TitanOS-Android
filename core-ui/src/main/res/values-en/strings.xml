@@ -39,5 +39,6 @@
         <item quantity="other">%d unread</item>
     </plurals>
     <string name="ui_dock">Dock</string>
+    <string name="ui_dock_page">Page %1$d of %2$d</string>
     <string name="ui_undo">Undo</string>
 </resources>

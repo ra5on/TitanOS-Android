@@ -66,6 +66,7 @@ import io.github.ra5on.titanos.ui.components.Divider
 import io.github.ra5on.titanos.ui.components.ListRow
 import io.github.ra5on.titanos.ui.components.Page
 import io.github.ra5on.titanos.ui.components.RowIcon
+import io.github.ra5on.titanos.ui.components.Sheet
 import io.github.ra5on.titanos.ui.components.TopBar
 import io.github.ra5on.titanos.ui.theme.Titan
 import io.github.ra5on.titanos.ui.theme.TitanIcons
@@ -181,9 +182,6 @@ internal fun BoxScope.SideMenu(
 ) {
     BackHandler(onBack = onDismiss)
     val c = Titan.colors
-    val active = graph.activeProfile
-    var nodes by remember { mutableStateOf<List<ClusterNode>>(emptyList()) }
-    LaunchedEffect(graph.activeId, graph.nasEpoch) { nodes = clusterNodes(graph.connection()) }
     val closeLabel = stringResource(R.string.side_close)
     Box(
         Modifier.matchParentSize().background(Color.Black.copy(alpha = .45f))
@@ -208,36 +206,7 @@ internal fun BoxScope.SideMenu(
                     Text(roleName(graph.sessions.user?.role), style = TitanType.rowSub, color = c.muted)
                 }
             }
-            MenuHeader(stringResource(R.string.side_nas))
-            for (p in graph.profiles) {
-                val chosen = p.id == active?.id
-                MenuRow(
-                    title = p.name,
-                    sub = stringResource(R.string.nas_account, p.pairing.user, p.pairing.hostname.ifBlank { p.pairing.addresses.firstOrNull()?.server.orEmpty() }),
-                    chosen = chosen,
-                    icon = { AppIcon("storage", "dark", 36.dp) },
-                    onClick = { onDismiss(); graph.switchTo(p.id) },
-                )
-            }
-            if (nodes.isNotEmpty() && active != null) {
-                MenuHeader(stringResource(R.string.side_cluster, active.name))
-                val current = active.pairing.node
-                for (n in nodes) {
-                    val chosen = if (n.self) current.isEmpty() else current == n.id
-                    val usable = n.self || n.online
-                    val sub = listOfNotNull(
-                        if (n.self) stringResource(R.string.side_node_self) else stringResource(R.string.side_node_via, active.name),
-                        if (!usable) stringResource(R.string.nas_cluster_offline) else null,
-                    ).joinToString(" · ")
-                    MenuRow(
-                        title = n.name.ifBlank { n.id },
-                        sub = sub,
-                        chosen = chosen,
-                        icon = { Icon(TitanIcons.nodes, null, tint = if (usable) c.text else c.muted, modifier = Modifier.size(24.dp)) },
-                        onClick = if (usable && !chosen) ({ onDismiss(); graph.setNode(if (n.self) "" else n.id, n.name) }) else null,
-                    )
-                }
-            }
+            NasChoices(graph, onDismiss)
             Divider(Modifier.padding(vertical = 10.dp))
             MenuRow(stringResource(R.string.nas_add), null, false, { RowIcon(TitanIcons.plus, tint = c.text) }) { onDismiss(); graph.beginAdd() }
             MenuRow(stringResource(R.string.side_settings), null, false, { RowIcon(TitanIcons.gear, tint = c.text) }) { onDismiss(); onSettings() }
@@ -248,7 +217,115 @@ internal fun BoxScope.SideMenu(
                 if (running == 0 && finished == 0) stringResource(R.string.side_transfers_none) else stringResource(R.string.side_transfers_sub, running, finished)
             }
             MenuRow(stringResource(R.string.side_transfers), transfersSub, false, { RowIcon(TitanIcons.download, tint = c.text) }) { onDismiss(); onTransfers() }
-            MenuRow(stringResource(io.github.ra5on.titanos.home.R.string.home_menu_about), null, false, { RowIcon(TitanIcons.info, tint = c.text) }) { onDismiss(); onAbout() }
+            // Neue Version (1.02): Punkt und Zeile darunter, nicht nur Farbe.
+            val newVersion = io.github.ra5on.titanos.update.UpdateHint.version
+            MenuRow(
+                stringResource(io.github.ra5on.titanos.home.R.string.home_menu_about),
+                newVersion?.let { stringResource(R.string.update_menu_sub, it) },
+                false,
+                {
+                    Box {
+                        RowIcon(TitanIcons.info, tint = c.text)
+                        if (newVersion != null) Box(Modifier.align(Alignment.TopEnd).size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(c.accent))
+                    }
+                },
+            ) { onDismiss(); onAbout() }
+        }
+    }
+}
+
+/**
+ * Die gekoppelten NAS (umschalten) und die Knoten des Clusters des gewählten
+ * NAS – im Seitenmenü und im Blatt des NAS-Knopfs auf der Startseite.
+ */
+@Composable
+private fun NasChoices(graph: AppGraph, onDismiss: () -> Unit) {
+    val c = Titan.colors
+    val active = graph.activeProfile
+    var nodes by remember { mutableStateOf<List<ClusterNode>>(emptyList()) }
+    LaunchedEffect(graph.activeId, graph.nasEpoch) { nodes = clusterNodes(graph.connection()) }
+    MenuHeader(stringResource(R.string.side_nas))
+    for (p in graph.profiles) {
+        val chosen = p.id == active?.id
+        MenuRow(
+            title = nasName(p),
+            sub = stringResource(R.string.nas_account, p.pairing.user, p.pairing.hostname.ifBlank { p.pairing.addresses.firstOrNull()?.server.orEmpty() }),
+            chosen = chosen,
+            icon = { AppIcon("storage", "dark", 36.dp) },
+            onClick = { onDismiss(); if (!chosen) graph.switchTo(p.id) },
+        )
+    }
+    if (nodes.isNotEmpty() && active != null) {
+        MenuHeader(stringResource(R.string.side_cluster, nasName(active)))
+        val current = active.pairing.node
+        for (n in nodes) {
+            val chosen = if (n.self) current.isEmpty() else current == n.id
+            val usable = n.self || n.online
+            val sub = listOfNotNull(
+                if (n.self) stringResource(R.string.side_node_self) else stringResource(R.string.side_node_via, nasName(active)),
+                if (!usable) stringResource(R.string.nas_cluster_offline) else null,
+            ).joinToString(" · ")
+            MenuRow(
+                title = n.name.ifBlank { n.id },
+                sub = sub,
+                chosen = chosen,
+                icon = { Icon(TitanIcons.nodes, null, tint = if (usable) c.text else c.muted, modifier = Modifier.size(24.dp)) },
+                onClick = if (usable && !chosen) ({ onDismiss(); graph.setNode(if (n.self) "" else n.id, n.name) }) else null,
+            )
+        }
+    }
+}
+
+/** Rechnername, den jedes gekoppelte NAS zuletzt selbst gemeldet hat (Startseite ohne gewählten Knoten), je Kopplung. */
+internal val reportedHosts = androidx.compose.runtime.mutableStateMapOf<String, String>()
+
+/** Kurzer Name eines gekoppelten NAS („titan“ statt „titan.dunker-lizard.ts.net“), wie im Knopf der Startseite. */
+internal fun nasName(p: io.github.ra5on.titanos.net.NasProfile): String =
+    io.github.ra5on.titanos.net.NasNames.display(p.label, reportedHosts[p.id].orEmpty(), p.pairing.hostname, p.pairing.addresses.firstOrNull()?.server.orEmpty())
+
+/** Der Name im Knopf oben auf der Startseite; [reported]: Rechnername, den das gewählte NAS (oder der gewählte Knoten) meldet. */
+internal fun homeNasTitle(graph: AppGraph, reported: String): String {
+    val p = graph.activeProfile ?: return io.github.ra5on.titanos.net.NasNames.short(reported)
+    // Ist ein Knoten gewählt, meldet die Startseite dessen Namen; oben steht trotzdem zuerst das NAS.
+    if (p.pairing.node.isEmpty() && reported.isNotBlank() && reportedHosts[p.id] != reported) reportedHosts[p.id] = reported
+    return nasName(p)
+}
+
+/**
+ * Blatt des NAS-Knopfs auf der Startseite (1.02, wie der Umschalter im Web):
+ * gekoppelte NAS, Knoten des Clusters, NAS hinzufügen.
+ */
+@Composable
+internal fun BoxScope.NasSheet(graph: AppGraph, onDismiss: () -> Unit) {
+    val c = Titan.colors
+    Sheet(onDismiss = onDismiss) {
+        NasChoices(graph, onDismiss)
+        Divider(Modifier.padding(vertical = 10.dp))
+        MenuRow(stringResource(R.string.nas_add), null, false, { RowIcon(TitanIcons.plus, tint = c.text) }) { onDismiss(); graph.beginAdd() }
+    }
+}
+
+/**
+ * Hinweis auf der Startseite (1.02): „TitanOS 1.03 ist da“ mit „Jetzt
+ * aktualisieren“ (derselbe Ablauf wie unter „Über die App“) und „Später“
+ * (für diese Version weg; der Punkt am Seitenmenü bleibt).
+ */
+@Composable
+internal fun UpdateBanner(version: String, onUpdate: () -> Unit, onLater: () -> Unit) {
+    val c = Titan.colors
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp).fillMaxWidth().clip(shape).background(c.surface).border(1.dp, c.accent.copy(alpha = .6f), shape)
+            .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(TitanIcons.download, null, tint = c.accent, modifier = Modifier.size(22.dp))
+            Text(stringResource(R.string.update_hint, version), style = TitanType.rowTitle, color = c.text, modifier = Modifier.weight(1f).semantics { heading() })
+        }
+        Text(stringResource(R.string.update_hint_text), style = TitanType.small, color = c.muted, modifier = Modifier.padding(start = 32.dp, top = 2.dp))
+        androidx.compose.foundation.layout.FlowRow(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)) {
+            io.github.ra5on.titanos.ui.components.TitanButton(stringResource(R.string.update_hint_later), onLater, kind = io.github.ra5on.titanos.ui.components.ButtonKind.Normal)
+            io.github.ra5on.titanos.ui.components.TitanButton(stringResource(R.string.update_hint_do), onUpdate, kind = io.github.ra5on.titanos.ui.components.ButtonKind.Primary)
         }
     }
 }

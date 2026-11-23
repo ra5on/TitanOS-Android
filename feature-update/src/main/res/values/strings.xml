@@ -18,7 +18,7 @@
     <string name="upd_allow_note">Zum Installieren fragt Android einmal, ob TitanOS „unbekannte Apps installieren“ darf. Der Knopf „Installieren“ führt dorthin.</string>
     <string name="upd_section">Updates</string>
     <string name="upd_auto">Automatisch suchen</string>
-    <string name="upd_auto_text">Täglich; installiert wird erst nach deinem Tipp – Android fragt dabei womöglich noch einmal</string>
+    <string name="upd_auto_text">Täglich und beim Öffnen der App (höchstens alle 6 Stunden); installiert wird erst nach deinem Tipp – Android fragt dabei womöglich noch einmal</string>
     <string name="upd_test">Testfassungen einbeziehen</string>
     <string name="upd_test_text">Vorab-Versionen vor 1.00 ebenfalls anbieten</string>
     <string name="upd_agent">Agent-App</string>

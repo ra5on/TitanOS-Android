@@ -55,7 +55,8 @@ internal fun newId(prefix: String): String = prefix + System.currentTimeMillis()
 internal fun BoxScope.ItemSheet(
     key: String,
     draft: PhonePrefs,
-    pages: List<List<String>>,
+    pages: List<List<String?>>,
+    rows: Int,
     folders: List<PhoneFolder>,
     byKey: Map<String, Program>,
     onChange: (PhonePrefs) -> Unit,
@@ -83,8 +84,17 @@ internal fun BoxScope.ItemSheet(
             Segments(widget.size, listOf("s" to stringResource(R.string.home_half), "l" to stringResource(R.string.home_full)), { onChange(resizeWidget(draft, widget.id, it)) }, Modifier.padding(bottom = 12.dp))
         }
         Card(background = c.bg) {
-            ListRow(stringResource(R.string.home_move_earlier), icon = { RowIcon(TitanIcons.back) }, onClick = { apply(moveBy(draft, key, -1)) })
-            ListRow(stringResource(R.string.home_move_later), icon = { RowIcon(TitanIcons.chev) }, divider = true, onClick = { apply(moveBy(draft, key, +1)) })
+            ListRow(stringResource(R.string.home_move_earlier), icon = { RowIcon(TitanIcons.back) }, onClick = { apply(moveBy(draft, key, -1, rows * PHONE_COLUMNS)) })
+            ListRow(stringResource(R.string.home_move_later), icon = { RowIcon(TitanIcons.chev) }, divider = true, onClick = { apply(moveBy(draft, key, +1, rows * PHONE_COLUMNS)) })
+            // Genaue Stelle (1.02): Seite, Zeile und Spalte wählen – derselbe Weg wie Ziehen, auch für TalkBack.
+            ListRow(
+                stringResource(R.string.home_move_cell),
+                icon = { RowIcon(TitanIcons.grid) },
+                chevron = expand != "cell",
+                divider = true,
+                onClick = { expand = if (expand == "cell") null else "cell" },
+            )
+            if (expand == "cell") CellPicker(draft, key, pages.size, rows) { page, cell -> apply(placeAt(draft, key, page, cell)) }
             ListRow(
                 stringResource(R.string.home_move_page),
                 icon = { RowIcon(TitanIcons.move) },
@@ -130,7 +140,7 @@ internal fun BoxScope.ItemSheet(
                         )
                     }
                     // Mit einem anderen Programm einen neuen Ordner (wie Aufeinanderziehen).
-                    for (other in pages.flatten().filter { it != key && byKey[it] != null }) {
+                    for (other in pages.flatten().filterNotNull().filter { it != key && byKey[it] != null }) {
                         val p = byKey[other] ?: continue
                         ListRow(
                             stringResource(R.string.home_folder_with, programLabel(p.id)),
@@ -189,7 +199,7 @@ internal fun BoxScope.FolderSheet(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         AppIcon(p.glyph, p.gradient, 52.dp)
-                        Text(programLabel(p.id), style = TitanType.appLabel, color = c.text, textAlign = TextAlign.Center)
+                        io.github.ra5on.titanos.ui.HyphenText(programLabel(p.id), TitanType.appLabel, c.text, textAlign = TextAlign.Center)
                         if (editing) {
                             SmallButton(stringResource(R.string.home_folder_take_out), { onChange { outOfFolder(it, key, folder.id) } })
                         }
@@ -281,5 +291,41 @@ internal fun BoxScope.AddSheet(
             }
         }
         Spacer(Modifier.width(1.dp).padding(bottom = 8.dp))
+    }
+}
+
+/**
+ * Seite, Zeile und Spalte wählen („Bewegen …“ › „An eine Stelle …“, 1.02):
+ * je ein Wert mit − und +, beschriftet für TalkBack („Zeile 2 von 5“), dazu
+ * „Hierher“. Ist die Stelle belegt, rücken die anderen weiter wie beim Ziehen.
+ */
+@Composable
+private fun CellPicker(draft: PhonePrefs, key: String, pageCount: Int, rows: Int, onPick: (Int, Int) -> Unit) {
+    val c = Titan.colors
+    val here = placeOf(draft, key)
+    val (w, _) = spanOf(key, draft)
+    var page by remember(key) { mutableStateOf(here?.first ?: 0) }
+    var row by remember(key) { mutableStateOf((here?.second ?: 0) / PHONE_COLUMNS) }
+    var col by remember(key) { mutableStateOf((here?.second ?: 0) % PHONE_COLUMNS) }
+    val cols = PHONE_COLUMNS - w + 1
+    Column(Modifier.padding(start = 24.dp, end = 12.dp, top = 4.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Stepper(stringResource(R.string.home_cell_page, page + 1, maxOf(pageCount, page + 1)), page > 0, page < pageCount) { page = (page + it).coerceIn(0, pageCount) }
+        Stepper(stringResource(R.string.home_cell_row, row + 1, maxOf(rows, row + 1)), row > 0, row < rows - 1) { row = (row + it).coerceIn(0, maxOf(0, rows - 1)) }
+        if (w < PHONE_COLUMNS) {
+            Stepper(stringResource(R.string.home_cell_col, col / w + 1, cols / w + if (cols % w > 0) 1 else 0), col > 0, col + w < PHONE_COLUMNS) { col = (col + it * w).coerceIn(0, PHONE_COLUMNS - w) }
+        }
+        val taken = draft.pages.getOrNull(page)?.getOrNull(row * PHONE_COLUMNS + col)?.takeIf { it != key }
+        if (taken != null) Text(stringResource(R.string.home_cell_taken), style = TitanType.small, color = c.muted)
+        io.github.ra5on.titanos.ui.components.TitanButton(stringResource(R.string.home_cell_here), { onPick(page, row * PHONE_COLUMNS + col) }, Modifier.fillMaxWidth(), io.github.ra5on.titanos.ui.components.ButtonKind.Primary)
+    }
+}
+
+@Composable
+private fun Stepper(label: String, canDown: Boolean, canUp: Boolean, onStep: (Int) -> Unit) {
+    val c = Titan.colors
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = TitanType.body, color = c.text, modifier = Modifier.weight(1f))
+        io.github.ra5on.titanos.ui.components.IconButton(TitanIcons.back, stringResource(R.string.home_cell_less, label), { if (canDown) onStep(-1) }, tint = if (canDown) c.text else c.muted)
+        io.github.ra5on.titanos.ui.components.IconButton(TitanIcons.chev, stringResource(R.string.home_cell_more, label), { if (canUp) onStep(+1) }, tint = if (canUp) c.text else c.muted)
     }
 }
