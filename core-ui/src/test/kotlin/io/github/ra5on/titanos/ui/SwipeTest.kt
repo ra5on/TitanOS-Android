@@ -202,8 +202,12 @@ class SwipeTest {
     }
 
     @Test
-    fun onlyTalkBackGetsTheLongerTime() {
-        assertEquals(4_000L, io.github.ra5on.titanos.ui.components.snackTimeout(4_000, talkBack = false, recommended = 120_000))
+    fun theLongerTimeOnlyWithAccessibilitySettings() {
+        // Ohne Bedienungshilfen: genau 4 bzw. 6 Sekunden.
+        assertEquals(4_000L, io.github.ra5on.titanos.ui.components.snackTimeout(4_000, talkBack = false, recommended = 4_000))
+        assertEquals(6_000L, io.github.ra5on.titanos.ui.components.snackTimeout(6_000, talkBack = false, recommended = 6_000))
+        // „Zeit zum Reagieren“ eingestellt oder TalkBack: die längere Zeit, nie kürzer als ohne.
+        assertEquals(120_000L, io.github.ra5on.titanos.ui.components.snackTimeout(4_000, talkBack = false, recommended = 120_000))
         assertEquals(120_000L, io.github.ra5on.titanos.ui.components.snackTimeout(4_000, talkBack = true, recommended = 120_000))
         assertEquals(6_000L, io.github.ra5on.titanos.ui.components.snackTimeout(6_000, talkBack = true, recommended = 1_000))
     }

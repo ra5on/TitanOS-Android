@@ -401,9 +401,10 @@ private fun FreeGrid(
     // Was beim Loslassen gälte: die Nachbarn stehen schon dort (der gezogene Eintrag als Platzhalter).
     val preview = remember(page, prefs, target, dragKey) {
         val d = grid.draft
-        if (target != null && d != null && dragKey != null) placeAt(d, dragKey, index, target.second).pages.getOrNull(index) else null
+        if (target != null && d != null && dragKey != null) fitDraft(placeAt(d, dragKey, index, target.second), rows).pages.getOrNull(index) else null
     }
-    val shownRows = if (editing) maxOf(rows, rowsUsed(preview ?: page, prefs) + 1) else rows
+    // Im Bearbeiten genau die Zeilen der Startseite (nur ein zu hohes Widget macht mehr), damit nach „Fertig“ nichts springt.
+    val shownRows = if (editing) maxOf(rows, rowsUsed(preview ?: page, prefs)) else rows
     val (placed, _) = remember(preview ?: page, prefs, shownRows) { arrange(preview ?: page, prefs, if (editing) shownRows else maxOf(shownRows, rowsNeeded(page, prefs))) }
     val geo = remember(index) { PageGeometry() }.also { grid.geometry[index] = it }
     val density = LocalDensity.current

@@ -43,6 +43,7 @@ import io.github.ra5on.titanos.ui.theme.TitanIcons
 import io.github.ra5on.titanos.ui.theme.TitanType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -157,7 +158,13 @@ private fun LocalPage(model: PhotosModel, t: Tile, active: Boolean, onZoom: (Boo
     // Das Original erst für die sichtbare Seite; Formate ohne Kacheln bleiben beim Vorschaubild.
     val tiled by produceState<io.github.ra5on.titanos.files.TiledSource?>(null, t.id, active) {
         if (value == null && active && t.kind != Kind.Video) {
-            value = withContext(Dispatchers.IO) { model.item(t.id)?.let { io.github.ra5on.titanos.files.TiledSource.open(context, it.uri) } }
+            // Ohne Abbruch öffnen und, falls die Seite inzwischen weg ist, gleich wieder schließen (Datei und Decoder).
+            val opened = withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) { model.item(t.id)?.let { io.github.ra5on.titanos.files.TiledSource.open(context, it.uri) } }
+            if (!kotlinx.coroutines.currentCoroutineContext().isActive) {
+                opened?.close()
+                return@produceState
+            }
+            value = opened
             if (value == null && bitmap == null) failed = true
         }
     }

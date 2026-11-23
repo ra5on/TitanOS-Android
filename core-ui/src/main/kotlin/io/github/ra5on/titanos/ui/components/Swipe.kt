@@ -287,11 +287,12 @@ const val SNACK_INFO_MS = 4_000L
 const val SNACK_ACTION_MS = 6_000L
 
 /**
- * Standzeit einer Meldung (1.02): [base]; nur mit TalkBack (Tastendruck-Erkunden)
- * gilt die von Android empfohlene Zeit als Untergrenze – vorher galt sie immer
- * und konnte mit „Zeit zum Reagieren“ Minuten betragen.
+ * Standzeit einer Meldung (1.02): [base]. Die von Android empfohlene Zeit
+ * ([recommended]) gilt nur als Untergrenze und nur, wenn TalkBack läuft oder in
+ * den Bedienungshilfen eine längere „Zeit zum Reagieren“ eingestellt ist.
  */
-fun snackTimeout(base: Long, talkBack: Boolean, recommended: Long): Long = if (talkBack) maxOf(base, recommended) else base
+fun snackTimeout(base: Long, talkBack: Boolean, recommended: Long): Long =
+    if (talkBack || recommended > base) maxOf(base, recommended) else base
 
 /**
  * Kurze Meldung unten (Entwurf 21, 1.02 überarbeitet): Text, darunter wahlweise

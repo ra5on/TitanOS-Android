@@ -201,8 +201,10 @@ class PhoneLayoutTest {
         // Fehlt Start in den gespeicherten Plätzen, kommt es nach vorn; nie mehr als 15.
         assertEquals(listOf(DOCK_HOME, "app:mail", DOCK_FILES), dockEntries(PhoneDock(apps = listOf("app:mail", DOCK_FILES), custom = true), all))
         val many = (1..20).map { "app:x$it" }
-        assertEquals(DOCK_MAX, setDock(p, many).dock.apps.size)
-        assertEquals(p.copy(dock = p.dock), dockAdd(setDock(p, many), dockEntries(setDock(p, many).dock, many), "app:mail").let { if (it.dock.apps.size == DOCK_MAX) p else it })
+        val full = setDock(p, many)
+        assertEquals(DOCK_MAX, full.dock.apps.size)
+        // Voll: nichts dazu.
+        assertEquals(full, dockAdd(full, dockEntries(full.dock, many + "app:mail"), "app:mail"))
     }
 
     @Test
@@ -375,5 +377,25 @@ class PhoneLayoutTest {
         val raw = json["pages"]!!.jsonArray[0].jsonArray
         assertEquals(listOf("app:mail", "app:vms"), raw.mapNotNull { (it as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { p -> p.isString }?.content })
         assertEquals(listOf("app:mail", null, null, "app:vms"), sanitizePhone(json).pages.single())
+    }
+
+    @Test
+    fun editingNeverPutsAnythingBelowTheLastRow() {
+        // Zwei Zeilen: acht Symbole füllen die Seite; ein neuntes vorn rückt das letzte auf die nächste Seite.
+        val full = (1..8).map { "app:a$it" }
+        val p = custom(full, listOf("app:b1"))
+        val dropped = fitDraft(placeAt(p.copy(pages = listOf(full, listOf("app:b1", "app:c"))), "app:c", 0, 0), rows = 2)
+        assertEquals(listOf("app:c") + full.take(7), dropped.pages[0].keys())
+        assertTrue(dropped.pages[0].size <= 8)
+        // Das verdrängte kommt an die erste freie Stelle der nächsten Seite, b1 bleibt an seiner.
+        assertEquals("app:b1", dropped.pages[1][0])
+        assertEquals("app:a8", dropped.pages[1][1])
+        // Abgelegt hinter der letzten Zeile (wie in 1.02 vor dieser Korrektur): sichtbar an der ersten Lücke.
+        val gap = custom(listOf("app:x", null, "app:y"))
+        val below = fitDraft(placeAt(gap, "app:x", 0, 23), rows = 2)
+        assertEquals(listOf("app:x", "app:y"), below.pages[0].keys())
+        assertTrue(below.pages[0].size <= 8)
+        // Eine leere neue Seite („+“) bleibt im Bearbeiten stehen.
+        assertEquals(2, fitDraft(addPage(gap), 2).pages.size)
     }
 }

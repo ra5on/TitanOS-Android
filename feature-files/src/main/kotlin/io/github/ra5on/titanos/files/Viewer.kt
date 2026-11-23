@@ -85,6 +85,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.ByteBuffer
@@ -313,7 +314,13 @@ private fun ImagePage(api: FilesApi?, location: Location, e: FileEntry, active: 
     val original by produceState<Any?>(null, api, path, active) {
         if (value == null && api != null && (active || thumb == null)) {
             val file = NasImages.originalFile(context, api, location.root.id, path, e.modified, e.size)
-            value = file?.let { f -> withContext(Dispatchers.IO) { TiledSource.open(f) } ?: withContext(Dispatchers.Default) { NasImages.decode(f, maxPx) } }
+            // Ohne Abbruch öffnen und, falls die Seite inzwischen weg ist, gleich wieder schließen (Datei und Decoder).
+            val tiled = file?.let { f -> withContext(kotlinx.coroutines.NonCancellable + Dispatchers.IO) { TiledSource.open(f) } }
+            if (!kotlinx.coroutines.currentCoroutineContext().isActive) {
+                tiled?.close()
+                return@produceState
+            }
+            value = tiled ?: file?.let { f -> withContext(Dispatchers.Default) { NasImages.decode(f, maxPx) } }
             if (value == null && thumb == null) failed = true
         }
     }

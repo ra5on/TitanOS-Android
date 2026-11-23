@@ -324,7 +324,7 @@ internal fun rowsNeeded(cells: List<String?>, prefs: PhonePrefs): Int =
     cells.size / PHONE_COLUMNS + 1 + cells.filterNotNull().sumOf { spanOf(it, prefs).second }
 
 /** Verteilt Seiten auf Raster mit [rows] Zeilen: was nicht passt, kommt an die ersten freien Stellen der nächsten Seite. */
-private fun fitPages(pages: List<List<String?>>, prefs: PhonePrefs, rows: Int): List<List<String?>> {
+internal fun fitPages(pages: List<List<String?>>, prefs: PhonePrefs, rows: Int): List<List<String?>> {
     val out = mutableListOf<List<String?>>()
     var carry = emptyList<String>()
     var i = 0
@@ -404,6 +404,20 @@ fun phoneLayout(prefs: PhonePrefs, programs: List<String>, cells: Int, widgetKin
     pages = fitPages(pages, prefs, rows).filter { p -> p.any { it != null } }
     if (pages.isEmpty()) pages = listOf(emptyList())
     return PhoneShown(pages, folders)
+}
+
+/**
+ * Die Anordnung im Bearbeiten so, wie die Startseite sie mit [rows] Zeilen
+ * zeigt: was unten keinen Platz hat (abgelegt hinter der letzten Zeile,
+ * weitergerückt, neu hinzugefügt), kommt an die erste freie Stelle oder auf
+ * die nächste Seite. So springt nach „Fertig“ nichts.
+ */
+fun fitDraft(p: PhonePrefs, rows: Int): PhonePrefs {
+    if (rows <= 0) return p
+    val fitted = fitPages(p.pages, p, rows)
+    // Leere Seiten (der „+“-Punkt) bleiben stehen, bis „Fertig“ sie entfernt.
+    val pages = fitted + List(maxOf(0, p.pages.size - fitted.size)) { emptyList() }
+    return if (pages == p.pages) p else p.copy(pages = pages)
 }
 
 /** Ohne Lücken am Ende. */

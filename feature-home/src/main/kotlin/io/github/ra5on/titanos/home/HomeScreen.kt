@@ -193,7 +193,7 @@ fun HomeScreen(
             val current = draft ?: prefs
             val pageCount = rememberUpdatedState(pages.size)
             val pager = rememberPagerState { pageCount.value }
-            SyncGrid(grid, draft, pages, stringResource(R.string.home_folder_default), dockDrop) { onDraft(it) }
+            SyncGrid(grid, draft, pages, stringResource(R.string.home_folder_default), dockDrop) { onDraft(fitDraft(it, rows)) }
             LaunchedEffect(firstPage) { if (firstPage > 0) pager.animateScrollToPage(0) }
             fun startEdit() {
                 if (editing) return
@@ -272,7 +272,7 @@ fun HomeScreen(
                         },
                         onPhotos = onPhotos,
                         onSheet = { sheet = it },
-                        onChange = { d -> onDraft(d) },
+                        onChange = { d -> onDraft(fitDraft(d, rows)) },
                         draft = draft,
                         pageCount = pages.size,
                         pager = pager,
@@ -292,7 +292,7 @@ fun HomeScreen(
                 if (d == null) {
                     sheet = null
                 } else {
-                    ItemSheet(key, d, pages, rows, folders, byKey, onChange = { onDraft(it) }, onDismiss = { sheet = null }, onOpenFolder = { folderOpen = it })
+                    ItemSheet(key, d, pages, rows, folders, byKey, onChange = { onDraft(fitDraft(it, rows)) }, onDismiss = { sheet = null }, onOpenFolder = { folderOpen = it })
                 }
             }
             folderOpen?.let { id ->
@@ -305,7 +305,7 @@ fun HomeScreen(
                         byKey = byKey,
                         editing = editing,
                         onOpen = { p -> folderOpen = null; onProgram(p) },
-                        onChange = { change -> draft?.let { onDraft(change(it)) } },
+                        onChange = { change -> draft?.let { onDraft(fitDraft(change(it), rows)) } },
                         onDismiss = { folderOpen = null },
                     )
                 }
@@ -317,7 +317,7 @@ fun HomeScreen(
                     keys = keys,
                     widgetsAllowed = widgetsAllowed,
                     page = pager.currentPage,
-                    onChange = { onDraft(it) },
+                    onChange = { onDraft(fitDraft(it, rows)) },
                     onDismiss = { adding = false },
                 )
             }

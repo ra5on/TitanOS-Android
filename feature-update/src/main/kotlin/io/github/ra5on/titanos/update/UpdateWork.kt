@@ -24,6 +24,9 @@ object UpdateCheck {
 
     suspend fun run(context: Context, http: OkHttpClient = client): AppRelease? {
         val settings = UpdateSettings(context)
+        // Läuft gerade eine Installation (etwa vom Hinweis auf der Startseite), nicht dazwischen suchen.
+        val busy = UpdateState.step
+        if (busy is UpdateStep.Downloading || busy is UpdateStep.Installing || busy is UpdateStep.NeedsConfirm) return UpdateState.available
         UpdateState.step = UpdateStep.Checking
         return try {
             val source = ReleaseSource(http)
