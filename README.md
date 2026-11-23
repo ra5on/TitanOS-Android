@@ -135,6 +135,8 @@ Die Uhr-App „TitanOS“ (`io.github.ra5on.titanos.watch`, Datei `TitanOS-Watch
 
 TitanOS und die Apps sind ein privates, nicht kommerzielles Projekt, kostenlos und ohne jede Gewähr; die Nutzung geschieht auf eigenes Risiko. Den ganzen Text (Deutsch und Englisch) enthält [`DISCLAIMER.md`](DISCLAIMER.md). Die App zeigt ihn unter **Seitenmenü › Über die App** und fragt einmal danach: beim ersten Koppeln vor dem Koppeln, eine schon gekoppelte App beim ersten Start nach dem Update. Mitteilungen und Foto-Sicherung laufen davon unabhängig weiter.
 
+*Part of TitanOS, a private, non-commercial project, provided free of charge and without warranty; use it at your own risk. See [DISCLAIMER.md](DISCLAIMER.md).*
+
 ## Testgeräte
 
 - **Emulator:** Android 17 (Handy, 2560×1600 für Desktop und Arbeitsplatz), Wear OS 7 für die Uhr. Fast alles ist dort geprüft, meist gegen nachgebaute Test-NAS mit TLS, Freigaben, Benutzer, Kontakte und Kalender auch gegen ein echtes `titand`.
