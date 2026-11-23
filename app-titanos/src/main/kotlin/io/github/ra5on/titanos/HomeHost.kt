@@ -94,7 +94,8 @@ internal fun rememberHomeStore(graph: AppGraph): HomeLayoutStore {
 /** Speichert und sagt es, wenn das NAS die Einrichtung nicht annahm. */
 internal fun saveHome(context: android.content.Context, graph: AppGraph, store: HomeLayoutStore, next: PhonePrefs) {
     val failed = context.getString(io.github.ra5on.titanos.home.R.string.home_save_failed)
-    graph.scope.launch {
+    // Sofort bis zum ersten Warten: die neue Einrichtung gilt, bevor das Bearbeiten endet (sonst springt die Seite).
+    graph.scope.launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) {
         if (!store.save(next) && store.loaded) Toast.makeText(context, failed, Toast.LENGTH_LONG).show()
     }
 }

@@ -139,6 +139,7 @@ class WatchScreenshotTest {
             )
         },
         "einstellungen" to { SettingsRoute() },
+        "haftungsausschluss" to { DisclaimerRoute() },
         "dialog" to { ConfirmDanger(true, "„windows11“ herunterfahren?", "Die VM fährt geordnet herunter.", "Herunterfahren", {}, {}) },
     )
 
