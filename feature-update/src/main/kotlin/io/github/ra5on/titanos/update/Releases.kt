@@ -11,10 +11,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
 
-/** Die Apps und wie ihre Dateien im Release heißen. */
+/**
+ * Die Apps, die sich selbst aktualisieren, und wie ihre Dateien im Release
+ * heißen (release.yml: `<Präfix><versionName>.apk`, dazu `SHA256SUMS`). Die
+ * Agent-App (`TitanOS-Agent-`) gibt es ab 1.01 nicht mehr; ihr Agent steckt
+ * in der TitanOS-App, ihre letzte Fassung 1.00 bleibt auf GitHub.
+ */
 enum class AppKind(val packageName: String, val assetPrefix: String) {
     TitanOS("io.github.ra5on.titanos", "TitanOS-Android-"),
-    Agent("io.github.ra5on.titanos.agent", "TitanOS-Agent-"),
     /** Die Uhr-App (Wear OS, PLAN 116 Paket G). */
     Watch("io.github.ra5on.titanos.watch", "TitanOS-Watch-"),
     ;
@@ -22,6 +26,9 @@ enum class AppKind(val packageName: String, val assetPrefix: String) {
     companion object {
         /** Die App, die gerade läuft; sie aktualisiert sich selbst. */
         fun own(packageName: String): AppKind = entries.firstOrNull { it.packageName == packageName } ?: TitanOS
+
+        /** Die alte Agent-App (bis 1.00): wird nicht mehr aktualisiert, darf deinstalliert werden. */
+        const val OLD_AGENT_PACKAGE = "io.github.ra5on.titanos.agent"
     }
 }
 
@@ -86,6 +93,13 @@ class ReleaseSource(
             if (minor > 99) return null
             return "%d.%02d".format(major, minor) to major * 100 + minor
         }
+
+        /**
+         * Die Prüfsumme von [name] aus einer Datei SHA256SUMS, wie `sha256sum`
+         * sie schreibt (`<hex>  <name>`, im Binärmodus `<hex> *<name>`); null, wenn sie fehlt.
+         */
+        fun sumIn(sums: String, name: String): String? = sums.lines().map { it.trim().split(Regex("\\s+"), limit = 2) }
+            .firstOrNull { it.size == 2 && it[1].trimStart('*') == name }?.get(0)?.takeIf { it.length == 64 }
 
         fun pick(all: List<AppRelease>, installedCode: Int, includeTest: Boolean, kind: AppKind): AppRelease? =
             all.filter { it.versionCode > installedCode && it.apks.containsKey(kind) && (includeTest || !it.prerelease) }

@@ -40,7 +40,6 @@ sealed interface UpdateStep {
 object UpdateState {
     var step: UpdateStep by mutableStateOf(UpdateStep.Idle)
     var available: AppRelease? by mutableStateOf(null)
-    var agentAvailable: AppRelease? by mutableStateOf(null)
     var lastCheckMs: Long by mutableStateOf(0L)
     var lastError: String? by mutableStateOf(null)
 }
@@ -88,9 +87,7 @@ class Installer(private val context: Context, private val client: OkHttpClient) 
     private fun sumFor(url: String, name: String): String {
         client.newCall(Request.Builder().url(url).build()).execute().use { r ->
             if (!r.isSuccessful) throw IOException("SHA256SUMS ${r.code}")
-            return r.body.string().lines().map { it.trim().split(Regex("\\s+"), limit = 2) }
-                .firstOrNull { it.size == 2 && it[1].trimStart('*') == name }?.get(0)
-                ?: throw IOException("$name not in SHA256SUMS")
+            return ReleaseSource.sumIn(r.body.string(), name) ?: throw IOException("$name not in SHA256SUMS")
         }
     }
 
@@ -180,13 +177,14 @@ class InstallReceiver : BroadcastReceiver() {
                 val confirm = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_INTENT, Intent::class.java) ?: return
                 UpdateState.step = UpdateStep.NeedsConfirm(kind)
                 confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                // Im Vordergrund gleich der Dialog von Android, sonst eine Mitteilung zum Antippen.
-                val started = runCatching { context.startActivity(confirm) }.isSuccess
+                // Im Vordergrund gleich der Dialog von Android, sonst eine Mitteilung zum Antippen. Aus dem
+                // Hintergrund blockt Android 14+ den Start oft still (ohne Ausnahme): dann nur die Mitteilung.
+                val started = inFront() && runCatching { context.startActivity(confirm) }.isSuccess
                 if (!started) Notifier.confirm(context, confirm)
             }
             PackageInstaller.STATUS_SUCCESS -> {
                 UpdateState.step = UpdateStep.Idle
-                if (kind == AppKind.Agent) UpdateState.agentAvailable = null else UpdateState.available = null
+                UpdateState.available = null
             }
             else -> UpdateState.step = UpdateStep.Failed(intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "install")
         }
@@ -194,6 +192,11 @@ class InstallReceiver : BroadcastReceiver() {
 
     companion object {
         const val KIND = "kind"
+
+        /** Ob die App gerade vorne zu sehen ist (dann darf sie den Dialog von Android selbst öffnen). */
+        private fun inFront(): Boolean = android.app.ActivityManager.RunningAppProcessInfo().also {
+            android.app.ActivityManager.getMyMemoryState(it)
+        }.importance <= android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
     }
 }
 
